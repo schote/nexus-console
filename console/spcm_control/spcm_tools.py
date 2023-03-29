@@ -1,7 +1,7 @@
 from ctypes import *
 
 # load registers for easier access
-from py_header.regs import *
+from console.spcm_control.py_header.regs import *
 
 #
 # **************************************************************************
