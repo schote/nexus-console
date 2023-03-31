@@ -1,3 +1,4 @@
+# %%
 import math
 import warnings
 
@@ -6,7 +7,7 @@ import numpy as np
 import pypulseq as pp
 
 
-def main(plot: bool, write_seq: bool, seq_filename: str = "seq/tse_pypulseq.seq"):
+def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
     # ======
     # SETUP
     # ======
@@ -316,7 +317,11 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "seq/tse_pypulseq.seq"
     # =========
     if write_seq:
         seq.write(seq_filename)
+        
+    return seq
 
-
+# %%
 if __name__ == "__main__":
-    main(plot=False, write_seq=True)
+    
+    seq = main(plot=True, write_seq=False)
+# %%
