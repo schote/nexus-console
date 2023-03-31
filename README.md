@@ -7,9 +7,9 @@ Here we briefly show, how to setup a virtual environment with miniconda. To get 
 
 You can check your python version by running `python --version`.
 
-1. Open a new terminal/command prompt and go to the repository folder `/spectrum-pulseq`. For simplicity we are going to create our virtual environment in here, alternatively you can also create it in your default environments folder (configurable in the `.condarc`file which can be found in `C:\Users\<username>`) by using a different prefix. We create the environment with python version [3.11](https://docs.python.org/3/whatsnew/3.11.html).
+1. Open a new terminal/command prompt and go to the repository folder `/spectrum-pulseq`. For simplicity we are going to create our virtual environment in here, alternatively you can also create it in your default environments folder (configurable in the `.condarc`file which can be found in `C:\Users\<username>`) by using a different prefix. We create the environment with python version [3.10](https://peps.python.org/pep-0619/).
 ```
-conda create --prefix=./.venv python==3.11
+conda create --prefix=./.venv python==3.10
 ```
 
 2. We activate the virtual environment with the following command.
@@ -18,7 +18,7 @@ conda activate .\.venv
 ```
 Now, the path to your virtual environment should appear in front of the current path in your terminal/command prompt.
 
-3. You can check your python version by running `python --version`, it should print some version of `3.11.XX`.
+3. You can check your python version by running `python --version`, it should print some version of `3.10.XX`.
 
 4. Within the activated virtual environment you can you `pip` to install [packages](https://pypi.org/). Anything you install within the virtual environment is only available if the environment is active. 
 

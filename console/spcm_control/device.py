@@ -95,8 +95,6 @@ class TxCard(SpectrumDevice):
         bytes_per_sample = int32 (0)
         spcm_dwGetParam_i32(self.card, SPC_MIINST_BYTESPERSAMPLE, byref(bytes_per_sample.value))
         print(f"Bytes per sample: {bytes_per_sample}")
-
-    def set_buffer(self):
         
         
 class RxCard(SpectrumDevice):

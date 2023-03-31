@@ -6,9 +6,13 @@ setup(
   author='David Schote',
   author_email='david.schote@ptb.de',
   packages=find_packages(),
-  required_packages=[
-    matplotlib,
-    pypulseq,
+  install_requires=[
+    'matplotlib',
+    'pypulseq',
+    'numpy',
+    'pydantic',
+    'ipykernel',
+    'PyYAML'
   ],
-  description='Low field MRI console application with ScanHub-SDK and interface to Spectrum Instrumentation',
+  description='MRI console application to control Spectrum Instrumentation devices. Console interprets pulseq sequences and provides a ScanHub interface.',
 )
