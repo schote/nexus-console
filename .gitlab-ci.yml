@@ -43,21 +43,3 @@ pylint:
     reports:
       codequality: codeclimate.json
     when: always
-
-
-
-
-
-image: "python:3.10"
-
-before_script:
-  - python --version
-  - pip install -e .
-
-stages:
-  - Static Analysis
-
-flake8:
-  stage: Static Analysis
-  script:
-  - flake8 --max-line-length=120 bild/*.py
