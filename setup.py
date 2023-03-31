@@ -6,5 +6,9 @@ setup(
   author='David Schote',
   author_email='david.schote@ptb.de',
   packages=find_packages(),
+  required_packages=[
+    matplotlib,
+    pypulseq,
+  ],
   description='Low field MRI console application with ScanHub-SDK and interface to Spectrum Instrumentation',
 )
