@@ -1,0 +1,14 @@
+# Spectrum instrumentation device configuration
+
+devices:
+
+  # M2p.6546-x4 -> /dev/spcm0 (AWG)
+  - !TxCard
+    path: '/dev/spcm0'
+    amplitude: 1
+    segment_size: 4096
+    sample_rate: 2  # MHz
+
+  # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
+  - !RxCard
+    path: '/dev/spcm1'
