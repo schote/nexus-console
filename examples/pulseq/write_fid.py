@@ -9,7 +9,7 @@ from pypulseq.opts import Opts
 
 # %%
 
-f0 = 2.048e6 # approx 2 MHz
+# f0 = 2.048e6 # approx 2 MHz
 
 # Define system
 system = Opts(
@@ -31,7 +31,7 @@ adc_duration = 4e-3 # 4 ms
 
 
 # 90 degree RF sinc pulse
-rf_sinc, gz, _ = pp.make_sinc_pulse(
+rf_sinc, gz, _ = make_sinc_pulse(
     flip_angle=rf_flip_angle,
     system=system,
     duration=rf_duration,
