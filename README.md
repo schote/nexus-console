@@ -30,7 +30,9 @@ If the installation was successful you are good to go.
 
 
 
-### Troubleshooting
+## Troubleshooting
+
+### Installation
 
 <details>
 <summary>Miniconda was installed but the command `conda` cannot be found.</summary>
@@ -41,6 +43,12 @@ Ensure that you added conda to your system path. You may also want to restart yo
 <summary>Timeout during creation of conda environment or package installation.</summary>
 If you are at PTB, ensure that your proxy is configured correctly to install packages with pip or conda respectively.
 </details>
+
+<details>
+<summary>ValueError: Mime type rendering requires nbformat>=4.2.0 but it is not installed</summary>
+If you are at PTB, ensure that your proxy is configured correctly to install packages with pip or conda respectively.
+</details>
+
 
 ---
 
