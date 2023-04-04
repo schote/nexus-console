@@ -1,13 +1,9 @@
 from pydantic import BaseModel
-import yaml
 
 from console.spcm_control.pyspcm import *
 from console.spcm_control.spcm_tools import *
 
-# Add constructors to PyYAML loader
-yaml_loader = yaml.SafeLoader
-yaml_loader.add_constructor("!TxCard", lambda loader, node: TxCard(**loader.construct_mapping(node)))
-yaml_loader.add_constructor("!RxCard", lambda loader, node: RxCard(**loader.construct_mapping(node)))
+
 
 class SpectrumDevice(BaseModel):
     
@@ -93,7 +89,7 @@ class TxCard(SpectrumDevice):
 
         # Get bytes per sample
         bytes_per_sample = int32 (0)
-        spcm_dwGetParam_i32(self.card, SPC_MIINST_BYTESPERSAMPLE, byref(bytes_per_sample.value))
+        spcm_dwGetParam_i32(self.card, SPC_MIINST_BYTESPERSAMPLE, byref(bytes_per_sample))
         print(f"Bytes per sample: {bytes_per_sample}")
         
         
