@@ -1,5 +1,7 @@
 # Spectrum-Pulseq MRI Console
 
+This project aims to implement a console for magnetic resonance imaging (MRI) acquisitions. The central hardware components are two spectrum cards from Spectrum Instrumentation. They serve as arbitrary waveform generators (AWG) and analog to digital converter (digitizer). This application controls AWG and digitizer cards to perform MRI scans from a sequence description with the open-source pulseq framework. The console application is formerly designed for low-field applications, but might be extendable also for higher field strength.
+
 ## Installation
 
 It is recommended to install the package within a virtual environment. There are many options to create and manage virtual environments. Examples are [virtualenv](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html), [venv](https://docs.python.org/3/library/venv.html), [conda](https://docs.conda.io/projects/conda/en/stable/) or [miniconda](https://docs.conda.io/en/latest/miniconda.html).
