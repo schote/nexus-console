@@ -11,6 +11,8 @@ image: python:3.10
 # only cache local items.
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  HTTP_PROXY: "$http://webproxy:8080/"
+  HTTPS_PROXY: "$http://webproxy:8080/"
 
 # Pip's cache doesn't store the python packages
 # https://pip.pypa.io/en/stable/topics/caching/
@@ -24,6 +26,7 @@ cache:
 
 before_script:
   - python --version  # For debugging
+
   - pip install virtualenv
   - virtualenv venv
   - source venv/bin/activate
