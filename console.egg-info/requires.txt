@@ -1,0 +1,6 @@
+matplotlib
+pypulseq
+numpy
+pydantic
+ipykernel
+PyYAML
