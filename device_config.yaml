@@ -6,7 +6,8 @@ devices:
   - !TxCard
     path: '/dev/spcm0'
     amplitude: 1
-    segment_size: 4096
+    # notify_size_samples: 2048  # number of samples
+    buffer_size_samples: 65536
     sample_rate: 2  # MHz
 
   # M2p.5933-x4 -> /dev/spcm1 (Digitizer)

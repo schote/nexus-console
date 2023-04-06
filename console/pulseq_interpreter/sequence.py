@@ -20,7 +20,7 @@ from pypulseq.opts import Opts
 
 # %%
 
-class SequenceWrapper(Sequence):
+class SequenceProvider(Sequence):
     def __init__(self, system: Opts):
         super().__init__(system=system)
         
@@ -51,3 +51,6 @@ class SequenceWrapper(Sequence):
         
         return data_modulated, t*duration*1e6
         
+        
+    def rollout_sequence(self):
+        return None

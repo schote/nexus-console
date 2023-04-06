@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.io as pio
 
 from console.utilities.io import yaml_loader
-from console.pulseq_interpreter.sequence import SequenceWrapper
+from console.pulseq_interpreter.sequence import SequenceProvider
 
 # Plotly configuration
 pio.renderers.default = "notebook"
@@ -29,12 +29,9 @@ for dev in devices:
     print(dev.__name__)
     pprint(dev.dict())
     
-    
 # %%
 # Get the tx card by filtering the class names and call it's init function
 tx_card = list(filter(lambda device: device.__name__ == "TxCard", devices))[0]
-
-tx_card.init_card()
 
 # %%
 # Read system config
@@ -44,7 +41,7 @@ print(f"Found system configuration: {type(system)}")
 
 # %%
 # Load sequence and modulate RF block 
-seq = SequenceWrapper(system)
+seq = SequenceProvider(system)
 seq_path = os.path.normpath("/Users/schote01/code/spectrum-pulseq/examples/pulseq/fid.seq")
 seq.read(seq_path)
 
@@ -52,5 +49,15 @@ rf_mod, t = seq.get_modulated_rf_block(1)
 
 fig = px.line(x=t, y=rf_mod, title='Sinc RF Pulse', labels=dict(x="Time (us)", y="RF Amplitude"))
 fig.show()
+
+
+# %%
+# Transfer data to spectrum card
+
+tx_card.connect()
+tx_card.operate(rf_mod)
+
+# %%
+tx_card.disconnect()
 
 # %%
