@@ -38,9 +38,9 @@ class AcquistionControl:
         # rx_thread.start()
         
         # Report progress
-        while tx_thread.is_alive():
-            print(f"Ctrl: Running sequence... {self.tx_engine.progress*100}%")
-            time.sleep(0.1)
+        # while tx_thread.is_alive():
+        #     print(f"Ctrl: Running sequence... {self.tx_engine.progress*100}%")
+        #     time.sleep(0.1)
         
         # Wait for threads
         tx_thread.join()

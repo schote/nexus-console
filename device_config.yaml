@@ -20,12 +20,12 @@ system:
     # ADC
     adc_dead_time: 0
     # Gradents
-    grad_raster_time: 10e-6
     rise_time: 0
-    max_grad: 10 # in Hz/m
-    max_slew: 5 # in Hz/m/s
+    max_grad: 32 # in Hz/m
+    max_slew: 130 # in Hz/m/s
+    # grad_raster_time: 1e-6
     # RF
-    rf_dead_time: 50
+    rf_dead_time: 10e-6
     rf_raster_time: 1e-6
-    rf_ringdown_time: 0
+    rf_ringdown_time: 100e-6
       

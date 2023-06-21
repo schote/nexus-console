@@ -131,36 +131,42 @@ class TxCard(SpectrumDevice):
             print(f"Driver adjusted the sampling rate, sampling rate now is {sample_rate.value}...")
             self.sample_rate = int(sample_rate.value)
         
-    def operate(self, data: np.array):
+    def operate(self, data: np.ndarray):
         
-        print("Operating TX Card...")
-        print(f"Sequence data in thread: {data}")
-        self.progress = 0.
+        # *** Thread testing:
+        # print("Operating TX Card...")
+        # print(f"Sequence data in thread: {data}")
+        # self.progress = 0.
         
-        for k, _ in enumerate(data):
-            self.progress = round((k+1)/len(data), 2)
-            if k == int(len(data)/2):
-                print("Thrd: Half of sequence data processed...")
-            time.sleep(0.2)
-        return
+        # for k, _ in enumerate(data):
+        #     self.progress = round((k+1)/len(data), 2)
+        #     if k == int(len(data)/2):
+        #         print("Thrd: Half of sequence data processed...")
+        #     time.sleep(0.2)
+        # return
         
         # CHECKS (to be implemented)
         # check size of data - is continuous buffer required?
         
-        # Get bytes per sample
-        bytes_per_sample = int32 (0)
+        # Read bytes per sample: 1 sample = int32?
+        bytes_per_sample = int32(0)
         spcm_dwGetParam_i32(self.card, SPC_MIINST_BYTESPERSAMPLE, byref(bytes_per_sample))
         print(f"Bytes per sample: {bytes_per_sample.value}")
         
-        # Define notify and buffer size in python simple_rep_fifo example:
-        notify_size = int32(0)  # int32(128*1024)
-        # buffer_size = uint64(32*1024*1024)
+
+        # Calculate buffer size
         num_samples = len(data)
         buffer_size = uint64(num_samples*4*bytes_per_sample.value)
-        # Define pointer to buffer
-        # buffer = c_void_p()
-        data = np.int16(data)
-        buffer = data.ctypes.data_as(ptr16)
+        
+        # Rescale data samples to int32
+        sample_max_val = np.iinfo(np.int32).max
+        scale_vals = np.max(np.abs(data))/sample_max_val
+        data = np.int32(data*scale_vals)
+        
+        buffer = data.ctypes.data_as(ptr32)
+        
+        # Define notify and buffer size in python simple_rep_fifo example:
+        notify_size = int32(128*1024)
 
         # Transfer first <notify-size> chunk of data to DMA
         # spcm_dwDefTransfer_i64 defines the transfer buffer by 2 x 32 bit unsigned integer
