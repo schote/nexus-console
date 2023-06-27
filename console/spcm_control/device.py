@@ -4,17 +4,14 @@ import numpy as np
 
 from console.spcm_control.pyspcm import *
 from console.spcm_control.spcm_tools import *
-
+import ctypes
 
 
 class SpectrumDevice(BaseModel):
-    
+    # TODO: Define as dataclass?
     path: str
-    card: str = None
-    name: str = None
-    func_type: int = None
-    serial_number: int = None
-    card_started: bool = False
+    card: str | None = None
+    name: str | None = None
     
     class Config:
         # Configuration of pydantic model
@@ -24,87 +21,100 @@ class SpectrumDevice(BaseModel):
         super().__init__(**kwargs)
     
     def disconnect(self):
-        # Destructor closing the card
+        # Closing the card
         if self.card:
-            print(f"Closing spectrum card {self.name}...")
+            print(f"Stopping and closing card {self.name}...")
+            spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
             spcm_vClose(self.card)
+            # Reset card information
+            self.card = None
+            self.name = None
             
     def connect(self):
         # Open card
-        self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
-        
+        print(f"Connecting to card...")
         if self.card:
-            # read values from card
+            raise ConnectionError(f"Already connected to card")
+        else:
+            # Only connect, if card is not already defined
+            self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
+
+        if self.card:
+            # Read card information
             card_type = int32(0)
             spcm_dwGetParam_i32(self.card, SPC_PCITYP, byref(card_type))
-            serial_number = int32(0)
-            spcm_dwGetParam_i32(self.card, SPC_PCISERIALNO, byref(serial_number))
-            func_type = int32(0)
-            spcm_dwGetParam_i32(self.card, SPC_FNCTYPE, byref(func_type))
-
+            # func_type = int32(0)
+            # spcm_dwGetParam_i32(self.card, SPC_FNCTYPE, byref(func_type))
+            
             # write values to settings
             self.name = szTypeToName(card_type.value)
-            self.serial_number = serial_number
-            self.func_type = func_type
             
+            # Print card values
+            print(f"Connection to card {self.name} established!")
             self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")
-        
-    def handle_error(self, err = None):
-        if err:
-            # Read and print the error
-            err_msg = create_string_buffer(ERRORTEXTLEN)
-            spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg)
-            print(err_msg)
-            # Stop card if started
-            if self.card_started:
-                spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
-            # Disconnect
-            self.disconnect()
+    
+    def handle_error(self, error):
+        if error:
+            # Read error message from card
+            error_msg = create_string_buffer(ERRORTEXTLEN)
+            spcm_dwGetErrorInfo_i32(self.card, None, None, error_msg)
+            
+            # Disconnect and raise error
+            print(f"Stopping card {self.name}...")
+            spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
+            raise Warning(f"Card error: {error_msg.value}")
         
     def get_status(self):
+        # TODO: Define as abstract method
         pass
         
     def setup_card(self):
+        # TODO: Define as abstract method
         pass
     
     def operate(self):
+        # TODO: Define as abstract method
         pass
         
 
-
 class TxCard(SpectrumDevice):
     __name__ = "TxCard"
-    
-    amplitude: int
+    # Card configuration
+    channel_enable: list[int]
+    max_amplitude: list[int]
+    filter_type: list[int]
     sample_rate: int # in MHz
-    buffer_size_samples: int
+    
     progress: int = 0.
-    
-    # TODO: Define notify and buffer size in config file?
-    # notify_size_samples: int
-    
+
     
     def setup_card(self):
         
         # Reset card
         spcm_dwSetParam_i64 (self.card, SPC_M2CMD, M2CMD_CARD_RESET)
         
-        # TODO: Check if card is correct card...
+        # Set trigger
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_ORMASK, SPC_TM_NONE)
         
-        # Setup the card mode
-        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_FIFO_SINGLE) # Configure fifo mode
-        # spcm_dwSetParam_i64 (self.card, SPC_SEGMENTSIZE, 0) # used to limit amount of replayed data if SPC_LOOPS != 0 
-        # spcm_dwSetParam_i64 (self.card, SPC_LOOPS, 0) # continuous replay
-        spcm_dwSetParam_i32 (self.card, SPC_CLOCKOUT, 1) # enable clock output
+        # Set clock mode
+        spcm_dwSetParam_i32 (self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
         spcm_dwSetParam_i64 (self.card, SPC_SAMPLERATE, MEGA(self.sample_rate)) # set card sampling rate in MHz
         
+        # Check actual sampling rate
+        sample_rate = int64 (0)
+        spcm_dwGetParam_i64 (self.card, SPC_SAMPLERATE, byref(sample_rate))
+        print(f"Device sampling rate: {sample_rate.value*1e-6} MHz")
+        if sample_rate.value != MEGA(self.sample_rate):
+            raise Warning(f"Device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz...")
+
         # Multi purpose I/O lines
-        spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?
-        spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_DISABLE)
-        spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
-        spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
+        # spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?
+        # spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_DISABLE)
+        # spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
+        # spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
+        
         
         # Enable and setup channels
         spcm_dwSetParam_i32 (self.card, SPC_CHENABLE, CHANNEL0 | CHANNEL1 | CHANNEL2 | CHANNEL3)
@@ -115,21 +125,30 @@ class TxCard(SpectrumDevice):
         print(f"Number of active channels: {num_channels.value}")
         
         # Use loop to enable and setup active channels
-        for k in range(num_channels.value):
-            spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0 + k * (SPC_ENABLEOUT1 - SPC_ENABLEOUT0), 1)
-            spcm_dwSetParam_i32 (self.card, SPC_AMP0 + k * (SPC_AMP1 - SPC_AMP0), self.amplitude)
-            spcm_dwSetParam_i32 (self.card, SPC_FILTER0 + k * (SPC_FILTER1 - SPC_FILTER0), 0)
+        # Channel 0: RF
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[0])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[0])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[0])
 
-        # Software trigger
-        spcm_dwSetParam_i32 (self.card, SPC_TRIG_ORMASK, SPC_TMASK_SOFTWARE)
+        # Channel 1: Gradient x
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[1])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[1])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[1])
         
-        # Update actual sampling rate
-        sample_rate = int64 (0)
-        spcm_dwGetParam_i64 (self.card, SPC_SAMPLERATE, byref(sample_rate))
+        # Channel 2: Gradient y
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[2])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[2])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[2])
         
-        if sample_rate != self.sample_rate:
-            print(f"Driver adjusted the sampling rate, sampling rate now is {sample_rate.value}...")
-            self.sample_rate = int(sample_rate.value)
+        # Channel 3: Gradient z
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[3])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[3])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[3])
+
+        # Setup the card mode
+        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_STD_SINGLE)
+        spcm_dwSetParam_i64 (self.card, SPC_LOOPS, 1)
+        
         
     def operate(self, data: np.ndarray):
         
@@ -137,7 +156,6 @@ class TxCard(SpectrumDevice):
         # print("Operating TX Card...")
         # print(f"Sequence data in thread: {data}")
         # self.progress = 0.
-        
         # for k, _ in enumerate(data):
         #     self.progress = round((k+1)/len(data), 2)
         #     if k == int(len(data)/2):
@@ -145,49 +163,46 @@ class TxCard(SpectrumDevice):
         #     time.sleep(0.2)
         # return
         
-        # CHECKS (to be implemented)
-        # check size of data - is continuous buffer required?
+        if data.dtype != np.int16:
+            raise ValueError("Invalid type, require data to be int16.")
         
-        # Read bytes per sample: 1 sample = int32?
-        bytes_per_sample = int32(0)
-        spcm_dwGetParam_i32(self.card, SPC_MIINST_BYTESPERSAMPLE, byref(bytes_per_sample))
-        print(f"Bytes per sample: {bytes_per_sample.value}")
+        samples_per_channel = int(len(data)/4)  # Correct?
+        spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, samples_per_channel)
         
+        # Get pointer to data
+        buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        # buffer = data.ctypes.data_as(ptr16)
 
-        # Calculate buffer size
-        num_samples = len(data)
-        buffer_size = uint64(num_samples*4*bytes_per_sample.value)
-        
-        # Rescale data samples to int32
-        sample_max_val = np.iinfo(np.int32).max
-        scale_vals = np.max(np.abs(data))/sample_max_val
-        data = np.int32(data*scale_vals)
-        
-        buffer = data.ctypes.data_as(ptr32)
-        
-        # Define notify and buffer size in python simple_rep_fifo example:
-        notify_size = int32(128*1024)
 
+        print("Transfer samples to buffer...")
         # Transfer first <notify-size> chunk of data to DMA
         # spcm_dwDefTransfer_i64 defines the transfer buffer by 2 x 32 bit unsigned integer
         # Function arguments: device, buffer type, direction, notify size, pointer to the data buffer, offset - 0 in FIFO mode, transfer length
-        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, notify_size, buffer, uint64(0), buffer_size)
+        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), buffer,  uint64(0), uint64(data.nbytes))
         
         # Start dma transfer and wait until finished
-        self.handle_error(
-            spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
-        )
-            
-        if not self.card_started:
-            self.handle_error(
-                spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER)
-            )
-            self.card_started = True
-            
+        err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+        self.handle_error(err)
+                
+        # if(err != 0):
+        #     spcm_dwGetErrorInfo_i32 (self.card, None, None, self.szErrorTextBuffer)
+        #     print("Card 1- ERROR in Segment 1")
+        #     sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        #     spcm_vClose (self.card)
+        #     return
         
+        print("Trigger card...")
+        err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
+        self.handle_error(err)
         
-        
-        
+        # if(err != 0):   
+        #     spcm_dwGetErrorInfo_i32 (self.card, None, None, self.szErrorTextBuffer)
+        #     print("Card 1- ERROR in Segment 1")
+        #     sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        #     spcm_vClose (self.card)
+        #     return
+
+
 class RxCard(SpectrumDevice):
     __name__ = "RxCard"
     

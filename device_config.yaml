@@ -4,28 +4,28 @@ devices:
 
   # M2p.6546-x4 -> /dev/spcm0 (AWG)
   - !TxCard
-    path: '/dev/spcm0'
-    amplitude: 1
-    # notify_size_samples: 2048  # number of samples
-    buffer_size_samples: 65536
-    sample_rate: 2  # MHz
+    path: '/dev/spcm1'
+    max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
+    filter_type: [0, 2, 2, 2] # Filter per channel
+    channel_enable: [1, 1, 1, 1] # Enable per channel
+    sample_rate: 2  # in MHz
 
   # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
   - !RxCard
-    path: '/dev/spcm1'
+    path: '/dev/spcm2'
 
 
-system: 
-  - !System
-    # ADC
-    adc_dead_time: 0
-    # Gradents
-    rise_time: 0
-    max_grad: 32 # in Hz/m
-    max_slew: 130 # in Hz/m/s
-    # grad_raster_time: 1e-6
-    # RF
-    rf_dead_time: 10e-6
-    rf_raster_time: 1e-6
-    rf_ringdown_time: 100e-6
+# system: 
+#   - !System
+#     # ADC
+#     adc_dead_time: 0
+#     # Gradents
+#     rise_time: 0
+#     max_grad: 32 # in Hz/m
+#     max_slew: 130 # in Hz/m/s
+#     # grad_raster_time: 1e-6
+#     # RF
+#     rf_dead_time: 10e-6
+#     rf_raster_time: 1e-6
+#     rf_ringdown_time: 100e-6
       
