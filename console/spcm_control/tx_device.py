@@ -1,94 +1,26 @@
-import time
-from pydantic import BaseModel, Extra
-import numpy as np
-
-from console.spcm_control.pyspcm import *
-from console.spcm_control.spcm_tools import *
+"""Implementation of transmit card."""
 import ctypes
+from dataclasses import dataclass
 
+import numpy as np
+from console.spcm_control.device_interface import SpectrumDevice
+from console.spcm_control.spcm.pyspcm import *
+from console.spcm_control.spcm.spcm_tools import *
 
-class SpectrumDevice(BaseModel):
-    # TODO: Define as dataclass?
-    path: str
-    card: str | None = None
-    name: str | None = None
-    
-    class Config:
-        # Configuration of pydantic model
-        extra = Extra.ignore
-    
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-    
-    def disconnect(self):
-        # Closing the card
-        if self.card:
-            print(f"Stopping and closing card {self.name}...")
-            spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
-            spcm_vClose(self.card)
-            # Reset card information
-            self.card = None
-            self.name = None
-            
-    def connect(self):
-        # Open card
-        print(f"Connecting to card...")
-        if self.card:
-            raise ConnectionError(f"Already connected to card")
-        else:
-            # Only connect, if card is not already defined
-            self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
-
-        if self.card:
-            # Read card information
-            card_type = int32(0)
-            spcm_dwGetParam_i32(self.card, SPC_PCITYP, byref(card_type))
-            # func_type = int32(0)
-            # spcm_dwGetParam_i32(self.card, SPC_FNCTYPE, byref(func_type))
-            
-            # write values to settings
-            self.name = szTypeToName(card_type.value)
-            
-            # Print card values
-            print(f"Connection to card {self.name} established!")
-            self.setup_card()
-        else:
-            raise ConnectionError("Could not connect to card...")
-    
-    def handle_error(self, error):
-        if error:
-            # Read error message from card
-            error_msg = create_string_buffer(ERRORTEXTLEN)
-            spcm_dwGetErrorInfo_i32(self.card, None, None, error_msg)
-            
-            # Disconnect and raise error
-            print(f"Stopping card {self.name}...")
-            spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
-            raise Warning(f"Card error: {error_msg.value}")
-        
-    def get_status(self):
-        # TODO: Define as abstract method
-        pass
-        
-    def setup_card(self):
-        # TODO: Define as abstract method
-        pass
-    
-    def operate(self):
-        # TODO: Define as abstract method
-        pass
-        
-
+@dataclass
 class TxCard(SpectrumDevice):
-    __name__ = "TxCard"
-    # Card configuration
+    """Implementation of TX device."""
+    
+    path: str
     channel_enable: list[int]
     max_amplitude: list[int]
     filter_type: list[int]
-    sample_rate: int # in MHz
+    sample_rate: int
     
-    progress: int = 0.
-
+    __name__: str = "TxCard"
+    
+    def __post_init__(self):
+        super().__init__(self.path)
     
     def setup_card(self):
         
@@ -146,6 +78,11 @@ class TxCard(SpectrumDevice):
         spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[3])
 
         # Setup the card mode
+        # FIFO mode
+        # spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_FIFO_SINGLE)
+        # spcm_dwSetParam_i64 (self.card, SPC_LOOPS, 0) # continuous replay
+        
+        # Standard mode
         spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_STD_SINGLE)
         spcm_dwSetParam_i64 (self.card, SPC_LOOPS, 1)
         
@@ -166,48 +103,37 @@ class TxCard(SpectrumDevice):
         if data.dtype != np.int16:
             raise ValueError("Invalid type, require data to be int16.")
         
+        # For standard mode:
         samples_per_channel = int(len(data)/4)  # Correct?
         spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, samples_per_channel)
         
         # Get pointer to data
         buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        # buffer = data.ctypes.data_as(ptr16)
-
-
+        buffer_size = uint64(data.nbytes)
+        
         print("Transfer samples to buffer...")
         # Transfer first <notify-size> chunk of data to DMA
         # spcm_dwDefTransfer_i64 defines the transfer buffer by 2 x 32 bit unsigned integer
         # Function arguments: device, buffer type, direction, notify size, pointer to the data buffer, offset - 0 in FIFO mode, transfer length
-        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), buffer,  uint64(0), uint64(data.nbytes))
+        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, int32(0), buffer,  uint64(0), buffer_size)
         
-        # Start dma transfer and wait until finished
+        
+        # STANDARD MODE
+        # Transfer data, read error, start replay and again read error
+        # err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+        # self.handle_error(err)
+        # print("Trigger card...")
+        # err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
+        # self.handle_error(err)
+        
+        
+        # FIFO MODE
+        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, buffer_size)
         err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
         self.handle_error(err)
-                
-        # if(err != 0):
-        #     spcm_dwGetErrorInfo_i32 (self.card, None, None, self.szErrorTextBuffer)
-        #     print("Card 1- ERROR in Segment 1")
-        #     sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
-        #     spcm_vClose (self.card)
-        #     return
-        
-        print("Trigger card...")
         err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
         self.handle_error(err)
         
-        # if(err != 0):   
-        #     spcm_dwGetErrorInfo_i32 (self.card, None, None, self.szErrorTextBuffer)
-        #     print("Card 1- ERROR in Segment 1")
-        #     sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
-        #     spcm_vClose (self.card)
-        #     return
-
-
-class RxCard(SpectrumDevice):
-    __name__ = "RxCard"
-    
-    def setup_card(self):
-        pass
-    
-    def operate(self):
+        
+    def get_status(self):
         pass
