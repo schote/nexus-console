@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 
 from console.utilities.io import yaml_loader
-from console.spcm_control.device import TxCard
+from console.spcm_control.tx_device import TxCard
 
 import matplotlib.pyplot as plt
 
@@ -21,6 +21,7 @@ devices = config["devices"]
 # Get first device in list
 tx_card: TxCard = list(filter(lambda device: device.__name__ == "TxCard", devices))[0]
 
+# %%
 # Define a sequence
 max_val = 15000   # np.iinfo(np.uint16).max
 waveform = np.linspace(start=0, stop=max_val, num=4000, dtype=np.int16)
@@ -40,7 +41,11 @@ plt.show()
 # %%
 # Run experiment
 tx_card.connect()
+
+# %%
 tx_card.operate(sequence)
+
+# %%
 tx_card.disconnect()
 
 # %%
