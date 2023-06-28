@@ -1,6 +1,8 @@
 import yaml
 
-from console.spcm_control.device import TxCard, RxCard
+from console.spcm_control.tx_device import TxCard
+from console.spcm_control.rx_device import RxCard
+
 # from pypulseq.opts import Opts
 
 # Add constructors to PyYAML loader

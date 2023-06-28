@@ -5,7 +5,7 @@ import yaml
 import numpy as np
 
 from console.utilities.io import yaml_loader
-from console.spcm_control.device import TxCard, RxCard
+from console.spcm_control.device_interface import TxCard, RxCard
 from console.pulseq_interpreter.sequence import SequenceProvider
 
 
