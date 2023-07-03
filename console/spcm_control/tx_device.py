@@ -63,19 +63,19 @@ class TxCard(SpectrumDevice):
         spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[0])
 
         # Channel 1: Gradient x
-        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[1])
-        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[1])
-        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[1])
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT1, self.channel_enable[1])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP1, self.max_amplitude[1])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER1, self.filter_type[1])
         
         # Channel 2: Gradient y
-        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[2])
-        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[2])
-        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[2])
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT2, self.channel_enable[2])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP2, self.max_amplitude[2])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER2, self.filter_type[2])
         
         # Channel 3: Gradient z
-        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT0, self.channel_enable[3])
-        spcm_dwSetParam_i32 (self.card, SPC_AMP0, self.max_amplitude[3])
-        spcm_dwSetParam_i32 (self.card, SPC_FILTER0, self.filter_type[3])
+        spcm_dwSetParam_i32 (self.card, SPC_ENABLEOUT3, self.channel_enable[3])
+        spcm_dwSetParam_i32 (self.card, SPC_AMP3, self.max_amplitude[3])
+        spcm_dwSetParam_i32 (self.card, SPC_FILTER3, self.filter_type[3])
 
         # Setup the card mode
         # FIFO mode
@@ -88,7 +88,6 @@ class TxCard(SpectrumDevice):
         
         
     def operate(self, data: np.ndarray):
-        
         # *** Thread testing:
         # print("Operating TX Card...")
         # print(f"Sequence data in thread: {data}")
@@ -100,11 +99,21 @@ class TxCard(SpectrumDevice):
         #     time.sleep(0.2)
         # return
         
+        
+        self._std_example(data)
+        
+        # self._fifo_example(data)
+        
+        
+    def _std_example(self, data: np.ndarray):
+
+        
         if data.dtype != np.int16:
             raise ValueError("Invalid type, require data to be int16.")
         
         # For standard mode:
         samples_per_channel = int(len(data)/4)  # Correct?
+        # samples_per_channel = int(len(data))
         spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, samples_per_channel)
         
         # Get pointer to data
@@ -120,20 +129,68 @@ class TxCard(SpectrumDevice):
         
         # STANDARD MODE
         # Transfer data, read error, start replay and again read error
-        # err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
-        # self.handle_error(err)
-        # print("Trigger card...")
-        # err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
-        # self.handle_error(err)
-        
-        
-        # FIFO MODE
-        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, buffer_size)
         err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
         self.handle_error(err)
+        print("Trigger card...")
         err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
         self.handle_error(err)
         
         
+    def _fifo_example(self, data: np.ndarray):
+        # FIFO MODE
+        # spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, buffer_size)
+        # err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+        # self.handle_error(err)
+        # err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
+        # self.handle_error(err)
+        
+        
+        #         // in FIFO mode we need to define the buffer before starting the transfer
+        # int16* pnData = (int16*) pvAllocMemPageAligned (llBufsizeInSamples * 2); // assuming 2 byte per sample
+        # spcm_dwDefTransfer_i64 (hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 4096,
+        # (void*) pnData, 0, 2 * llBufsizeInSamples);
+        # // before start we once have to fill some data in for the start of the output
+        # vCalcOrLoadData (&pnData[0], 2 * llBufsizeInSamples);
+        # spcm_dwSetParam_i64 (hDrv, SPC_DATA_AVAIL_CARD_LEN, 2 * llBufsizeInSamples);
+        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
+        # // now the first <notifysize> bytes have been transferred to card and we start the output
+        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
+        # // we replay data in a loop. As we defined a notify size of 4k we’ll get the data in >=4k chuncks
+        # llTotalBytes = 2 * llBufsizeInSamples;
+        # while (!dwError)
+        # {
+        # // read out the available bytes that are free again
+        # spcm_dwGetParam_i64 (hDrv, SPC_DATA_AVAIL_USER_LEN, &llAvailBytes);
+        # spcm_dwGetParam_i64 (hDrv, SPC_DATA_AVAIL_USER_POS, &llUserPosInBytes);
+        # // be sure not to make a rollover and limit the data to be processed
+        # if ((llUserPosInBytes + llAvailBytes) > (2 * llBufsizeInSamples))
+        # llAvailBytes = (2 * llBufsizeInSamples) - llUserPosInBytes;
+        # llotalBytes += llAvailBytes;
+        # // generate some new data
+        # vCalcOrLoadData (&pnData[llUserPosInBytes / 2], llAvailBytes);
+        # printf ("Currently Available: %lld, total: %lld\n", llAvailBytes, llTotalBytes);
+        # // now we mark the number of bytes that we just generated for replay and wait for the next free buffer
+        # spcm_dwSetParam_i64 (hDrv, SPC_DATA_AVAIL_CARD_LEN, llAvailBytes);
+        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_DATA_WAITDMA);
+        # }
+        pass
+                
     def get_status(self):
         pass
+    
+    def output_to_card_value(self, value: int, channel: int = 0) -> int:
+        """Calculates int16 value which corresponds to given value in mV.
+
+        Parameters
+        ----------
+        value
+            Value in mV
+
+        Returns
+        -------
+            Integer card value to get desired output in mV
+        """
+        if (ratio := value/self.max_amplitude[channel]) > 1:
+            raise ValueError("Given value exceeds channel output limit.")
+        # Card values written as int16
+        return int(ratio * np.iinfo(np.int16).max)
