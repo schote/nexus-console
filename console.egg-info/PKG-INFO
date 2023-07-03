@@ -1,7 +1,0 @@
-Metadata-Version: 2.1
-Name: console
-Version: 0.0.1
-Summary: MRI console application to control Spectrum Instrumentation devices. Console interprets pulseq sequences and provides a ScanHub interface.
-Author: David Schote
-Author-email: david.schote@ptb.de
-License-File: LICENSE
