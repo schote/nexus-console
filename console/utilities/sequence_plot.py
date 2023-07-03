@@ -163,7 +163,9 @@ def generate_plotly_figure(traces: list[TraceData]):
         )
 
     fig.update_layout(
-        autosize=True,
+        autosize=False,
+        width=1600,
+        height=900,
         xaxis={
             "ticks": "outside",
             "title": "Time (ms)",
