@@ -33,6 +33,7 @@ before_script:
   # - pip install -e .
   # - python setup.py bdist_wheel
   # - pip install dist/*
+  - python bdist_wheel
   - pip install -e ".[lint]"
 
 stages:
