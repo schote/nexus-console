@@ -14,6 +14,5 @@ stages:
 
 pylint:
   stage: Static Analysis
-  image: registry.gitlab.com/pipeline-components/pylint:latest
   script:
     - poe lint
