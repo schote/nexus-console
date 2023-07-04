@@ -10,7 +10,7 @@ authors = [
     {name = "David Schote", email = "david.schote@ptb.de"},
 ]
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 dependencies = [
     "numpy==1.23.0",    # pypulseq release 1.4 incompatible with numpy 1.25
     "pypulseq==1.4.0",
