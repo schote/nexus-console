@@ -6,7 +6,7 @@ variables:
 
 before_script:
   - python --version
-  - pip install update pip
+  - pip install --upgrade pip
   - pip install -e . ".[lint]"
 
 stages:
