@@ -54,24 +54,24 @@ lint.ignore_fail = "return_non_zero"
 
     [tool.poe.tasks.isort]
     help = "Run isort"
-    cmd  = "isort app/"
+    cmd  = "isort console/"
 
     [tool.poe.tasks.black]
     help = "Run black"
-    cmd  = "black app/"
+    cmd  = "black console/"
 
     [tool.poe.tasks.pylint]
     help = "Run pylint"
-    cmd  = "pylint app/"
+    cmd  = "pylint console/"
 
     [tool.poe.tasks.mypy]
     help = "Run mypy"
-    cmd  = "mypy app/"
+    cmd  = "mypy console/"
 
     [tool.poe.tasks.flake8]
     help = "Run flake8"
-    cmd  = "flake8 app/"
+    cmd  = "flake8 console/"
 
     [tool.poe.tasks.pydocstyle]
     help = "Run pydocstyle"
-    cmd  = "pydocstyle app/"
+    cmd  = "pydocstyle console/"
