@@ -6,8 +6,8 @@ variables:
 
 before_script:
   - python --version
-  - pip install update pip
-  - pip install -e . ".[lint]"
+  - pip install --upgrade pip
+  - pip install ".[lint]"
 
 stages:
   - Static Analysis
