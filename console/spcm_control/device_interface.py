@@ -5,12 +5,13 @@ from abc import ABC, abstractmethod
 # import numpy as np
 from console.spcm_control.spcm.pyspcm import *
 from console.spcm_control.spcm.spcm_tools import *
+
 # from pydantic import BaseModel, Extra
 
 
 class SpectrumDevice(ABC):
     """Spectrum device abstract base class."""
-    
+
     def __init__(self, path: str):
         """Init function of spectrum device.
 
@@ -23,7 +24,7 @@ class SpectrumDevice(ABC):
         self.card: str | None = None
         self.name: str | None = None
         self.path = path
-    
+
     def disconnect(self):
         """Disconnect card."""
         # Closing the card
@@ -34,7 +35,7 @@ class SpectrumDevice(ABC):
             # Reset card information
             self.card = None
             self.name = None
-            
+
     def connect(self):
         """Establish card connection."""
         # Open card
@@ -51,24 +52,23 @@ class SpectrumDevice(ABC):
             spcm_dwGetParam_i32(self.card, SPC_PCITYP, byref(card_type))
             # func_type = int32(0)
             # spcm_dwGetParam_i32(self.card, SPC_FNCTYPE, byref(func_type))
-            
+
             # write values to settings
             self.name = szTypeToName(card_type.value)
-            
+
             # Print card values
             print(f"Connection to card {self.name} established!")
             self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")
-    
-    
+
     def handle_error(self, error):
         """General error handling function."""
         if error:
             # Read error message from card
             error_msg = create_string_buffer(ERRORTEXTLEN)
             spcm_dwGetErrorInfo_i32(self.card, None, None, error_msg)
-            
+
             # Disconnect and raise error
             print(f"Stopping card {self.name}...")
             spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
