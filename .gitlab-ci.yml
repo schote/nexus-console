@@ -31,8 +31,9 @@ before_script:
   - virtualenv venv
   - source venv/bin/activate
   # - pip install -e .
-  - python setup.py bdist_wheel
+  # - python setup.py bdist_wheel
   # - pip install dist/*
+  - pip install -e ".[lint]"
 
 stages:
   - linting
@@ -41,7 +42,7 @@ pylint:
   stage: linting
   image: registry.gitlab.com/pipeline-components/pylint:latest
   script:
-    - pylint --exit-zero --load-plugins=pylint_gitlab --output-format=gitlab-codeclimate:codeclimate.json **/*.py
+    - poe lint
   artifacts:
     reports:
       codequality: codeclimate.json
