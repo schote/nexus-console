@@ -7,16 +7,11 @@ variables:
 before_script:
   - python --version
   - pip install --upgrade pip
+  - pip install ".[lint]"
 
 stages:
-  - Build
   - Static Analysis
-
-build:
-  stage: Build
-  script:
-    - pip install ".[lint]"
-
+    
 lint:
   stage: Static Analysis
   script:
