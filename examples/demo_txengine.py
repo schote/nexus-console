@@ -24,9 +24,12 @@ tx_card: TxCard = list(filter(lambda device: device.__name__ == "TxCard", device
 # Definition of trapezoid waveforms with different amplitudes
 # Base trapezoid 
 max_val = 1
-waveform = np.linspace(start=0, stop=max_val, num=4000)
-waveform = np.append(waveform, np.array([max_val]*10000))
-waveform = np.append(waveform, np.linspace(start=max_val, stop=0, num=4000))
+# waveform = np.linspace(start=0, stop=max_val, num=4000)
+# waveform = np.append(waveform, np.array([max_val]*10000))
+# waveform = np.append(waveform, np.linspace(start=max_val, stop=0, num=4000))
+waveform = np.linspace(start=0, stop=max_val, num=100000)
+waveform = np.append(waveform, np.array([max_val]*400000))
+waveform = np.append(waveform, np.linspace(start=max_val, stop=0, num=100000))
 n_samples = len(waveform)
 
 # Scaling of base trapezoid
@@ -55,7 +58,11 @@ plt.show()
 # %%
 # Run experiment
 tx_card.connect()
+
+# %%
 tx_card.operate(sequence)
+
+# %%
 tx_card.disconnect()
 
 # %%

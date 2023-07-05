@@ -1,6 +1,8 @@
 """Implementation of transmit card."""
 import ctypes
 from dataclasses import dataclass
+import threading
+import time
 
 import numpy as np
 
@@ -23,13 +25,17 @@ class TxCard(SpectrumDevice):
 
     def __post_init__(self):
         super().__init__(self.path)
+        
+        self.num_channels = int32(0)
+        self.num_data_samples = int(0)
 
     def setup_card(self):
+        
         # Reset card
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)
 
         # Set trigger
-        spcm_dwSetParam_i32(self.card, SPC_TRIG_ORMASK, SPC_TM_NONE)
+        spcm_dwSetParam_i32(self.card, SPC_TRIG_ORMASK, SPC_TMASK_SOFTWARE)
 
         # Set clock mode
         spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
@@ -58,9 +64,8 @@ class TxCard(SpectrumDevice):
         )
 
         # Get the number of active channels
-        num_channels = int32(0)
-        spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(num_channels))
-        print(f"Number of active channels: {num_channels.value}")
+        spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
+        print(f"Number of active channels: {self.num_channels.value}")
 
         # Use loop to enable and setup active channels
         # Channel 0: RF
@@ -85,12 +90,12 @@ class TxCard(SpectrumDevice):
 
         # Setup the card mode
         # FIFO mode
-        # spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_FIFO_SINGLE)
+        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REP_FIFO_SINGLE)
         # spcm_dwSetParam_i64 (self.card, SPC_LOOPS, 0) # continuous replay
 
         # Standard mode
-        spcm_dwSetParam_i32(self.card, SPC_CARDMODE, SPC_REP_STD_SINGLE)
-        spcm_dwSetParam_i64(self.card, SPC_LOOPS, 1)
+        # spcm_dwSetParam_i32(self.card, SPC_CARDMODE, SPC_REP_STD_SINGLE)
+        # spcm_dwSetParam_i64(self.card, SPC_LOOPS, 1)
 
     def operate(self, data: np.ndarray):
         # *** Thread testing:
@@ -104,9 +109,22 @@ class TxCard(SpectrumDevice):
         #     time.sleep(0.2)
         # return
 
-        self._std_example(data)
-
+        # self._std_example(data)
         # self._fifo_example(data)
+        
+        # Implementation of thread
+        event = threading.Event()
+        worker = threading.Thread(target=self._fifo_example, args=(data, event))
+        worker.start()
+        
+        # Join after timeout of 3 seconds
+        worker.join(4)
+        event.set()
+        worker.join()
+        
+        print("\nThread closed, stopping card...")
+        error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
+        self.handle_error(error)
 
     def _std_example(self, data: np.ndarray):
         if data.dtype != np.int16:
@@ -149,43 +167,127 @@ class TxCard(SpectrumDevice):
         )
         self.handle_error(err)
 
-    def _fifo_example(self, data: np.ndarray):
-        # FIFO MODE
-        # spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, buffer_size)
-        # err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
-        # self.handle_error(err)
-        # err = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
-        # self.handle_error(err)
 
-        #         // in FIFO mode we need to define the buffer before starting the transfer
-        # int16* pnData = (int16*) pvAllocMemPageAligned (llBufsizeInSamples * 2); // assuming 2 byte per sample
-        # spcm_dwDefTransfer_i64 (hDrv, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, 4096,
-        # (void*) pnData, 0, 2 * llBufsizeInSamples);
-        # // before start we once have to fill some data in for the start of the output
-        # vCalcOrLoadData (&pnData[0], 2 * llBufsizeInSamples);
-        # spcm_dwSetParam_i64 (hDrv, SPC_DATA_AVAIL_CARD_LEN, 2 * llBufsizeInSamples);
-        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA);
-        # // now the first <notifysize> bytes have been transferred to card and we start the output
-        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER);
-        # // we replay data in a loop. As we defined a notify size of 4k we’ll get the data in >=4k chuncks
-        # llTotalBytes = 2 * llBufsizeInSamples;
-        # while (!dwError)
-        # {
-        # // read out the available bytes that are free again
-        # spcm_dwGetParam_i64 (hDrv, SPC_DATA_AVAIL_USER_LEN, &llAvailBytes);
-        # spcm_dwGetParam_i64 (hDrv, SPC_DATA_AVAIL_USER_POS, &llUserPosInBytes);
-        # // be sure not to make a rollover and limit the data to be processed
-        # if ((llUserPosInBytes + llAvailBytes) > (2 * llBufsizeInSamples))
-        # llAvailBytes = (2 * llBufsizeInSamples) - llUserPosInBytes;
-        # llotalBytes += llAvailBytes;
-        # // generate some new data
-        # vCalcOrLoadData (&pnData[llUserPosInBytes / 2], llAvailBytes);
-        # printf ("Currently Available: %lld, total: %lld\n", llAvailBytes, llTotalBytes);
-        # // now we mark the number of bytes that we just generated for replay and wait for the next free buffer
-        # spcm_dwSetParam_i64 (hDrv, SPC_DATA_AVAIL_CARD_LEN, llAvailBytes);
-        # dwError = spcm_dwSetParam_i32 (hDrv, SPC_M2CMD, M2CMD_DATA_WAITDMA);
-        # }
-        pass
+    def _calc_new_data(self, buffer, data, sample_position, num_samples):
+        """Function to load calculated data to ring buffer."""
+        
+        buffer_start_position = (sample_position % self.num_data_samples) * 2 * self.num_channels.value
+        bytes_to_copy = num_samples * 2 * self.num_channels.value
+        pre_calc_len_bytes = self.num_data_samples * 2 * self.num_channels.value
+        copied_bytes = 0
+        
+        while copied_bytes < bytes_to_copy:
+            
+            # copy at most the pre-calculated data
+            copy_bytes = bytes_to_copy - copied_bytes
+            if copy_bytes > pre_calc_len_bytes - buffer_start_position:
+                copy_bytes = pre_calc_len_bytes - buffer_start_position
+
+            # copy data from pre-calculated buffer to DMA buffer
+            ctypes.memmove(cast(buffer, c_void_p).value + copied_bytes, cast(data, c_void_p).value + buffer_start_position, copy_bytes)
+            copied_bytes += copy_bytes
+            buffer_start_position = 0
+
+
+    def _fifo_example(self, data: np.ndarray, event):
+        # FIFO MODE EXAMPLE
+        
+        # Define buffer pointer
+        data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        # data_buffer_size = uint64(data.nbytes)
+        self.num_data_samples = int(len(data)/4)     # number of samples per channel 
+                
+        notify_size = int32(128*1024) # 128kB
+        # num_notify_per_sequence = int(data.nbytes/notify_size.value)
+        
+        # Setup software buffer
+        cont_buffer = c_void_p()
+        cont_buffer_size = uint64 (1*1024*1024) # 1 MB
+        avail_cont_buffer_size = uint64(0)
+        spcm_dwGetContBuf_i64 (self.card, SPCM_BUF_DATA, byref(cont_buffer), byref(avail_cont_buffer_size))
+        
+        print(f"Available continuous buffer size: {avail_cont_buffer_size.value}")
+        print(f"Desired continuous buffer size: {cont_buffer_size.value}")        
+
+        # We try to use a continuous buffer for data transfer or allocate our own buffer in case there’s none
+        if avail_cont_buffer_size.value >= cont_buffer_size.value:
+            print("INFO: Using continuous buffer.")
+        else:
+            cont_buffer = pvAllocMemPageAligned(cont_buffer_size.value)
+            print("INFO: Using buffer allocated by user program.")
+        
+        sample_position = 0
+        num_avail_samples = (cont_buffer_size.value // self.num_channels.value) // 2
+        self._calc_new_data(cont_buffer, data_buffer, sample_position, num_avail_samples)
+        sample_position += num_avail_samples
+        
+        # Define transfer
+        spcm_dwDefTransfer_i64(self.card, SPCM_BUF_DATA, SPCM_DIR_PCTOCARD, notify_size, cont_buffer, uint64(0), cont_buffer_size)
+        spcm_dwSetParam_i64(self.card, SPC_DATA_AVAIL_CARD_LEN, cont_buffer_size)
+        
+        # Start DMA
+        print("Starting DMA...")
+        spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA)
+        
+        status = int32(0)
+        available_data = int32(0)
+        usr_position = int32(0)
+        buffer_level = int32(0)
+        card_started = False
+        
+        buffer_level_report_counter = 0
+        
+        # while True: # Runs forever
+        # for k in range(8600):
+        while not event.isSet():
+            
+            # Wait for DMA to finish
+            error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_WAITDMA)
+            if error != ERR_OK:
+                if error == ERR_TIMEOUT:
+                    print("Timeout...")
+                else:
+                    self.handle_error(error)
+                    break
+            else:
+                spcm_dwGetParam_i32(self.card, SPC_FILLSIZEPROMILLE, byref(buffer_level))
+                if not card_started:
+                    if buffer_level.value == 1000:
+                        # print(f"\nit. {k}: Card buffer filled...")
+                        # Start buffer if card buffer level is at 100%
+                        error = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER)
+                        if error == ERR_TIMEOUT:
+                            self.handle_error(error)
+                            break
+                        card_started = True
+                        
+                    else:
+                        buffer_level_report_counter += 1
+                        if buffer_level_report_counter > 10:
+                            # print(f"it. {k}: Loading initial card buffer data to start card: {buffer_level.value/10}", end="\r", flush=True)
+                            print(f"Loading initial card buffer data to start card: {buffer_level.value/10}", end="\r", flush=True)
+                            buffer_level_report_counter = 0
+                
+                # Read status, update available bytes and position
+                spcm_dwGetParam_i32(self.card, SPC_M2STATUS, byref(status))
+                spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_data))
+                spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_POS, byref(usr_position))
+                
+                # calculate new data
+                if available_data.value >= notify_size.value:
+                    new_data = (c_char * (cont_buffer_size.value - usr_position.value)).from_buffer(cont_buffer, usr_position.value)
+                    # to avoid problems with buffer wrap-arounds we fill only one notify size
+                    # avail_samples == samples which fit in notify size
+                    avail_samples = (notify_size.value // self.num_channels.value) // 2
+                    self._calc_new_data(new_data, data_buffer, sample_position, avail_samples)
+                    spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, notify_size)
+                    sample_position += avail_samples
+                
+        # print("\nStopping card...")
+        # # Stop cards
+        # error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
+        # self.handle_error(error)
+
 
     def get_status(self):
         pass
