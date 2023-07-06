@@ -1,14 +1,13 @@
 """Implementation of transmit card."""
 import ctypes
 import threading
-import time
 from dataclasses import dataclass
 
 import numpy as np
 
 from console.spcm_control.device_interface import SpectrumDevice
-from console.spcm_control.spcm.pyspcm import *  # pylint: disable=unused-import
-from console.spcm_control.spcm.spcm_tools import *  # pylint: disable=unused-import
+from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
+from console.spcm_control.spcm.spcm_tools import *  # noqa # pylint: disable=unused-wildcard-import
 
 
 @dataclass

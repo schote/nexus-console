@@ -1,12 +1,8 @@
-# import ctypes
-# import time
+"""Device interface class."""
 from abc import ABC, abstractmethod
 
-# import numpy as np
-from console.spcm_control.spcm.pyspcm import *
-from console.spcm_control.spcm.spcm_tools import *
-
-# from pydantic import BaseModel, Extra
+from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
+from console.spcm_control.spcm.spcm_tools import *  # noqa # pylint: disable=unused-wildcard-import
 
 
 class SpectrumDevice(ABC):
