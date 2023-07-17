@@ -13,14 +13,82 @@ class RxCard(SpectrumDevice):
     """Implementation of TX device."""
 
     path: str
-
+    channel_enable: list[int]
+    max_amplitude: list[int]
     __name__: str = "RxCard"
 
     def __post_init__(self):
         super().__init__(self.path)
 
     def setup_card(self):
-        pass
+        # Reset card
+        spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET) #Needed?
+
+        #Setup channels
+  
+        spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
+        print(f"Number of active Rx channels: {self.num_channels.value}")
+
+
+        # and voltage setting for channel0
+        spcm_dwSetParam_i32(self.card, SPC_CHENABLE, self.channel_enable[0])
+        spcm_dwSetParam_i32(self.card, SPC_50OHM0, 0) #Todo make it variable or input impedance always 50 ohms?  
+        spcm_dwSetParam_i32(self.card, SPC_AMP0, self.max_amplitude[0])
+
+        #Input impdefance and voltage setting for channel1
+        spcm_dwSetParam_i32(self.card, SPC_CHENABLE, self.channel_enable[1])
+        spcm_dwSetParam_i32(self.card, SPC_50OHM1, 0) #Todo make it variable or input impedance always 50 ohms?  
+        spcm_dwSetParam_i32(self.card, SPC_AMP1, self.max_amplitude[1])
+
+        #Digital filter setting for receiver
+        spcm_dwSetParam_i32 (self.card, SPC_DIGITALBWFILTER, 0)
+
+        # Set clock mode
+        spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
+        
+        # Set card sampling rate in MHz
+        spcm_dwSetParam_i64(
+            self.card, SPC_SAMPLERATE, MEGA(self.sample_rate)
+        )
+        # Check actual sampling rate
+        sample_rate = int64(0)
+        spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE, byref(sample_rate))
+        print(f" Rx device sampling rate: {sample_rate.value*1e-6} MHz")
+        if sample_rate.value != MEGA(self.sample_rate):
+            raise Warning(
+                f"Rx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
+            )
+        
+        # Output clock is available
+        spcm_dwSetParam_i32 (self.card, SPC_CLOCKOUT, 1)
+
+
+        #spcm_dwGetParam_i32 (hDrv, SPC_PCITYP, &lCardType);
+        #printf ("Found M2p.%04x in the system\n", lCardType & TYP_VERSIONMASK);
+
+
+
+
+        
+        # Multi purpose I/O lines
+        # spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?
+        # spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_DISABLE)
+        # spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
+        # spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
+
+
+
+        # Get the number of active channels
+
+
+        # Setup the card mode
+
+
+        # FIFO mode
+        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REC_STD_SINGLE);
+        #spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, *lMemsize);
+        #spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER, *posttr);
+        #spcm_dwSetParam_i32 (self.card, SPC_LOOPS, 1);
 
     def operate(self):
         pass

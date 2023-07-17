@@ -46,10 +46,10 @@ class TxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = int64(0)
         spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE, byref(sample_rate))
-        print(f"Device sampling rate: {sample_rate.value*1e-6} MHz")
+        print(f"Tx device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != MEGA(self.sample_rate):
             raise Warning(
-                f"Device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
+                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
             )
 
         # Multi purpose I/O lines
@@ -65,7 +65,7 @@ class TxCard(SpectrumDevice):
 
         # Get the number of active channels
         spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
-        print(f"Number of active channels: {self.num_channels.value}")
+        print(f"Number of active Tx channels: {self.num_channels.value}")
 
         # Use loop to enable and setup active channels
         # Channel 0: RF
