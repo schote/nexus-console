@@ -1,6 +1,6 @@
 """Implementation of receive card."""
 from dataclasses import dataclass
-
+import ctypes
 import numpy as np
 
 from console.spcm_control.device_interface import SpectrumDevice
@@ -29,7 +29,6 @@ class RxCard(SpectrumDevice):
         spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
         print(f"Number of active Rx channels: {self.num_channels.value}")
 
-
         # and voltage setting for channel0
         spcm_dwSetParam_i32(self.card, SPC_CHENABLE, self.channel_enable[0])
         spcm_dwSetParam_i32(self.card, SPC_50OHM0, 0) #Todo make it variable or input impedance always 50 ohms?  
@@ -45,7 +44,10 @@ class RxCard(SpectrumDevice):
 
         # Set clock mode
         spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
-        
+
+        # Output clock is available
+        spcm_dwSetParam_i32 (self.card, SPC_CLOCKOUT, 1)
+
         # Set card sampling rate in MHz
         spcm_dwSetParam_i64(
             self.card, SPC_SAMPLERATE, MEGA(self.sample_rate)
@@ -53,15 +55,23 @@ class RxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = int64(0)
         spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE, byref(sample_rate))
-        print(f" Rx device sampling rate: {sample_rate.value*1e-6} MHz")
+        print(f"Rx device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != MEGA(self.sample_rate):
             raise Warning(
                 f"Rx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
             )
-        
-        # Output clock is available
-        spcm_dwSetParam_i32 (self.card, SPC_CLOCKOUT, 1)
 
+
+        
+         # Trigger delay
+        trigger_delay = int64(0)
+        spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY, byref(trigger_delay))
+        print(f"Trigger delay is: {trigger_delay}")   #todo calculate and write time units 
+
+        # X0_mode 
+        x0_mode = int64(0)
+        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE, byref(x0_mode))
+        print(f"Trigger delay is: {x0_mode}")   #todo calculate and write time units 
 
         #spcm_dwGetParam_i32 (hDrv, SPC_PCITYP, &lCardType);
         #printf ("Found M2p.%04x in the system\n", lCardType & TYP_VERSIONMASK);
@@ -93,5 +103,19 @@ class RxCard(SpectrumDevice):
     def operate(self):
         pass
 
+    def _receiver_example(self, data: np.ndarray):
+        rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, rx_buffer)
+        
+        # Read post trigger
+        post_trigger = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        
+        spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER, byref(post_trigger))
+        print(f"Post trigger time: {post_trigger}")   #todo calculate and write time units 
+
+        # Read memory size
+        memory_size = int64(0)
+        spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE, byref(memory_size))
+        print(f"Rx device memory size: {memory_size}")
     def get_status(self):
         pass
