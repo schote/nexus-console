@@ -3,10 +3,9 @@ import os
 import yaml
 import numpy as np
 
+from console.utilities.line_plots import plot_spcm_data
 from console.utilities.io import yaml_loader
 from console.spcm_control.tx_device import TxCard
-
-import matplotlib.pyplot as plt
 
 # %%
 # Define configuration file
@@ -46,21 +45,30 @@ print(f"Number of sample points per channel: {n_samples}") # Calculate sequence 
 print(f"Memory size of test sequence: {sequence.nbytes}") # Calculate bytes
 print(f"Bytes per sample point: {int(sequence.nbytes/len(sequence))}")
 
-# Plot trapezoid waveforms, amplitude in int16 values
-fig, ax = plt.subplots(1, 1)
-ax.plot(sequence[0::4])
-ax.plot(sequence[1::4])
-ax.plot(sequence[2::4])
-ax.plot(sequence[3::4])
-plt.show()
+# Plot sequence
+# fig = plot_spcm_data(sequence, num_channels=4)
+# fig.show()
+
+# Build longer test sequence:
+long_seq = sequence
+for step in np.linspace(0.9, 0.2, 8):
+    long_seq = np.append(long_seq, (sequence*step).astype(np.int16))
+    
+fig = plot_spcm_data(long_seq, num_channels=4)
+fig.show()
 
 
 # %%
-# Run experiment
+# Connect to card
 tx_card.connect()
 
 # %%
+# Run first experiment: Short simple sequence with 4 trapez shaped signals
 tx_card.operate(sequence)
+
+# %%
+# Run second experiment: Long sequence with several trapez shaped signals of increasing amplitude
+tx_card.operate(long_seq)
 
 # %%
 tx_card.disconnect()
