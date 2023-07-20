@@ -26,6 +26,7 @@ docs = ["sphinx", "sphinx_rtd_theme"]
 examples = ["nbformat>=4.2.0", "ipykernel", "ipython"]
 
 [tool.pydocstyle]
+ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 convention = "numpy"
 
 [tool.pylint]
@@ -35,12 +36,18 @@ max-attributes = 20
 max-line-length = 120
 extension-pkg-allow-list = ["pydantic"]
 disable = ["too-few-public-methods"]    # suppress warning at pydantic BaseModel and sqlalchemy ORM model
+ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 
 [tool.flake8]
 max-line-length = 120
+ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 
 [tool.mypy]
 python_version = "3.11"
+ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
+
+[tool.black]
+max-line-length = 120
 
 # [tool.mypy-plotly]
 # ignore_missing_imports = true   # missing 3rd party stubs
