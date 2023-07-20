@@ -1,3 +1,4 @@
+#Minutes of meeting
 Date: 20.07.2023, 13:00-15:00
 Participants: Christoph Kolbitsch (CK) ,David Schote (DS),  Lukas Winter (LW), Frank Seifert (FS), Berk Silemek(BS) , Patrick Schünke (PS), Felix Zimmermann(FZ)
 
