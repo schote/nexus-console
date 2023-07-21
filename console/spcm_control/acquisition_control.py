@@ -24,15 +24,15 @@ class AcquistionControl:
 
         # Connect to cards
         self.tx_engine.connect()
-        # self.rx_engine.connect()
+        self.rx_engine.connect()
 
         # Create and start threads...
         tx_thread = threading.Thread(
             target=self.tx_engine.operate, args=(sequence,)
         )  # args=(sequence.rollout_sequence(), )
-        # rx_thread = threading.Thread(target=self.rx_engine.operate, args=(data, ))
+        rx_thread = threading.Thread(target=self.rx_engine.operate, args=(data, ))
         
-        # rx_thread.start()
+        rx_thread.start()
         tx_thread.start()
         
 
@@ -43,10 +43,10 @@ class AcquistionControl:
 
         # Wait for threads
         tx_thread.join()
-        # self.rx_thread.join()
+        rx_thread.join()
 
         # Disconnect cards and return acquired data
         self.tx_engine.disconnect()
-        # self.rx_engine.disconnect()
+        self.rx_engine.disconnect()
 
         return data

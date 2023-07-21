@@ -2,6 +2,8 @@
 from dataclasses import dataclass
 import ctypes
 import numpy as np
+import threading
+import time
 
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.pyspcm import *
@@ -63,16 +65,7 @@ class RxCard(SpectrumDevice):
 
 
         
-         # Trigger delay
-        trigger_delay = int64(0)
-        spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY, byref(trigger_delay))
-        print(f"Trigger delay is: {trigger_delay}")   #todo calculate and write time units 
-
-        # X0_mode 
-        x0_mode = int64(0)
-        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE, byref(x0_mode))
-        print(f"Trigger delay is: {x0_mode}")   #todo calculate and write time units 
-
+        
         #spcm_dwGetParam_i32 (hDrv, SPC_PCITYP, &lCardType);
         #printf ("Found M2p.%04x in the system\n", lCardType & TYP_VERSIONMASK);
 
@@ -100,22 +93,74 @@ class RxCard(SpectrumDevice):
         #spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER, *posttr);
         #spcm_dwSetParam_i32 (self.card, SPC_LOOPS, 1);
 
-    def operate(self):
-        pass
+    def operate(self, data: np.ndarray):
+        event = threading.Event()
+        worker = threading.Thread(target=self._fifo_example, args=(data, event))
+        worker.start()
+        
+        # Join after timeout of 10 seconds
+        worker.join(10)
+        event.set()
+        worker.join()
+        print("\nThread closed, stopping receiver card...")
 
     def _receiver_example(self, data: np.ndarray):
         rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, rx_buffer)
-        
-        # Read post trigger
-        post_trigger = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        
-        spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER, byref(post_trigger))
-        print(f"Post trigger time: {post_trigger}")   #todo calculate and write time units 
+        spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, int(len(rx_buffer)))
 
         # Read memory size
         memory_size = int64(0)
         spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE, byref(memory_size))
         print(f"Rx device memory size: {memory_size}")
+
+        # Read post trigger
+        post_trigger = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        
+        spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER, byref(post_trigger))
+        print(f"Post trigger time: {post_trigger}")   #todo calculate and write time units 
+        
+        # Trigger delay
+        trigger_delay = int64(0)
+        spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY, byref(trigger_delay))
+        print(f"Trigger delay is: {trigger_delay}")   #todo calculate and write time units 
+
+        # X0_mode 
+        x0_mode = int64(0)
+        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE, byref(x0_mode))
+        print(f"Trigger delay is: {x0_mode}")   #todo calculate and write time units 
+        
+        #Card start
+        err = spcm_dwSetParam_i32(
+            self.card,
+            SPC_M2CMD,
+            M2CMD_CARD_START 
+        )
+        self.handle_error(err)
+        print("Card Started...")
+        
+        #Enable trigger
+        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_ENABLETRIGGER)
+        print("Waiting for trigger...")
+
+        #Set timeout for trigger
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 10000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        if (spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_WAITTRIGGER) == ERR_TIMEOUT):
+        
+            print("No trigger detected!! Then, trigger is forced now!..")
+            spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_FORCETRIGGER)
+       
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 0)
+        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_WAITREADY)
+        
+        print ("Card is stopped now...")
+        #Transfer the data
+        print("Transfer samples from buffer...")
+        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 0, byref(memory_size), 0, memory_size)
+        err =spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+        self.handle_error(err)
+	
+        spcm_vClose (self.card)
+        
+    
     def get_status(self):
         pass
