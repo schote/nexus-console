@@ -103,6 +103,7 @@ class RxCard(SpectrumDevice):
         event.set()
         worker.join()
         print("\nThread closed, stopping receiver card...")
+        print(data)
 
     def _receiver_example(self, data: np.ndarray):
         rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
@@ -158,8 +159,6 @@ class RxCard(SpectrumDevice):
         spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 0, byref(memory_size), 0, memory_size)
         err =spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
         self.handle_error(err)
-	
-        spcm_vClose (self.card)
         
     
     def get_status(self):
