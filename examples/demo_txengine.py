@@ -64,7 +64,7 @@ tx_card.connect()
 
 # %%
 # Run first experiment: Short simple sequence with 4 trapez shaped signals
-tx_card.operate(sequence)
+# tx_card.operate(sequence)
 
 # %%
 # Run second experiment: Long sequence with several trapez shaped signals of increasing amplitude
