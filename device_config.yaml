@@ -11,8 +11,8 @@ devices:
     sample_rate: 2  # in MHz
 
   # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
-  - !RxCard
-    path: '/dev/spcm2'
+#  - !RxCard
+#    path: '/dev/spcm2'
 
 
 # system: 
