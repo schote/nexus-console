@@ -5,14 +5,15 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 from tqdm.auto import tqdm
 
-# Constants
-PI2 = np.pi * 2
-
-
 class SequenceProvider(Sequence):
     """Sequence provider class, inherited from pulseq sequence object."""
     
-    def __init__(self, system: Opts = Opts(), larmor_frequency: float = 2e6, spcm_sample_rate: float = 1 / 20e6):
+    def __init__(
+        self, system: Opts = Opts(), 
+        larmor_frequency: float = 2e6, 
+        spcm_sample_rate: float = 1 / 20e6,
+        rf_double_precision: bool = True,
+        ):
         """Init function for sequence provider class."""
         super().__init__(system=system)
         
@@ -20,6 +21,7 @@ class SequenceProvider(Sequence):
         self.spcm_sample_rate = spcm_sample_rate
         self.f0 = larmor_frequency
         
+        self.dtype = np.double if rf_double_precision else np.single
         self.carrier: np.ndarray | None = None
         
     def precalculate_carrier(self) -> None:
@@ -32,8 +34,8 @@ class SequenceProvider(Sequence):
             if (b := self.get_block(k)).rf:
                 rf_durations.append(b.rf.shape_dur)
         rf_dur_max = max(rf_durations)
-        t = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate)
-        self.carrier = np.exp(1j * PI2 * self.f0 * t)
+        self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
+        # self.carrier = np.exp(1j * PI2 * self.f0 * t)
 
     def calculate_rf(self, rf_block, num_total_samples: int) -> list[float]:
         """Calculates RF sample points to be played by TX card.
@@ -55,37 +57,43 @@ class SequenceProvider(Sequence):
         if not rf_block.type == "rf":
             raise AttributeError("Block is not a valid RF block.")
         
-        if self.carrier is None:
-            raise RuntimeError("Missing precalculated carrier signal.")
+        if self.carrier_time is None:
+            raise RuntimeError("Missing precalculated carrier time raster.")
         
-        # TODO: Unused argument: frequency offset (?) -> requires recalculation of carrier signal
-        # TODO: Take into account the phase starting point depending on the end-time of the last RF
+        # TODO: Take into account the phase starting point depending on the end-time of the last RF (!)
         
         # Calculate zero filling for RF delay
-        delay = [0.] * int(rf_block.delay / self.spcm_sample_rate)
+        delay = np.zeros(int(rf_block.delay/self.spcm_sample_rate), dtype=self.dtype)
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
-        ringdown_time = [0.] * int(max(self.system.rf_ringdown_time, rf_block.ringdown_time) / self.spcm_sample_rate)
+        ringdown_dur = max(self.system.rf_ringdown_time, rf_block.ringdown_time)
+        ringdown_time = np.zeros(int(ringdown_dur/self.spcm_sample_rate), dtype=self.dtype)
         # Zero filling for ADC dead-time (maximum of dead time defined in RF event and system)
-        dead_time = [0.] * int(max(self.system.rf_dead_time, rf_block.dead_time) / self.spcm_sample_rate)
+        dead_dur = max(self.system.rf_dead_time, rf_block.dead_time)
+        dead_time = np.zeros(int(dead_dur / self.spcm_sample_rate), dtype=self.dtype)
        
         # Calculate the number of shape sample points
         num_samples = int(rf_block.shape_dur / self.spcm_sample_rate)
         
         # Calculate the static phase offset, defined in RF pulse
-        phase_offset = 1    # np.exp(1j * rf_block.phase_offset)
+        phase_offset = np.exp(1j * rf_block.phase_offset)
         
         # Resampling of complex envelope
         envelope = resample(rf_block.signal, num=num_samples)
         
         # Calcuate modulated RF signal with precalculated carrier and phase offset
-        signal = (envelope * self.carrier[:num_samples] * phase_offset).real
-
-        # Combine signal from delays and rf
-        rf = delay + list(signal) + ringdown_time + dead_time
+        # signal = (envelope * self.carrier[:num_samples] * phase_offset).real
         
-        # Zero-fill rf signal
+        # Update: Only precalculate carrier time array, calculate carriere here to take into account the
+        # frequency offset of an RF block event 
+        carrier = np.exp(2j*np.pi * (self.f0 + rf_block.freq_offset) * self.carrier_time[:num_samples])
+        signal = (envelope * carrier * phase_offset).real
+        
+        # Combine signal from delays and rf
+        rf = np.concatenate((delay, signal, ringdown_time, dead_time))
+        
         if (num_signal_samples := len(rf)) < num_total_samples:
-            rf += [0.] * (num_total_samples-num_signal_samples)
+            # Zero-fill rf signal
+            rf = np.concatenate((rf, np.zeros(num_total_samples-num_signal_samples, dtype=self.dtype)))
         elif num_signal_samples > num_total_samples:
             raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
 
@@ -116,7 +124,8 @@ class SequenceProvider(Sequence):
             Number of calculated sample points is greater then number of block sample points
         """
         # Both gradient types have a delay
-        delay = [amp_offset] * int(block.delay/self.spcm_sample_rate)
+        # delay = [amp_offset] * int(block.delay/self.spcm_sample_rate)
+        delay = np.full(int(block.delay/self.spcm_sample_rate), fill_value=amp_offset, dtype=float)
         
         if block.type == "grad":
             # Arbitrary gradient waveform, interpolate linearly
@@ -125,23 +134,23 @@ class SequenceProvider(Sequence):
                 xp=block.tt,
                 fp=block.waveform+amp_offset
             )
-            gradient = delay + list(waveform)
+            # gradient = delay + list(waveform)
+            gradient = np.concatenate((delay, waveform))
             
         elif block.type == "trap":
             # Trapezoidal gradient, combine resampled rise, flat and fall sections
-            rise = np.linspace(0, block.amplitude, int(block.rise_time / self.spcm_sample_rate))
-            rise += amp_offset
-            flat = [block.amplitude+amp_offset] * int(block.flat_time / self.spcm_sample_rate)
-            fall = np.linspace(block.amplitude, 0, int(block.fall_time / self.spcm_sample_rate))
-            fall += amp_offset
-            gradient = delay + list(rise) + flat + list(fall)
+            rise = np.linspace(amp_offset, amp_offset+block.amplitude, int(block.rise_time/self.spcm_sample_rate))
+            flat = np.full(int(block.flat_time/self.spcm_sample_rate), fill_value=block.amplitude+amp_offset)
+            fall = np.linspace(amp_offset+block.amplitude, amp_offset, int(block.fall_time/self.spcm_sample_rate))
+            gradient = np.concatenate((delay, rise, flat, fall))
             
         else:
             raise AttributeError("Block is not a valid gradient block")
         
         # TODO: Is this a valid assumption? Gradients are zero-filled at the end?
         if (num_gradient_samples := len(gradient)) < num_total_samples:
-            gradient += [gradient[-1]] * (num_total_samples-num_gradient_samples)
+            # gradient += [gradient[-1]] * (num_total_samples-num_gradient_samples)
+            np.concatenate((gradient, np.full(num_total_samples-num_gradient_samples, fill_value=gradient[-1])))
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
 
@@ -161,12 +170,18 @@ class SequenceProvider(Sequence):
             No sequence loaded
         """
         print("Unrolling sequnce...")
+        
         if len(self.block_events) == 0:
             raise AttributeError("No sequence loaded.")
 
         # Pre-calculate the carrier signal to save computation time
         self.precalculate_carrier()
-        _seq = []   # list of list
+        
+        # Get all blocks in a list and pre-calculate number of sample points per block 
+        # to allocate empty sequence array.
+        blocks = [self.get_block(k) for k in list(self.block_events.keys())]
+        samples_per_block = [int(block.block_duration / self.spcm_sample_rate) for block in blocks]
+        _seq = [np.empty(4*n) for n in samples_per_block]  # empty list of list, 4 channels => 4 times n_samples
         
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
@@ -175,23 +190,23 @@ class SequenceProvider(Sequence):
         gz_const = 0
         
         # Count the total number of sample points
-        total_samples = 0
+        sample_count = 0
 
-        for k in tqdm(list(self.block_events.keys())):
+        # for k, (n_samples, block) in tqdm(enumerate(zip(samples_per_block, blocks))):
+        for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
             
-            block = self.get_block(k)
-            n_samples = int(block.block_duration / self.spcm_sample_rate)
-            total_samples += n_samples
+            sample_count += n_samples
             
             # Calculate rf events of current block, zero-fill channels if not defined
-            rf_tmp = self.calculate_rf(block.rf, n_samples) if block.rf else [0.]*n_samples
+            rf_tmp = self.calculate_rf(block.rf, n_samples) if block.rf else np.zeros(n_samples)
+            
             # TODO: Remember the phase of the last RF signal sample 
             # => defines starting point for next RF event by adding a phase offset
             
             # Calculate gradient events of the current block, zero-fill channels if not defined
-            gx_tmp = self.calculate_gradient(block.gx, n_samples, gx_const) if block.gx else [0.]*n_samples
-            gy_tmp = self.calculate_gradient(block.gy, n_samples, gy_const) if block.gy else [0.]*n_samples
-            gz_tmp = self.calculate_gradient(block.gz, n_samples, gz_const) if block.gz else [0.]*n_samples
+            gx_tmp = self.calculate_gradient(block.gx, n_samples, gx_const) if block.gx else np.zeros(n_samples)
+            gy_tmp = self.calculate_gradient(block.gy, n_samples, gy_const) if block.gy else np.zeros(n_samples)
+            gz_tmp = self.calculate_gradient(block.gz, n_samples, gz_const) if block.gz else np.zeros(n_samples)
             
             # The new last gradient values are updated here.
             gx_const = gx_tmp[-1]
@@ -201,6 +216,10 @@ class SequenceProvider(Sequence):
             # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
 
             # Append correctly ordered list to sequence 
-            _seq += list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
+            # _seq += list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
+            # _seq[k] = list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
+            
+            # TODO: Cast to int16, scale to correct values => saves memory
+            _seq[k] = np.stack((rf_tmp, gx_tmp, gy_tmp, gz_tmp)).flatten(order="F")
 
-        return _seq, total_samples
+        return _seq, sample_count
