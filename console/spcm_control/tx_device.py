@@ -347,7 +347,7 @@ class TxCard(SpectrumDevice):
         event
             Interrupt thread event to stop infinite loop
         """
-        print(self.get_status())
+        print("CARD STATUS: ", self.get_status())
          
         data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         self.data_buffer_size = int(data.nbytes)

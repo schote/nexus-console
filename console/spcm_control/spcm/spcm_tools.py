@@ -17,8 +17,6 @@ def translate_status(status: int) -> str:
     -------
         Description from user manual, default is unknown
     """
-    if status in error_translation.keys():
-        return "ERROR: {}".format(error_translation[status])
     match status:
         case 0x100: 
             return "The next data block as defined in the notify size is available. It is at least the amount of data available but it also can be more data."
@@ -29,7 +27,10 @@ def translate_status(status: int) -> str:
         case 0x800: 
             return "An internal error occurred while doing data transfer."
         case _:
-            return "Unknown status."
+            if status in error_translation.keys():
+                return "ERROR: {}".format(error_translation[status])
+            else:
+                return "Unknown status."
 
 
 def translate_error(error: int) -> str:
