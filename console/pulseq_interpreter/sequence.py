@@ -197,6 +197,8 @@ class SequenceProvider(Sequence):
             gx_const = gx_tmp[-1]
             gy_const = gy_tmp[-1]
             gz_const = gz_tmp[-1]
+            
+            # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
 
             # Append correctly ordered list to sequence 
             _seq += list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
