@@ -120,8 +120,8 @@ class TxCard(SpectrumDevice):
         worker.start()
 
         # Join after timeout of 3 seconds
-        # worker.join(2.5)
-        # event.set()
+        worker.join(2.5)
+        event.set()
         worker.join()
 
         # print("\nThread closed, stopping card...")

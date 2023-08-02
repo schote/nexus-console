@@ -27,7 +27,7 @@ array_b = np.ones(n_samples)
 list_a = [0.] * n_samples 
 list_b = [0.] * n_samples
 
-x = np.arange(2*np.pi, step=(2*np.pi)/20)
+x = np.arange(2*np.pi, step=(2*np.pi)/n_samples)
 
 results = dict()
 
@@ -70,9 +70,9 @@ results.update(test_calls([
 # %%
 # Calculate carrier
 results.update(test_calls([
-    "np.exp(2j*np.pi*x)",
-    "np.exp(2j*np.pi*x + offset)",
-    "np.exp(2j*np.pi*x) * np.exp(1j*offset)",
+    "np.exp(2j*np.pi*array_a)",
+    "np.exp(2j*np.pi*array_a + offset)",
+    "np.exp(2j*np.pi*array_a) * np.exp(1j*offset)",
 ]))
 
 # %%
@@ -85,8 +85,8 @@ results.update(test_calls([
 
 # %%
 # Write results to csv table
-with open("performance_test_results.csv", "w", newline="") as csv_fh:
-    writer = csv.DictWriter(csv_fh, fieldnames=results.keys())
-    writer.writeheader()
-    writer.writerow(results)
+# with open("performance_test_results.csv", "w", newline="") as csv_fh:
+#     writer = csv.DictWriter(csv_fh, fieldnames=results.keys())
+#     writer.writeheader()
+#     writer.writerow(results)
 # %%
