@@ -2,6 +2,7 @@
 import os
 import yaml
 import numpy as np
+import time
 
 from console.utilities.line_plots import plot_spcm_data
 from console.utilities.io import yaml_loader
@@ -41,10 +42,6 @@ for k, amp in enumerate([400, 600, 800, 1000]):
 # => [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_N, ch1_N, ch2_N, ch3_N]]
 sequence = sequence.flatten(order="F")
 
-print(f"Number of sample points per channel: {n_samples}") # Calculate sequence sample points
-print(f"Memory size of test sequence: {sequence.nbytes}") # Calculate bytes
-print(f"Bytes per sample point: {int(sequence.nbytes/len(sequence))}")
-
 # Plot sequence
 # fig = plot_spcm_data(sequence, num_channels=4)
 # fig.show()
@@ -54,8 +51,12 @@ long_seq = sequence
 for step in np.linspace(0.9, 0.2, 8):
     long_seq = np.append(long_seq, (sequence*step).astype(np.int16))
     
-fig = plot_spcm_data(long_seq, num_channels=4)
-fig.show()
+# fig = plot_spcm_data(long_seq, num_channels=4)
+# fig.show()
+
+print(f"Number of sample points per channel: {n_samples}") # Calculate sequence sample points
+print(f"Memory size of test sequence: {long_seq.nbytes}") # Calculate bytes
+print(f"Bytes per sample point: {int(long_seq.nbytes/len(long_seq))}")
 
 
 # %%
@@ -63,12 +64,13 @@ fig.show()
 tx_card.connect()
 
 # %%
-# Run first experiment: Short simple sequence with 4 trapez shaped signals
-# tx_card.operate(sequence)
+# Run second experiment: 
+# Long sequence with several trapez shaped signals of increasing amplitude
+# Start operation, wait a few seconds and stop the streaming mode
+tx_card.start_operation(long_seq)
+time.sleep(3)
+tx_card.stop_operation()
 
-# %%
-# Run second experiment: Long sequence with several trapez shaped signals of increasing amplitude
-tx_card.operate(long_seq)
 
 # %%
 tx_card.disconnect()
