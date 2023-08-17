@@ -84,7 +84,7 @@ ERR_INTERNAL_ERROR = 0xFFFF
 
 
 # Translation of error codes from spectrum documentation
-error_translation: dict[int, str] = {
+error_reg: dict[int, str] = {
     ERR_OK: "Execution OK, no error.",
     ERR_INIT: "An error occurred when initializing the given card. Either the card has already been opened by another process or an hardware error occurred.",
     ERR_TYP: "Initialization only: The type of board is unknown. This is a critical error. Please check whether the board is correctly plugged in the slot and whether you have the latest driver version.",
