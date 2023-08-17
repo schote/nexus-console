@@ -2,10 +2,11 @@ from ctypes import *
 
 # load registers for easier access
 import console.spcm_control.py_header.regs as regs
-from console.spcm_control.py_header.spcerr import error_translation
+from console.spcm_control.py_header.errors import error_reg
+from console.spcm_control.py_header.status import status_reg, status_reg_desc
 
 
-def translate_status(status: int) -> str:
+def translate_status(status: int, include_desc: bool = False) -> [list, str]:
     """Translate integer value to readable status message.
 
     Parameters
@@ -17,25 +18,29 @@ def translate_status(status: int) -> str:
     -------
         Description from user manual, default is unknown
     """
-    match status:
-        case 0x100: 
-            return "The next data block as defined in the notify size is available. It is at least the amount of data available but it also can be more data."
-        case 0x200: 
-            return "The data transfer has completed. This status information will only occur if the notify size is set to zero."
-        case 0x400:
-            return "The data transfer had on overrun (acquisition) or underrun (replay) while doing FIFO transfer."
-        case 0x800: 
-            return "An internal error occurred while doing data transfer."
-        case _:
-            if status in error_translation.keys():
-                return "ERROR: {}".format(error_translation[status])
-            else:
-                return "Unknown status."
+    # Convert status code to 12-digit bit sequence in reversed order 
+    # >> lowest bit comes first => correspondence to order in manual
+    bit_reg = list(reversed("{:012b}".format(status)))
+    
+    # Status codes are defined for card (0x1 ... 0x8) and data (0x100 ... 0x800)
+    # >> First 4 bits correspond to (0x1 ... 0x8)
+    # >> Last 4 bits correspond to (0x100 ... 0x800) 
+    status_flags_card = [bool(int(b)) for b in bit_reg[:4]]
+    status_flags_data = [bool(int(b)) for b in bit_reg[-4:]]
+    status_flags = status_flags_card + status_flags_data
+    
+    # Construct status dictionary, include description depending on function argument
+    status: dict[int, list] = {}
+    for k, (val, stat) in enumerate(status_reg.items()):
+        status[val] = [status_flags[k], stat, status_reg_desc[val]] if include_desc else [status_flags[k], stat]
+            
+    return status, bit_reg
+
 
 
 def translate_error(error: int) -> str:
-    if error in error_translation.keys():
-        return "ERROR: {}".format(error_translation[error])
+    if error in error_reg.keys():
+        return "ERROR: {}".format(error_reg[error])
     else:
         return "Unknown error."
 
