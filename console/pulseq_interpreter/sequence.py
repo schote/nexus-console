@@ -39,7 +39,7 @@ class SequenceProvider(Sequence):
         self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
         self.carrier = np.exp(2j*np.pi * self.f0 * self.carrier_time)
 
-    def calculate_rf(self, rf_block, num_total_samples: int) -> list[float]:
+    def calculate_rf(self, rf_block, num_total_samples: int) -> np.ndarray:
         """Calculates RF sample points to be played by TX card.
 
         Parameters
@@ -101,9 +101,11 @@ class SequenceProvider(Sequence):
             raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
 
         return rf
+    
+    
 
 
-    def calculate_gradient(self, block, num_total_samples: int, amp_offset: float = 0.) -> list[float]:
+    def calculate_gradient(self, block, num_total_samples: int, amp_offset: float = 0.) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
         Parameters
@@ -159,7 +161,7 @@ class SequenceProvider(Sequence):
 
         return gradient
 
-    def unroll_sequence(self):
+    def unroll_sequence(self) -> (np.ndarray, int):
         """Unroll a read sequence object.
 
         Returns
@@ -210,11 +212,6 @@ class SequenceProvider(Sequence):
             gx_tmp = self.calculate_gradient(block.gx, n_samples, gx_const) if block.gx else np.zeros(n_samples)
             gy_tmp = self.calculate_gradient(block.gy, n_samples, gy_const) if block.gy else np.zeros(n_samples)
             gz_tmp = self.calculate_gradient(block.gz, n_samples, gz_const) if block.gz else np.zeros(n_samples)
-            
-            # The new last gradient values are updated here.
-            gx_const = gx_tmp[-1]
-            gy_const = gy_tmp[-1]
-            gz_const = gz_tmp[-1]
             
             # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
 

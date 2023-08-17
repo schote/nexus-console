@@ -13,7 +13,8 @@ def plot_spcm_data(data: np.ndarray, num_channels: int):
     for k in range(num_channels):
         ax[k].plot(data[k::num_channels])
         ax[k].set_ylabel("Channel {}".format(k+1))
-        ax[k].set_ylim(minmax[k])
+        if not minmax[k][0] == minmax[k][1]:
+            ax[k].set_ylim(minmax[k])
         
     ax[k].set_xlabel("Number of samples")
         
