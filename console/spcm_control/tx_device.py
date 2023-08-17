@@ -47,8 +47,8 @@ class TxCard(SpectrumDevice):
         self.data_buffer_size = int(0)
         
         # Define ring buffer and notify size
-        # self.ring_buffer_size: uint64 = uint64(1024**3)  # => 512 MSamples * 2 Bytes = 1024 MB
-        self.ring_buffer_size: uint64 = uint64(1024**2)
+        self.ring_buffer_size: uint64 = uint64(1024**3)  # => 512 MSamples * 2 Bytes = 1024 MB
+        # self.ring_buffer_size: uint64 = uint64(1024**2)
         
         # Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)
         if (self.ring_buffer_size.value % (self.num_ch * 2) != 0):
@@ -144,11 +144,16 @@ class TxCard(SpectrumDevice):
         
 
     def stop_operation(self) -> None:
-        self.emergency_stop.set()
-        self.worker.join()
-        
-        error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
-        self.handle_error(error)
+        if self.worker is not None:
+            self.emergency_stop.set()
+            self.worker.join()
+            
+            error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
+            self.handle_error(error)
+            
+            self.worker = None
+        else:
+            print("No active process found...")
         
 
     def _streaming(self, data: np.ndarray) -> None:
@@ -163,6 +168,7 @@ class TxCard(SpectrumDevice):
             Here, X denotes the channel and the subsequent index N the sample index.
         """
         # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
+        # TODO: If replay data << ring buffer size we write a lot of zeros => dynamically adjust ring buffer size?
         if (rest := data.nbytes % self.ring_buffer_size.value) != 0:
             rest = self.ring_buffer_size.value - rest
             if rest % 2 != 0:
@@ -171,26 +177,21 @@ class TxCard(SpectrumDevice):
             fill_size = int((rest)/2)
             data = np.append(data, np.zeros(fill_size, dtype=np.int16))
             print(f"Appended {fill_size} zeros to data array...")
-
+        
         # Get total size of data buffer to be played out
         self.data_buffer_size = int(data.nbytes)
         if self.data_buffer_size % (self.num_ch * 2) != 0:
             raise MemoryError("Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...")
         data_buffer_samples_per_ch = uint64(int(self.data_buffer_size / (self.num_ch * 2)))
         # Report replay buffer size and samples
-        print(f"Buffer size in bytes: {self.data_buffer_size}, number of samples per channel: {data_buffer_samples_per_ch.value}...")
-
-        # Setup software buffer
-        # >> Replay buffer
+        print(f"Replay data buffer size in bytes: {self.data_buffer_size}, number of samples per channel: {data_buffer_samples_per_ch.value}...")
+        
+        # >> Define software buffer
+        # Setup replay data buffer
         data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        # >> Allocate continuous ring buffer
+        # Allocate continuous ring buffer as defined by class attribute
         ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
-        
-        # Set segment size and loops to determine acquisition, set in number of samples per channel
-        # >> Does not seems to have an effect, WAIT_CARD_READY still does not terminate...
-        # spcm_dwSetParam_i64(self.card, SPC_SEGMENTSIZE, data_buffer_samples_per_ch)
-        # spcm_dwSetParam_i64(self.card, SPC_LOOPS, 1)
-        
+
         # Perform initial memory transfer: Fill the whole ring buffer
         ctypes.memmove(cast(ring_buffer, c_void_p).value, cast(data_buffer, c_void_p).value, self.ring_buffer_size.value)
         transferred_bytes = self.ring_buffer_size.value
@@ -216,8 +217,6 @@ class TxCard(SpectrumDevice):
         print("Starting card...")
         error = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_START | M2CMD_CARD_ENABLETRIGGER)
         self.handle_error(error)
-
-        self.print_status() # debug
 
         avail_bytes = int32(0)
         usr_position = int32(0)
@@ -248,10 +247,13 @@ class TxCard(SpectrumDevice):
                 self.handle_error(error)
 
         print("FIFO LOOP FINISHED...")
+        # Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)
         print(f">> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
 
         del data_buffer
         del ring_buffer
+        
+        self.print_status()
         
         
     def get_status(self) -> dict[str, str]:
