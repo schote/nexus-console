@@ -8,70 +8,108 @@ import time
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
 from console.spcm_control.spcm.spcm_tools import *  # noqa # pylint: disable=unused-wildcard-import
-
+from console.utilities.receiver_postProcessing import wind
 
 @dataclass
 class RxCard(SpectrumDevice):
-    """Implementation of TX device."""
+    """Implementation of RX device."""
 
-    path: str
-    channel_enable: list[int]
-    max_amplitude: list[int]
+    path:               str
+    channel_enable:     list[int]
+    max_amplitude:      list[int]
+    sample_rate:        int
+    memory_size:        int
+    loops:              int
+    
     __name__: str = "RxCard"
 
     def __post_init__(self):
         super().__init__(self.path)
-
+        self.num_channels       = int32(0)
+        self.lCardType          = int32(0)
+        self.lmemory_size       = int64(0)
+        self.lpost_trigger      = int32(0) 
+        self.ltrigger_delay     = int32(0)
+        self.lx0_mode           = int32(0)
+#    Maybe create channel enable/disable option for later 
+    '''
+    def channel_lookup(self, enableList: list):
+        ChannelList     = [CHANNEL0,CHANNEL1,CHANNEL2,CHANNEL3]
+        helper          = []
+        EnabledChannels = [] 
+        
+        for i in range (len(enableList)):
+            if(enableList[i] == 1):
+                helper.append(ChannelList[i])
+                EnabledChannels = EnabledChannels | ChannelList[i]
+    '''  
     def setup_card(self):
-        # Reset card
-        spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET) #Needed?
+        # Get the card type and reset card
+        spcm_dwGetParam_i32(self.card, SPC_PCITYP      , byref (self.lCardType))
+        spcm_dwSetParam_i64(self.card, SPC_M2CMD       , M2CMD_CARD_RESET) #Needed?
 
         #Setup channels
-  
-        spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
-        print(f"Number of active Rx channels: {self.num_channels.value}")
-
-        # and voltage setting for channel0
-        spcm_dwSetParam_i32(self.card, SPC_CHENABLE, self.channel_enable[0])
-        spcm_dwSetParam_i32(self.card, SPC_50OHM0, 0) #Todo make it variable or input impedance always 50 ohms?  
-        spcm_dwSetParam_i32(self.card, SPC_AMP0, self.max_amplitude[0])
+        #Input impdefance and voltage setting for channel0
+        #spcm_dwSetParam_i32(self.card, SPC_CHENABLE    , CHANNEL0 | CHANNEL1 | CHANNEL2 | CHANNEL3) #Todo for all channels
+        spcm_dwSetParam_i32(self.card, SPC_CHENABLE    , CHANNEL0 | CHANNEL1) #Todo for all channels
+        spcm_dwSetParam_i32(self.card, SPC_50OHM0      , 0) #Todo make it variable or input impedance always 50 ohms?  
+        spcm_dwSetParam_i32(self.card, SPC_AMP0        , self.max_amplitude[0])
 
         #Input impdefance and voltage setting for channel1
-        spcm_dwSetParam_i32(self.card, SPC_CHENABLE, self.channel_enable[1])
-        spcm_dwSetParam_i32(self.card, SPC_50OHM1, 0) #Todo make it variable or input impedance always 50 ohms?  
-        spcm_dwSetParam_i32(self.card, SPC_AMP1, self.max_amplitude[1])
-
-        #Digital filter setting for receiver
-        spcm_dwSetParam_i32 (self.card, SPC_DIGITALBWFILTER, 0)
-
-        # Set clock mode
-        spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
-
-        # Output clock is available
-        spcm_dwSetParam_i32 (self.card, SPC_CLOCKOUT, 1)
+        spcm_dwSetParam_i32(self.card, SPC_50OHM1      , 0) #Todo make it variable or input impedance always 50 ohms?  
+        spcm_dwSetParam_i32(self.card, SPC_AMP1        , self.max_amplitude[1])
+        
+        #Input impdefance and voltage setting for channel2
+        # spcm_dwSetParam_i32(self.card, SPC_50OHM2      , 0) #Todo make it variable or input impedance always 50 ohms?  
+        # spcm_dwSetParam_i32(self.card, SPC_AMP2        , self.max_amplitude[2])
+        
+        # #Input impdefance and voltage setting for channel3
+        # spcm_dwSetParam_i32(self.card, SPC_50OHM3      , 0) #Todo make it variable or input impedance always 50 ohms?  
+        # spcm_dwSetParam_i32(self.card, SPC_AMP3        , self.max_amplitude[3])
+        
+        #Get the number of active channels. This will be needed for handling the buffer size
+        spcm_dwGetParam_i32(self.card, SPC_CHCOUNT     , byref(self.num_channels))
+        print(f"Number of active Rx channels:           {self.num_channels.value}")
+        
+        #Some general cards settings 
+        spcm_dwSetParam_i32(self.card, SPC_DIGITALBWFILTER , 0)#Digital filter setting for receiver
+        spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE   , SPC_CM_INTPLL) # Set clock mode
+        spcm_dwSetParam_i32(self.card, SPC_CLOCKOUT    , 0) # Output clock is not needed at the moment
 
         # Set card sampling rate in MHz
-        spcm_dwSetParam_i64(
-            self.card, SPC_SAMPLERATE, MEGA(self.sample_rate)
-        )
+        spcm_dwSetParam_i64(self.card, SPC_SAMPLERATE  , MEGA(self.sample_rate))
+        
         # Check actual sampling rate
         sample_rate = int64(0)
-        spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE, byref(sample_rate))
-        print(f"Rx device sampling rate: {sample_rate.value*1e-6} MHz")
+        spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE  , byref(sample_rate))
+        print(f"Rx device sampling rate:                {sample_rate.value*1e-6} MHz")
         if sample_rate.value != MEGA(self.sample_rate):
             raise Warning(
-                f"Rx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
-            )
-
+                f"Rx device sample rate                {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz...")
+        
+        # Setup the card mode
+        self.post_trigger = self.memory_size - 8000 #Maybe make it variable? 
+        # FIFO mode
+        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_STD_SINGLE    )
+        spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE     , self.memory_size      )
+        spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , self.post_trigger     )
+        spcm_dwSetParam_i32 (self.card, SPC_LOOPS       , self.loops            )
+        
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_ORMASK, SPC_TMASK_EXT0);
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_TERM, 1);
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_LEVEL0, 1000);
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_MODE, SPC_TM_POS);
 
         
+        spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE     , byref(self.lmemory_size   )) # Read memory size
+        spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER , byref(self.lpost_trigger  )) # Read post trigger
+        spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY  , byref(self.ltrigger_delay )) # Trigger delay
+        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE    , byref(self.lx0_mode       )) # X0_mode , Can be used as trigger.
         
-        #spcm_dwGetParam_i32 (hDrv, SPC_PCITYP, &lCardType);
-        #printf ("Found M2p.%04x in the system\n", lCardType & TYP_VERSIONMASK);
-
-
-
-
+        print(f"Rx device memory size:                  {self.lmemory_size}"   )
+        print(f"Post trigger time:                      {self.lpost_trigger}"  )   #todo calculate and write time units 
+        print(f"Trigger delay is:                       {self.ltrigger_delay}" )   #todo calculate and write time units 
+        print(f"X0 mode is:                             {self.lx0_mode}"       )  
         
         # Multi purpose I/O lines
         # spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?
@@ -79,87 +117,167 @@ class RxCard(SpectrumDevice):
         # spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
         # spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
 
-
-
-        # Get the number of active channels
-
-
-        # Setup the card mode
-
-
-        # FIFO mode
-        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE, SPC_REC_STD_SINGLE);
-        #spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, *lMemsize);
-        #spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER, *posttr);
-        #spcm_dwSetParam_i32 (self.card, SPC_LOOPS, 1);
-
-    def operate(self, data: np.ndarray):
+    def operate(self): #self note: Add type? 
+        
         event = threading.Event()
-        worker = threading.Thread(target=self._fifo_example, args=(data, event))
+        worker = threading.Thread(target=self._receiver_example)#, args=(None)) #
         worker.start()
         
         # Join after timeout of 10 seconds
-        worker.join(10)
-        event.set()
         worker.join()
+        #event.set()
+        #worker.join()
         print("\nThread closed, stopping receiver card...")
-        print(data)
-
-    def _receiver_example(self, data: np.ndarray):
-        rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE, int(len(rx_buffer)))
-
-        # Read memory size
-        memory_size = int64(0)
-        spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE, byref(memory_size))
-        print(f"Rx device memory size: {memory_size}")
-
-        # Read post trigger
-        post_trigger = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         
-        spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER, byref(post_trigger))
-        print(f"Post trigger time: {post_trigger}")   #todo calculate and write time units 
-        
-        # Trigger delay
-        trigger_delay = int64(0)
-        spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY, byref(trigger_delay))
-        print(f"Trigger delay is: {trigger_delay}")   #todo calculate and write time units 
+        #print(rx_buffer.value)
 
-        # X0_mode 
-        x0_mode = int64(0)
-        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE, byref(x0_mode))
-        print(f"Trigger delay is: {x0_mode}")   #todo calculate and write time units 
+    def _receiver_example(self): #self note: Add type? 
+        #rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        # Create Rx buffer pointer 
+        rx_data = np.empty(shape=(1, self.memory_size*self.num_channels.value), dtype=np.int16)
+        rx_buffer = rx_data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        lNotifySize = int32 (0) 
         
-        #Card start
-        err = spcm_dwSetParam_i32(
-            self.card,
-            SPC_M2CMD,
-            M2CMD_CARD_START 
-        )
+        # Determine the size of the bufffer. 
+        RxBufferSize = uint64(self.memory_size*2*self.num_channels.value) 
+       
+        #Set timeout for trigger
+        
+        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 
+                                lNotifySize, rx_buffer, uint64 (0), RxBufferSize)
+        # Define the DMA transfer
+        
+        
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 5000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        
+        #Start the card and wait for trigger. DMA flag is also enabled
+        err = spcm_dwSetParam_i32 (self.card, 
+                                   SPC_M2CMD, 
+                                   M2CMD_CARD_START | 
+                                   M2CMD_CARD_ENABLETRIGGER)
         self.handle_error(err)
         print("Card Started...")
-        
-        #Enable trigger
-        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_ENABLETRIGGER)
         print("Waiting for trigger...")
-
-        #Set timeout for trigger
-        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 10000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
-        if (spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_WAITTRIGGER) == ERR_TIMEOUT):
-        
+        if (spcm_dwSetParam_i32(self.card, SPC_M2CMD, 
+                                M2CMD_CARD_WAITTRIGGER) == ERR_TIMEOUT):
             print("No trigger detected!! Then, trigger is forced now!..")
-            spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_FORCETRIGGER)
-       
-        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 0)
-        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_WAITREADY)
-        
-        print ("Card is stopped now...")
-        #Transfer the data
-        print("Transfer samples from buffer...")
-        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 0, byref(memory_size), 0, memory_size)
-        err =spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+            spcm_dwSetParam_i32 (self.card, SPC_M2CMD, 
+                                           M2CMD_CARD_FORCETRIGGER)
+        #
+        #spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 0)
+        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_WAITREADY 
+                                        )
+        spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
         self.handle_error(err)
+        #print ("Card is stopped now and data we got the floowing data: ")
+        #Transfer the data
+        #print("Transfer finished! Post_processing received data...")
+
+        f0_i    = np.zeros((self.memory_size), dtype=np.complex128)
+        f1_i    = np.zeros((self.memory_size), dtype=np.complex128)
+        offset0 = np.complex_(0.0)
+        offset1 = np.complex_(0.0)
+        counter = 0
+        counter2 = 0
+        for bufferIndex in range(1,self.memory_size): #int(self.memory_size/self.num_channels.value)-1
+            counterX = self.num_channels.value*bufferIndex
+            f0_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX-1]))
+            f1_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX]))
+            #offset0 += f0_i[bufferIndex]
+            #offset1 += f1_i[bufferIndex]
+            counter = counterX
+            counter2 = bufferIndex
+        print(f"Got samples...{counter}")
+        print(f"Got samples...{counter2}")
+        with open (r'test.txt','a') as fp:
+            for index1, index2 in zip(range(len(f0_i)),range(len(f1_i))):
+            # write each item on a new line
+                fp.write(str(f0_i[index1]) + " " + str(f1_i[index2])+ "\n")
+        print('Done')
+        #offset0 /= float(self.memory_size)
+        #offset1 /= float(self.memory_size)
+        '''
         
-    
+        print("Sorting the samples...")
+        alSamplePos= [] # array for the position of each channel inside one sample
+        if (((self.lCardType.value & TYP_SERIESMASK) == TYP_M2ISERIES) or ((self.lCardType.value & TYP_SERIESMASK) == TYP_M2IEXPSERIES)):
+            # on M2i cards the samples for the channels are multiplexed if channels on both modules are active
+            for lChannel in range (0, self.num_channels.value // 2, 1):
+                alSamplePos.append (lChannel) # 
+                alSamplePos.append (lChannel + self.num_channels.value // 2) # 
+                print("on M2i cards the samples for the channels are multiplexed if channels on both modules are active...")
+        else:
+            # starting with M3i all cards use linear sorting of the channels
+            for lChannel in range (0, self.num_channels.value, 1):
+                alSamplePos.append (lChannel)
+        
+        nfit = 100
+        fsig = 2048000
+        fref = 2048000
+        dt   = 1/self.sample_rate
+        windi0 = 0.0
+        windi1 = 0.0
+        fmix0 = np.zeros(2*nfit+1, dtype=np.complex128)
+        fmix1 = np.zeros(2*nfit+1, dtype=np.complex128)
+
+        for i in range(1, 2*nfit+2):
+            x = float(i-1)/float(nfit) - 1.0
+            fmix0[i-1] = np.exp(0.0 + 2.0j * np.pi * fsig * float(i-1) * dt)
+            fmix1[i-1] = np.exp(0.0 + 2.0j * np.pi * fref * float(i-1) * dt)
+            
+            windi0 += wind(x)
+            windi1 += wind(x)
+            
+            fmix0[i-1] *= wind(x)
+            fmix1[i-1] *= wind(x)
+
+        print("windi0:", windi0)
+        print("windi1:", windi1)
+        print("fmix0:", fmix0)
+        print("fmix1:", fmix1)
+        
+        
+
+
+        for i in range(1, self.memory_size + 1):
+            f0_i[i] = np.complex_(float(rx_buffer[2*i-2]), 0.0)
+            f1_i[i] = np.complex_(float(rx_buffer[2*i-1]), 0.0)
+            offset0 += f0_i
+            offset1 += f1_i
+
+        offset0 /= float(self.memory_size)
+        offset1 /= float(self.memory_size)
+        print("Get max and min value for a demo...")
+        alMin = [32767]  * 2# self.num_channels.value  # normal python type
+        alMax = [-32768] * 2# self.num_channels.value  # normal python type
+        lBitsPerSample = int32 (0)
+        spcm_dwGetParam_i32 (self.card, SPC_MIINST_BITSPERSAMPLE, byref (lBitsPerSample))
+        print(f"Bits per sample is :                    {lBitsPerSample.value}")
+        if lBitsPerSample.value <= 8:
+            pbyData = cast  (rx_buffer, ptr8) # cast to pointer to 8bit integer
+            for i in range (0, 500000, 1):
+                for lChannel in range (0, self.num_channels.value, 1):
+                    lDataPos = i * self.num_channels.value + alSamplePos[lChannel]
+                    if pbyData[lDataPos] < alMin[lChannel]:
+                        alMin[lChannel] = pbyData[lDataPos]
+                    if pbyData[lDataPos] > alMax[lChannel]:
+                        alMax[lChannel] = pbyData[lDataPos]
+        else:
+            pnData = cast  (rx_buffer, ptr16) # cast to pointer to 16bit integer
+            for i in range (0, 500000, 1):
+                for lChannel in range (0, self.num_channels.value, 1):
+                    lDataPos = i * self.num_channels.value + alSamplePos[lChannel]
+                    if pnData[lDataPos] < alMin[lChannel]:
+                        alMin[lChannel] = pnData[lDataPos]
+                    if pnData[lDataPos] > alMax[lChannel]:
+                        alMax[lChannel] = pnData[lDataPos]
+
+        print("Finished!...")
+        for lChannel in range (0, self.num_channels.value, 1):
+            sys.stdout.write ("Channel {0:d}\n".format (lChannel)) 
+            sys.stdout.write ("\tMinimum: {0:d}\n".format(alMin[lChannel]))
+            sys.stdout.write ("\tMaximum: {0:d}\n".format(alMax[lChannel]))
+        '''
+        
     def get_status(self):
         pass

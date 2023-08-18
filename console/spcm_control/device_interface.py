@@ -41,7 +41,6 @@ class SpectrumDevice(ABC):
         else:
             # Only connect, if card is not already defined
             self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
-
         if self.card:
             # Read card information
             card_type = int32(0)
