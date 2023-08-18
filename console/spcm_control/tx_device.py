@@ -29,11 +29,11 @@ class TxCard(SpectrumDevice):
     """
 
     path: str
-    channel_enable: list[int]
+    channel_enable: list[int] = [1, 1, 1, 1]
     max_amplitude: list[int]
     filter_type: list[int]
     sample_rate: int
-    notify_rate: int
+    notify_rate: int = 16
 
     __name__: str = "TxCard"
 
@@ -136,6 +136,14 @@ class TxCard(SpectrumDevice):
         
 
     def start_operation(self, data: np.ndarray) -> None:
+        
+        # TODO: Values in data given in V, check if max. amplitude per channel is not exceeded
+        # TODO: Convert float values to int16
+        # TODO: Add ADC event to one of the gradient channels:
+        # >> Shift uint16 values of gradient channels (index 1...3, step_size 4) by one bit to the right
+        # >> Reduces precision by one bit, use highest bit (left) to control digital output
+        # >> ADC example: ADC on = 1000 0000 0000, combine by XOR/OR? => Test
+        
         # Setup card, clear emergency stop thread event and start thread
         self.setup_card()
         self.emergency_stop.clear()

@@ -7,7 +7,7 @@ from pprint import pprint
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from console.pulseq_interpreter.sequence import SequenceProvider
+from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
 # %%
 # Read sequence

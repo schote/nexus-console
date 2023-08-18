@@ -1,6 +1,6 @@
 # %%
 # imports
-from console.pulseq_interpreter.sequence import SequenceProvider
+from console.pulseq_interpreter.sequence_provider import SequenceProvider
 import os
 import time
 import numpy as np

@@ -13,6 +13,8 @@ class SequenceProvider(Sequence):
         larmor_frequency: float = 2e6, 
         spcm_sample_rate: float = 1 / 20e6,
         rf_double_precision: bool = True,
+        grad_to_volt: float = 1,
+        rf_to_volt: float = 1,
         ):
         """Init function for sequence provider class."""
         super().__init__(system=system)
@@ -99,6 +101,8 @@ class SequenceProvider(Sequence):
             rf = np.concatenate((rf, np.zeros(num_total_samples-num_signal_samples, dtype=self.dtype)))
         elif num_signal_samples > num_total_samples:
             raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
+        
+        # TODO: Gradient values are given in kHz/m, scale to output voltage
 
         return rf
     
@@ -158,6 +162,8 @@ class SequenceProvider(Sequence):
             np.concatenate((gradient, np.full(num_total_samples-num_gradient_samples, fill_value=gradient[-1])))
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
+        
+        # TODO: Gradient values are given in kHz/m, scale to output voltage
 
         return gradient
 
