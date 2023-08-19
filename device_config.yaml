@@ -3,12 +3,24 @@
 devices:
 
   # M2p.6546-x4 -> /dev/spcm0 (AWG)
-  - !TxCard
-    path: '/dev/spcm1'
-    max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
-    filter_type: [0, 2, 2, 2] # Filter per channel
-    channel_enable: [1, 1, 1, 1] # Enable per channel
-    sample_rate: 2  # in MHz
+   - !TxCard
+     path: '/dev/spcm1'
+     max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
+     filter_type: [0, 2, 2, 2] # Filter per channel
+     channel_enable: [1, 1, 1, 1] # Enable per channel
+     sample_rate: 2  # in MHz
+
+  # M2p.5933-x4 -> /dev/spcm0 (AWG)
+   - !RxCard
+     path: '/dev/spcm0'
+     max_amplitude: [10000, 10000, 1000, 1000] # Max. amplitude per channel
+     channel_enable: [1, 1, 1, 1] # Enable per channel
+     sample_rate: 40         # in MHz
+     memory_size: 10000    # memory size in cycles, Please note that step size is 8. 
+     loops: 1          # number of loops
+    # post_trigger: !!python/object/apply:eval [memory_size - 8000] ##Todo #Note that step size is 8
+
+
 
   # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
 #  - !RxCard
