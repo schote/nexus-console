@@ -67,14 +67,14 @@ class RxCard(SpectrumDevice):
         # spcm_dwSetParam_i32(self.card, SPC_50OHM3      , 0) #Todo make it variable or input impedance always 50 ohms?  
         # spcm_dwSetParam_i32(self.card, SPC_AMP3        , self.max_amplitude[3])
         
-        #Get the number of active channels. This will be needed for handling the buffer size
+        # Get the number of active channels. This will be needed for handling the buffer size
         spcm_dwGetParam_i32(self.card, SPC_CHCOUNT     , byref(self.num_channels))
         print(f"Number of active Rx channels:           {self.num_channels.value}")
         
-        #Some general cards settings 
+        # Some general cards settings 
         spcm_dwSetParam_i32(self.card, SPC_DIGITALBWFILTER , 0)#Digital filter setting for receiver
         spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE   , SPC_CM_INTPLL) # Set clock mode
-        spcm_dwSetParam_i32(self.card, SPC_CLOCKOUT    , 0) # Output clock is not needed at the moment
+        spcm_dwSetParam_i32(self.card, SPC_CLOCKOUT    , 1)             # Output clock
 
         # Set card sampling rate in MHz
         spcm_dwSetParam_i64(self.card, SPC_SAMPLERATE  , MEGA(self.sample_rate))
@@ -95,16 +95,18 @@ class RxCard(SpectrumDevice):
         spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , self.post_trigger     )
         spcm_dwSetParam_i32 (self.card, SPC_LOOPS       , self.loops            )
         
-        spcm_dwSetParam_i32 (self.card, SPC_TRIG_ORMASK, SPC_TMASK_EXT0);
-        spcm_dwSetParam_i32 (self.card, SPC_TRIG_TERM, 1);
-        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_LEVEL0, 1000);
-        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_MODE, SPC_TM_POS);
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT1_MODE, SPC_TM_POS)
+#        spcm_dwSetParam_i32 (self.card, SPC_TRIG_TERM, 1)     #If we use analog trigger
+#        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_LEVEL0, 1000)
+        spcm_dwSetParam_i32 (self.card, SPC_TRIG_ORMASK, SPC_TMASK_EXT1)
+
+        
 
         
         spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE     , byref(self.lmemory_size   )) # Read memory size
         spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER , byref(self.lpost_trigger  )) # Read post trigger
         spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY  , byref(self.ltrigger_delay )) # Trigger delay
-        spcm_dwGetParam_i32 (self.card, SPCM_X0_MODE    , byref(self.lx0_mode       )) # X0_mode , Can be used as trigger.
+        spcm_dwGetParam_i32 (self.card, SPCM_X1_MODE    , byref(self.lx0_mode       )) # X0_mode , Can be used as trigger.
         
         print(f"Rx device memory size:                  {self.lmemory_size}"   )
         print(f"Post trigger time:                      {self.lpost_trigger}"  )   #todo calculate and write time units 
@@ -148,7 +150,7 @@ class RxCard(SpectrumDevice):
         # Define the DMA transfer
         
         
-        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 5000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 10000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
         
         #Start the card and wait for trigger. DMA flag is also enabled
         err = spcm_dwSetParam_i32 (self.card, 
@@ -181,19 +183,21 @@ class RxCard(SpectrumDevice):
         counter2 = 0
         for bufferIndex in range(1,self.memory_size): #int(self.memory_size/self.num_channels.value)-1
             counterX = self.num_channels.value*bufferIndex
-            f0_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX-1]))
+            f0_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX-1])) #Type is complex at the moment we can change it later
             f1_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX]))
             #offset0 += f0_i[bufferIndex]
             #offset1 += f1_i[bufferIndex]
             counter = counterX
             counter2 = bufferIndex
-        print(f"Got samples...{counter}")
-        print(f"Got samples...{counter2}")
+        # Todo Scaling to mV.. 
+        print(f"Got total samples...        {counter}")
+        print(f"Got samples per channel...  {counter2}")
         with open (r'test.txt','a') as fp:
             for index1, index2 in zip(range(len(f0_i)),range(len(f1_i))):
             # write each item on a new line
                 fp.write(str(f0_i[index1]) + " " + str(f1_i[index2])+ "\n")
         print('Done')
+        # Post Processing.. To be discussed
         #offset0 /= float(self.memory_size)
         #offset1 /= float(self.memory_size)
         '''
@@ -236,9 +240,6 @@ class RxCard(SpectrumDevice):
         print("fmix0:", fmix0)
         print("fmix1:", fmix1)
         
-        
-
-
         for i in range(1, self.memory_size + 1):
             f0_i[i] = np.complex_(float(rx_buffer[2*i-2]), 0.0)
             f1_i[i] = np.complex_(float(rx_buffer[2*i-1]), 0.0)
@@ -273,10 +274,6 @@ class RxCard(SpectrumDevice):
                         alMax[lChannel] = pnData[lDataPos]
 
         print("Finished!...")
-        for lChannel in range (0, self.num_channels.value, 1):
-            sys.stdout.write ("Channel {0:d}\n".format (lChannel)) 
-            sys.stdout.write ("\tMinimum: {0:d}\n".format(alMin[lChannel]))
-            sys.stdout.write ("\tMaximum: {0:d}\n".format(alMax[lChannel]))
         '''
         
     def get_status(self):

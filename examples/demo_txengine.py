@@ -6,7 +6,7 @@ import numpy as np
 from console.utilities.line_plots import plot_spcm_data
 from console.utilities.io import yaml_loader
 from console.spcm_control.tx_device import TxCard
-from console.spcm_control.rx_device import RxCard
+#from console.spcm_control.rx_device import RxCard
 
 #Added for buffer stuff
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
@@ -21,7 +21,7 @@ with open(config_file, 'rb') as file:
 # Get devices: RxCard or TxCard, take first card in list
 devices = config["devices"]
 tx_card: TxCard = list(filter(lambda device: device.__name__ == "TxCard", devices))[0]
-rx_card: RxCard = list(filter(lambda device: device.__name__ == "RxCard", devices))[0]
+#rx_card: RxCard = list(filter(lambda device: device.__name__ == "RxCard", devices))[0]
 
 # %%
 # Definition of trapezoid waveforms with different amplitudes
@@ -64,14 +64,26 @@ fig = plot_spcm_data(long_seq, num_channels=4)
 fig.show()
 
 # %% 
-rx_card.connect()
+# rx_card.connect()
 tx_card.connect()
 # %%
-rx_card.operate()
+# import threading
+# eventRx = threading.Event()
+# worker = threading.Thread(target=rx_card.operate)#, args=(None)) #
+
+#eventTx = threading.Event()
+#workerTx = threading.Thread(target=tx_card.operate, args=(long_seq)) #
+# worker.start()
+#workerTx.start()
+#workerTx.join()
+# worker.join()
+import time
+# time.sleep(2)
 tx_card.operate(long_seq)
+time.sleep(5)
 # %%
 tx_card.disconnect()
-rx_card.disconnect()
+# rx_card.disconnect()
 
 
 # %%
