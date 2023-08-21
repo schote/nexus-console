@@ -53,7 +53,7 @@ class SpectrumDevice(ABC):
 
             # Print card values
             print(f"Connection to card {self.name} established!")
-            self.setup_card()
+            # self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")
 
@@ -81,6 +81,11 @@ class SpectrumDevice(ABC):
         pass
 
     @abstractmethod
-    def operate(self):
-        """Abstract method to operate the card."""
+    def start_operation(self):
+        """Abstract method to start card operation."""
+        pass
+    
+    @abstractmethod
+    def stop_operation(self):
+        """Abstract method to stop card operation."""
         pass
