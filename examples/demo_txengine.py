@@ -67,20 +67,7 @@ fig.show()
 # rx_card.connect()
 tx_card.connect()
 # %%
-# import threading
-# eventRx = threading.Event()
-# worker = threading.Thread(target=rx_card.operate)#, args=(None)) #
-
-#eventTx = threading.Event()
-#workerTx = threading.Thread(target=tx_card.operate, args=(long_seq)) #
-# worker.start()
-#workerTx.start()
-#workerTx.join()
-# worker.join()
-import time
-# time.sleep(2)
 tx_card.operate(long_seq)
-time.sleep(5)
 # %%
 tx_card.disconnect()
 # rx_card.disconnect()
