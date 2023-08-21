@@ -1,7 +1,6 @@
 # %%
 # imports
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-import os
 import time
 import numpy as np
 from console.utilities.line_plots import plot_spcm_data
@@ -9,8 +8,8 @@ from console.utilities.line_plots import plot_spcm_data
 # %%
 # Read sequence
 seq = SequenceProvider(rf_double_precision=False)
-seq_path = os.path.normpath("/Users/schote01/code/spectrum-pulseq/console/pulseq_interpreter/seq/fid.seq")
-seq.read("./pulseq/tse.seq")
+seq_path = "./pulseq/tse.seq"
+seq.read(seq_path)
 
 # %%
 t0 = time.time()
