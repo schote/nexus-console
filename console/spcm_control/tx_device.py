@@ -29,7 +29,6 @@ class TxCard(SpectrumDevice):
     """
 
     path: str
-    channel_enable: list[int] = [1, 1, 1, 1]
     max_amplitude: list[int]
     filter_type: list[int]
     sample_rate: int
@@ -41,7 +40,7 @@ class TxCard(SpectrumDevice):
         """Post init function which is required to use dataclass arguments."""
         super().__init__(self.path)
 
-        self.num_ch = sum(self.channel_enable)
+        self.num_ch = 4
 
         # Size of the current sequence 
         self.data_buffer_size = int(0)
@@ -67,7 +66,19 @@ class TxCard(SpectrumDevice):
         self.emergency_stop = threading.Event()
         
             
-    def setup_card(self):
+    def setup_card(self) -> None:
+        """Setup function for transmit (TX) spectrum card. 
+        
+        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate, 
+        defined by the class attribute.
+        All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
+        Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.
+
+        Raises
+        ------
+        Warning
+            The actual set sample rate deviates from the corresponding class attribute to be set, class attribute is overwritten.  
+        """
         # Reset card
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)
         
@@ -123,26 +134,57 @@ class TxCard(SpectrumDevice):
         
         # >> Setup digital output channels
         # Multi purpose I/O lines for gate and un-blanking
-        # spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT)
-        # spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_TRIGOUT)
 
-        # Analog channel 1 for digital ADC gate signal
-        # spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15)
-        # Analog channel 2 for digital un-blanking signal
-        # spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        # Analog channel 1, 2, 3 for digital ADC gate signal
+        # TODO: Invert ADC gate signal on one channel (e.g. for un-blanking) ?
+        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH3 | SPCM_XMODE_DIGOUTSRC_BIT15)
 
         print("Setup done, reading status...")
         self.print_status()
         
 
-    def start_operation(self, data: np.ndarray) -> None:
+    def start_operation(self, data: np.ndarray, adc_gate: np.ndarray) -> None:
+        """Start transmit (TX) card operation.
         
-        # TODO: Values in data given in V, check if max. amplitude per channel is not exceeded
-        # TODO: Convert float values to int16
-        # TODO: Add ADC event to one of the gradient channels:
-        # >> Shift uint16 values of gradient channels (index 1...3, step_size 4) by one bit to the right
-        # >> Reduces precision by one bit, use highest bit (left) to control digital output
-        # >> ADC example: ADC on = 1000 0000 0000, combine by XOR/OR? => Test
+        Performs input checks and formats data accordingly by adding adc gate to replay data in int16 format.
+        Resets the stop flag and starts the worker in a thread.
+
+        Parameters
+        ----------
+        data
+            Replay data as float values in correctly ordered numpy array.
+            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
+            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+        adc_gate
+            ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
+            The gate signal is replayed on digital outputs X0, X1, X2
+        """
+        # Check if max value in data does not exceed max amplitude, set per channel
+        for k in range(4):
+            if np.amax(data[k::4] > self.max_amplitude[k]):
+                raise ValueError(f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel...")
+        # Check if lengths of data and gate signal are matching
+        if (len(data) / 4) != len(adc_gate):
+            raise ValueError("Miss match between replay data and adc gate length...")
+        # ADC gate must be in range [0, 1]
+        if not np.array_equal(adc_gate, adc_gate.as_type(bool)):
+            raise ValueError("ADC gate signal is not a binary signal...")
+        
+        # Convert float to int16
+        data = data.astype(np.int16)
+        # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
+        adc_gate = ((-2**15) * adc_gate).astype(np.int16)
+        
+        # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
+        # Leave channel 0 (RF) as is
+        data[1::4] = data[1::4] >> 1 | adc_gate
+        data[2::4] = data[2::4] >> 1 | adc_gate
+        data[3::4] = data[3::4] >> 1 | adc_gate
         
         # Setup card, clear emergency stop thread event and start thread
         self.setup_card()

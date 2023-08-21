@@ -5,20 +5,11 @@ import numpy as np
 import time
 
 from console.utilities.line_plots import plot_spcm_data
-from console.utilities.io import yaml_loader
+from console.utilities.io import get_tx_card
 from console.spcm_control.tx_device import TxCard
 
 # %%
-# Define configuration file
-config_file = os.path.normpath("../device_config.yaml")
-
-# Load config
-with open(config_file, 'rb') as file:
-    config = yaml.load(file, Loader=yaml_loader)
-
-# Get devices: RxCard or TxCard, take first card in list
-devices = config["devices"]
-tx_card: TxCard = list(filter(lambda device: device.__name__ == "TxCard", devices))[0]
+tx_card: TxCard = get_tx_card("../device_config.yaml")
 
 # %%
 # Definition of trapezoid waveforms with different amplitudes
