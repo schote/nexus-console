@@ -7,7 +7,7 @@ from ctypes import *
 from console.spcm_control.py_header.regs import *
 
 # load registers for easier access
-from console.spcm_control.py_header.spcerr import *
+from console.spcm_control.py_header.errors import *
 
 SPCM_DIR_PCTOCARD = 0
 SPCM_DIR_CARDTOPC = 1

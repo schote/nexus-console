@@ -20,7 +20,10 @@ class RxCard(SpectrumDevice):
     def setup_card(self):
         pass
 
-    def operate(self):
+    def start_operation(self):
+        pass
+    
+    def stop_operation(self):
         pass
 
     def get_status(self):

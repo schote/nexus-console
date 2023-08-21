@@ -8,7 +8,8 @@ devices:
     max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
     filter_type: [0, 2, 2, 2] # Filter per channel
     channel_enable: [1, 1, 1, 1] # Enable per channel
-    sample_rate: 2  # in MHz
+    sample_rate: 20  # in MHz
+    notify_rate: 16
 
   # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
   - !RxCard

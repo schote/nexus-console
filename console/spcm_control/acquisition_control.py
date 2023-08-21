@@ -4,7 +4,7 @@ import time
 import numpy as np
 import yaml
 
-from console.pulseq_interpreter.sequence import SequenceProvider
+from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.device_interface import RxCard, TxCard
 from console.utilities.io import yaml_loader
 
