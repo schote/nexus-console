@@ -1,32 +1,30 @@
+# Configuration file for OSI²One pypulseq-console
+
 # Spectrum instrumentation device configuration
+# M2p.6546-x4 -> /dev/spcm0 (AWG)
+TxCard: !TxCard
+  path: '/dev/spcm1'
+  max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
+  filter_type: [0, 2, 2, 2] # Filter per channel
+  sample_rate: 20  # in MHz
+  notify_rate: 16
 
-devices:
-
-  # M2p.6546-x4 -> /dev/spcm0 (AWG)
-  - !TxCard
-    path: '/dev/spcm1'
-    max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
-    filter_type: [0, 2, 2, 2] # Filter per channel
-    channel_enable: [1, 1, 1, 1] # Enable per channel
-    sample_rate: 20  # in MHz
-    notify_rate: 16
-
-  # M2p.5933-x4 -> /dev/spcm1 (Digitizer)
-  - !RxCard
+# M2p.5933-x4 -> /dev/spcm1 (Digitizer)
+RxCard: !RxCard
     path: '/dev/spcm2'
 
-
-# system: 
-#   - !System
-#     # ADC
-#     adc_dead_time: 0
-#     # Gradents
-#     rise_time: 0
-#     max_grad: 32 # in Hz/m
-#     max_slew: 130 # in Hz/m/s
-#     # grad_raster_time: 1e-6
-#     # RF
-#     rf_dead_time: 10e-6
-#     rf_raster_time: 1e-6
-#     rf_ringdown_time: 100e-6
-      
+# Sequence provider configuration
+SequenceProvider: !SequenceProvider
+  spcm_sample_rate: 0.00000005 # 5e-8 => 20 MHz
+  rf_double_precision: True
+  grad_to_volt: 1
+  rf_to_volt: 1
+  # TODO: Set system limits
+  system: !Opts
+    max_grad: 250000.0
+    max_slew: 250000.0
+    rise_time: 0
+    rf_dead_time: 0
+    rf_ringdown_time: 0
+    adc_dead_time: 0
+    B0: 0.05
