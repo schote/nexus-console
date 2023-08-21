@@ -26,7 +26,8 @@ n_samples = len(waveform)
 # Scaling of base trapezoid
 sequence = np.empty(shape=(4, n_samples), dtype=np.int16)
 for k, amp in enumerate([400, 600, 800, 1000]):
-    sequence[k, :] = waveform * tx_card.output_to_card_value(value=amp, channel=k)
+    sequence[k, :] = waveform * (amp / tx_card.max_amplitude[k]) * np.iinfo(np.int16).max
+    
     
 # Flatten sequence in Fortran order:
 # [[ch0_0, ch0_1, ...], [ch0_0, ch0_1, ...], ..., [ch0_0, ch0_1, ...]]
@@ -34,8 +35,8 @@ for k, amp in enumerate([400, 600, 800, 1000]):
 sequence = sequence.flatten(order="F")
 
 # Plot sequence
-# fig = plot_spcm_data(sequence, num_channels=4)
-# fig.show()
+fig = plot_spcm_data(data=sequence)
+fig.show()
 
 # Build longer test sequence:
 long_seq = sequence
