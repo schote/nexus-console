@@ -25,28 +25,26 @@ gate = np.concatenate(gate)
 
 print(f"Sequence unrolling: {t_execution} s")
 print(f"Total number of sampling points (per channel): {total_samples}")
+
 # %%
-# Combine sequence and gate 
-# For int16 (signed!) 15th bit corresponds to -2**15 = -32768
-_sqnc = sqnc.astype(np.int16)
-_gate = ((-2**15) * gate).astype(np.int16)
+tx_card: TxCard = get_tx_card("../device_config.yaml")
 
-_sqnc[1::4] = _sqnc[1::4] >> 1 | _gate
-_sqnc[2::4] = _sqnc[2::4] >> 1 | _gate
-_sqnc[3::4] = _sqnc[3::4] >> 1 | _gate
-
-fig = plot_spcm_data(_sqnc, contains_gate=True)
+# %%
+data = tx_card.prepare_sequence(sqnc, gate)
+fig = plot_spcm_data(data, contains_gate=True)
 fig.show()
-
-# %%
-# tx_card: TxCard = get_tx_card("../device_config.yaml")
 
 # %%
 # Connect to card and replay sequence
 # TODO: Test this...
 
-# tx_card.connect()
-# tx_card.start_operation(sqnc, gate)
-# time.sleep(3)
-# get_tx_card.stop_operation()
-# tx_card.disconnect()
+tx_card.connect()
+
+# %%
+tx_card.start_operation(data)
+time.sleep(3)
+tx_card.stop_operation()
+
+# %%
+tx_card.disconnect()
+# %%

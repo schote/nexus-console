@@ -167,10 +167,10 @@ class SequenceProvider(Sequence):
     def add_adc_gate(self, block, gate: np.ndarray) -> None:
         
         delay = int(block.delay / self.spcm_sample_rate)
-        dead_dur = max(self.system.adc_dead_time, block.dead_time)
-        dead_time = int(dead_dur / self.spcm_sample_rate)
-        
-        gate[delay:-(1+dead_time)] = 1
+        # dead_dur = max(self.system.adc_dead_time, block.dead_time)
+        # dead_time = int(dead_dur / self.spcm_sample_rate)
+        adc_len = int(block.num_samples * block.dwell / self.spcm_sample_rate)
+        gate[delay:delay+adc_len] = 1
         
 
     def unroll_sequence(self) -> (np.ndarray, int):

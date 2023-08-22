@@ -23,6 +23,7 @@ gate = np.concatenate(gate)
 
 print(f"Sequence unrolling: {t_execution} s")
 print(f"Total number of sampling points (per channel): {total_samples}")
+
 # %%
 # Combine sequence and gate 
 # For int16 (signed!) 15th bit corresponds to -2**15 = -32768

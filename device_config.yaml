@@ -1,7 +1,7 @@
 # Configuration file for OSI²One pypulseq-console
 
 # Spectrum instrumentation device configuration
-# M2p.6546-x4 -> /dev/spcm0 (AWG)
+# M2p.6546-x4 -> /dev/spcm1 (AWG)
 TxCard: !TxCard
   path: '/dev/spcm1'
   max_amplitude: [1000, 1000, 1000, 1000] # Max. amplitude per channel
@@ -9,9 +9,9 @@ TxCard: !TxCard
   sample_rate: 20  # in MHz
   notify_rate: 16
 
-# M2p.5933-x4 -> /dev/spcm1 (Digitizer)
+# M2p.5933-x4 -> /dev/spcm0 (Digitizer)
 RxCard: !RxCard
-    path: '/dev/spcm2'
+    path: '/dev/spcm0'
 
 # Sequence provider configuration
 SequenceProvider: !SequenceProvider

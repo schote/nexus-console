@@ -41,6 +41,7 @@ class TxCard(SpectrumDevice):
         super().__init__(self.path)
 
         self.num_ch = 4
+        self.channel_enable = [1, 1, 1, 1]
 
         # Size of the current sequence 
         self.data_buffer_size = int(0)
@@ -179,18 +180,18 @@ class TxCard(SpectrumDevice):
             if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
                 raise ValueError(f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel...")
             else:
-                sequence[k::4] = rel_values * self.max_amplitude[k]
+                sequence[k::4] = rel_values * np.iinfo(np.int16).max
 
         # Convert float to int16
         sequence = sequence.astype(np.int16)
 
-        if adc_gate:
+        if adc_gate is not None:
             # Check if lengths of data and gate signal are matching
             if (len(sequence) / 4) != len(adc_gate):
                 raise ValueError("Miss match between replay data and adc gate length...")
         
             # ADC gate must be in range [0, 1]
-            if not np.array_equal(adc_gate, adc_gate.as_type(bool)):
+            if not np.array_equal(adc_gate, adc_gate.astype(bool)):
                 raise ValueError("ADC gate signal is not a binary signal...")
         
             # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
