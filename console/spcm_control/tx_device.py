@@ -19,8 +19,8 @@ class TxCard(SpectrumDevice):
     Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(), setup_card() and operate().
     The TxCard is automatically instantiated by a yaml-loader when loading the configuration file.
     
-    The implementation was done and tested with M2p6546-x4.
-    - std. memory size: 512 MSample, 2 Bytes/sample => 1024 MB
+    The implementation was done and tested with card M2p6546-x4, which has an onboard
+    memory size of 512 MSample, 2 Bytes/sample => 1024 MB.
     
     Overview:
     ---------
@@ -29,7 +29,6 @@ class TxCard(SpectrumDevice):
     """
 
     path: str
-    channel_enable: list[int] = [1, 1, 1, 1]
     max_amplitude: list[int]
     filter_type: list[int]
     sample_rate: int
@@ -41,7 +40,8 @@ class TxCard(SpectrumDevice):
         """Post init function which is required to use dataclass arguments."""
         super().__init__(self.path)
 
-        self.num_ch = sum(self.channel_enable)
+        self.num_ch = 4
+        self.channel_enable = [1, 1, 1, 1]
 
         # Size of the current sequence 
         self.data_buffer_size = int(0)
@@ -67,7 +67,19 @@ class TxCard(SpectrumDevice):
         self.emergency_stop = threading.Event()
         
             
-    def setup_card(self):
+    def setup_card(self) -> None:
+        """Setup function for transmit (TX) spectrum card. 
+        
+        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate, 
+        defined by the class attribute.
+        All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
+        Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.
+
+        Raises
+        ------
+        Warning
+            The actual set sample rate deviates from the corresponding class attribute to be set, class attribute is overwritten.  
+        """
         # Reset card
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)
         
@@ -131,26 +143,98 @@ class TxCard(SpectrumDevice):
         
         # >> Setup digital output channels
         # Multi purpose I/O lines for gate and un-blanking
-        # spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT)
-        # spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_TRIGOUT)
+        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_TRIGOUT)
 
-        # Analog channel 1 for digital ADC gate signal
-        # spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15)
-        # Analog channel 2 for digital un-blanking signal
-        # spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        # Analog channel 1, 2, 3 for digital ADC gate signal
+        # TODO: Invert ADC gate signal on one channel (e.g. for un-blanking) ?
+        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH3 | SPCM_XMODE_DIGOUTSRC_BIT15)
 
         print("Setup done, reading status...")
         self.print_status()
         
+    def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -> np.ndarray:
+        """Prepare sequence data for replay.
+
+        Parameters
+        ----------
+        sequence
+            Replay data as float values in correctly ordered numpy array.
+            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
+            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+        adc_gate
+            ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
+            The gate signal is replayed on digital outputs X0, X1, X2
+
+        Returns
+        -------
+            Recombined sequence as numpy array with digital adc gate signal (if provided)
+
+        Raises
+        ------
+        ValueError
+            Raised if maximum voltage exceeds the channel maximum
+        ValueError
+            Raised if 
+        ValueError
+            _description_
+        """
+        # Check if max value in data does not exceed max amplitude, set per channel
+        # Convert voltage float values to int16, according to max amplitude per channel
+        for k in range(4):
+            if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
+                raise ValueError(f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel...")
+            else:
+                sequence[k::4] = rel_values * np.iinfo(np.int16).max
+
+        # Convert float to int16
+        sequence = sequence.astype(np.int16)
+
+        if adc_gate is not None:
+            # Check if lengths of data and gate signal are matching
+            if (len(sequence) / 4) != len(adc_gate):
+                raise ValueError("Miss match between replay data and adc gate length...")
+        
+            # ADC gate must be in range [0, 1]
+            if not np.array_equal(adc_gate, adc_gate.astype(bool)):
+                raise ValueError("ADC gate signal is not a binary signal...")
+        
+            # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
+            adc_gate = ((-2**15) * adc_gate).astype(np.int16)
+            
+            # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
+            # Leave channel 0 (RF) as is
+            sequence[1::4] = sequence[1::4] >> 1 | adc_gate
+            sequence[2::4] = sequence[2::4] >> 1 | adc_gate
+            sequence[3::4] = sequence[3::4] >> 1 | adc_gate
+            
+        return sequence
 
     def start_operation(self, data: np.ndarray) -> None:
-        
-        # TODO: Values in data given in V, check if max. amplitude per channel is not exceeded
-        # TODO: Convert float values to int16
-        # TODO: Add ADC event to one of the gradient channels:
-        # >> Shift uint16 values of gradient channels (index 1...3, step_size 4) by one bit to the right
-        # >> Reduces precision by one bit, use highest bit (left) to control digital output
-        # >> ADC example: ADC on = 1000 0000 0000, combine by XOR/OR? => Test
+        """Start transmit (TX) card operation.
+
+        Steps:
+        (1) Setup the transmit card
+        (2) Clear emergency stop flag, reset to False
+        (3) Start worker thread (card streaming mode), with provided replay data
+
+        Parameters
+        ----------
+        data
+            Replay data as int16 numpy array in correct order
+            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
+            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+
+        Raises
+        ------
+        ValueError
+            Raised if replay data is not provided as numpy int16 values
+        """
+        if not data.dtype == np.int16:
+            raise ValueError("Replay data was not provided as numpy int16 values...")
         
         # Setup card, clear emergency stop thread event and start thread
         self.setup_card()
@@ -291,21 +375,3 @@ class TxCard(SpectrumDevice):
         msg, bit_reg_rev = translate_status(code, include_desc=include_desc)
         pprint(msg)
         print(f"Status code: {code}, Bit register (reversed): {bit_reg_rev}")
-
-
-    def output_to_card_value(self, value: int, channel: int = 0) -> int:
-        """Calculates int16 value which corresponds to given value in mV.
-
-        Parameters
-        ----------
-        value
-            Value in mV
-
-        Returns
-        -------
-            Integer card value to get desired output in mV
-        """
-        if (ratio := value / self.max_amplitude[channel]) > 1:
-            raise ValueError("Given value exceeds channel output limit.")
-        # Card values written as int16
-        return int(ratio * np.iinfo(np.int16).max)

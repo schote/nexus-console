@@ -9,19 +9,23 @@ class SequenceProvider(Sequence):
     """Sequence provider class, inherited from pulseq sequence object."""
     
     def __init__(
-        self, system: Opts = Opts(), 
-        larmor_frequency: float = 2e6, 
+        self,
+        # larmor_frequency: float = 2e6,
         spcm_sample_rate: float = 1 / 20e6,
         rf_double_precision: bool = True,
         grad_to_volt: float = 1,
         rf_to_volt: float = 1,
+        system: Opts = Opts(),
         ):
         """Init function for sequence provider class."""
         super().__init__(system=system)
         
+        self.grad_to_volt = grad_to_volt
+        self.rf_to_volt = rf_to_volt
+        
         self.spcm_freq = 1 / spcm_sample_rate
         self.spcm_sample_rate = spcm_sample_rate
-        self.f0 = larmor_frequency
+        self.f0 = self.system.B0 * self.system.gamma
         
         self.dtype = np.double if rf_double_precision else np.single
         
@@ -101,13 +105,8 @@ class SequenceProvider(Sequence):
             rf = np.concatenate((rf, np.zeros(num_total_samples-num_signal_samples, dtype=self.dtype)))
         elif num_signal_samples > num_total_samples:
             raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
-        
-        # TODO: Gradient values are given in kHz/m, scale to output voltage
 
-        return rf
-    
-    
-
+        return rf * self.rf_to_volt
 
     def calculate_gradient(self, block, num_total_samples: int, amp_offset: float = 0.) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
@@ -162,10 +161,17 @@ class SequenceProvider(Sequence):
             np.concatenate((gradient, np.full(num_total_samples-num_gradient_samples, fill_value=gradient[-1])))
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
-        
-        # TODO: Gradient values are given in kHz/m, scale to output voltage
 
-        return gradient
+        return gradient * self.grad_to_volt
+    
+    def add_adc_gate(self, block, gate: np.ndarray) -> None:
+        
+        delay = int(block.delay / self.spcm_sample_rate)
+        # dead_dur = max(self.system.adc_dead_time, block.dead_time)
+        # dead_time = int(dead_dur / self.spcm_sample_rate)
+        adc_len = int(block.num_samples * block.dwell / self.spcm_sample_rate)
+        gate[delay:delay+adc_len] = 1
+        
 
     def unroll_sequence(self) -> (np.ndarray, int):
         """Unroll a read sequence object.
@@ -193,6 +199,7 @@ class SequenceProvider(Sequence):
         blocks = [self.get_block(k) for k in list(self.block_events.keys())]
         samples_per_block = [int(block.block_duration / self.spcm_sample_rate) for block in blocks]
         _seq = [np.empty(4*n) for n in samples_per_block]  # empty list of list, 4 channels => 4 times n_samples
+        _adc = [np.zeros(n) for n in samples_per_block]
         
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
@@ -219,13 +226,10 @@ class SequenceProvider(Sequence):
             gy_tmp = self.calculate_gradient(block.gy, n_samples, gy_const) if block.gy else np.zeros(n_samples)
             gz_tmp = self.calculate_gradient(block.gz, n_samples, gz_const) if block.gz else np.zeros(n_samples)
             
-            # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
-
-            # Append correctly ordered list to sequence 
-            # _seq += list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
-            # _seq[k] = list(np.array([rf_tmp, gx_tmp, gy_tmp, gz_tmp]).flatten(order="F"))
-            
-            # TODO: Cast to int16, scale to correct values => saves memory
             _seq[k] = np.stack((rf_tmp, gx_tmp, gy_tmp, gz_tmp)).flatten(order="F")
+            
+            # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
+            if block.adc:
+                self.add_adc_gate(block.adc, _adc[k])
 
-        return _seq, sample_count
+        return _seq, _adc, sample_count
