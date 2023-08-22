@@ -53,7 +53,7 @@ class SpectrumDevice(ABC):
 
             # Print card values
             print(f"Connection to card {self.name} established!")
-            # self.setup_card()
+            self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")
 

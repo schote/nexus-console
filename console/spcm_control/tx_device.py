@@ -88,7 +88,6 @@ class TxCard(SpectrumDevice):
         
         # Set trigger
         spcm_dwSetParam_i32(self.card, SPC_TRIG_ORMASK, SPC_TMASK_SOFTWARE)
-        #spcm_dwSetParam_i32(self.card, SPC_TRIG_ORMASK, SPC_TM_NONE)
 
         # Set clock mode
         spcm_dwSetParam_i32(self.card, SPC_CLOCKMODE, SPC_CM_INTPLL)
@@ -104,13 +103,6 @@ class TxCard(SpectrumDevice):
             raise Warning(
                 f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
             )
-
-        # Multi purpose I/O lines
-        spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?
-        
-        # spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_DISABLE)
-        # spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
-        # spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
 
         # Enable and setup channels
         spcm_dwSetParam_i32(
@@ -140,18 +132,13 @@ class TxCard(SpectrumDevice):
 
         # Setup the card in FIFO mode
         spcm_dwSetParam_i32(self.card, SPC_CARDMODE, SPC_REP_FIFO_SINGLE)
-        
-        # >> Setup digital output channels
-        # Multi purpose I/O lines for gate and un-blanking
-        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT)
-        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_TRIGOUT)
-        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_TRIGOUT)
 
+        # >> Setup digital output channels
         # Analog channel 1, 2, 3 for digital ADC gate signal
         # TODO: Invert ADC gate signal on one channel (e.g. for un-blanking) ?
-        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15)
-        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15)
-        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH3 | SPCM_XMODE_DIGOUTSRC_BIT15)
+        spcm_dwSetParam_i32(self.card, SPCM_X0_MODE, (SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH1 | SPCM_XMODE_DIGOUTSRC_BIT15))
+        spcm_dwSetParam_i32(self.card, SPCM_X1_MODE, (SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH2 | SPCM_XMODE_DIGOUTSRC_BIT15))
+        spcm_dwSetParam_i32(self.card, SPCM_X2_MODE, (SPCM_XMODE_DIGOUT | SPCM_XMODE_DIGOUTSRC_CH3 | SPCM_XMODE_DIGOUTSRC_BIT15))
 
         print("Setup done, reading status...")
         self.print_status()
@@ -236,8 +223,11 @@ class TxCard(SpectrumDevice):
         if not data.dtype == np.int16:
             raise ValueError("Replay data was not provided as numpy int16 values...")
         
+        if not self.card:
+            raise ConnectionError("No connection to card established...")
+        
         # Setup card, clear emergency stop thread event and start thread
-        self.setup_card()
+        # self.setup_card()
         self.emergency_stop.clear()
         self.worker = threading.Thread(target=self._streaming, args=(data, ))
         self.worker.start()
@@ -350,8 +340,8 @@ class TxCard(SpectrumDevice):
         # Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)
         print(f">> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
 
-        del data_buffer
-        del ring_buffer
+        # del data_buffer
+        # del ring_buffer
         
         self.print_status()
         

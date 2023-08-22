@@ -119,7 +119,7 @@ class RxCard(SpectrumDevice):
         # spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)
         # spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)
 
-    def operate(self): #self note: Add type? 
+    def start_operation(self): #self note: Add type? 
         
         event = threading.Event()
         worker = threading.Thread(target=self._receiver_example)#, args=(None)) #
@@ -132,6 +132,9 @@ class RxCard(SpectrumDevice):
         print("\nThread closed, stopping receiver card...")
         
         #print(rx_buffer.value)
+        
+    def stop_operation(self):
+        pass
 
     def _receiver_example(self): #self note: Add type? 
         #rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
