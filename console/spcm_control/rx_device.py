@@ -31,6 +31,10 @@ class RxCard(SpectrumDevice):
         self.lpost_trigger      = int32(0) 
         self.ltrigger_delay     = int32(0)
         self.lx0_mode           = int32(0)
+        
+        
+        self.worker: threading.Thread | None = None
+        
 #    Maybe create channel enable/disable option for later 
     '''
     def channel_lookup(self, enableList: list):
@@ -121,20 +125,22 @@ class RxCard(SpectrumDevice):
 
     def start_operation(self): #self note: Add type? 
         
-        event = threading.Event()
-        worker = threading.Thread(target=self._receiver_example)#, args=(None)) #
-        worker.start()
+        # event = threading.Event()
+        self.worker = threading.Thread(target=self._receiver_example)#, args=(None)) #
+        self.worker.start()
         
         # Join after timeout of 10 seconds
-        worker.join()
+        # worker.join()
         #event.set()
         #worker.join()
-        print("\nThread closed, stopping receiver card...")
+        # print("\nThread closed, stopping receiver card...")
         
         #print(rx_buffer.value)
         
     def stop_operation(self):
-        pass
+        if self.worker is not None:
+            self.worker.join()
+            self.worker = None
 
     def _receiver_example(self): #self note: Add type? 
         #rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
@@ -195,10 +201,12 @@ class RxCard(SpectrumDevice):
         # Todo Scaling to mV.. 
         print(f"Got total samples...        {counter}")
         print(f"Got samples per channel...  {counter2}")
-        with open (r'test.txt','a') as fp:
-            for index1, index2 in zip(range(len(f0_i)),range(len(f1_i))):
-            # write each item on a new line
-                fp.write(str(f0_i[index1]) + " " + str(f1_i[index2])+ "\n")
+        # with open (r'test.txt','a') as fp:
+        #     for index1, index2 in zip(range(len(f0_i)),range(len(f1_i))):
+        #     # write each item on a new line
+        #         fp.write(str(f0_i[index1]) + " " + str(f1_i[index2])+ "\n")
+        np.save("rx_channel_1.npy", f0_i)
+        np.save("rx_channel_2.npy", f1_i)
         print('Done')
         # Post Processing.. To be discussed
         #offset0 /= float(self.memory_size)
