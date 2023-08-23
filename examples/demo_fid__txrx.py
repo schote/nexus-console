@@ -41,10 +41,12 @@ rx_card.connect()
 
 # %%
 rx_card.start_operation()
-time.sleep(2)
-tx_card.start_operation(data)
-time.sleep(3)
-tx_card.stop_operation()
+# %%
+for i in range (10):
+    tx_card.start_operation(data)
+    time.sleep(3)
+    tx_card.stop_operation()
+# %%
 rx_card.stop_operation()
 
 # %%
@@ -55,7 +57,7 @@ rx_card.disconnect()
 
 # %%
 # Plot rx data
-rx_file = "./rx_channel_2.npy"
+rx_file = "./rx_channel_4_2.npy"
 file_exists = False
 while not file_exists:
     file_exists = os.path.exists(rx_file)
@@ -63,12 +65,13 @@ while not file_exists:
 rx_data = np.load(rx_file)
 
 # %%
-sample_rate = 1/40e6
+sample_rate = 1/10e6
 time_points = np.arange(len(rx_data)) * sample_rate
-to_idx = 40000
+#to_idx = 140000
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-ax.plot(time_points[:to_idx]*1e3, np.abs(rx_data[:to_idx]))
+#ax.plot(time_points[:to_idx]*1e3, np.abs(rx_data[:to_idx]))
+ax.plot(time_points*1e3, np.abs(rx_data))
 ax.set_ylabel("RX amplitude")
 ax.set_xlabel("Time [ms]")
 # %%

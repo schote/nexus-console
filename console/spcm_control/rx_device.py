@@ -34,7 +34,7 @@ class RxCard(SpectrumDevice):
         
         
         self.worker: threading.Thread | None = None
-        
+        self.emergency_stop = threading.Event()
 #    Maybe create channel enable/disable option for later 
     '''
     def channel_lookup(self, enableList: list):
@@ -92,11 +92,16 @@ class RxCard(SpectrumDevice):
                 f"Rx device sample rate                {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz...")
         
         # Setup the card mode
-        self.post_trigger = self.memory_size - 8000 #Maybe make it variable? 
+        #self.post_trigger = self.memory_size - 8000 #Maybe make it variable? 
+        self.post_trigger = 5000#(1/self.sample_rate)*8000 #Maybe make it variable? 
+        self.pre_trigger  = 5000#(1/self.sample_rate)*8000 #Maybe make it variable? 
         # FIFO mode
-        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_STD_SINGLE    )
+        spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_FIFO_GATE    )
+        # Single mode
+        #spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_STD_SINGLE    )
         spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE     , self.memory_size      )
         spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , self.post_trigger     )
+        spcm_dwSetParam_i32 (self.card, SPC_PRETRIGGER ,  self.pre_trigger      )
         spcm_dwSetParam_i32 (self.card, SPC_LOOPS       , self.loops            )
         
         spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT1_MODE, SPC_TM_POS)
@@ -107,12 +112,12 @@ class RxCard(SpectrumDevice):
         
 
         
-        spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE     , byref(self.lmemory_size   )) # Read memory size
+        #spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE     , byref(self.lmemory_size   )) # Read memory size
         spcm_dwGetParam_i32 (self.card, SPC_POSTTRIGGER , byref(self.lpost_trigger  )) # Read post trigger
         spcm_dwGetParam_i32 (self.card, SPC_TRIG_DELAY  , byref(self.ltrigger_delay )) # Trigger delay
         spcm_dwGetParam_i32 (self.card, SPCM_X1_MODE    , byref(self.lx0_mode       )) # X0_mode , Can be used as trigger.
         
-        print(f"Rx device memory size:                  {self.lmemory_size}"   )
+        #print(f"Rx device memory size:                  {self.lmemory_size}"   )
         print(f"Post trigger time:                      {self.lpost_trigger}"  )   #todo calculate and write time units 
         print(f"Trigger delay is:                       {self.ltrigger_delay}" )   #todo calculate and write time units 
         print(f"X0 mode is:                             {self.lx0_mode}"       )  
@@ -126,7 +131,8 @@ class RxCard(SpectrumDevice):
     def start_operation(self): #self note: Add type? 
         
         # event = threading.Event()
-        self.worker = threading.Thread(target=self._receiver_example)#, args=(None)) #
+        self.emergency_stop.clear()
+        self.worker = threading.Thread(target=self._FIFO_gated_mode_example)#, args=(None)) #
         self.worker.start()
         
         # Join after timeout of 10 seconds
@@ -139,11 +145,78 @@ class RxCard(SpectrumDevice):
         
     def stop_operation(self):
         if self.worker is not None:
+            self.emergency_stop.set()
             self.worker.join()
+            
+            error = spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
+            self.handle_error(error)
+            
             self.worker = None
+        else:
+            print("No active process found...")
+        
+    def _FIFO_gated_mode_example(self):
+        # Read available memory first
+        rx_data = np.empty(shape=(1, self.memory_size*self.num_channels.value), dtype=np.int16)
+        rx_buffer = rx_data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        lNotifySize = int32 (0) 
+        RxBufferSize = uint64(self.memory_size*2*self.num_channels.value) 
 
+
+        
+        spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 
+                                lNotifySize, rx_buffer, uint64 (0), RxBufferSize)
+        
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 5000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        err = spcm_dwSetParam_i32 (self.card, 
+                                   SPC_M2CMD, 
+                                   M2CMD_CARD_START | 
+                                   M2CMD_CARD_ENABLETRIGGER)
+        self.handle_error(err)
+        print("Card Started...")
+        qwTotalMem = uint64(0)
+        qwToTransfer = uint64(MEGA_B(16))
+        lStatus = int32()
+        lAvailUser = int32()
+        lPCPos = int32()
+        rxCounter = 0
+        while (not self.emergency_stop.is_set()):
+            spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
+            self.handle_error(err)
+            spcm_dwGetParam_i32(self.card, SPC_M2STATUS,            byref(lStatus))
+            spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(lAvailUser))
+            spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_POS, byref(lPCPos))
+            
+            if lAvailUser.value >= lNotifySize.value:
+                qwTotalMem.value += lNotifySize.value
+                sys.stdout.write("Stat:{0:08x} Pos:{1:08x} Avail:{2:08x} Total:{3:.2f}MB/{4:.2f}MB\n".format(lStatus.value, lPCPos.value, lAvailUser.value, c_double(qwTotalMem.value).value / MEGA_B(1), c_double(qwToTransfer.value).value / MEGA_B(1)))
+                f0_i    = np.zeros((self.memory_size), dtype=np.complex128)
+                f1_i    = np.zeros((self.memory_size), dtype=np.complex128)
+                offset0 = np.complex_(0.0)
+                offset1 = np.complex_(0.0)
+                counter = 0
+                counter2 = 0
+                for bufferIndex in range(1,self.memory_size): #int(self.memory_size/self.num_channels.value)-1
+                    counterX = self.num_channels.value*bufferIndex
+                    f0_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX-1])) #Type is complex at the moment we can change it later
+                    f1_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX]))
+                    #offset0 += f0_i[bufferIndex]
+                    #offset1 += f1_i[bufferIndex]
+                    counter = counterX
+                    counter2 = bufferIndex
+                # Todo Scaling to mV.. 
+                print(f"Got total samples...        {counter}")
+                print(f"Got samples per channel...  {counter2}")
+                np.save("rx_channel_" + str(rxCounter+1)+ "_1.npy", f0_i) #Channel 2 #Berk Note fix 
+                np.save("rx_channel_" + str(rxCounter+1)+ "_2.npy", f1_i) #Channel 1
+                rxCounter +=1 
+                print('Done')
+                spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN,  lNotifySize)
+        #spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
+        self.handle_error(err)
     def _receiver_example(self): #self note: Add type? 
         #rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        
         # Create Rx buffer pointer 
         rx_data = np.empty(shape=(1, self.memory_size*self.num_channels.value), dtype=np.int16)
         rx_buffer = rx_data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
