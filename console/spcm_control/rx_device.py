@@ -167,7 +167,7 @@ class RxCard(SpectrumDevice):
         spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 
                                 lNotifySize, rx_buffer, uint64 (0), RxBufferSize)
         
-        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 5000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 25000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
         err = spcm_dwSetParam_i32 (self.card, 
                                    SPC_M2CMD, 
                                    M2CMD_CARD_START | 
@@ -196,7 +196,7 @@ class RxCard(SpectrumDevice):
                 offset1 = np.complex_(0.0)
                 counter = 0
                 counter2 = 0
-                for bufferIndex in range(1,self.memory_size): #int(self.memory_size/self.num_channels.value)-1
+                for bufferIndex in range(int(lPCPos.value),self.memory_size): 
                     counterX = self.num_channels.value*bufferIndex
                     f0_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX-1])) #Type is complex at the moment we can change it later
                     f1_i[bufferIndex-1]   = np.complex_(float(rx_buffer[counterX]))

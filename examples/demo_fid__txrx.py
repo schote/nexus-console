@@ -57,7 +57,7 @@ rx_card.disconnect()
 
 # %%
 # Plot rx data
-rx_file = "./rx_channel_4_2.npy"
+rx_file = "./rx_channel_1_2.npy"
 file_exists = False
 while not file_exists:
     file_exists = os.path.exists(rx_file)
