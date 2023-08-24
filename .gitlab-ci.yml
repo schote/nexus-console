@@ -10,11 +10,11 @@ before_script:
   - pip install ".[lint]"
 
 stages:
-  - static tests
+  - static_tests
   - documentation
     
 lint:
-  stage: Static Analysis
+  stage: static_tests
   script:
     - poe lint
 
