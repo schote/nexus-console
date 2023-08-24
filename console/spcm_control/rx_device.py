@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import ctypes
 import numpy as np
 import threading
-import time
+from datetime import datetime
 
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
@@ -93,8 +93,8 @@ class RxCard(SpectrumDevice):
         
         # Setup the card mode
         #self.post_trigger = self.memory_size - 8000 #Maybe make it variable? 
-        self.post_trigger = 5000#(1/self.sample_rate)*8000 #Maybe make it variable? 
-        self.pre_trigger  = 5000#(1/self.sample_rate)*8000 #Maybe make it variable? 
+        self.post_trigger = 8#(1/self.sample_rate)*8000 #Maybe make it variable? 
+        self.pre_trigger  = 8#(1/self.sample_rate)*8000 #Maybe make it variable? 
         # FIFO mode
         spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_FIFO_GATE    )
         # Single mode
@@ -102,6 +102,8 @@ class RxCard(SpectrumDevice):
         spcm_dwSetParam_i32 (self.card, SPC_MEMSIZE     , self.memory_size      )
         spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , self.post_trigger     )
         spcm_dwSetParam_i32 (self.card, SPC_PRETRIGGER ,  self.pre_trigger      )
+        # spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , 0)
+        # spcm_dwSetParam_i32 (self.card, SPC_PRETRIGGER , 0)
         spcm_dwSetParam_i32 (self.card, SPC_LOOPS       , self.loops            )
         
         spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT1_MODE, SPC_TM_POS)
@@ -161,13 +163,11 @@ class RxCard(SpectrumDevice):
         rx_buffer = rx_data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         lNotifySize = int32 (0) 
         RxBufferSize = uint64(self.memory_size*2*self.num_channels.value) 
-
-
         
         spcm_dwDefTransfer_i64 (self.card, SPCM_BUF_DATA, SPCM_DIR_CARDTOPC, 
                                 lNotifySize, rx_buffer, uint64 (0), RxBufferSize)
         
-        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 25000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
+        spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 10000) #Todo: trigger timeout set to 10 seconds. Maybe make it variable?
         err = spcm_dwSetParam_i32 (self.card, 
                                    SPC_M2CMD, 
                                    M2CMD_CARD_START | 
@@ -181,6 +181,7 @@ class RxCard(SpectrumDevice):
         lPCPos = int32()
         rxCounter = 0
         while (not self.emergency_stop.is_set()):
+            # spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 1000)
             spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)
             self.handle_error(err)
             spcm_dwGetParam_i32(self.card, SPC_M2STATUS,            byref(lStatus))
@@ -207,13 +208,16 @@ class RxCard(SpectrumDevice):
                 # Todo Scaling to mV.. 
                 print(f"Got total samples...        {counter}")
                 print(f"Got samples per channel...  {counter2}")
-                np.save("rx_channel_" + str(rxCounter+1)+ "_1.npy", f0_i) #Channel 2 #Berk Note fix 
-                np.save("rx_channel_" + str(rxCounter+1)+ "_2.npy", f1_i) #Channel 1
+                rx_time = datetime.now().strftime("%Y%m%d-%H%M%S")
+                # np.save("rx_channel_" + str(rxCounter+1)+ "_1.npy", f0_i) #Channel 2 #Berk Note fix 
+                # np.save(f"rx_{rx_time}.npy", f1_i) #Channel 1
+                np.save(f"rx_debug.npy", f1_i)
                 rxCounter +=1 
                 print('Done')
                 spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN,  lNotifySize)
         #spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)
         self.handle_error(err)
+        
     def _receiver_example(self): #self note: Add type? 
         #rx_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         

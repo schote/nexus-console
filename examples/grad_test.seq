@@ -9,7 +9,7 @@ revision 0
 [DEFINITIONS]
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
-GradientRasterTime 0.0005 
+GradientRasterTime 1e-05 
 Name gradient_test 
 RadiofrequencyRasterTime 1e-06 
 
@@ -17,7 +17,7 @@ RadiofrequencyRasterTime 1e-06
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
 [BLOCKS]
 1 400   0   1   0   0  1  0
-2 100   0   0   0   0  0  0
+2 200   0   0   0   0  0  0
 3 400   0   2   0   0  1  0
 
 # Format of arbitrary gradients:
@@ -55,17 +55,17 @@ num_samples 12
 shape_id 2
 num_samples 12
 0
-0.4
-1.2
-1.6
-2.4
-2.8
-5.2
-5.6
-6.4
-6.8
-7.6
-8
+20
+60
+80
+120
+140
+260
+280
+320
+340
+380
+400
 
 shape_id 3
 num_samples 6
@@ -79,11 +79,11 @@ num_samples 6
 shape_id 4
 num_samples 6
 0
-0.8
-2.4
-3.2
-4.8
-6.4
+40
+120
+160
+320
+400
 
 
 [SIGNATURE]
@@ -91,4 +91,4 @@ num_samples 6
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 9c3c67acdc7459994ef28203e2831086
+Hash d4e24255dc9665cfbc5639254cb38a3c

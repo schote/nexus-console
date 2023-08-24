@@ -3,7 +3,6 @@ from pypulseq.Sequence.sequence import Sequence
 from pypulseq.make_adc import make_adc
 from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_delay import make_delay
-from pypulseq.opts import Opts
 import numpy as np
 
 from console.utilities.sequence_plot import get_sequence_plot
@@ -21,14 +20,7 @@ amp4 = 200000
 flat_time = 400e-6
 rise_time = 200e-6
 
-
-# ADC event
-# TODO: Add dead time at the beginning? Currently ADC starts at 1/2 of gradient rise time
-# => Add 1/2 of gradient rise time
-adc = make_adc(
-    num_samples=num_samples,
-    duration=adc_duration, 
-)
+adc = make_adc(num_samples=num_samples, duration=adc_duration)
 
 g1_t = np.array([
     0, 
@@ -75,7 +67,8 @@ seq.plot(time_disp='ms')
 # ok, e = seq.check_timing()
 # seq.plot(time_range=(0, 1e-3), time_disp='us') if ok else print(e)
 
+
 # %% 
 # Write sequence
-seq.write('grad_test.seq')
+seq.write('gradient_test.seq')
 # %%

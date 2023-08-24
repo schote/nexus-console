@@ -41,9 +41,11 @@ class SequenceProvider(Sequence):
         for k in self.block_events.keys():
             if (b := self.get_block(k)).rf:
                 rf_durations.append(b.rf.shape_dur)
-        rf_dur_max = max(rf_durations)
-        self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
-        self.carrier = np.exp(2j*np.pi * self.f0 * self.carrier_time)
+                
+        if len(rf_durations) > 0:
+            rf_dur_max = max(rf_durations)
+            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
+            self.carrier = np.exp(2j*np.pi * self.f0 * self.carrier_time)
 
     def calculate_rf(self, rf_block, num_total_samples: int) -> np.ndarray:
         """Calculates RF sample points to be played by TX card.
