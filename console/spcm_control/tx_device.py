@@ -339,9 +339,6 @@ class TxCard(SpectrumDevice):
         print("FIFO LOOP FINISHED...")
         # Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)
         print(f">> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
-
-        # del data_buffer
-        # del ring_buffer
         
         self.print_status()
         

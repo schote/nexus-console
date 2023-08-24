@@ -28,7 +28,6 @@ rise_time = 200e-6
 adc = make_adc(
     num_samples=num_samples,
     duration=adc_duration, 
-    system=system, 
 )
 
 g1_t = np.array([

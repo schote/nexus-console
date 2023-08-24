@@ -1,7 +1,5 @@
 # %%
 # imports
-import time
-
 import numpy as np
 
 from console.utilities.io import get_sequence_provider
@@ -10,19 +8,15 @@ from console.utilities.line_plots import plot_spcm_data
 # %%
 # Get sequence provider object and read sequence
 seq = get_sequence_provider("../device_config.yaml")
-seq.read("./pulseq/fid_proj.seq")
+# seq.read("./sequences/fid_proj.seq")
+seq.read("./sequences/txrx_test.seq")
 
 # %%
-t0 = time.time()
 sqnc, gate, total_samples = seq.unroll_sequence()
-t_execution = time.time() - t0
 
 # Sequence and adc gate are returned as list of numpy arrays => concatenate them
 sqnc = np.concatenate(sqnc)
 gate = np.concatenate(gate)
-
-print(f"Sequence unrolling: {t_execution} s")
-print(f"Total number of sampling points (per channel): {total_samples}")
 
 # %%
 # Combine sequence and gate 
