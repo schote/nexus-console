@@ -10,9 +10,21 @@ before_script:
   - pip install ".[lint]"
 
 stages:
-  - Static Analysis
+  - static tests
+  - documentation
     
 lint:
   stage: Static Analysis
   script:
     - poe lint
+
+pages:
+  stage: documentation
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html . public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
