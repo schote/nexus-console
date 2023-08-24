@@ -7,7 +7,7 @@ variables:
 before_script:
   - python --version
   - pip install --upgrade pip
-  - pip install ".[lint]"
+  - pip install ".[lint, docs]"
 
 stages:
   - static_tests
@@ -22,11 +22,10 @@ lint:
 pages:
   stage: documentation
   script:
-  - pip install -U sphinx
-  - sphinx-build -b html . public
+  - sphinx-build -b html ./docs ./docs/public
   artifacts:
     paths:
-    - public
+    - ./docs/public
   only:
   - main
   - development
