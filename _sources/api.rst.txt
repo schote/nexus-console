@@ -1,5 +1,5 @@
-API
-===
+Spectrum-Console API
+====================
 
 API documentation for spectrum instrumentation devices and pulseq sequence provider.
 
