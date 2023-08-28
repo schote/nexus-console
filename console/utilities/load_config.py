@@ -1,3 +1,4 @@
+"""Utility functions for loading configuration and adding constructors."""
 import os
 
 import yaml
@@ -25,7 +26,8 @@ yaml_loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construc
 def read_config(path_to_config: str) -> dict:
     """Read configuration yaml file with custom yaml loader.
 
-    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and pypulseq parameters.
+    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and 
+    pypulseq parameters.
 
     Parameters
     ----------

@@ -14,8 +14,8 @@ from pypulseq import Sequence  # type: ignore
 class TraceData:
     """Numpy model for trace data."""
 
-    x: list[float]
-    y: list[float]
+    time_points: list[float]
+    signal_values: list[float]
     name: str
 
 
@@ -119,11 +119,11 @@ def get_sequence_plot(
 
     return generate_plotly_figure(
         [
-            TraceData(x=tx_data[0], y=tx_data[1], name="Tx"),
-            TraceData(x=rx_data[0], y=rx_data[1], name="Rx"),
-            TraceData(x=gradients["gx"][0], y=gradients["gx"][1], name="Gx"),
-            TraceData(x=gradients["gy"][0], y=gradients["gy"][1], name="Gy"),
-            TraceData(x=gradients["gz"][0], y=gradients["gz"][1], name="Gz"),
+            TraceData(time_points=tx_data[0], signal_values=tx_data[1], name="Tx"),
+            TraceData(time_points=rx_data[0], signal_values=rx_data[1], name="Rx"),
+            TraceData(time_points=gradients["gx"][0], signal_values=gradients["gx"][1], name="Gx"),
+            TraceData(time_points=gradients["gy"][0], signal_values=gradients["gy"][1], name="Gy"),
+            TraceData(time_points=gradients["gz"][0], signal_values=gradients["gz"][1], name="Gz"),
         ]
     )
 
@@ -144,8 +144,8 @@ def generate_plotly_figure(traces: list[TraceData]):
     for k, trace in enumerate(traces):
         fig.add_trace(
             go.Scatter(
-                x=trace.x,
-                y=trace.y,
+                x=trace.time_points,
+                y=trace.signal_values,
                 name=trace.name,
                 yaxis=f"y{len(traces)-k}",
                 mode="lines",

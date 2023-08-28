@@ -5,10 +5,10 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from console.utilities.io import (RxCard, SequenceProvider, TxCard,
+from console.utilities.load_config import (RxCard, SequenceProvider, TxCard,
                                   get_rx_card, get_sequence_provider,
                                   get_tx_card)
-from console.utilities.line_plots import plot_spcm_data
+from console.utilities.spcm_data_plot import plot_spcm_data
 
 # %%
 # Get sequence provider object and read sequence

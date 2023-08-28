@@ -7,7 +7,7 @@ from pprint import pprint
 import numpy as np
 
 from console.spcm_control.device_interface import SpectrumDevice
-from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
+from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=wildcard-import,unused-wildcard-import
 from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status
 
 
@@ -16,8 +16,9 @@ class TxCard(SpectrumDevice):
     """
     Implementation of TX device.
 
-    Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(), setup_card() and operate().
-    The TxCard is automatically instantiated by a yaml-loader when loading the configuration file.
+    Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(),
+    setup_card() and operate(). The TxCard is automatically instantiated by a yaml-loader when
+    loading the configuration file.
 
     The implementation was done and tested with card M2p6546-x4, which has an onboard
     memory size of 512 MSample, 2 Bytes/sample => 1024 MB.
@@ -53,7 +54,8 @@ class TxCard(SpectrumDevice):
         # Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)
         if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
             raise MemoryError(
-                "Ring buffer size is not a multiple of channel sample product (number of enables channels times 2 byte per sample)"
+                "Ring buffer size is not a multiple of channel sample product \
+                (number of enables channels times 2 byte per sample)"
             )
 
         if self.ring_buffer_size.value % self.notify_rate == 0:
@@ -79,7 +81,8 @@ class TxCard(SpectrumDevice):
         Raises
         ------
         Warning
-            The actual set sample rate deviates from the corresponding class attribute to be set, class attribute is overwritten.
+            The actual set sample rate deviates from the corresponding class attribute to be set,
+            class attribute is overwritten.
         """
         # Reset card
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)
@@ -100,7 +103,8 @@ class TxCard(SpectrumDevice):
         print(f"Tx device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != MEGA(self.sample_rate):
             raise Warning(
-                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
+                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate \
+                of {self.sample_rate} MHz..."
             )
 
         # Enable and setup channels
@@ -184,8 +188,7 @@ class TxCard(SpectrumDevice):
                 raise ValueError(
                     f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
                 )
-            else:
-                sequence[k::4] = rel_values * np.iinfo(np.int16).max
+            sequence[k::4] = rel_values * np.iinfo(np.int16).max
 
         # Convert float to int16
         sequence = sequence.astype(np.int16)
@@ -282,7 +285,8 @@ class TxCard(SpectrumDevice):
         data_buffer_samples_per_ch = uint64(int(self.data_buffer_size / (self.num_ch * 2)))
         # Report replay buffer size and samples
         print(
-            f"Replay data buffer size in bytes: {self.data_buffer_size}, number of samples per channel: {data_buffer_samples_per_ch.value}..."
+            f"Replay data buffer size in bytes: {self.data_buffer_size}, \
+                number of samples per channel: {data_buffer_samples_per_ch.value}..."
         )
 
         # >> Define software buffer
@@ -335,7 +339,8 @@ class TxCard(SpectrumDevice):
                 ).value
                 data_buffer_position = cast(data_buffer, c_void_p).value + transferred_bytes
 
-                # Move memory: Current ring buffer position, position in sequence data and amount to transfer (=> notify size)
+                # Move memory: Current ring buffer position,
+                # position in sequence data and amount to transfer (=> notify size)
                 ctypes.memmove(ring_buffer_position, data_buffer_position, self.notify_size.value)
 
                 spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, self.notify_size)

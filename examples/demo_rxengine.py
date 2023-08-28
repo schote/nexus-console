@@ -3,8 +3,8 @@ import os
 import yaml
 import numpy as np
 
-from console.utilities.line_plots import plot_spcm_data
-from console.utilities.io import yaml_loader
+from console.utilities.spcm_data_plot import plot_spcm_data
+from console.utilities.load_config import yaml_loader
 #from console.spcm_control.tx_device import TxCard
 from console.spcm_control.rx_device import RxCard
 

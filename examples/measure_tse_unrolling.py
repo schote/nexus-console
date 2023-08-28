@@ -3,7 +3,7 @@
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 import time
 import numpy as np
-from console.utilities.line_plots import plot_spcm_data
+from console.utilities.spcm_data_plot import plot_spcm_data
 
 # %%
 # Read sequence

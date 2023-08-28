@@ -1,14 +1,20 @@
-from dataclasses import dataclass
+"""Collection of post processing utilities."""
 
 import numpy as np
 
 
-@dataclass
-class ReceiverPostProcessing:
-    name: str
+def window(data: float):
+    """Window function for receive data post processing.
 
+    Parameters
+    ----------
+    data
+        Float data sample to window
 
-def wind(data: float):
+    Returns
+    -------
+        Windowed data sample
+    """
     np.pi = 4.0 * np.arctan(1.0)
     if abs(data) <= 1.0:
         if abs(data) != 0.0:

@@ -1,3 +1,5 @@
+"""Plot function for spcm formatted data array."""
+
 import matplotlib.pyplot as plt
 import numpy as np
 

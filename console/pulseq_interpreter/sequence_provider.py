@@ -1,13 +1,27 @@
-# %%
+"""Sequence provider class."""
+
 import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
-from tqdm.auto import tqdm
 
 
 class SequenceProvider(Sequence):
-    """Sequence provider class, inherited from pulseq sequence object."""
+    """Sequence provider class.
+
+    This object is inherited from pulseq sequence object, so that all methods of the
+    pypulseq ``Sequence`` object can be accessed.
+
+    The main functionality of the ``SequenceProvider`` is to unroll a given pulseq sequence.
+    Usually the first step is to read a sequence file. The unrolling step can be achieved using
+    the ``unroll_sequence()`` function.
+
+    Example
+    -------
+    >>> seq = SequenceProvider()
+    >>> seq.read("./seq_file.seq")
+    >>> sqnc, gate, total_samples = seq.unroll_sequence()
+    """
 
     def __init__(
         self,
@@ -26,7 +40,7 @@ class SequenceProvider(Sequence):
 
         self.spcm_freq = 1 / spcm_sample_rate
         self.spcm_sample_rate = spcm_sample_rate
-        self.f0 = self.system.B0 * self.system.gamma
+        self.larmor_freq = self.system.B0 * self.system.gamma
 
         self.dtype = np.double if rf_double_precision else np.single
 
@@ -40,13 +54,13 @@ class SequenceProvider(Sequence):
         """
         rf_durations = []
         for k in self.block_events.keys():
-            if (b := self.get_block(k)).rf:
-                rf_durations.append(b.rf.shape_dur)
+            if (block := self.get_block(k)).rf:
+                rf_durations.append(block.rf.shape_dur)
 
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
             self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
-            self.carrier = np.exp(2j * np.pi * self.f0 * self.carrier_time)
+            self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
 
     def calculate_rf(self, rf_block, num_total_samples: int) -> np.ndarray:
         """Calculates RF sample points to be played by TX card.
@@ -97,19 +111,19 @@ class SequenceProvider(Sequence):
 
         # Update: Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency offset of an RF block event
-        carrier = np.exp(2j * np.pi * (self.f0 + rf_block.freq_offset) * self.carrier_time[:num_samples])
+        carrier = np.exp(2j * np.pi * (self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples])
         signal = (envelope * carrier * phase_offset).real
 
         # Combine signal from delays and rf
-        rf = np.concatenate((delay, signal, ringdown_time, dead_time))
+        rf_pulse = np.concatenate((delay, signal, ringdown_time, dead_time))
 
-        if (num_signal_samples := len(rf)) < num_total_samples:
+        if (num_signal_samples := len(rf_pulse)) < num_total_samples:
             # Zero-fill rf signal
-            rf = np.concatenate((rf, np.zeros(num_total_samples - num_signal_samples, dtype=self.dtype)))
+            rf_pulse = np.concatenate((rf_pulse, np.zeros(num_total_samples - num_signal_samples, dtype=self.dtype)))
         elif num_signal_samples > num_total_samples:
             raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
 
-        return rf * self.rf_to_volt
+        return rf_pulse * self.rf_to_volt
 
     def calculate_gradient(self, block, num_total_samples: int, amp_offset: float = 0.0) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
@@ -168,6 +182,15 @@ class SequenceProvider(Sequence):
         return gradient * self.grad_to_volt
 
     def add_adc_gate(self, block, gate: np.ndarray) -> None:
+        """Adds ADC gate signal inplace to gate array.
+
+        Parameters
+        ----------
+        block
+            ADC event of sequence block.
+        gate
+            Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.
+        """
         delay = int(block.delay / self.spcm_sample_rate)
         # dead_dur = max(self.system.adc_dead_time, block.dead_time)
         # dead_time = int(dead_dur / self.spcm_sample_rate)
@@ -228,7 +251,6 @@ class SequenceProvider(Sequence):
 
             _seq[k] = np.stack((rf_tmp, gx_tmp, gy_tmp, gz_tmp)).flatten(order="F")
 
-            # TODO: Extract ADC event, how to save ADC? => Remeber sample number for switching or sequence of (0, 1)?
             if block.adc:
                 self.add_adc_gate(block.adc, _adc[k])
 

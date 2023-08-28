@@ -1,7 +1,9 @@
 """Device interface class."""
 from abc import ABC, abstractmethod
 
-from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
+import numpy as np
+
+from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=wildcard-import,unused-wildcard-import
 from console.spcm_control.spcm.spcm_tools import translate_error, type_to_name
 
 
@@ -33,20 +35,25 @@ class SpectrumDevice(ABC):
             self.name = None
 
     def connect(self):
-        """Establish card connection."""
-        # Open card
-        print(f"Connecting to card...")
+        """Establish card connection.
+
+        Raises
+        ------
+        ConnectionError
+            Connection to card already exists
+        ConnectionError
+            Connection could not be established
+        """
+        print("Connecting to card...")
         if self.card:
-            raise ConnectionError(f"Already connected to card")
-        else:
-            # Only connect, if card is not already defined
-            self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
+            # Raise connection error if card object already exists
+            raise ConnectionError("Already connected to card")
+        # Only connect, if card is not already defined
+        self.card = spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
             # Read card information
             card_type = int32(0)
             spcm_dwGetParam_i32(self.card, SPC_PCITYP, byref(card_type))
-            # func_type = int32(0)
-            # spcm_dwGetParam_i32(self.card, SPC_FNCTYPE, byref(func_type))
 
             # write values to settings
             self.name = type_to_name(card_type.value)
@@ -73,19 +80,25 @@ class SpectrumDevice(ABC):
     @abstractmethod
     def get_status(self):
         """Abstract method to obtain card status."""
-        pass
 
     @abstractmethod
     def setup_card(self):
         """Abstract method to setup the card."""
-        pass
 
     @abstractmethod
     def start_operation(self):
         """Abstract method to start card operation."""
-        pass
+
+    @abstractmethod
+    def start_operation(self, data: np.ndarray):
+        """Abstract method to start card operation.
+
+        Parameters
+        ----------
+        data
+            Replay data as numpy array in correct format and order
+        """
 
     @abstractmethod
     def stop_operation(self):
         """Abstract method to stop card operation."""
-        pass

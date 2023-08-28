@@ -3,8 +3,8 @@ import numpy as np
 
 #Added for buffer stuff
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
-from console.utilities.io import TxCard, get_tx_card
-from console.utilities.line_plots import plot_spcm_data
+from console.utilities.load_config import TxCard, get_tx_card
+from console.utilities.spcm_data_plot import plot_spcm_data
 
 # %%
 tx_card: TxCard = get_tx_card("../device_config.yaml")
