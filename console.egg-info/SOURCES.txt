@@ -1,8 +1,0 @@
-LICENSE
-README.md
-setup.py
-console.egg-info/PKG-INFO
-console.egg-info/SOURCES.txt
-console.egg-info/dependency_links.txt
-console.egg-info/requires.txt
-console.egg-info/top_level.txt

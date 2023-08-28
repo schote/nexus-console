@@ -9,27 +9,43 @@ Here we briefly show, how to setup a virtual environment with miniconda. To get 
 
 You can check your python version by running `python --version`.
 
-1. Open a new terminal/command prompt and go to the repository folder `/spectrum-pulseq`. For simplicity we are going to create our virtual environment in here, alternatively you can also create it in your default environments folder (configurable in the `.condarc`file which can be found in `C:\Users\<username>`) by using a different prefix. We create the environment with python version [3.10](https://peps.python.org/pep-0619/).
-```
-conda create --prefix=./.venv python==3.10
-```
+Install `spectrum-console`:
 
-2. We activate the virtual environment with the following command.
-```
-conda activate .\.venv
-```
-Now, the path to your virtual environment should appear in front of the current path in your terminal/command prompt.
+1. **Open a new terminal/command prompt to create a new virtual environment.**
+   
+   We are using conda, but of course you can use any other tool to create a virtual environment as well. We create the environment with python version [3.11](https://peps.python.org/pep-0664/).
+   
+   ```
+   conda create <env-name> python==3.11
+   ```
 
-3. You can check your python version by running `python --version`, it should print some version of `3.10.XX`.
+   _Hint: 
+   We use the defalt environment directory, but you can also create it in custom environments folder (configurable in the `.condarc` file which should be located in your home directory). Use `--prefix <custom/destination/>` to choose an individual path for the conda enironment._
 
-4. Within the activated virtual environment you can you `pip` to install [packages](https://pypi.org/). Anything you install within the virtual environment is only available if the environment is active. 
+2. **Activate the virtual environment**
+   ```
+   conda activate <env-name>
+   ```
+   Now the name of the virtual environment should appear in front of the current path in your terminal/command prompt.
+   
+   _Hint: You can check your python version by running `python --version`, it should print some version of `3.10.XX`._
 
-5. To install the console application just ensure that you are still in the repository directory and simply enter:
-```
-pip install -e .
-```
-If the installation was successful you are good to go.
+3. **Install the package**
+   
+   To install the console application, ensure that you are in the repository directory (`*/spectrum-console/`). The enter the following command.
+    
+    ```
+    pip install -e .
+    ```
 
+    To install optional dependencies you can use one of the following commands or similar:
+    ```
+    pip install -e ".[lint]"
+    pip install -e ".[test]"
+    pip install -e ".[lint, test]"
+    ```
+    
+    _Hint: Within the activated virtual environment you can install additional [packages](https://pypi.org/) with `pip`. Anything you install within the virtual environment is only available if the environment is active. Packages which should be installed with the project should be added to the `pyproject.toml` file_
 
 
 ## Troubleshooting
