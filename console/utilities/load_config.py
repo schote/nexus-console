@@ -9,15 +9,15 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 
 # >> Create yaml loader object
-yaml_loader = yaml.SafeLoader
+Loader = yaml.SafeLoader
 
 # >> Add constructors to PyYAML loader
-yaml_loader.add_constructor("!RxCard", lambda loader, node: RxCard(**loader.construct_mapping(node, deep=True)))
-yaml_loader.add_constructor("!TxCard", lambda loader, node: TxCard(**loader.construct_mapping(node, deep=True)))
-yaml_loader.add_constructor(
+Loader.add_constructor("!RxCard", lambda loader, node: RxCard(**loader.construct_mapping(node, deep=True)))
+Loader.add_constructor("!TxCard", lambda loader, node: TxCard(**loader.construct_mapping(node, deep=True)))
+Loader.add_constructor(
     "!SequenceProvider", lambda loader, node: SequenceProvider(**loader.construct_mapping(node, deep=True))
 )
-yaml_loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construct_mapping(node, deep=True)))
+Loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construct_mapping(node, deep=True)))
 
 
 # >> Helper functions to read configuration file
@@ -26,7 +26,7 @@ yaml_loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construc
 def read_config(path_to_config: str) -> dict:
     """Read configuration yaml file with custom yaml loader.
 
-    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and 
+    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and
     pypulseq parameters.
 
     Parameters
@@ -40,7 +40,7 @@ def read_config(path_to_config: str) -> dict:
     """
     file_path = os.path.normpath(path_to_config)
     with open(file_path, "rb") as file:
-        config = yaml.load(file, Loader=yaml_loader)
+        config = yaml.load(file, Loader=Loader)
     return config
 
 

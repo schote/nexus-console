@@ -4,7 +4,7 @@ import yaml
 import numpy as np
 
 from console.utilities.spcm_data_plot import plot_spcm_data
-from console.utilities.load_config import yaml_loader
+from console.utilities.load_config import Loader
 #from console.spcm_control.tx_device import TxCard
 from console.spcm_control.rx_device import RxCard
 
@@ -16,7 +16,7 @@ config_file = os.path.normpath("../device_config.yaml")
 
 # Load config
 with open(config_file, 'rb') as file:
-    config = yaml.load(file, Loader=yaml_loader)
+    config = yaml.load(file, Loader=Loader)
 
 # Get devices: RxCard or TxCard, take first card in list
 devices = config["devices"]

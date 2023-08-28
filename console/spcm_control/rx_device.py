@@ -9,7 +9,6 @@ import numpy as np
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
 from console.spcm_control.spcm.spcm_tools import *  # noqa # pylint: disable=unused-wildcard-import
-from console.utilities.post_processing import wind
 
 
 @dataclass

@@ -4,7 +4,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
+def plot_spcm_data(data: np.ndarray, contains_gate: bool = False) -> plt.figure.Figure:
+    """Plot replay data for spectrum-instrumentation data in final card format.
+
+    Parameters
+    ----------
+    data
+        Numpy array containing the replay data
+    contains_gate, optional
+        Flag which indicates if replay data is contained in channels 1, 2 and 3, by default False
+
+    Returns
+    -------
+        Matplotlib figure
+
+    Raises
+    ------
+    ValueError
+        Provided replay data is not in int16 format
+    """
     num_channels = 4
     fig, ax = plt.subplots(num_channels + int(contains_gate), 1, figsize=(16, 9))
     minmax = []
@@ -29,7 +47,7 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
         minmax.append((_min - abs(_min) * 0.1, _max + abs(_max) * 0.1))
 
         ax[k].plot(_data)
-        ax[k].set_ylabel("Channel {}".format(k + 1))
+        ax[k].set_ylabel("Channel ", k + 1)
 
         if not minmax[k][0] == minmax[k][1]:
             ax[k].set_ylim(minmax[k])
