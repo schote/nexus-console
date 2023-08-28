@@ -32,4 +32,4 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'sphinx_rtd_theme'
 html_show_sphinx = False
-html_static_path = ['_static']
+# html_static_path = ['_static']

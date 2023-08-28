@@ -1,12 +1,9 @@
 import threading
-import time
 
 import numpy as np
-import yaml
 
-from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.spcm_control.device_interface import RxCard, TxCard
-from console.utilities.io import yaml_loader
+from console.spcm_control.rx_device import RxCard
+from console.spcm_control.tx_device import TxCard
 
 
 class AcquistionControl:
