@@ -4,10 +4,10 @@ import sys
 from ctypes import *
 
 # load registers for easier access
-from console.spcm_control.py_header.regs import *
+from console.spcm_control.py_header.errors import *
 
 # load registers for easier access
-from console.spcm_control.py_header.errors import *
+from console.spcm_control.py_header.regs import *
 
 SPCM_DIR_PCTOCARD = 0
 SPCM_DIR_CARDTOPC = 1
@@ -48,9 +48,7 @@ uptr64 = POINTER(uint64)
 
 # Windows
 if os.name == "nt":
-    sys.stdout.write(
-        "Python Version: {0} on Windows\n\n".format(platform.python_version())
-    )
+    sys.stdout.write("Python Version: {0} on Windows\n\n".format(platform.python_version()))
 
     # define card handle type
     if bIs64Bit:
@@ -171,9 +169,7 @@ if os.name == "nt":
 
 
 elif os.name == "posix":
-    sys.stdout.write(
-        "Python Version: {0} on Linux\n\n".format(platform.python_version())
-    )
+    sys.stdout.write("Python Version: {0} on Linux\n\n".format(platform.python_version()))
 
     # define card handle type
     if bIs64Bit:

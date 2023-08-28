@@ -27,11 +27,10 @@ class AcquistionControl:
         tx_thread = threading.Thread(
             target=self.tx_engine.operate, args=(sequence,)
         )  # args=(sequence.rollout_sequence(), )
-        rx_thread = threading.Thread(target=self.rx_engine.operate, args=(data, ))
-        
+        rx_thread = threading.Thread(target=self.rx_engine.operate, args=(data,))
+
         rx_thread.start()
         tx_thread.start()
-        
 
         # Report progress
         # while tx_thread.is_alive():

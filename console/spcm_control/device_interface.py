@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 
 from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=unused-wildcard-import
-from console.spcm_control.spcm.spcm_tools import type_to_name, translate_error
+from console.spcm_control.spcm.spcm_tools import translate_error, type_to_name
 
 
 class SpectrumDevice(ABC):
@@ -67,7 +67,7 @@ class SpectrumDevice(ABC):
             # Disconnect and raise error
             print(f"Catched error:\n{err_msg}\nStopping card {self.name}...")
             spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_STOP)
-            
+
             raise Warning(translate_error(error))
 
     @abstractmethod
@@ -84,7 +84,7 @@ class SpectrumDevice(ABC):
     def start_operation(self):
         """Abstract method to start card operation."""
         pass
-    
+
     @abstractmethod
     def stop_operation(self):
         """Abstract method to stop card operation."""

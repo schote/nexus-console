@@ -46,14 +46,15 @@ ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm
 
 [tool.flake8]
 max-line-length = 120
-ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
+exclude = "console/spcm_control/py_header/,console/spcm_control/spcm/"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 
 [tool.black]
-max-line-length = 120
+line-length = 120
+target-version = ['py310']
 
 # [tool.mypy-plotly]
 # ignore_missing_imports = true   # missing 3rd party stubs

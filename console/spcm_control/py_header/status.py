@@ -31,6 +31,5 @@ status_reg_desc: dict[int, str] = {
     M2STAT_DATA_BLOCKREADY: "The next data block as defined in the notify size is available. It is at least the amount of data available but it also can be more data.",
     M2STAT_DATA_END: "The data transfer has completed. This status information will only occur if the notify size is set to zero.",
     M2STAT_DATA_OVERRUN: "The data transfer had on overrun (acquisition) or underrun (replay) while doing FIFO transfer.",
-    M2STAT_DATA_ERROR: "An internal error occurred while doing data transfer."
+    M2STAT_DATA_ERROR: "An internal error occurred while doing data transfer.",
 }
-

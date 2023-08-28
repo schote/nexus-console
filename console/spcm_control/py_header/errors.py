@@ -127,7 +127,7 @@ error_reg: dict[int, str] = {
     ERR_MEMINIT: "On-board memory initialization error. Power cycle the PC and try another PCIe slot (if possible). In case that the error persists, please contact Spectrum support for further assistance.",
     ERR_POWERSUPPLY: "On-board power supply error. Power cycle the PC and try another PCIe slot (if possible). In case that the error persists, please contact Spectrum support for further assistance.",
     ERR_ADCCOMMUNICATION: "Communication with ADC failed.P ower cycle the PC and try another PCIe slot (if possible). In case that the error persists, please contact Spectrum support for further assistance.",
-    ERR_CHANNEL: "The channel number may not be accessed on the board: Either it is not a valid channel number or the channel is not accessible due to the current setup (e.g. Only channel 0 is accessible in interlace mode)", 
+    ERR_CHANNEL: "The channel number may not be accessed on the board: Either it is not a valid channel number or the channel is not accessible due to the current setup (e.g. Only channel 0 is accessible in interlace mode)",
     ERR_NOTIFYSIZE: "The notify size of the last spcm_dwDefTransfer call is not valid. The notify size must be a multiple of the page size of 4096. For data transfer it may also be a fraction of 4k in the range of 16, 32, 64, 128, 256, 512, 1k or 2k. For ABA and timestamp the notify size can be 2k as a minimum.",
     ERR_RUNNING: "The board is still running, this function is not available now or this register is not accessible now.",
     ERR_ADJUST: "Automatic card calibration has reported an error. Please check the card inputs.",
