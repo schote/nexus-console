@@ -6,6 +6,10 @@ on:
       - main
       - development
       - documentation
+  pull_request:
+    branches:
+      - main
+      - documentation
 
 jobs:
   Documentation:
@@ -33,5 +37,6 @@ jobs:
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
+        publish_branch: github-pages
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./docs/build/html
