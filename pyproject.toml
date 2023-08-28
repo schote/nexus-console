@@ -28,7 +28,7 @@ dependencies = [
 [project.optional-dependencies]
 test = ["coverage", "codecov", "pre-commit"]
 lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet"]
-docs = ["sphinx", "sphinx_rtd_theme"]
+docs = ["sphinx", "pydata-sphinx-theme"]
 examples = ["nbformat>=4.2.0", "ipykernel", "ipython"]
 
 [tool.pydocstyle]
