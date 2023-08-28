@@ -150,8 +150,7 @@ class TxCard(SpectrumDevice):
         ----------
         sequence
             Replay data as float values in correctly ordered numpy array.
-            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
-            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+            
         adc_gate
             ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
             The gate signal is replayed on digital outputs X0, X1, X2
@@ -159,6 +158,12 @@ class TxCard(SpectrumDevice):
         Returns
         -------
             Recombined sequence as numpy array with digital adc gate signal (if provided)
+            
+        Example
+        -------
+            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
+            
+            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
 
         Raises
         ------
@@ -211,9 +216,8 @@ class TxCard(SpectrumDevice):
         Parameters
         ----------
         data
-            Replay data as int16 numpy array in correct order
-            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
-            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+            Replay data as int16 numpy array in correct order. 
+            Checkout `prepare_sequence` function for reference of correct replay data format.
 
         Raises
         ------
