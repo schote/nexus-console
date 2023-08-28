@@ -35,7 +35,7 @@ jobs:
         pip install ".[docs]"
 
     - name: Build docs
-      run: sphinx-build -b html ./docs ./docs/build/html
+      run: sphinx-build -b html ./docs/source ./docs/build/html
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
