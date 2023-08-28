@@ -11,6 +11,9 @@ on:
       - main
       - documentation
 
+permissions:
+    contents: write
+
 jobs:
   Documentation:
     name: 'Build and deploy Documentation'
