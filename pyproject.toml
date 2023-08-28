@@ -37,11 +37,12 @@ convention = "numpy"
 
 [tool.pylint]
 py-version = "3.10"
+max-args=10
 max-locals = 25
 max-attributes = 20
 max-line-length = 120
 extension-pkg-allow-list = ["pydantic"]
-disable = ["too-few-public-methods"]    # suppress warning at pydantic BaseModel and sqlalchemy ORM model
+disable = ["too-few-public-methods", "duplicate-code"]    # suppress warning at pydantic BaseModel and sqlalchemy ORM model
 ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 
 [tool.flake8]
