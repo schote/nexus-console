@@ -15,9 +15,8 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
 dependencies = [
-    # "numpy==1.23.0",    # pypulseq release 1.4 incompatible with numpy 1.25
+    "numpy==1.23.0",    # pypulseq release 1.4 incompatible with numpy 1.25
     # "pypulseq==1.4.0",
-    "numpy",
     "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
     "plotly",
     "PyYAML",
