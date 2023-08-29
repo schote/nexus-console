@@ -591,7 +591,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.start_operation">
 <a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start transmit (TX) card operation.</span>
 
 <span class="sd">        Steps:</span>
@@ -610,8 +610,8 @@ document.write(`
 <span class="sd">        ValueError</span>
 <span class="sd">            Raised if replay data is not provided as numpy int16 values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Replay data was not provided as numpy int16 values...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Replay data was not provided or not in int16 format...&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No connection to card established...&quot;</span><span class="p">)</span>
@@ -756,6 +756,17 @@ document.write(`
 <div class="viewcode-block" id="TxCard.print_status">
 <a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.print_status">[docs]</a>
     <span class="k">def</span> <span class="nf">print_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_desc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print current card status.</span>
+<span class="sd">        </span>
+<span class="sd">        The status is represented by a list. Each entry represents a possible card status in form</span>
+<span class="sd">        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum</span>
+<span class="sd">        instrumentation manual.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        include_desc, optional</span>
+<span class="sd">            Flag which indicates if description string should be contained in status entry, by default False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>
         <span class="n">msg</span><span class="p">,</span> <span class="n">bit_reg_rev</span> <span class="o">=</span> <span class="n">translate_status</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">include_desc</span><span class="o">=</span><span class="n">include_desc</span><span class="p">)</span>
         <span class="n">pprint</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>

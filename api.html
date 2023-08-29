@@ -418,11 +418,14 @@ document.write(`
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.start_operation">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.start_operation" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.start_operation" title="Link to this definition">#</a></dt>
 <dd><p>Abstract method to start card operation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> – Replay data as numpy array in correct format and order</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
+<li><p><strong>optional</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -515,7 +518,19 @@ The gate signal is replayed on digital outputs X0, X1, X2</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.print_status">
 <span class="sig-name descname"><span class="pre">print_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.print_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.print_status" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dd><p>Print current card status.</p>
+<p>The status is represented by a list. Each entry represents a possible card status in form
+of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
+instrumentation manual.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>include_desc</strong> – Flag which indicates if description string should be contained in status entry, by default False</p></li>
+<li><p><strong>optional</strong> – Flag which indicates if description string should be contained in status entry, by default False</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.sample_rate">
@@ -540,7 +555,7 @@ Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit o
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.start_operation">
-<span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.start_operation" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.start_operation" title="Link to this definition">#</a></dt>
 <dd><p>Start transmit (TX) card operation.</p>
 <p>Steps:
 (1) Setup the transmit card
@@ -619,7 +634,10 @@ Checkout <cite>prepare_sequence</cite> function for reference of correct replay 
 <dd><p>Abstract method to start card operation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> – Replay data as numpy array in correct format and order</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
+<li><p><strong>optional</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>

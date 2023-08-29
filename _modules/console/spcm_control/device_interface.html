@@ -470,20 +470,16 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to setup the card.&quot;&quot;&quot;</span></div>
 
 
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to start card operation.&quot;&quot;&quot;</span>
-
 <div class="viewcode-block" id="SpectrumDevice.start_operation">
 <a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to start card operation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        data</span>
-<span class="sd">            Replay data as numpy array in correct format and order</span>
+<span class="sd">        data, optional</span>
+<span class="sd">            Replay data in correct spcm format as numpy array, by default None</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 
