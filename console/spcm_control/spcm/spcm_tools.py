@@ -1,4 +1,7 @@
+"""Tools for spectrum card."""
+
 from ctypes import *
+from typing import Any
 
 # load registers for easier access
 import console.spcm_control.py_header.regs as regs
@@ -6,7 +9,7 @@ from console.spcm_control.py_header.errors import error_reg
 from console.spcm_control.py_header.status import status_reg, status_reg_desc
 
 
-def translate_status(status: int, include_desc: bool = False) -> [list, str]:
+def translate_status(status: int, include_desc: bool = False) -> tuple[dict[int, list[Any]], list[str]]:
     """Translate integer value to readable status message.
 
     Parameters
@@ -30,14 +33,25 @@ def translate_status(status: int, include_desc: bool = False) -> [list, str]:
     status_flags = status_flags_card + status_flags_data
 
     # Construct status dictionary, include description depending on function argument
-    status: dict[int, list] = {}
+    status_dict: dict[int, list] = {}
     for k, (val, stat) in enumerate(status_reg.items()):
-        status[val] = [status_flags[k], stat, status_reg_desc[val]] if include_desc else [status_flags[k], stat]
+        status_dict[val] = [status_flags[k], stat, status_reg_desc[val]] if include_desc else [status_flags[k], stat]
 
-    return status, bit_reg
+    return status_dict, bit_reg
 
 
 def translate_error(error: int) -> str:
+    """Translate error code to description string from manual.
+
+    Parameters
+    ----------
+    error
+        Error code to be translated
+
+    Returns
+    -------
+        Error description string from user manual
+    """
     if error in error_reg.keys():
         return "ERROR: {}".format(error_reg[error])
     else:

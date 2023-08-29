@@ -1,0 +1,1 @@
+"""Console package init file."""

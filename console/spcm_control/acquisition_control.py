@@ -24,7 +24,7 @@ class AcquistionControl:
         self.interrupt_acq = threading.Event()
 
     def acquire(self, sequence: np.ndarray) -> str:
-        """Handles the acquisition of an unrolled pulseq sequence.
+        """Handle the acquisition of an unrolled pulseq sequence.
 
         This function is yet a prototypic skeleton.
 

@@ -1,11 +1,13 @@
+"""Setup of spectrum-instrumentation card driver."""
+
 import os
 import platform
 import sys
 from ctypes import *
+from typing import Any
 
 # load registers for easier access
 from console.spcm_control.py_header.errors import *
-
 # load registers for easier access
 from console.spcm_control.py_header.regs import *
 
@@ -122,7 +124,22 @@ if not os.getenv("GITHUB_ACTIONS"):
         spcm_dwSetParam_i64_.argtype = [drv_handle, int32, int64]
         spcm_dwSetParam_i64_.restype = uint32
 
-        def spcm_dwSetParam_i64(hDrv, lReg, Val):
+        def spcm_dwSetParam_i64(hDrv, lReg, Val) -> Any:
+            """Set card parameter.
+
+            Parameters
+            ----------
+            hDrv
+                Opene device/card
+            lReg
+                Register to be set
+            Val
+                Value
+
+            Returns
+            -------
+                Any
+            """
             try:
                 llVal = int64(Val.value)
             except AttributeError:
@@ -168,7 +185,6 @@ if not os.getenv("GITHUB_ACTIONS"):
             spcm_dwGetContBuf_i64 = getattr(spcmDll, "_spcm_dwGetContBuf_i64@16")
         spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, POINTER(c_void_p), uptr64]
         spcm_dwGetContBuf_i64.restype = uint32
-
 
     elif os.name == "posix":
         sys.stdout.write("Python Version: {0} on Linux\n\n".format(platform.python_version()))

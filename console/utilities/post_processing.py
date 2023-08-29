@@ -15,7 +15,7 @@ def window(data: float):
     -------
         Windowed data sample
     """
-    np.pi = 4.0 * np.arctan(1.0)
+    # np.pi = 4.0 * np.arctan(1.0)    # ??
     if abs(data) <= 1.0:
         if abs(data) != 0.0:
             wind = np.exp(-1.0 / (1.0 - data * data)) * np.sin(2.073 * np.pi * data) / data

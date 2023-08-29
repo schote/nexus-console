@@ -25,6 +25,7 @@ class RxCard(SpectrumDevice):
     __name__: str = "RxCard"
 
     def __post_init__(self):
+        """Execute after init function to do further class setup."""
         super().__init__(self.path)
         self.num_channels = int32(0)
         self.lCardType = int32(0)

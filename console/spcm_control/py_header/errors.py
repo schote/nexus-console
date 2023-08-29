@@ -1,3 +1,5 @@
+"""Definition of spectrum-card error codes provided by spectrum instrumentation."""
+
 SPCM_ERROR_ORIGIN_MASK = 0x80000000
 SPCM_ERROR_ORIGIN_LOCAL = 0x00000000
 SPCM_ERROR_ORIGIN_REMOTE = 0x80000000
