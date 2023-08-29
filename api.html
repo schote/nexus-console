@@ -459,7 +459,7 @@ The ring buffer is filled in fractions of notify_size.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.get_status">
-<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.get_status" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.get_status" title="Link to this definition">#</a></dt>
 <dd><p>Get the current card status.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -540,7 +540,7 @@ instrumentation manual.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.setup_card">
 <span class="sig-name descname"><span class="pre">setup_card</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.setup_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.setup_card" title="Link to this definition">#</a></dt>
-<dd><p>Setup function for transmit (TX) spectrum card.</p>
+<dd><p>Set up spectrum card in transmit (TX) mode.</p>
 <p>At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
 defined by the class attribute.
 All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
@@ -575,7 +575,7 @@ Checkout <cite>prepare_sequence</cite> function for reference of correct replay 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.stop_operation">
 <span class="sig-name descname"><span class="pre">stop_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.stop_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.stop_operation" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to stop card operation.</p>
+<dd><p>Stop card operation by thread event and stop card.</p>
 </dd></dl>
 
 </section>
@@ -660,7 +660,7 @@ Checkout <cite>prepare_sequence</cite> function for reference of correct replay 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.acquire">
 <span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.acquire"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.acquire" title="Link to this definition">#</a></dt>
-<dd><p>Handles the acquisition of an unrolled pulseq sequence.</p>
+<dd><p>Handle the acquisition of an unrolled pulseq sequence.</p>
 <p>This function is yet a prototypic skeleton.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -696,7 +696,7 @@ the <code class="docutils literal notranslate"><span class="pre">unroll_sequence
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">
 <span class="sig-name descname"><span class="pre">add_adc_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.add_adc_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate" title="Link to this definition">#</a></dt>
-<dd><p>Adds ADC gate signal inplace to gate array.</p>
+<dd><p>Add ADC gate signal inplace to gate array.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -735,7 +735,7 @@ the <code class="docutils literal notranslate"><span class="pre">unroll_sequence
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">
 <span class="sig-name descname"><span class="pre">calculate_rf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rf_block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_rf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf" title="Link to this definition">#</a></dt>
-<dd><p>Calculates RF sample points to be played by TX card.</p>
+<dd><p>Calculate RF sample points to be played by TX card.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>rf_block</strong> – Pulseq RF block</p>
@@ -752,8 +752,9 @@ the <code class="docutils literal notranslate"><span class="pre">unroll_sequence
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">
 <span class="sig-name descname"><span class="pre">precalculate_carrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.precalculate_carrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier" title="Link to this definition">#</a></dt>
-<dd><p>Pre-calculation of carrier signal for the longest occurring RF event.
-Each RF event reuses the pre-calculated signal.
+<dd><p>Pre-calculation of carrier signal.</p>
+<p>Calculation is done for the longest occurring RF event
+Each RF event then reuses the pre-calculated carrier signal.
 Dependent on the specific RF event it might be truncated and modulated.</p>
 </dd></dl>
 
