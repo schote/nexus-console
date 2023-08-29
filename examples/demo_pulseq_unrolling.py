@@ -9,7 +9,8 @@ from console.utilities.spcm_data_plot import plot_spcm_data
 # Get sequence provider object and read sequence
 seq = get_sequence_provider("../device_config.yaml")
 # seq.read("./sequences/fid_proj.seq")
-seq.read("./sequences/txrx_test.seq")
+# seq.read("./sequences/txrx_test.seq")
+seq.read("./sequences/tse.seq")
 
 # %%
 sqnc, gate, total_samples = seq.unroll_sequence()

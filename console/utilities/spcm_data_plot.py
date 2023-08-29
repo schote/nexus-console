@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot_spcm_data(data: np.ndarray, contains_gate: bool = False) -> plt.figure.Figure:
+def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
     """Plot replay data for spectrum-instrumentation data in final card format.
 
     Parameters
