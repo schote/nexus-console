@@ -41,7 +41,11 @@ max-locals = 25
 max-attributes = 20
 max-line-length = 120
 extension-pkg-allow-list = ["pydantic"]
-disable = ["too-few-public-methods", "duplicate-code"]    # suppress warning at pydantic BaseModel and sqlalchemy ORM model
+disable = [
+    "too-few-public-methods", 
+    "duplicate-code", 
+    "fixme" # fixme warning is thrown on each TODO: ..., comment to see todo's
+] 
 ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 
 [tool.flake8]

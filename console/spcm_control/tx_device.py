@@ -213,7 +213,7 @@ class TxCard(SpectrumDevice):
 
         return sequence
 
-    def start_operation(self, data: np.ndarray) -> None:
+    def start_operation(self, data: np.ndarray | None = None) -> None:
         """Start transmit (TX) card operation.
 
         Steps:
@@ -232,8 +232,8 @@ class TxCard(SpectrumDevice):
         ValueError
             Raised if replay data is not provided as numpy int16 values
         """
-        if not data.dtype == np.int16:
-            raise ValueError("Replay data was not provided as numpy int16 values...")
+        if data is None or not data.dtype == np.int16:
+            raise ValueError("Replay data was not provided or not in int16 format...")
 
         if not self.card:
             raise ConnectionError("No connection to card established...")
@@ -369,6 +369,17 @@ class TxCard(SpectrumDevice):
         return status.value
 
     def print_status(self, include_desc: bool = False) -> None:
+        """Print current card status.
+        
+        The status is represented by a list. Each entry represents a possible card status in form
+        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
+        instrumentation manual.
+
+        Parameters
+        ----------
+        include_desc, optional
+            Flag which indicates if description string should be contained in status entry, by default False
+        """
         code = self.get_status()
         msg, bit_reg_rev = translate_status(code, include_desc=include_desc)
         pprint(msg)

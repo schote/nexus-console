@@ -24,7 +24,7 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
         Provided replay data is not in int16 format
     """
     num_channels = 4
-    fig, ax = plt.subplots(num_channels + int(contains_gate), 1, figsize=(16, 9))
+    fig, axis = plt.subplots(num_channels + int(contains_gate), 1, figsize=(16, 9))
     minmax = []
 
     for k in range(num_channels):
@@ -34,8 +34,8 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
             _data = data[k::num_channels] << 1
             _adc = -1 * (data[k::num_channels] >> 15)
 
-            ax[-1].plot(_adc)
-            ax[-1].set_ylabel("Digital")
+            axis[-1].plot(_adc)
+            axis[-1].set_ylabel("Digital")
 
         else:
             _data = data[k::num_channels]
@@ -46,12 +46,12 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
         # Add +-10% of absolute to the calculated limits
         minmax.append((_min - abs(_min) * 0.1, _max + abs(_max) * 0.1))
 
-        ax[k].plot(_data)
-        ax[k].set_ylabel("Channel ", k + 1)
+        axis[k].plot(_data)
+        axis[k].set_ylabel("Channel ", k + 1)
 
         if not minmax[k][0] == minmax[k][1]:
-            ax[k].set_ylim(minmax[k])
+            axis[k].set_ylim(minmax[k])
 
-    ax[k].set_xlabel("Number of samples")
+    axis[k].set_xlabel("Number of samples")
 
     return fig

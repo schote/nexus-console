@@ -86,17 +86,13 @@ class SpectrumDevice(ABC):
         """Abstract method to setup the card."""
 
     @abstractmethod
-    def start_operation(self):
-        """Abstract method to start card operation."""
-
-    @abstractmethod
-    def start_operation(self, data: np.ndarray):
+    def start_operation(self, data: np.ndarray | None = None):
         """Abstract method to start card operation.
 
         Parameters
         ----------
-        data
-            Replay data as numpy array in correct format and order
+        data, optional
+            Replay data in correct spcm format as numpy array, by default None
         """
 
     @abstractmethod
