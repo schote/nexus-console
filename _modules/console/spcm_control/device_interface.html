@@ -226,7 +226,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -313,6 +313,26 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -376,7 +396,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SpectrumDevice">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice">[docs]</a>
 <span class="k">class</span> <span class="nc">SpectrumDevice</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Spectrum device abstract base class.&quot;&quot;&quot;</span>
 
@@ -394,7 +414,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
 <div class="viewcode-block" id="SpectrumDevice.disconnect">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.disconnect">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.disconnect">[docs]</a>
     <span class="k">def</span> <span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Disconnect card.&quot;&quot;&quot;</span>
         <span class="c1"># Closing the card</span>
@@ -408,7 +428,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SpectrumDevice.connect">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.connect">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.connect">[docs]</a>
     <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish card connection.</span>
 
@@ -441,7 +461,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SpectrumDevice.handle_error">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.handle_error">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.handle_error">[docs]</a>
     <span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;General error handling function.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
@@ -457,21 +477,21 @@ document.write(`
 
 
 <div class="viewcode-block" id="SpectrumDevice.get_status">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.get_status">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.get_status">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to obtain card status.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.setup_card">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.setup_card">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.setup_card">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to setup the card.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.start_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to start card operation.</span>
@@ -484,7 +504,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SpectrumDevice.stop_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.device_interface.SpectrumDevice.stop_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.stop_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to stop card operation.&quot;&quot;&quot;</span></div>

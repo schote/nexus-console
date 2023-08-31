@@ -226,7 +226,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -313,6 +313,26 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -375,7 +395,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SequenceProvider">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">[docs]</a>
 <span class="k">class</span> <span class="nc">SequenceProvider</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence provider class.</span>
 
@@ -418,7 +438,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">carrier</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="SequenceProvider.precalculate_carrier">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">[docs]</a>
     <span class="k">def</span> <span class="nf">precalculate_carrier</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Pre-calculation of carrier signal.</span>
 <span class="sd">        </span>
@@ -438,7 +458,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SequenceProvider.calculate_rf">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">[docs]</a>
     <span class="k">def</span> <span class="nf">calculate_rf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_block</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate RF sample points to be played by TX card.</span>
 
@@ -504,7 +524,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SequenceProvider.calculate_gradient">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">[docs]</a>
     <span class="k">def</span> <span class="nf">calculate_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">amp_offset</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate spectrum-card sample points of a gradient waveform.</span>
 
@@ -563,7 +583,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SequenceProvider.add_adc_gate">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">[docs]</a>
     <span class="k">def</span> <span class="nf">add_adc_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add ADC gate signal inplace to gate array.</span>
 
@@ -582,7 +602,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
-<a class="viewcode-back" href="../../../api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
     <span class="k">def</span> <span class="nf">unroll_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll a read sequence object.</span>
 

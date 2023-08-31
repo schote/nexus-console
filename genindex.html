@@ -226,7 +226,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -313,6 +313,26 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -359,13 +379,13 @@ document.write(`
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.acquisition_control.AcquistionControl.acquire">acquire() (console.spcm_control.acquisition_control.AcquistionControl method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl.acquire">acquire() (console.spcm_control.acquisition_control.AcquistionControl method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.acquisition_control.AcquistionControl">AcquistionControl (class in console.spcm_control.acquisition_control)</a>
+      <li><a href="spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl">AcquistionControl (class in console.spcm_control.acquisition_control)</a>
 </li>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">add_adc_gate() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">add_adc_gate() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -373,23 +393,44 @@ document.write(`
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">calculate_gradient() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">calculate_gradient() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">calculate_rf() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">calculate_rf() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.channel_enable">channel_enable (console.spcm_control.rx_device.RxCard attribute)</a>
+</li>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.connect">connect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+</li>
+      <li>
+    console.utilities.load_config
+
+      <ul>
+        <li><a href="utilities.html#module-console.utilities.load_config">module</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.channel_enable">channel_enable (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li>
+    console.utilities.sequence_plot
+
+      <ul>
+        <li><a href="utilities.html#module-console.utilities.sequence_plot">module</a>
 </li>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.connect">connect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      </ul></li>
+      <li>
+    console.utilities.spcm_data_plot
+
+      <ul>
+        <li><a href="utilities.html#module-console.utilities.spcm_data_plot">module</a>
 </li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.disconnect">disconnect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.disconnect">disconnect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -397,7 +438,7 @@ document.write(`
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.tx_device.TxCard.filter_type">filter_type (console.spcm_control.tx_device.TxCard attribute)</a>
+      <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.filter_type">filter_type (console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -405,21 +446,33 @@ document.write(`
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.get_status">get_status() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="utilities.html#console.utilities.sequence_plot.generate_plotly_figure">generate_plotly_figure() (in module console.utilities.sequence_plot)</a>
+</li>
+      <li><a href="utilities.html#console.utilities.load_config.get_rx_card">get_rx_card() (in module console.utilities.load_config)</a>
+</li>
+      <li><a href="utilities.html#console.utilities.sequence_plot.get_sequence_plot">get_sequence_plot() (in module console.utilities.sequence_plot)</a>
+</li>
+      <li><a href="utilities.html#console.utilities.load_config.get_sequence_provider">get_sequence_provider() (in module console.utilities.load_config)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.get_status">get_status() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.rx_device.RxCard.get_status">(console.spcm_control.rx_device.RxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">(console.spcm_control.rx_device.RxCard method)</a>
 </li>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.get_status">(console.spcm_control.tx_device.TxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
+      <li><a href="utilities.html#console.utilities.load_config.get_tx_card">get_tx_card() (in module console.utilities.load_config)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="H">H</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.handle_error">handle_error() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.handle_error">handle_error() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -427,7 +480,7 @@ document.write(`
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.loops">loops (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.loops">loops (console.spcm_control.rx_device.RxCard attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -435,23 +488,38 @@ document.write(`
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.max_amplitude">max_amplitude (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.max_amplitude">max_amplitude (console.spcm_control.rx_device.RxCard attribute)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.max_amplitude">(console.spcm_control.tx_device.TxCard attribute)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.max_amplitude">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.memory_size">memory_size (console.spcm_control.rx_device.RxCard attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.memory_size">memory_size (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li>
+    module
+
+      <ul>
+        <li><a href="utilities.html#module-console.utilities.load_config">console.utilities.load_config</a>
 </li>
+        <li><a href="utilities.html#module-console.utilities.sequence_plot">console.utilities.sequence_plot</a>
+</li>
+        <li><a href="utilities.html#module-console.utilities.spcm_data_plot">console.utilities.spcm_data_plot</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.tx_device.TxCard.notify_rate">notify_rate (console.spcm_control.tx_device.TxCard attribute)</a>
+      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.name">name (console.utilities.sequence_plot.TraceData attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.notify_rate">notify_rate (console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -459,19 +527,21 @@ document.write(`
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.path">path (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.path">path (console.spcm_control.rx_device.RxCard attribute)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.path">(console.spcm_control.tx_device.TxCard attribute)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.path">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
+      <li><a href="utilities.html#console.utilities.spcm_data_plot.plot_spcm_data">plot_spcm_data() (in module console.utilities.spcm_data_plot)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">precalculate_carrier() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">precalculate_carrier() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
-      <li><a href="api.html#console.spcm_control.tx_device.TxCard.prepare_sequence">prepare_sequence() (console.spcm_control.tx_device.TxCard method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.prepare_sequence">prepare_sequence() (console.spcm_control.tx_device.TxCard method)</a>
 </li>
-      <li><a href="api.html#console.spcm_control.tx_device.TxCard.print_status">print_status() (console.spcm_control.tx_device.TxCard method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.print_status">print_status() (console.spcm_control.tx_device.TxCard method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -479,7 +549,11 @@ document.write(`
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard">RxCard (class in console.spcm_control.rx_device)</a>
+      <li><a href="utilities.html#console.utilities.load_config.read_config">read_config() (in module console.utilities.load_config)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard">RxCard (class in console.spcm_control.rx_device)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -487,40 +561,42 @@ document.write(`
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.rx_device.RxCard.sample_rate">sample_rate (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.sample_rate">sample_rate (console.spcm_control.rx_device.RxCard attribute)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.sample_rate">(console.spcm_control.tx_device.TxCard attribute)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.sample_rate">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">SequenceProvider (class in console.pulseq_interpreter.sequence_provider)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">SequenceProvider (class in console.pulseq_interpreter.sequence_provider)</a>
 </li>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.setup_card">setup_card() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.setup_card">setup_card() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.rx_device.RxCard.setup_card">(console.spcm_control.rx_device.RxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.setup_card">(console.spcm_control.rx_device.RxCard method)</a>
 </li>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.setup_card">(console.spcm_control.tx_device.TxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
+      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.signal_values">signal_values (console.utilities.sequence_plot.TraceData attribute)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice">SpectrumDevice (class in console.spcm_control.device_interface)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice">SpectrumDevice (class in console.spcm_control.device_interface)</a>
 </li>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">start_operation() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">start_operation() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.rx_device.RxCard.start_operation">(console.spcm_control.rx_device.RxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.start_operation">(console.spcm_control.rx_device.RxCard method)</a>
 </li>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.start_operation">(console.spcm_control.tx_device.TxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
-      <li><a href="api.html#console.spcm_control.device_interface.SpectrumDevice.stop_operation">stop_operation() (console.spcm_control.device_interface.SpectrumDevice method)</a>
+      <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.stop_operation">stop_operation() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
       <ul>
-        <li><a href="api.html#console.spcm_control.rx_device.RxCard.stop_operation">(console.spcm_control.rx_device.RxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.stop_operation">(console.spcm_control.rx_device.RxCard method)</a>
 </li>
-        <li><a href="api.html#console.spcm_control.tx_device.TxCard.stop_operation">(console.spcm_control.tx_device.TxCard method)</a>
+        <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.stop_operation">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -529,7 +605,13 @@ document.write(`
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.spcm_control.tx_device.TxCard">TxCard (class in console.spcm_control.tx_device)</a>
+      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.time_points">time_points (console.utilities.sequence_plot.TraceData attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData">TraceData (class in console.utilities.sequence_plot)</a>
+</li>
+      <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard">TxCard (class in console.spcm_control.tx_device)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -537,7 +619,7 @@ document.write(`
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">unroll_sequence() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">unroll_sequence() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
   </ul></td>
 </tr></table>

@@ -226,7 +226,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -313,6 +313,26 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -380,7 +400,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="TxCard">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">TxCard</span><span class="p">(</span><span class="n">SpectrumDevice</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -441,7 +461,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
 
 <div class="viewcode-block" id="TxCard.setup_card">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.setup_card">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">[docs]</a>
     <span class="k">def</span> <span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up spectrum card in transmit (TX) mode.</span>
 
@@ -533,7 +553,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="TxCard.prepare_sequence">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.prepare_sequence">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.prepare_sequence">[docs]</a>
     <span class="k">def</span> <span class="nf">prepare_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">adc_gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare sequence data for replay.</span>
 
@@ -599,7 +619,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="TxCard.start_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start transmit (TX) card operation.</span>
 
@@ -633,7 +653,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="TxCard.stop_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.stop_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.stop_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card operation by thread event and stop card.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -758,7 +778,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">print_status</span><span class="p">()</span>
 
 <div class="viewcode-block" id="TxCard.get_status">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.get_status">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">[docs]</a>
     <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current card status.</span>
 
@@ -774,7 +794,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="TxCard.print_status">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.tx_device.TxCard.print_status">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.print_status">[docs]</a>
     <span class="k">def</span> <span class="nf">print_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_desc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Print current card status.</span>
 

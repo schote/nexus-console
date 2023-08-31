@@ -226,7 +226,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -313,6 +313,26 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -380,7 +400,7 @@ document.write(`
 
 
 <div class="viewcode-block" id="RxCard">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.rx_device.RxCard">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">RxCard</span><span class="p">(</span><span class="n">SpectrumDevice</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Implementation of RX device.&quot;&quot;&quot;</span>
@@ -421,7 +441,7 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="RxCard.setup_card">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.rx_device.RxCard.setup_card">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.setup_card">[docs]</a>
     <span class="k">def</span> <span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Get the card type and reset card</span>
         <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lCardType</span><span class="p">))</span>
@@ -505,7 +525,7 @@ document.write(`
         <span class="c1"># spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)</span>
 
 <div class="viewcode-block" id="RxCard.start_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.rx_device.RxCard.start_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.start_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># self note: Add type?</span>
         <span class="c1"># event = threading.Event()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
@@ -522,7 +542,7 @@ document.write(`
         <span class="c1"># print(rx_buffer.value)</span>
 
 <div class="viewcode-block" id="RxCard.stop_operation">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.rx_device.RxCard.stop_operation">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.stop_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -678,7 +698,7 @@ document.write(`
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished!...&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="RxCard.get_status">
-<a class="viewcode-back" href="../../../api.html#console.spcm_control.rx_device.RxCard.get_status">[docs]</a>
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">[docs]</a>
     <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span></div>
 </div>

@@ -40,6 +40,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'api';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Spectrum-Instrumentation Card Controller" href="spcm_control.html" />
     <link rel="prev" title="Spectrum-Console Documentation" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
@@ -232,7 +233,7 @@ document.write(`
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
       
-      <div class="bd-sidebar-primary bd-sidebar hide-on-wide">
+      <div class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -319,6 +320,36 @@ document.write(`
     
   </div>
   
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="spcm_control.html">Spectrum-Instrumentation Card Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sqnc_provider.html">Pulseq Sequence Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
   </div>
@@ -371,414 +402,13 @@ document.write(`
   <section id="spectrum-console-api">
 <h1>Spectrum-Console API<a class="headerlink" href="#spectrum-console-api" title="Link to this heading">#</a></h1>
 <p>API documentation for spectrum instrumentation devices and pulseq sequence provider.</p>
-<section id="spectrum-instrumentation-card-controller">
-<h2>Spectrum-Instrumentation Card Controller<a class="headerlink" href="#spectrum-instrumentation-card-controller" title="Link to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.device_interface.</span></span><span class="sig-name descname"><span class="pre">SpectrumDevice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
-<p>Spectrum device abstract base class.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.connect">
-<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.connect" title="Link to this definition">#</a></dt>
-<dd><p>Establish card connection.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ConnectionError</strong> – Connection to card already exists</p></li>
-<li><p><strong>ConnectionError</strong> – Connection could not be established</p></li>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="spcm_control.html">Spectrum-Instrumentation Card Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sqnc_provider.html">Pulseq Sequence Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.disconnect">
-<span class="sig-name descname"><span class="pre">disconnect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.disconnect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.disconnect" title="Link to this definition">#</a></dt>
-<dd><p>Disconnect card.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.get_status">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.get_status" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to obtain card status.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.handle_error">
-<span class="sig-name descname"><span class="pre">handle_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.handle_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.handle_error" title="Link to this definition">#</a></dt>
-<dd><p>General error handling function.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.setup_card">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_card</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.setup_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.setup_card" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to setup the card.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.start_operation">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.start_operation" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to start card operation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
-<li><p><strong>optional</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.stop_operation">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">stop_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.stop_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.stop_operation" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to stop card operation.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.tx_device.</span></span><span class="sig-name descname"><span class="pre">TxCard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_amplitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__name__</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TxCard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#console.spcm_control.device_interface.SpectrumDevice" title="console.spcm_control.device_interface.SpectrumDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumDevice</span></code></a></p>
-<p>Implementation of TX device.</p>
-<p>Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(),
-setup_card() and operate(). The TxCard is automatically instantiated by a yaml-loader when
-loading the configuration file.</p>
-<p>The implementation was done and tested with card M2p6546-x4, which has an onboard
-memory size of 512 MSample, 2 Bytes/sample =&gt; 1024 MB.</p>
-<section id="overview">
-<h3>Overview:<a class="headerlink" href="#overview" title="Link to this heading">#</a></h3>
-<p>The TX card operates with a ring buffer on the spectrum card, defined by ring_buffer_size.
-The ring buffer is filled in fractions of notify_size.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.filter_type">
-<span class="sig-name descname"><span class="pre">filter_type</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.filter_type" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.get_status">
-<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.get_status" title="Link to this definition">#</a></dt>
-<dd><p>Get the current card status.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>String with status description.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.max_amplitude">
-<span class="sig-name descname"><span class="pre">max_amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.max_amplitude" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.notify_rate">
-<span class="sig-name descname"><span class="pre">notify_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">16</span></em><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.notify_rate" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.path">
-<span class="sig-name descname"><span class="pre">path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.path" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.prepare_sequence">
-<span class="sig-name descname"><span class="pre">prepare_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adc_gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.prepare_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.prepare_sequence" title="Link to this definition">#</a></dt>
-<dd><p>Prepare sequence data for replay.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>sequence</strong> – Replay data as float values in correctly ordered numpy array.</p></li>
-<li><p><strong>adc_gate</strong> – ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
-The gate signal is replayed on digital outputs X0, X1, X2</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Recombined sequence as numpy array with digital adc gate signal (if provided)</p>
-</dd>
-</dl>
-<p class="rubric">Example</p>
-<p>For channels ch0, ch1, ch2, ch3, data values n = 0, 1, …, N are to be ordered as follows</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch0_0</span><span class="p">,</span> <span class="n">ch1_0</span><span class="p">,</span> <span class="n">ch2_0</span><span class="p">,</span> <span class="n">ch3_0</span><span class="p">,</span> <span class="n">ch0_1</span><span class="p">,</span> <span class="n">ch1_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch0_n</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch3_N</span><span class="p">]</span>
-</pre></div>
 </div>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ValueError</strong> – Raised if maximum voltage exceeds the channel maximum</p></li>
-<li><p><strong>ValueError</strong> – Raised if</p></li>
-<li><p><strong>ValueError</strong> – _description_</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.print_status">
-<span class="sig-name descname"><span class="pre">print_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">include_desc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.print_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.print_status" title="Link to this definition">#</a></dt>
-<dd><p>Print current card status.</p>
-<p>The status is represented by a list. Each entry represents a possible card status in form
-of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
-instrumentation manual.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>include_desc</strong> – Flag which indicates if description string should be contained in status entry, by default False</p></li>
-<li><p><strong>optional</strong> – Flag which indicates if description string should be contained in status entry, by default False</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.sample_rate">
-<span class="sig-name descname"><span class="pre">sample_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.sample_rate" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.setup_card">
-<span class="sig-name descname"><span class="pre">setup_card</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.setup_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.setup_card" title="Link to this definition">#</a></dt>
-<dd><p>Set up spectrum card in transmit (TX) mode.</p>
-<p>At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
-defined by the class attribute.
-All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
-Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Warning</strong> – The actual set sample rate deviates from the corresponding class attribute to be set,
-    class attribute is overwritten.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.start_operation">
-<span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.start_operation" title="Link to this definition">#</a></dt>
-<dd><p>Start transmit (TX) card operation.</p>
-<p>Steps:
-(1) Setup the transmit card
-(2) Clear emergency stop flag, reset to False
-(3) Start worker thread (card streaming mode), with provided replay data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>data</strong> – Replay data as int16 numpy array in correct order.
-Checkout <cite>prepare_sequence</cite> function for reference of correct replay data format.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – Raised if replay data is not provided as numpy int16 values</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.tx_device.TxCard.stop_operation">
-<span class="sig-name descname"><span class="pre">stop_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/tx_device.html#TxCard.stop_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.tx_device.TxCard.stop_operation" title="Link to this definition">#</a></dt>
-<dd><p>Stop card operation by thread event and stop card.</p>
-</dd></dl>
-
-</section>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.rx_device.</span></span><span class="sig-name descname"><span class="pre">RxCard</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel_enable</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_amplitude</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">memory_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loops</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">__name__</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RxCard'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/rx_device.html#RxCard"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.rx_device.RxCard" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#console.spcm_control.device_interface.SpectrumDevice" title="console.spcm_control.device_interface.SpectrumDevice"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpectrumDevice</span></code></a></p>
-<p>Implementation of RX device.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.channel_enable">
-<span class="sig-name descname"><span class="pre">channel_enable</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.channel_enable" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.get_status">
-<span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/rx_device.html#RxCard.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.get_status" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to obtain card status.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.loops">
-<span class="sig-name descname"><span class="pre">loops</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.loops" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.max_amplitude">
-<span class="sig-name descname"><span class="pre">max_amplitude</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.max_amplitude" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.memory_size">
-<span class="sig-name descname"><span class="pre">memory_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.memory_size" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.path">
-<span class="sig-name descname"><span class="pre">path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.path" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.sample_rate">
-<span class="sig-name descname"><span class="pre">sample_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.sample_rate" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.setup_card">
-<span class="sig-name descname"><span class="pre">setup_card</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/rx_device.html#RxCard.setup_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.setup_card" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to setup the card.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.start_operation">
-<span class="sig-name descname"><span class="pre">start_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/rx_device.html#RxCard.start_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.start_operation" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to start card operation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
-<li><p><strong>optional</strong> – Replay data in correct spcm format as numpy array, by default None</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.rx_device.RxCard.stop_operation">
-<span class="sig-name descname"><span class="pre">stop_operation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/rx_device.html#RxCard.stop_operation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.rx_device.RxCard.stop_operation" title="Link to this definition">#</a></dt>
-<dd><p>Abstract method to stop card operation.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquistionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tx_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">rx_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.rx_device.RxCard" title="console.spcm_control.rx_device.RxCard"><span class="pre">RxCard</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Acquisition control class.</p>
-<p>The main functionality of the acquisition control is to orchestrate transmit and receive cards using
-<code class="docutils literal notranslate"><span class="pre">TxCard</span></code> and <code class="docutils literal notranslate"><span class="pre">RxCard</span></code> instances.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.acquire">
-<span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.acquire"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.acquire" title="Link to this definition">#</a></dt>
-<dd><p>Handle the acquisition of an unrolled pulseq sequence.</p>
-<p>This function is yet a prototypic skeleton.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sequence</strong> – Numpy array with unrolled replay data (pulseq sequence)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Path of the receive data file as string</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
-<section id="pulseq-sequence-provider">
-<h2>Pulseq Sequence Provider<a class="headerlink" href="#pulseq-sequence-provider" title="Link to this heading">#</a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.pulseq_interpreter.sequence_provider.</span></span><span class="sig-name descname"><span class="pre">SequenceProvider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spcm_sample_rate:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_double_precision:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_to_volt:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_to_volt:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system:</span> <span class="pre">~pypulseq.opts.Opts</span> <span class="pre">=</span> <span class="pre">&lt;pypulseq.opts.Opts</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></p>
-<p>Sequence provider class.</p>
-<p>This object is inherited from pulseq sequence object, so that all methods of the
-pypulseq <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> object can be accessed.</p>
-<p>The main functionality of the <code class="docutils literal notranslate"><span class="pre">SequenceProvider</span></code> is to unroll a given pulseq sequence.
-Usually the first step is to read a sequence file. The unrolling step can be achieved using
-the <code class="docutils literal notranslate"><span class="pre">unroll_sequence()</span></code> function.</p>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span> <span class="o">=</span> <span class="n">SequenceProvider</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;./seq_file.seq&quot;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">sqnc</span><span class="p">,</span> <span class="n">gate</span><span class="p">,</span> <span class="n">total_samples</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">()</span>
-</pre></div>
-</div>
-<dl class="py method">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">
-<span class="sig-name descname"><span class="pre">add_adc_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.add_adc_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate" title="Link to this definition">#</a></dt>
-<dd><p>Add ADC gate signal inplace to gate array.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>block</strong> – ADC event of sequence block.</p></li>
-<li><p><strong>gate</strong> – Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">
-<span class="sig-name descname"><span class="pre">calculate_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient" title="Link to this definition">#</a></dt>
-<dd><p>Calculate spectrum-card sample points of a gradient waveform.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>block</strong> – Gradient block from sequence, type must be grad or trap</p></li>
-<li><p><strong>num_total_samples</strong> – Total number of block samples points to verify calculation</p></li>
-<li><p><strong>amp_offset</strong> – Amplitude offset, last value of last gradient, by default 0.</p></li>
-<li><p><strong>optional</strong> – Amplitude offset, last value of last gradient, by default 0.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>List of gradient waveform values</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>AttributeError</strong> – Block type is not grad or trap</p></li>
-<li><p><strong>ArithmeticError</strong> – Number of calculated sample points is greater then number of block sample points</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">
-<span class="sig-name descname"><span class="pre">calculate_rf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rf_block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_rf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf" title="Link to this definition">#</a></dt>
-<dd><p>Calculate RF sample points to be played by TX card.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>rf_block</strong> – Pulseq RF block</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>List of RF samples</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>AttributeError</strong> – Invalid RF block</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">
-<span class="sig-name descname"><span class="pre">precalculate_carrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.precalculate_carrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier" title="Link to this definition">#</a></dt>
-<dd><p>Pre-calculation of carrier signal.</p>
-<p>Calculation is done for the longest occurring RF event
-Each RF event then reuses the pre-calculated carrier signal.
-Dependent on the specific RF event it might be truncated and modulated.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">
-<span class="sig-name descname"><span class="pre">unroll_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">)</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'numpy.ndarray'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'int'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.unroll_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence" title="Link to this definition">#</a></dt>
-<dd><p>Unroll a read sequence object.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>List of lists, block-wise calculated sample points in correct order for spectrum card</em></p></li>
-<li><p><em>and total number of sequence sample points</em></p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>AttributeError</strong> – No sequence loaded</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 </section>
 
 
@@ -801,6 +431,15 @@ Dependent on the specific RF event it might be truncated and modulated.</p>
         <p class="prev-next-title">Spectrum-Console Documentation</p>
       </div>
     </a>
+    <a class="right-next"
+       href="spcm_control.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Spectrum-Instrumentation Card Controller</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
 </div></div>
   
 </div>
@@ -812,70 +451,6 @@ Dependent on the specific RF event it might be truncated and modulated.</p>
             
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-  <div class="sidebar-secondary-item">
-  <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav class="bd-toc-nav page-toc">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#spectrum-instrumentation-card-controller">Spectrum-Instrumentation Card Controller</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.connect"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.connect()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.disconnect"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.disconnect()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.get_status"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.get_status()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.handle_error"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.handle_error()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.setup_card"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.setup_card()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.start_operation"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.start_operation()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.device_interface.SpectrumDevice.stop_operation"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.stop_operation()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard"><code class="docutils literal notranslate"><span class="pre">TxCard</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.filter_type"><code class="docutils literal notranslate"><span class="pre">TxCard.filter_type</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.get_status"><code class="docutils literal notranslate"><span class="pre">TxCard.get_status()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.max_amplitude"><code class="docutils literal notranslate"><span class="pre">TxCard.max_amplitude</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.notify_rate"><code class="docutils literal notranslate"><span class="pre">TxCard.notify_rate</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.path"><code class="docutils literal notranslate"><span class="pre">TxCard.path</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.prepare_sequence"><code class="docutils literal notranslate"><span class="pre">TxCard.prepare_sequence()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.print_status"><code class="docutils literal notranslate"><span class="pre">TxCard.print_status()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.sample_rate"><code class="docutils literal notranslate"><span class="pre">TxCard.sample_rate</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.setup_card"><code class="docutils literal notranslate"><span class="pre">TxCard.setup_card()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.start_operation"><code class="docutils literal notranslate"><span class="pre">TxCard.start_operation()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.tx_device.TxCard.stop_operation"><code class="docutils literal notranslate"><span class="pre">TxCard.stop_operation()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard"><code class="docutils literal notranslate"><span class="pre">RxCard</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.channel_enable"><code class="docutils literal notranslate"><span class="pre">RxCard.channel_enable</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.get_status"><code class="docutils literal notranslate"><span class="pre">RxCard.get_status()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.loops"><code class="docutils literal notranslate"><span class="pre">RxCard.loops</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.max_amplitude"><code class="docutils literal notranslate"><span class="pre">RxCard.max_amplitude</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.memory_size"><code class="docutils literal notranslate"><span class="pre">RxCard.memory_size</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.path"><code class="docutils literal notranslate"><span class="pre">RxCard.path</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.sample_rate"><code class="docutils literal notranslate"><span class="pre">RxCard.sample_rate</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.setup_card"><code class="docutils literal notranslate"><span class="pre">RxCard.setup_card()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.start_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.start_operation()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.stop_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.stop_operation()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl"><code class="docutils literal notranslate"><span class="pre">AcquistionControl</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.acquire"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.acquire()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pulseq-sequence-provider">Pulseq Sequence Provider</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider"><code class="docutils literal notranslate"><span class="pre">SequenceProvider</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.add_adc_gate()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_gradient()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_rf()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.precalculate_carrier()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.unroll_sequence()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-  </nav></div>
 
   <div class="sidebar-secondary-item">
   <div class="tocsection sourcelink">
