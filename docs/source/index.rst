@@ -8,9 +8,10 @@ Spectrum-Console Documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: API Reference:
    
    api
+
 
 
 

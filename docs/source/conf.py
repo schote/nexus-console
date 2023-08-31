@@ -30,7 +30,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
 ]
 
 templates_path = ['_templates']
@@ -49,6 +49,8 @@ html_show_sphinx = False
 html_static_path = ['_static']
 
 html_logo = "_static/scanner_config.png"
+
+html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}
 
 html_theme_options = {
     "pygment_light_style": "default",
