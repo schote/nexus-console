@@ -8,6 +8,7 @@ from typing import Any
 
 # load registers for easier access
 from console.spcm_control.py_header.errors import *
+
 # load registers for easier access
 from console.spcm_control.py_header.regs import *
 

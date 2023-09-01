@@ -49,7 +49,7 @@ class SequenceProvider(Sequence):
 
     def precalculate_carrier(self) -> None:
         """Pre-calculation of carrier signal.
-        
+
         Calculation is done for the longest occurring RF event
         Each RF event then reuses the pre-calculated carrier signal.
         Dependent on the specific RF event it might be truncated and modulated.
@@ -197,7 +197,7 @@ class SequenceProvider(Sequence):
         # dead_dur = max(self.system.adc_dead_time, block.dead_time)
         # dead_time = int(dead_dur / self.spcm_sample_rate)
         adc_len = int(block.num_samples * block.dwell / self.spcm_sample_rate)
-        gate[delay: delay + adc_len] = 1
+        gate[delay : delay + adc_len] = 1
 
     def unroll_sequence(self) -> (np.ndarray, int):
         """Unroll a read sequence object.

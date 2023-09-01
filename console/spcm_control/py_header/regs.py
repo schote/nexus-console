@@ -1,8 +1,9 @@
 """Spectrum card registers provided by spectrum instrumentation."""
 
+
 def KILO(k):
     """Translate value to kilo.
-    
+
     Example
     -------
     >>> KILO(1)
@@ -22,7 +23,7 @@ def KILO(k):
 
 def MEGA(m):
     """Translate value to mega.
-    
+
     Example
     -------
     >>> MEGA(1)
@@ -42,7 +43,7 @@ def MEGA(m):
 
 def GIGA(g):
     """Translate value to giga.
-    
+
     Example
     -------
     >>> GIGA(1)
@@ -62,7 +63,7 @@ def GIGA(g):
 
 def KILO_B(k):
     """Translate value to kilo bytes.
-    
+
     Example
     -------
     >>> KILO_B(1)
@@ -82,7 +83,7 @@ def KILO_B(k):
 
 def MEGA_B(m):
     """Translate value to mega bytes.
-    
+
     Example
     -------
     >>> MEGA_B(1)
@@ -102,7 +103,7 @@ def MEGA_B(m):
 
 def GIGA_B(g):
     """Translate value to giga bytes.
-    
+
     Example
     -------
     >>> GIGA_B(1)
