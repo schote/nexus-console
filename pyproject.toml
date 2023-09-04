@@ -10,7 +10,7 @@ name = "console"
 version = "0.1.0"
 description = "Spectrum Instrumentation Console for ultralow-field MRI with an interface to ScanHub."
 authors = [
-    {name = "David Schote", email = "david.schote@ptb.de"},
+    {name="David Schote", email="david.schote@ptb.de"},
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
@@ -31,9 +31,12 @@ lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "py
 docs = ["sphinx", "pydata-sphinx-theme"]
 examples = ["nbformat>=4.2.0", "ipykernel", "ipython"]
 
-# Tool configuration
+
+# >> Tool configuration
+
 [tool.pydocstyle]
 convention = "numpy"
+
 
 [tool.pylint]
 py-version = "3.10"
@@ -41,31 +44,44 @@ max-args=10
 max-locals = 25
 max-attributes = 20
 max-line-length = 120
+ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 extension-pkg-allow-list = ["pydantic"]
 disable = [
     "too-few-public-methods", 
     "duplicate-code", 
     "fixme" # fixme warning is thrown on each TODO: ..., comment to see todo's
 ] 
-ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
+
 
 [tool.flake8]
 max-line-length = 120
 exclude = "console/spcm_control/py_header/,console/spcm_control/spcm/"
 
+
 [tool.mypy]
 check_untyped_defs = "True"
 warn_unreachable = "True"
 python_version = "3.10"
-exclude = ["docs", "examples"]
+ignore_missing_imports = true
+# exclude = ['console/utilities', 'console/spcm_control']
+exclude = ['^pyspcm\.py$']
+
+[tool.mypy-mycode.console.spcm_control.spcm]
+exclude = ["^pyspcm\\.py$"]
+
 
 [tool.black]
 line-length = 120
 target-version = ['py310']
 
+
 [tool.isort]
 line_length = 120
 py_version=310
+
+
+[tool.pyright]
+typeCheckingMode = "strict"
 
 # [tool.mypy-plotly]
 # ignore_missing_imports = true   # missing 3rd party stubs
@@ -92,7 +108,7 @@ lint.ignore_fail = "return_non_zero"
     cmd  = "pylint console/"
 
     [tool.poe.tasks.mypy]
-    help = "Run mypy"
+    help = "Run mypy, python type checker..."
     cmd  = "mypy console/"
 
     [tool.poe.tasks.flake8]

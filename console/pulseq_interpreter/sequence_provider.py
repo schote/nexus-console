@@ -199,7 +199,7 @@ class SequenceProvider(Sequence):
         adc_len = int(block.num_samples * block.dwell / self.spcm_sample_rate)
         gate[delay : delay + adc_len] = 1
 
-    def unroll_sequence(self) -> (np.ndarray, int):
+    def unroll_sequence(self) -> tuple[np.ndarray, int]:
         """Unroll a read sequence object.
 
         Returns
