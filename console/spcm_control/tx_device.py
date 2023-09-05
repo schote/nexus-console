@@ -190,6 +190,7 @@ class TxCard(SpectrumDevice):
         ValueError
             _description_
         """
+        replay_data = np.zeros_like(sequence, dtype=np.int16)
         # Check if max value in data does not exceed max amplitude, set per channel
         # Convert voltage float values to int16, according to max amplitude per channel
         for k in range(4):
@@ -197,14 +198,11 @@ class TxCard(SpectrumDevice):
                 raise ValueError(
                     f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
                 )
-            sequence[k::4] = rel_values * np.iinfo(np.int16).max
-
-        # Convert float to int16
-        sequence = sequence.astype(np.int16)
+            replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)
 
         if adc_gate is not None:
             # Check if lengths of data and gate signal are matching
-            if (len(sequence) / 4) != len(adc_gate):
+            if (len(replay_data) / 4) != len(adc_gate):
                 raise ValueError("Miss match between replay data and adc gate length...")
 
             # ADC gate must be in range [0, 1]
@@ -216,11 +214,11 @@ class TxCard(SpectrumDevice):
 
             # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
             # Leave channel 0 (RF) as is
-            sequence[1::4] = sequence[1::4] >> 1 | adc_gate
-            sequence[2::4] = sequence[2::4] >> 1 | adc_gate
-            sequence[3::4] = sequence[3::4] >> 1 | adc_gate
+            replay_data[1::4] = replay_data[1::4] >> 1 | adc_gate
+            replay_data[2::4] = replay_data[2::4] >> 1 | adc_gate
+            replay_data[3::4] = replay_data[3::4] >> 1 | adc_gate
 
-        return sequence
+        return replay_data
 
     def start_operation(self, data: np.ndarray | None = None) -> None:
         """Start transmit (TX) card operation.

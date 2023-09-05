@@ -47,7 +47,7 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
         minmax.append((_min - abs(_min) * 0.1, _max + abs(_max) * 0.1))
 
         axis[k].plot(_data)
-        axis[k].set_ylabel("Channel ", k + 1)
+        axis[k].set_ylabel(f"Channel {k+1}")
 
         if not minmax[k][0] == minmax[k][1]:
             axis[k].set_ylim(minmax[k])
