@@ -14,6 +14,7 @@ from console.utilities.spcm_data_plot import plot_spcm_data
 # Get sequence provider object and read sequence
 seq: SequenceProvider = get_sequence_provider("../device_config.yaml")
 # seq.read("./sequences/fid_proj.seq")
+#seq.read("./sequences/gradient_test.seq")
 seq.read("./sequences/gradient_test.seq")
 
 # %%
@@ -29,8 +30,8 @@ rx_card: RxCard = get_rx_card("../device_config.yaml")
 
 # %%
 data = tx_card.prepare_sequence(sqnc, gate)
-fig = plot_spcm_data(data, contains_gate=True)
-fig.show()
+#fig = plot_spcm_data(data, contains_gate=True)
+#fig.show()
 
 # %%
 # Connect to tx card
@@ -42,11 +43,15 @@ rx_card.connect()
 
 # %%
 rx_card.start_operation()
-time.sleep(2)
+#time.sleep(2)
+# %%
 tx_card.start_operation(data)
 time.sleep(3)
 tx_card.stop_operation()
-time.sleep(2)
+#time.sleep(2)
+
+
+# %%
 rx_card.stop_operation()
 
 # %%
@@ -58,21 +63,20 @@ rx_card.disconnect()
 # %%
 # Plot rx data
 # rx_file = "./rx_20230824-141639.npy"
-rx_file = "./rx_debug.npy"
+rx_file = "./rx_20230904-233221.npy"
 
 file_exists = False
 while not file_exists:
     file_exists = os.path.exists(rx_file)
-
 rx_data = np.load(rx_file)
 
-# %%
+
 sample_rate = 1/10e6
 time_points = np.arange(len(rx_data)) * sample_rate
-to_idx = int(8e-3/sample_rate)
+#to_idx = int(8e-3/sample_rate)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 4))
-ax.plot(time_points[:to_idx]*1e3, np.abs(rx_data[:to_idx]))
+ax.plot(time_points*1e3, np.abs(rx_data))
 # ax.plot(time_points*1e3, np.abs(rx_data))
 ax.set_ylabel("RX amplitude")
 ax.set_xlabel("Time [ms]")
