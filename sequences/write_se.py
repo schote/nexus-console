@@ -29,28 +29,28 @@ num_samples = 5000
 adc_duration = 1e-3 # 4 ms
 te = 10e-3
 
-# # >> RF signals with varying amplitudes
-# # 90 degree RF sinc pulse
-# rf_block_1 = make_sinc_pulse(
-#     flip_angle=rf_flip,
-#     system=system,
-#     duration=rf_duration,
-#     slice_thickness=10,
-#     apodization=0.5,
-#     phase_offset=rf_phase,
-#     return_gz=False,
-# )
+# >> RF signals with varying amplitudes
+# 90 degree RF sinc pulse
+rf_block_1 = make_sinc_pulse(
+    flip_angle=rf_flip,
+    system=system,
+    duration=rf_duration,
+    slice_thickness=10,
+    apodization=0.5,
+    phase_offset=rf_phase,
+    return_gz=False,
+)
 
-# # 180 degree RF sinc pulse
-# rf_block_2 = make_sinc_pulse(
-#     flip_angle=rf_flip*2,   # twice the flip angle => 180°
-#     system=system,
-#     duration=rf_duration,   # same rf duration
-#     slice_thickness=10,
-#     apodization=0.5,
-#     phase_offset=rf_phase,
-#     return_gz=False,
-# )
+# 180 degree RF sinc pulse
+rf_block_2 = make_sinc_pulse(
+    flip_angle=rf_flip*2,   # twice the flip angle => 180°
+    system=system,
+    duration=rf_duration,   # same rf duration
+    slice_thickness=10,
+    apodization=0.5,
+    phase_offset=rf_phase,
+    return_gz=False,
+)
 
 # # >> RF signals with varying duration
 # # 90 degree RF sinc pulse
@@ -71,27 +71,27 @@ te = 10e-3
 #     system=system,
 # )
 
-# >> RF signals with varying duration
-# 90 degree RF sinc pulse
-rf_block_1 = make_block_pulse(
-    flip_angle=rf_flip,
-    duration=rf_duration,
-    phase_offset=rf_phase,
-    system=system,
-)
+# # >> RF signals with varying duration
+# # 90 degree RF sinc pulse
+# rf_block_1 = make_block_pulse(
+#     flip_angle=rf_flip,
+#     duration=rf_duration,
+#     phase_offset=rf_phase,
+#     system=system,
+# )
 
-# 180 degree RF sinc pulse
-rf_block_2 = make_block_pulse(
-    flip_angle=rf_flip*2,   # twice the flip angle => 180°
-    duration=rf_duration*2, # twice the duration => equal amplitudes
-    phase_offset=rf_phase,
-    system=system,
-)
+# # 180 degree RF sinc pulse
+# rf_block_2 = make_block_pulse(
+#     flip_angle=rf_flip*2,   # twice the flip angle => 180°
+#     duration=rf_duration*2, # twice the duration => equal amplitudes
+#     phase_offset=rf_phase,
+#     system=system,
+# )
 
 # # 90 degree RF block pulse
 # rf_block = make_block_pulse(
 #     flip_angle=rf_flip_angle, 
-#     duration=rf_duration, 
+#     duration=rf_duration,
 #     bandwidth=rf_bandwidth, 
 #     use='excitation', 
 #     system=system
