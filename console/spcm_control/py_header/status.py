@@ -1,3 +1,5 @@
+"""Spectrum card status registers, translations and descriptions from user manual."""
+
 # Card status
 M2STAT_CARD_PRETRIGGER = 0x1
 M2STAT_CARD_TRIGGER = 0x2

@@ -1,27 +1,127 @@
+"""Spectrum card registers provided by spectrum instrumentation."""
+
+
 def KILO(k):
+    """Translate value to kilo.
+
+    Example
+    -------
+    >>> KILO(1)
+    1e3
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in kilo
+    """
     return 1000 * (k)
 
 
 def MEGA(m):
+    """Translate value to mega.
+
+    Example
+    -------
+    >>> MEGA(1)
+    1e6
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in mega
+    """
     return 1000 * 1000 * (m)
 
 
 def GIGA(g):
+    """Translate value to giga.
+
+    Example
+    -------
+    >>> GIGA(1)
+    1e9
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in giga
+    """
     return 1000 * 1000 * 1000 * (g)
 
 
 def KILO_B(k):
+    """Translate value to kilo bytes.
+
+    Example
+    -------
+    >>> KILO_B(1)
+    1024
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in kilo bytes
+    """
     return 1024 * (k)
 
 
 def MEGA_B(m):
+    """Translate value to mega bytes.
+
+    Example
+    -------
+    >>> MEGA_B(1)
+    1024**2
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in mega bytes
+    """
     return 1024 * 1024 * (m)
 
 
 def GIGA_B(g):
+    """Translate value to giga bytes.
+
+    Example
+    -------
+    >>> GIGA_B(1)
+    1024**3
+
+    Parameters
+    ----------
+    k
+        Value to be translated
+
+    Returns
+    -------
+        Value in giga bytes
+    """
     return 1024 * 1024 * 1024 * (g)
 
 
+# Card registers
 TYP_PCIDEVICEID = 0x00000000
 TYP_EVAL = 0x00000010
 TYP_RSDLGA = 0x00000014
