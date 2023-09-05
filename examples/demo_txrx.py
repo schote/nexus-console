@@ -61,7 +61,7 @@ rx_card.disconnect()
 # %%
 # Plot rx data
 # rx_file = "./rx_20230824-141639.npy"
-rx_file = "./rx_20230904-233221.npy"
+rx_file = "./rx_20230905-223732_2.2340246_2.2300246.npy"
 
 file_exists = False
 while not file_exists:
@@ -76,6 +76,6 @@ time_points = np.arange(len(rx_data)) * sample_rate
 fig, ax = plt.subplots(1, 1, figsize=(10, 4))
 ax.plot(time_points*1e3, np.abs(rx_data))
 # ax.plot(time_points*1e3, np.abs(rx_data))
-ax.set_ylabel("RX amplitude")
-ax.set_xlabel("Time [ms]")
+ax.set_ylabel("RX amplitude / a.u.") #units are in PTB format
+ax.set_xlabel("Time / ms")
 # %%
