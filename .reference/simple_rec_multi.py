@@ -31,6 +31,10 @@ import sys
 from pyspcm import *
 from spcm_tools import *
 
+from console.spcm_control.device_interface import SpectrumDevice
+from console.spcm_control.spcm.pyspcm import *  # noqa # pylint: disable=wildcard-import,unused-wildcard-import
+from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status
+#
 #
 # **************************************************************************
 # main 
