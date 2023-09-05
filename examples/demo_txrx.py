@@ -17,33 +17,31 @@ seq: SequenceProvider = get_sequence_provider("../device_config.yaml")
 #seq.read("./sequences/gradient_test.seq")
 seq.read("./sequences/gradient_test.seq")
 
-# %%
 # Unrolling the sequence...
 sqnc, gate, total_samples = seq.unroll_sequence()
 
 # Sequence and adc gate are returned as list of numpy arrays => concatenate them
 sqnc = np.concatenate(sqnc)
 gate = np.concatenate(gate)
-# %%
+
 tx_card: TxCard = get_tx_card("../device_config.yaml")
 rx_card: RxCard = get_rx_card("../device_config.yaml")
 
-# %%
 data = tx_card.prepare_sequence(sqnc, gate)
-#fig = plot_spcm_data(data, contains_gate=True)
-#fig.show()
+fig = plot_spcm_data(data, contains_gate=True)
+fig.show()
 
 # %%
 # Connect to tx card
 tx_card.connect()
-
-# %%
 # Connect to rx card
 rx_card.connect()
 
+
 # %%
 rx_card.start_operation()
-#time.sleep(2)
+
+
 # %%
 tx_card.start_operation(data)
 time.sleep(3)

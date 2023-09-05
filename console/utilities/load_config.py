@@ -5,7 +5,7 @@ import yaml
 from pypulseq.opts import Opts
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.spcm_control.rx_device import RxCard
+from console.spcm_control.rx_device_2 import RxCard
 from console.spcm_control.tx_device import TxCard
 
 # >> Create yaml loader object
