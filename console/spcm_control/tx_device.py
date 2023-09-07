@@ -8,7 +8,7 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
 from console.spcm_control.device_interface import SpectrumDevice
-from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status
+from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status, type_to_name
 
 
 @dataclass
@@ -69,6 +69,8 @@ class TxCard(SpectrumDevice):
         # Threading class attributes
         self.worker: threading.Thread | None = None
         self.emergency_stop = threading.Event()
+        
+        self.card_type = spcm.int32(0)
 
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
@@ -86,6 +88,11 @@ class TxCard(SpectrumDevice):
         """
         # Reset card
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, spcm.byref(self.card_type))
+        
+        if not 'M2p.65' in (device_type := type_to_name(self.card_type.value)):
+            raise ConnectionError(f"TX ENGINE: Device with path {self.path} is of type {device_type}, no transmit card...")
+
 
         # self.print_status() # debug
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?

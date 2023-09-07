@@ -55,6 +55,9 @@ class RxCard(SpectrumDevice):
         spcm_dwGetParam_i32(self.card, SPC_PCITYP, byref(self.lCardType))
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)  # Needed?
 
+        if not 'M2p.59' in (device_type := type_to_name(self.lCardType.value)):
+            raise ConnectionError(f"RX ENGINE: Device with path {self.path} is of type {device_type}, no receive card...")
+
         # Setup channels
         # Input impdefance and voltage setting for channel0
         # spcm_dwSetParam_i32(self.card, SPC_CHENABLE    , CHANNEL0 | CHANNEL1 | CHANNEL2 | CHANNEL3) #Todo for all channels

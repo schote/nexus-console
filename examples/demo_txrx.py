@@ -5,16 +5,14 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from console.utilities.load_config import (RxCard, SequenceProvider, TxCard,
-                                  get_rx_card, get_sequence_provider,
-                                  get_tx_card)
+from console.utilities.load_config import get_instances
 from console.utilities.spcm_data_plot import plot_spcm_data
 
 # %%
-# Get sequence provider object and read sequence
-seq: SequenceProvider = get_sequence_provider("../device_config.yaml")
-# seq.read("./sequences/fid_proj.seq")
-#seq.read("./sequences/gradient_test.seq")
+# Get instances from configuration file
+seq, tx_card, rx_card = get_instances("../device_config.yaml")
+
+# Read sequence
 seq.read("./sequences/gradient_test.seq")
 
 # Unrolling the sequence...
@@ -23,9 +21,6 @@ sqnc, gate, total_samples = seq.unroll_sequence()
 # Sequence and adc gate are returned as list of numpy arrays => concatenate them
 sqnc = np.concatenate(sqnc)
 gate = np.concatenate(gate)
-
-tx_card: TxCard = get_tx_card("../device_config.yaml")
-rx_card: RxCard = get_rx_card("../device_config.yaml")
 
 data = tx_card.prepare_sequence(sqnc, gate)
 fig = plot_spcm_data(data, contains_gate=True)
