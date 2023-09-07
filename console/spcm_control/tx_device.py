@@ -54,7 +54,7 @@ class TxCard(SpectrumDevice):
         # Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)
         if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
             raise MemoryError(
-                "Ring buffer size is not a multiple of channel sample product \
+                "TX ENGINE:> Ring buffer size is not a multiple of channel sample product \
                 (number of enables channels times 2 byte per sample)"
             )
 
@@ -64,7 +64,7 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        print(f"Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
+        print(f"TX ENGINE:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -91,7 +91,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, spcm.byref(self.card_type))
         
         if not 'M2p.65' in (device_type := type_to_name(self.card_type.value)):
-            raise ConnectionError(f"TX ENGINE: Device with path {self.path} is of type {device_type}, no transmit card...")
+            raise ConnectionError(f"TX ENGINE:> Device with path {self.path} is of type {device_type}, no transmit card...")
 
 
         # self.print_status() # debug
@@ -108,7 +108,7 @@ class TxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = spcm.int64(0)
         spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.byref(sample_rate))
-        print(f"Tx device sampling rate: {sample_rate.value*1e-6} MHz")
+        print(f"TX ENGINE:> Device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != spcm.MEGA(self.sample_rate):
             raise Warning(
                 f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate \
@@ -163,8 +163,8 @@ class TxCard(SpectrumDevice):
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
-        print("Setup done, reading status...")
-        self.print_status()
+        # print("Setup done, reading status...")
+        # self.print_status()
 
     def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -> np.ndarray:
         """Prepare sequence data for replay.
@@ -203,18 +203,18 @@ class TxCard(SpectrumDevice):
         for k in range(4):
             if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
                 raise ValueError(
-                    f"Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
+                    f"TX ENGINE:> Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
                 )
             replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)
 
         if adc_gate is not None:
             # Check if lengths of data and gate signal are matching
             if (len(replay_data) / 4) != len(adc_gate):
-                raise ValueError("Miss match between replay data and adc gate length...")
+                raise ValueError("TX ENGINE:> Miss match between replay data and adc gate length...")
 
             # ADC gate must be in range [0, 1]
             if not np.array_equal(adc_gate, adc_gate.astype(bool)):
-                raise ValueError("ADC gate signal is not a binary signal...")
+                raise ValueError("TX ENGINE:> ADC gate signal is not a binary signal...")
 
             # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
             adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)
@@ -247,10 +247,10 @@ class TxCard(SpectrumDevice):
             Raised if replay data is not provided as numpy int16 values
         """
         if data is None or not data.dtype == np.int16:
-            raise ValueError("Replay data was not provided or not in int16 format...")
+            raise ValueError("TX ENGINE:> Replay data was not provided or not in int16 format...")
 
         if not self.card:
-            raise ConnectionError("No connection to card established...")
+            raise ConnectionError("TX ENGINE:> No connection to card established...")
 
         # Setup card, clear emergency stop thread event and start thread
         # self.setup_card()
@@ -261,6 +261,7 @@ class TxCard(SpectrumDevice):
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:
+            print("TX ENGINE:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
 
@@ -269,7 +270,7 @@ class TxCard(SpectrumDevice):
 
             self.worker = None
         else:
-            print("No active process found...")
+            print("TX ENGINE:> No active replay thread found...")
 
     def _streaming(self, data: np.ndarray) -> None:
         """Continuous FIFO mode examples.
@@ -287,22 +288,20 @@ class TxCard(SpectrumDevice):
         if (rest := data.nbytes % self.ring_buffer_size.value) != 0:
             rest = self.ring_buffer_size.value - rest
             if rest % 2 != 0:
-                raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
+                raise MemoryError("TX ENGINE:> Providet data array size is not a multiple of 2 bytes (size of one sample)")
 
             fill_size = int((rest) / 2)
             data = np.append(data, np.zeros(fill_size, dtype=np.int16))
-            print(f"Appended {fill_size} zeros to data array...")
+            print(f"TX ENGINE:> Appended {fill_size} zeros to data array...")
 
         # Get total size of data buffer to be played out
         self.data_buffer_size = int(data.nbytes)
         if self.data_buffer_size % (self.num_ch * 2) != 0:
-            raise MemoryError("Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...")
+            raise MemoryError("TX ENGINE:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...")
         data_buffer_samples_per_ch = spcm.uint64(int(self.data_buffer_size / (self.num_ch * 2)))
         # Report replay buffer size and samples
-        print(
-            f"Replay data buffer size in bytes: {self.data_buffer_size}, \
-                number of samples per channel: {data_buffer_samples_per_ch.value}..."
-        )
+        print(f"TX ENGINE:> Replay data buffer: {self.data_buffer_size} bytes")
+        print(f"TX ENGINE:> Samples per channel: {data_buffer_samples_per_ch.value}")
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -317,7 +316,7 @@ class TxCard(SpectrumDevice):
             self.ring_buffer_size.value,
         )
         transferred_bytes = self.ring_buffer_size.value
-        print("Initially transferred bytes: ", transferred_bytes)
+        # print("TX ENGINE:> Initially transferred bytes: ", transferred_bytes)
 
         # Perform initial data transfer to completely fill continuous buffer
         spcm.spcm_dwDefTransfer_i64(
@@ -331,12 +330,12 @@ class TxCard(SpectrumDevice):
         )
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
 
-        print("Starting DMA...")
+        # print("TX ENGINE:> Starting DMA...")
         error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA)
         self.handle_error(error)
 
         # Start card
-        print("Starting card...")
+        print("TX ENGINE:> Starting card...")
         error = spcm.spcm_dwSetParam_i32(
             self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER
         )
@@ -374,11 +373,11 @@ class TxCard(SpectrumDevice):
                 error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
                 self.handle_error(error)
 
-        print("FIFO LOOP FINISHED...")
+        # print("TX ENGINE:> FIFO LOOP FINISHED...")
         # Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)
-        print(f">> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
+        # print(f"TX ENGINE:> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
 
-        self.print_status()
+        # self.print_status()
 
     def get_status(self) -> int:
         """Get the current card status.
@@ -388,7 +387,7 @@ class TxCard(SpectrumDevice):
             String with status description.
         """
         if not self.card:
-            raise ConnectionError("No spectrum card found.")
+            raise ConnectionError("TX ENGINE:> No spectrum card found.")
         status = spcm.int32(0)
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_M2STATUS, spcm.byref(status))
         return status.value
@@ -408,4 +407,4 @@ class TxCard(SpectrumDevice):
         code = self.get_status()
         msg, bit_reg_rev = translate_status(code, include_desc=include_desc)
         pprint(msg)
-        print(f"Status code: {code}, Bit register (reversed): {bit_reg_rev}")
+        print(f"TX ENGINE:> Status code: {code}")
