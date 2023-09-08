@@ -53,7 +53,7 @@ g2 = make_extended_trapezoid(channel="x", times=g2_t, amplitudes=g2_amps)
 
 # Define sequence
 seq.add_block(g1, adc)
-seq.add_block(make_delay(6e-3))
+seq.add_block(make_delay(20e-3))
 seq.add_block(g2, adc)
 seq.set_definition('Name', 'gradient_test')
 

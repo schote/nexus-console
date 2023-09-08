@@ -17,7 +17,7 @@ RadiofrequencyRasterTime 1e-06
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
 [BLOCKS]
 1 400   0   1   0   0  1  0
-2 600   0   0   0   0  0  0
+2 2000   0   0   0   0  0  0
 3 400   0   2   0   0  1  0
 
 # Format of arbitrary gradients:
@@ -91,4 +91,4 @@ num_samples 6
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash e8d64e7c00ef8519160de5698e1d03f8
+Hash 3859b49e7aa0a9d7a4231b69384a9313
