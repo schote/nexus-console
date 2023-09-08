@@ -59,7 +59,7 @@ class RxCard(SpectrumDevice):
         spcm_dwSetParam_i64(self.card, SPC_M2CMD, M2CMD_CARD_RESET)  # Needed?
 
         if not 'M2p.59' in (device_type := type_to_name(self.lCardType.value)):
-            raise ConnectionError(f"RX ENGINE:> Device with path {self.path} is of type {device_type}, no receive card...")
+            raise ConnectionError(f"RX:> Device with path {self.path} is of type {device_type}, no receive card...")
 
         # Setup channels
         # Input impdefance and voltage setting for channel0
@@ -74,7 +74,7 @@ class RxCard(SpectrumDevice):
 
         # Get the number of active channels. This will be needed for handling the buffer size
         spcm_dwGetParam_i32(self.card, SPC_CHCOUNT, byref(self.num_channels))
-        print(f"RX ENGINE:> Number of active channels: {self.num_channels.value}")
+        print(f"RX:> Number of active channels: {self.num_channels.value}")
 
         # Some general cards settings
         spcm_dwSetParam_i32(self.card, SPC_DIGITALBWFILTER, 0)  # Digital filter setting for receiver
@@ -85,10 +85,10 @@ class RxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = int64(0)
         spcm_dwGetParam_i64(self.card, SPC_SAMPLERATE, byref(sample_rate))
-        print(f"RX ENGINE:> Device sampling rate: {sample_rate.value*1e-6} MHz")
+        print(f"RX:> Device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != MEGA(self.sample_rate):
             raise Warning(
-                f"RX ENGINE:> Rx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
+                f"RX:> Rx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz..."
             )
 
         # Set up the pre and post trigger values. Post trigger size is at least one notify size to avoid data loss. 
@@ -130,7 +130,7 @@ class RxCard(SpectrumDevice):
     def stop_operation(self):
         # Stop card thread. Check if thread is running
         if self.worker is not None:
-            print("RX ENGINE:> Stopping card...")
+            print("RX:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
             
@@ -149,11 +149,12 @@ class RxCard(SpectrumDevice):
     def _fifo_gated_ts(self):
         
         # >> Define data buffer
-        # Define the Rx buffer size. It should be at multiple of 4096 bytes notify size.
-        rx_size = 204800
-        rx_buffer_size = uint64(rx_size)
         rx_notify = 4096
         rx_notify_size = int32(rx_notify)
+        # Rx buffer size should be at multiple of 4096 bytes notify size.
+        rx_size = rx_notify * 60    # 204800
+        rx_buffer_size = uint64(rx_size)
+        # rx_buffer_size = uint64(1024**2) # 1 MB == 512 KSamples, max. buffer size
         
         # Define Rx Buffer
         rx_data = np.empty(shape=(1, rx_buffer_size.value * self.num_channels.value), dtype=np.int16)
@@ -200,10 +201,11 @@ class RxCard(SpectrumDevice):
 
         self.rx_data = []
         
+        print("RX:> Starting receiver...")
+        
         while not self.emergency_stop.is_set():
             
             spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_WAITDMA)
-            
             spcm_dwGetParam_i64(self.card, SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
             
             if available_timestamp_bytes.value >= 32:
@@ -253,11 +255,11 @@ class RxCard(SpectrumDevice):
                         spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
                         
                         # Read all samples
-                        index_0 = data_user_position.value
+                        # index_0 = data_user_position.value
                         
                         # gate_data = rx_data[index_0:index_0 + int(total_bytes/2)]
-                        available_samples = int(available_user_databytes.value / 2)
-                        gate_data = rx_data[:available_samples]
+                        # gate_data = rx_data[:int(available_user_databytes.value / 2)]
+                        gate_data = rx_data[:int(rx_buffer_size.value/2)]
                         
                         # Extract channel 0 and convert data from int16 to floats [V]
                         channel_0 = (np.array(gate_data[::2]) / np.iinfo(np.int16).max) * self.max_amplitude[0]
@@ -265,7 +267,7 @@ class RxCard(SpectrumDevice):
                         self.rx_data.append(channel_0[self.pre_trigger:])
 
 
-                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, total_bytes)
+                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, available_user_databytes.value)
                         
                         self.print_status()
                         
@@ -288,7 +290,7 @@ class RxCard(SpectrumDevice):
             String with status description.
         """
         if not self.card:
-            raise ConnectionError("RX ENGINE:> No spectrum card found.")
+            raise ConnectionError("RX:> No spectrum card found.")
         status = int32(0)
         spcm_dwGetParam_i32(self.card, SPC_M2STATUS, byref(status))
         return status.value
@@ -308,4 +310,4 @@ class RxCard(SpectrumDevice):
         code = self.get_status()
         msg, bit_reg_rev = translate_status(code, include_desc=include_desc)
         pprint(msg)
-        print(f"RX ENGINE:> Status code: {code}")
+        print(f"RX:> Status code: {code}")
