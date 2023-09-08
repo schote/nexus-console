@@ -93,8 +93,8 @@ class RxCard(SpectrumDevice):
 
         # Set up the pre and post trigger values. Post trigger size is at least one notify size to avoid data loss. 
         self.pre_trigger = 8
-        self.post_trigger = 4096        
-        self.post_trigger_size = self.post_trigger * 2 * self.num_channels.value
+        self.post_trigger = 4096 // self.num_channels.value        
+        self.post_trigger_size = self.post_trigger * 2 
         
         # Set the memory size, pre and post trigger and loop paramaters
         # spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, self.memory_size)
@@ -152,7 +152,7 @@ class RxCard(SpectrumDevice):
         rx_notify = 4096
         rx_notify_size = int32(rx_notify)
         # Rx buffer size should be at multiple of 4096 bytes notify size.
-        rx_size = rx_notify * 100    # 204800
+        rx_size = rx_notify * 400    
         rx_buffer_size = uint64(rx_size)
         # rx_buffer_size = uint64(1024**2) # 1 MB == 512 KSamples, max. buffer size
         
@@ -206,7 +206,6 @@ class RxCard(SpectrumDevice):
         total_bytes_read = 0
         self.rx_data = []
         # Todo check sequence parameters.
-        is_first = True
         print("RX:> Starting receiver...")
         
         
@@ -225,7 +224,7 @@ class RxCard(SpectrumDevice):
                 timestamp1 = pll_data[int(available_timestamp_postion.value/8)+2] / (self.sample_rate*1e6)
 
                 gate_length = timestamp1 - timestamp0
-                
+                print("------------------------------------------")
                 print(f"RX:> Timestamps: {(timestamp0, timestamp1)}s, difference: {round(gate_length*1e3, 2)}ms")
                 
                 spcm_dwSetParam_i32(self.card, SPC_TS_AVAIL_CARD_LEN, 32)
@@ -234,12 +233,12 @@ class RxCard(SpectrumDevice):
                 spcm_dwGetParam_i64(self.card, SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
                 print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
                 
-                
-                
-                
                 gate_sample = gate_length * self.sample_rate * 1e6    # number of adc gate sample points per channel
+                
+                #------------- Check for rounding errors
                 total_bytes = int((gate_sample + self.pre_trigger) * 2 * self.num_channels.value)
-                page_allign = total_bytes + (rx_notify-int(total_bytes % rx_notify)) 
+                page_allign = total_bytes + (rx_notify-int(total_bytes % rx_notify))
+                #-------------  
                 # Read/update available user bytes
                 spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))      
                 print("RX:> Available user length: ", available_user_databytes.value)
@@ -267,13 +266,9 @@ class RxCard(SpectrumDevice):
                         print(bytes_in_buffer)
                         
                         total_bytes_to_read = available_user_databytes.value
-                        if(is_first):
-                            index_0             = bytes_in_buffer + bytes_leftover
-                            is_first            = False
-                        else:
-                            index_0             = bytes_in_buffer + bytes_leftover + rx_notify
+                        index_0             = bytes_in_buffer + bytes_leftover
                         
-                        if(total_bytes_to_read + bytes_in_buffer > rx_size):
+                        if(total_bytes_to_read + bytes_in_buffer >= rx_size):
                             index_1                            = (rx_size - bytes_in_buffer)//2
                             index_2                            = (bytes_in_buffer - index_1)//2
                             print(f"RX:> indexes:               {index_1, index_2}")
@@ -293,11 +288,12 @@ class RxCard(SpectrumDevice):
 
                         # Tell the card that we have read the data. The card length should be in the order of notify size.
                         #spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, (available_user_databytes.value//rx_notify)*rx_notify)
-                        update_card_length = (available_user_databytes.value//rx_notify)*rx_notify
-                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, update_card_length)
+                        #update_card_length = (available_user_databytes.value//rx_notify)*rx_notify
+                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, page_allign+rx_notify)
                         #spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, available_user_databytes.value)
-                        bytes_leftover =bytes_in_buffer%rx_notify
-                        
+                        bytes_leftover = (total_bytes+self.post_trigger_size)%rx_notify
+                        spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
+                        print("RX:> Available user length: ", available_user_databytes.value)
                         
                         
                         print(f"RX:> Readout duration: {time.time() - t0}")
