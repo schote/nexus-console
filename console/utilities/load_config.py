@@ -23,11 +23,12 @@ Loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construct_map
 # >> Helper functions to read configuration file
 
 
-def read_config(path_to_config: str) -> dict:
-    """Read configuration yaml file with custom yaml loader.
+def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard]:
+    """Construct object instances from yaml configuration file.
 
-    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and
-    pypulseq parameters.
+    Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.
+    Object instances are created according to the parameterization from yaml configuration file.
+    This function returns object instances for all the different constructors.
 
     Parameters
     ----------
@@ -36,57 +37,14 @@ def read_config(path_to_config: str) -> dict:
 
     Returns
     -------
-        Dictionary with all entries from configuration yaml file
+        Tuple of instances: SequenceProvider, TxCard and RxCard
     """
     file_path = os.path.normpath(path_to_config)
     with open(file_path, "rb") as file:
         config = yaml.load(file, Loader=Loader)
-    return config
-
-
-# >> Helper functions to get instances
-
-
-def get_sequence_provider(path_to_config: str = "../device_config.yaml") -> SequenceProvider:
-    """Get a sequence provider class instance.
-
-    Parameters
-    ----------
-    path_to_config, optional
-        Path to configuration yaml file, by default "../device_config.yaml"
-
-    Returns
-    -------
-        Sequence provider class instance with configuration from yaml file.
-    """
-    return read_config(path_to_config)["SequenceProvider"]
-
-
-def get_tx_card(path_to_config: str = "../device_config.yaml") -> TxCard:
-    """Get a transmit card class instance.
-
-    Parameters
-    ----------
-    path_to_config, optional
-        Path to configuration yaml file, by default "../device_config.yaml"
-
-    Returns
-    -------
-        Transmit card class instance with configuration from yaml file.
-    """
-    return read_config(path_to_config)["TxCard"]
-
-
-def get_rx_card(path_to_config: str = "../device_config.yaml") -> RxCard:
-    """Get a receive card class instance.
-
-    Parameters
-    ----------
-    path_to_config, optional
-        Path to configuration yaml file, by default "../device_config.yaml"
-
-    Returns
-    -------
-        Receive card class instance with configuration from yaml file.
-    """
-    return read_config(path_to_config)["RxCard"]
+        
+    return (
+        config["SequenceProvider"],
+        config["TxCard"],
+        config["RxCard"]
+    )
