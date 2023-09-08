@@ -57,11 +57,13 @@ rx_card.disconnect()
 # TODO: Plot acquired data
 gate1 = rx_card.rx_data[0]
 gate2 = rx_card.rx_data[1]
+gate3 = rx_card.rx_data[2]
 
-fig, ax = plt.subplots(1, 2, figsize=(10,3))
+fig, ax = plt.subplots(1, 3, figsize=(10,3))
 ax[0].plot(gate1)
 ax[1].plot(gate2)
-
+ax[2].plot(gate3)
+plt.show()
 # %%
 # # Plot rx data
 # # rx_file = "./rx_20230824-141639.npy"
@@ -82,3 +84,5 @@ ax[1].plot(gate2)
 # # ax.plot(time_points*1e3, np.abs(rx_data))
 # ax.set_ylabel("RX amplitude")
 # ax.set_xlabel("Time [ms]")
+
+# %%

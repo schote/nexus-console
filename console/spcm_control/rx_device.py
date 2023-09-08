@@ -173,7 +173,7 @@ class RxCard(SpectrumDevice):
         ts_buffer       = ts_data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
                 
         # Define the notify size for rx buffer and timestamps. They should be at multiple of 4096 bytes.
-        rx_notify= 4096*10
+        rx_notify= 4096
         rx_notify_size = int32(rx_notify)
         ts_notify_size = int32(4096)
                 
