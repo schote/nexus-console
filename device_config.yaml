@@ -26,7 +26,8 @@ SequenceProvider: !SequenceProvider
   rf_double_precision: True
   grad_to_volt: 0.005
   rf_to_volt: 0.1
-  # TODO: Set system limits
+
+  # TODO: Review the following values
   system: !Opts
     max_grad: 250000.0
     max_slew: 250000.0
