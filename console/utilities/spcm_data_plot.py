@@ -3,16 +3,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
-def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
+
+def plot_spcm_data(sequence: UnrolledSequence):
     """Plot replay data for spectrum-instrumentation data in final card format.
 
     Parameters
     ----------
-    data
-        Numpy array containing the replay data
-    contains_gate, optional
-        Flag which indicates if replay data is contained in channels 1, 2 and 3, by default False
+    sequence
+        Instance of `UnrolledSequence` object containing the replay data and digital signals.
 
     Returns
     -------
@@ -24,34 +24,43 @@ def plot_spcm_data(data: np.ndarray, contains_gate: bool = False):
         Provided replay data is not in int16 format
     """
     num_channels = 4
-    fig, axis = plt.subplots(num_channels + int(contains_gate), 1, figsize=(16, 9))
-    minmax = []
+    fig, axis = plt.subplots(num_channels + 1, 1, figsize=(16, 9))
+    
+    sqncs = np.concatenate(sequence.seq)
+    
+    rf = sqncs[0::num_channels]
+    gx = sqncs[1::num_channels]
+    gy = sqncs[2::num_channels]
+    gz = sqncs[3::num_channels]
 
-    for k in range(num_channels):
-        if contains_gate and k > 0:
-            if not data[k::num_channels].dtype == np.int16:
-                raise ValueError("Require int16 values to decode digital signal...")
-            _data = data[k::num_channels] << 1
-            _adc = -1 * (data[k::num_channels] >> 15)
+    if sequence.is_int16:
+        if not sequence.seq.dtype == np.int16:
+            raise ValueError("Require int16 values to decode digital signal...")
+        
+        adc = -1 * (gx >> 15)
+        unblanking = -1 * (gy >> 15) 
+        
+        gx = gx << 1
+        gy = gy << 1
+        gz = gz << 1
 
-            axis[-1].plot(_adc)
-            axis[-1].set_ylabel("Digital")
+    else:
+        adc = np.concatenate(sequence.adc_gate)
+        unblanking = np.concatenate(sequence.rf_unblanking)
 
-        else:
-            _data = data[k::num_channels]
 
-        # Extract min-max values per channel
-        _min = _data.min()
-        _max = _data.max()
-        # Add +-10% of absolute to the calculated limits
-        minmax.append((_min - abs(_min) * 0.1, _max + abs(_max) * 0.1))
+    axis[0].plot(rf)
+    axis[1].plot(gx)
+    axis[2].plot(gy)
+    axis[3].plot(gz)
+    axis[4].plot(adc)
+    axis[4].plot(unblanking)
+    
+    axis[0].set_ylabel("RF")
+    axis[1].set_ylabel("Gx")
+    axis[2].set_ylabel("Gy")
+    axis[3].set_ylabel("Gz")
+    axis[4].set_ylabel("Digital")
+    axis[4].set_xlabel("Number of samples")
 
-        axis[k].plot(_data)
-        axis[k].set_ylabel(f"Channel {k+1}")
-
-        if not minmax[k][0] == minmax[k][1]:
-            axis[k].set_ylim(minmax[k])
-
-    axis[k].set_xlabel("Number of samples")
-
-    return fig
+    return fig, axis
