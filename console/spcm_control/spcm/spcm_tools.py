@@ -5,7 +5,7 @@ from typing import Any
 
 # load registers for easier access
 import console.spcm_control.py_header.regs as regs
-from console.spcm_control.py_header.errors import error_reg
+from console.spcm_control.py_header.errors import error_reg, ERR_OK
 from console.spcm_control.py_header.status import status_reg, status_reg_desc
 
 
@@ -53,9 +53,10 @@ def translate_error(error: int) -> str:
         Error description string from user manual
     """
     if error in error_reg.keys():
-        return "ERROR: {}".format(error_reg[error])
+        if error_reg[error] is not ERR_OK:
+                return f"ERROR: {error_reg[error]}"
     else:
-        return "Unknown error."
+        return "Unknown error"
 
 
 def type_to_name(card_type: int) -> str:
