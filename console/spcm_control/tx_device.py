@@ -166,66 +166,66 @@ class TxCard(SpectrumDevice):
         # print("Setup done, reading status...")
         # self.print_status()
 
-    def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -> np.ndarray:
-        """Prepare sequence data for replay.
+    # def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -> np.ndarray:
+    #     """Prepare sequence data for replay.
 
-        Parameters
-        ----------
-        sequence
-            Replay data as float values in correctly ordered numpy array.
+    #     Parameters
+    #     ----------
+    #     sequence
+    #         Replay data as float values in correctly ordered numpy array.
 
-        adc_gate
-            ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
-            The gate signal is replayed on digital outputs X0, X1, X2
+    #     adc_gate
+    #         ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
+    #         The gate signal is replayed on digital outputs X0, X1, X2
 
-        Returns
-        -------
-            Recombined sequence as numpy array with digital adc gate signal (if provided)
+    #     Returns
+    #     -------
+    #         Recombined sequence as numpy array with digital adc gate signal (if provided)
 
-        Example
-        -------
-            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
+    #     Example
+    #     -------
+    #         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
 
-            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+    #         >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
 
-        Raises
-        ------
-        ValueError
-            Raised if maximum voltage exceeds the channel maximum
-        ValueError
-            Raised if
-        ValueError
-            _description_
-        """
-        replay_data = np.zeros_like(sequence, dtype=np.int16)
-        # Check if max value in data does not exceed max amplitude, set per channel
-        # Convert voltage float values to int16, according to max amplitude per channel
-        for k in range(4):
-            if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
-                raise ValueError(
-                    f"TX:> Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
-                )
-            replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)
+    #     Raises
+    #     ------
+    #     ValueError
+    #         Raised if maximum voltage exceeds the channel maximum
+    #     ValueError
+    #         Raised if
+    #     ValueError
+    #         _description_
+    #     """
+    #     replay_data = np.zeros_like(sequence, dtype=np.int16)
+    #     # Check if max value in data does not exceed max amplitude, set per channel
+    #     # Convert voltage float values to int16, according to max amplitude per channel
+    #     for k in range(4):
+    #         if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
+    #             raise ValueError(
+    #                 f"TX:> Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
+    #             )
+    #         replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)
 
-        if adc_gate is not None:
-            # Check if lengths of data and gate signal are matching
-            if (len(replay_data) / 4) != len(adc_gate):
-                raise ValueError("TX:> Miss match between replay data and adc gate length...")
+    #     if adc_gate is not None:
+    #         # Check if lengths of data and gate signal are matching
+    #         if (len(replay_data) / 4) != len(adc_gate):
+    #             raise ValueError("TX:> Miss match between replay data and adc gate length...")
 
-            # ADC gate must be in range [0, 1]
-            if not np.array_equal(adc_gate, adc_gate.astype(bool)):
-                raise ValueError("TX:> ADC gate signal is not a binary signal...")
+    #         # ADC gate must be in range [0, 1]
+    #         if not np.array_equal(adc_gate, adc_gate.astype(bool)):
+    #             raise ValueError("TX:> ADC gate signal is not a binary signal...")
 
-            # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
-            adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)
+    #         # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
+    #         adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)
 
-            # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
-            # Leave channel 0 (RF) as is
-            replay_data[1::4] = replay_data[1::4] >> 1 | adc_gate
-            replay_data[2::4] = replay_data[2::4] >> 1 | adc_gate
-            replay_data[3::4] = replay_data[3::4] >> 1 | adc_gate
+    #         # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
+    #         # Leave channel 0 (RF) as is
+    #         replay_data[1::4] = replay_data[1::4] >> 1 | adc_gate
+    #         replay_data[2::4] = replay_data[2::4] >> 1 | adc_gate
+    #         replay_data[3::4] = replay_data[3::4] >> 1 | adc_gate
 
-        return replay_data
+    #     return replay_data
 
     def start_operation(self, data: np.ndarray | None = None) -> None:
         """Start transmit (TX) card operation.
