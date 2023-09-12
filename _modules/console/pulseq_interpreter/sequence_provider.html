@@ -389,6 +389,8 @@ document.write(`
 <span></span><span class="sd">&quot;&quot;&quot;Sequence provider class.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> \
+    <span class="n">UnrolledSequence</span>
 <span class="kn">from</span> <span class="nn">pypulseq.opts</span> <span class="kn">import</span> <span class="n">Opts</span>
 <span class="kn">from</span> <span class="nn">pypulseq.Sequence.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">resample</span>
@@ -436,6 +438,18 @@ document.write(`
 
         <span class="bp">self</span><span class="o">.</span><span class="n">carrier_time</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">carrier</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">channel_maxima</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span>
+
+    <span class="nd">@channel_maxima</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">set_channel_maxima</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amplitudes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">amplitudes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Only </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">amplitudes</span><span class="p">)</span><span class="si">}</span><span class="s2"> amplitude values are given but 4 are required.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span> <span class="o">=</span> <span class="n">amplitudes</span>
 
 <div class="viewcode-block" id="SequenceProvider.precalculate_carrier">
 <a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">[docs]</a>
@@ -459,7 +473,7 @@ document.write(`
 
 <div class="viewcode-block" id="SequenceProvider.calculate_rf">
 <a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">[docs]</a>
-    <span class="k">def</span> <span class="nf">calculate_rf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_block</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">calculate_rf</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_block</span><span class="p">,</span> <span class="n">unblanking</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate RF sample points to be played by TX card.</span>
 
 <span class="sd">        Parameters</span>
@@ -485,16 +499,22 @@ document.write(`
         <span class="c1"># TODO: Take into account the phase starting point depending on the end-time of the last RF (!)</span>
 
         <span class="c1"># Calculate zero filling for RF delay</span>
-        <span class="n">delay</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">rf_block</span><span class="o">.</span><span class="n">delay</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">num_samples_delay</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rf_block</span><span class="o">.</span><span class="n">delay</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">)</span>
+        <span class="n">delay</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples_delay</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="c1"># Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)</span>
         <span class="n">ringdown_dur</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">rf_ringdown_time</span><span class="p">,</span> <span class="n">rf_block</span><span class="o">.</span><span class="n">ringdown_time</span><span class="p">)</span>
-        <span class="n">ringdown_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">ringdown_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="n">num_samgles_ringdown</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ringdown_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">)</span>
+        <span class="n">ringdown_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samgles_ringdown</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
         <span class="c1"># Zero filling for ADC dead-time (maximum of dead time defined in RF event and system)</span>
         <span class="n">dead_dur</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">rf_dead_time</span><span class="p">,</span> <span class="n">rf_block</span><span class="o">.</span><span class="n">dead_time</span><span class="p">)</span>
-        <span class="n">dead_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dead_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-
+        <span class="n">num_samples_dead</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dead_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">)</span>
+        <span class="n">dead_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples_dead</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+        
         <span class="c1"># Calculate the number of shape sample points</span>
         <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">rf_block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">)</span>
+        
+        <span class="c1"># Set unblanking signal</span>
+        <span class="n">unblanking</span><span class="p">[</span><span class="n">num_samples_delay</span> <span class="p">:</span> <span class="n">num_samples_delay</span> <span class="o">+</span> <span class="n">num_samples</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># Calculate the static phase offset, defined in RF pulse</span>
         <span class="n">phase_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">rf_block</span><span class="o">.</span><span class="n">phase_offset</span><span class="p">)</span>
@@ -603,23 +623,65 @@ document.write(`
 
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
 <a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
-    <span class="k">def</span> <span class="nf">unroll_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll a read sequence object.</span>
+    <span class="k">def</span> <span class="nf">unroll_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">return_as_int16</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnrolledSequence</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll a pypulseq sequence object.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            List of lists, block-wise calculated sample points in correct order for spectrum card</span>
-<span class="sd">            and total number of sequence sample points</span>
+<span class="sd">            Instance of `UnrolledSequence` which contains a list of numpy arrays containing the </span>
+<span class="sd">            block-wise calculated sample points in correct spectrum card order.</span>
+<span class="sd">            The unrolled sequence may already be returned as int16 values. in this case it contains </span>
+<span class="sd">            the digital signals for the adc gate signal and the unblanking. Independent of the returned</span>
+<span class="sd">            sequence datatype, the adc and unblanking signals are returned as list of numpy arrays</span>
+<span class="sd">            in the unrolled sequence instance. Overall the `UnrolledSequence` instance gathers the following</span>
+<span class="sd">            attributes:</span>
+<span class="sd">            - seq: np.ndarray</span>
+<span class="sd">            - adc_gate: np.ndarray</span>
+<span class="sd">            - rf_blanking: np.ndarray</span>
+<span class="sd">            - is_int16: bool</span>
+<span class="sd">            - sample_count: int</span>
+<span class="sd">            - grad_to_volt: float</span>
+<span class="sd">            - rf_to_volt: float</span>
+<span class="sd">            - sample_rate: float</span>
+<span class="sd">            - larmor_frequency: float</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
 <span class="sd">        AttributeError</span>
 <span class="sd">            No sequence loaded</span>
+<span class="sd">            </span>
+<span class="sd">        AttributeError</span>
+<span class="sd">            Error converting sequence to int16: Maximum values per channel not set...</span>
+<span class="sd">            </span>
+<span class="sd">        Examples</span>
+<span class="sd">        ---------</span>
+<span class="sd">        </span>
+<span class="sd">        For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are ordered the following way.</span>
+
+<span class="sd">            &gt;&gt;&gt; data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]</span>
+<span class="sd">            </span>
+<span class="sd">            Per channel data can be extracted by the following code.</span>
+<span class="sd">            </span>
+<span class="sd">            &gt;&gt;&gt; rf = seq[0::4]</span>
+<span class="sd">            &gt;&gt;&gt; gx = seq[1::4]</span>
+<span class="sd">            &gt;&gt;&gt; gy = seq[2::4]</span>
+<span class="sd">            &gt;&gt;&gt; gz = seq[3::4]</span>
+<span class="sd">            </span>
+<span class="sd">            If `return_as_int16` flag was set, channel `gx` contains the digital adc gate signal and </span>
+<span class="sd">            `gy` the digital unblanking signal. The following example shows, how to extract the digital signals.</span>
+<span class="sd">            </span>
+<span class="sd">            &gt;&gt;&gt; adc = </span>
+<span class="sd">            &gt;&gt;&gt; unblanking = </span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unrolling sequnce...&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No sequence loaded.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Raise error if sequence values are to be returned as int16 but no channel max. values are given</span>
+        <span class="k">if</span> <span class="n">return_as_int16</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Error converting sequence to int16: Maximum values per channel not set...&quot;</span><span class="p">)</span>
 
         <span class="c1"># Pre-calculate the carrier signal to save computation time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">precalculate_carrier</span><span class="p">()</span>
@@ -630,6 +692,7 @@ document.write(`
         <span class="n">samples_per_block</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">block_duration</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">)</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">]</span>
         <span class="n">_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>  <span class="c1"># empty list of list, 4 channels =&gt; 4 times n_samples</span>
         <span class="n">_adc</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
+        <span class="n">_unblanking</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
 
         <span class="c1"># Last value of last block is added per channel to the gradient waveform as an offset value.</span>
         <span class="c1"># This is needed, since gradients must not be zero at the end of a block.</span>
@@ -642,10 +705,14 @@ document.write(`
 
         <span class="c1"># for k, (n_samples, block) in tqdm(enumerate(zip(samples_per_block, blocks))):</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">samples_per_block</span><span class="p">,</span> <span class="n">blocks</span><span class="p">)):</span>
+            
             <span class="n">sample_count</span> <span class="o">+=</span> <span class="n">n_samples</span>
 
             <span class="c1"># Calculate rf events of current block, zero-fill channels if not defined</span>
-            <span class="n">rf_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rf</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">)</span> <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">:</span>
+                <span class="n">rf_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rf</span><span class="p">(</span><span class="n">rf_block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">,</span> <span class="n">unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">num_total_samples</span><span class="o">=</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">rf_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
             <span class="c1"># TODO: Remember the phase of the last RF signal sample</span>
             <span class="c1"># =&gt; defines starting point for next RF event by adding a phase offset</span>
@@ -655,12 +722,49 @@ document.write(`
             <span class="n">gy_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">gy_const</span><span class="p">)</span> <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gy</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
             <span class="n">gz_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="p">,</span> <span class="n">n_samples</span><span class="p">,</span> <span class="n">gz_const</span><span class="p">)</span> <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gz</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
 
-            <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">rf_tmp</span><span class="p">,</span> <span class="n">gx_tmp</span><span class="p">,</span> <span class="n">gy_tmp</span><span class="p">,</span> <span class="n">gz_tmp</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
-
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">add_adc_gate</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="p">,</span> <span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
 
-        <span class="k">return</span> <span class="n">_seq</span><span class="p">,</span> <span class="n">_adc</span><span class="p">,</span> <span class="n">sample_count</span></div>
+            <span class="k">if</span> <span class="n">return_as_int16</span><span class="p">:</span>
+                <span class="c1"># Convert RF to int16</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span> <span class="o">:=</span> <span class="n">rf_tmp</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RF exceeds max. amplitude value configured for the channel...&quot;</span><span class="p">)</span>
+                <span class="n">rf_tmp</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                
+                <span class="c1"># Convert x gradient to int16</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span> <span class="o">:=</span> <span class="n">gx_tmp</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RF exceeds max. amplitude value configured for the channel...&quot;</span><span class="p">)</span>
+                <span class="n">gx_tmp</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                <span class="c1"># Add adc to gx_tmp</span>
+                <span class="n">gx_tmp</span> <span class="o">=</span> <span class="n">gx_tmp</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">))</span> <span class="o">*</span> <span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                
+                <span class="c1"># Convert y gradient to int16</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span> <span class="o">:=</span> <span class="n">gy_tmp</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RF exceeds max. amplitude value configured for the channel...&quot;</span><span class="p">)</span>
+                <span class="n">gy_tmp</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                <span class="c1"># Add unblanking to gy_tmp</span>
+                <span class="n">gy_tmp</span> <span class="o">=</span> <span class="n">gy_tmp</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">))</span> <span class="o">*</span> <span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                
+                <span class="c1"># Convert z gradient to int16</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x</span> <span class="o">:=</span> <span class="n">gz_tmp</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amp_per_channel</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RF exceeds max. amplitude value configured for the channel...&quot;</span><span class="p">)</span>
+                <span class="n">gz_tmp</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+                <span class="c1"># Use 15th bit of gz_tmp to store the clock? (simple sequence of 0, 1, 0, 1, ...)</span>
+
+            <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">rf_tmp</span><span class="p">,</span> <span class="n">gx_tmp</span><span class="p">,</span> <span class="n">gy_tmp</span><span class="p">,</span> <span class="n">gz_tmp</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">UnrolledSequence</span><span class="p">(</span>
+            <span class="n">seq</span><span class="o">=</span><span class="n">_seq</span><span class="p">,</span>
+            <span class="n">adc_gate</span><span class="o">=</span><span class="n">_adc</span><span class="p">,</span>
+            <span class="n">rf_unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">,</span>
+            <span class="n">is_int16</span><span class="o">=</span><span class="n">return_as_int16</span><span class="p">,</span>
+            <span class="n">sample_count</span><span class="o">=</span><span class="n">sample_count</span><span class="p">,</span>
+            <span class="n">grad_to_volt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grad_to_volt</span><span class="p">,</span>
+            <span class="n">rf_to_volt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf_to_volt</span><span class="p">,</span>
+            <span class="n">sample_rate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_sample_rate</span><span class="p">,</span>
+            <span class="n">larmor_frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>

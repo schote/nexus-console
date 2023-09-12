@@ -461,7 +461,7 @@ the <code class="docutils literal notranslate"><span class="pre">unroll_sequence
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">
-<span class="sig-name descname"><span class="pre">calculate_rf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rf_block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_rf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">calculate_rf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rf_block</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unblanking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_rf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf" title="Link to this definition">#</a></dt>
 <dd><p>Calculate RF sample points to be played by TX card.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -476,6 +476,11 @@ the <code class="docutils literal notranslate"><span class="pre">unroll_sequence
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.channel_maxima">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">channel_maxima</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.channel_maxima" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">
 <span class="sig-name descname"><span class="pre">precalculate_carrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.precalculate_carrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier" title="Link to this definition">#</a></dt>
@@ -485,22 +490,64 @@ Each RF event then reuses the pre-calculated carrier signal.
 Dependent on the specific RF event it might be truncated and modulated.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.set_channel_maxima">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">set_channel_maxima</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.set_channel_maxima" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">
-<span class="sig-name descname"><span class="pre">unroll_sequence</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.unroll_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence" title="Link to this definition">#</a></dt>
-<dd><p>Unroll a read sequence object.</p>
+<span class="sig-name descname"><span class="pre">unroll_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_as_int16</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">UnrolledSequence</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.unroll_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence" title="Link to this definition">#</a></dt>
+<dd><p>Unroll a pypulseq sequence object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><ul class="simple">
-<li><p><em>List of lists, block-wise calculated sample points in correct order for spectrum card</em></p></li>
-<li><p><em>and total number of sequence sample points</em></p></li>
+<li><p>Instance of <cite>UnrolledSequence</cite> which contains a list of numpy arrays containing the</p></li>
+<li><p><em>block-wise calculated sample points in correct spectrum card order.</em></p></li>
+<li><p><em>The unrolled sequence may already be returned as int16 values. in this case it contains</em></p></li>
+<li><p><em>the digital signals for the adc gate signal and the unblanking. Independent of the returned</em></p></li>
+<li><p><em>sequence datatype, the adc and unblanking signals are returned as list of numpy arrays</em></p></li>
+<li><p>in the unrolled sequence instance. Overall the <cite>UnrolledSequence</cite> instance gathers the following</p></li>
+<li><p><em>attributes</em></p></li>
+<li><p><strong>- seq</strong> (<em>np.ndarray</em>)</p></li>
+<li><p><strong>- adc_gate</strong> (<em>np.ndarray</em>)</p></li>
+<li><p><strong>- rf_blanking</strong> (<em>np.ndarray</em>)</p></li>
+<li><p><strong>- is_int16</strong> (<em>bool</em>)</p></li>
+<li><p><strong>- sample_count</strong> (<em>int</em>)</p></li>
+<li><p><strong>- grad_to_volt</strong> (<em>float</em>)</p></li>
+<li><p><strong>- rf_to_volt</strong> (<em>float</em>)</p></li>
+<li><p><strong>- sample_rate</strong> (<em>float</em>)</p></li>
+<li><p><strong>- larmor_frequency</strong> (<em>float</em>)</p></li>
 </ul>
 </p>
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>AttributeError</strong> – No sequence loaded</p>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>AttributeError</strong> – No sequence loaded</p></li>
+<li><p><strong>AttributeError</strong> – Error converting sequence to int16: Maximum values per channel not set…</p></li>
+</ul>
 </dd>
 </dl>
+<p class="rubric">Examples</p>
+<p>For channels ch0, ch1, ch2, ch3, data values n = 0, 1, …, N are ordered the following way.</p>
+<blockquote>
+<div><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch0_0</span><span class="p">,</span> <span class="n">ch1_0</span><span class="p">,</span> <span class="n">ch2_0</span><span class="p">,</span> <span class="n">ch3_0</span><span class="p">,</span> <span class="n">ch0_1</span><span class="p">,</span> <span class="n">ch1_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch0_n</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch3_N</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Per channel data can be extracted by the following code.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rf</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gx</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gy</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gz</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>If <cite>return_as_int16</cite> flag was set, channel <cite>gx</cite> contains the digital adc gate signal and
+<cite>gy</cite> the digital unblanking signal. The following example shows, how to extract the digital signals.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">adc</span> <span class="o">=</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">unblanking</span> <span class="o">=</span>
+</pre></div>
+</div>
+</div></blockquote>
 </dd></dl>
 
 </dd></dl>
@@ -558,7 +605,9 @@ Dependent on the specific RF event it might be truncated and modulated.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.add_adc_gate()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_gradient()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_rf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.channel_maxima"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.channel_maxima</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.precalculate_carrier()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.set_channel_maxima"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.set_channel_maxima</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.unroll_sequence()</span></code></a></li>
 </ul>
 </li>

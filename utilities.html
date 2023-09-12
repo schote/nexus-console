@@ -405,68 +405,21 @@ document.write(`
 <span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-console.utilities.load_config" title="Link to this heading">#</a></h1>
 <p>Utility functions for loading configuration and adding constructors.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.load_config.get_rx_card">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">get_rx_card</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../device_config.yaml'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="spcm_control.html#console.spcm_control.rx_device.RxCard" title="console.spcm_control.rx_device.RxCard"><span class="pre">RxCard</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#get_rx_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.get_rx_card" title="Link to this definition">#</a></dt>
-<dd><p>Get a receive card class instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path_to_config</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-<li><p><strong>optional</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Receive card class instance with configuration from yaml file.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.load_config.get_sequence_provider">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">get_sequence_provider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../device_config.yaml'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#get_sequence_provider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.get_sequence_provider" title="Link to this definition">#</a></dt>
-<dd><p>Get a sequence provider class instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path_to_config</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-<li><p><strong>optional</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Sequence provider class instance with configuration from yaml file.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.load_config.get_tx_card">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">get_tx_card</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../device_config.yaml'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="spcm_control.html#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#get_tx_card"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.get_tx_card" title="Link to this definition">#</a></dt>
-<dd><p>Get a transmit card class instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path_to_config</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-<li><p><strong>optional</strong> – Path to configuration yaml file, by default “../device_config.yaml”</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Transmit card class instance with configuration from yaml file.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.load_config.read_config">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">read_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#read_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.read_config" title="Link to this definition">#</a></dt>
-<dd><p>Read configuration yaml file with custom yaml loader.</p>
-<p>Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and
-pypulseq parameters.</p>
+<dt class="sig sig-object py" id="console.utilities.load_config.get_instances">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">get_instances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="spcm_control.html#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">RxCard</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#get_instances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.get_instances" title="Link to this definition">#</a></dt>
+<dd><p>Construct object instances from yaml configuration file.</p>
+<p>Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.
+Object instances are created according to the parameterization from yaml configuration file.
+This function returns object instances for all the different constructors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>path_to_config</strong> – Path to configuration yaml file</p>
 </dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Dictionary with all entries from configuration yaml file</p>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Tuple of instances</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider">SequenceProvider</a>, TxCard and RxCard</p>
 </dd>
 </dl>
 </dd></dl>
@@ -530,15 +483,11 @@ pypulseq parameters.</p>
 <p id="module-console.utilities.spcm_data_plot">Plot function for spcm formatted data array.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="console.utilities.spcm_data_plot.plot_spcm_data">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.spcm_data_plot.</span></span><span class="sig-name descname"><span class="pre">plot_spcm_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contains_gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/utilities/spcm_data_plot.html#plot_spcm_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.spcm_data_plot.plot_spcm_data" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">console.utilities.spcm_data_plot.</span></span><span class="sig-name descname"><span class="pre">plot_spcm_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">UnrolledSequence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/utilities/spcm_data_plot.html#plot_spcm_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.spcm_data_plot.plot_spcm_data" title="Link to this definition">#</a></dt>
 <dd><p>Plot replay data for spectrum-instrumentation data in final card format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> – Numpy array containing the replay data</p></li>
-<li><p><strong>contains_gate</strong> – Flag which indicates if replay data is contained in channels 1, 2 and 3, by default False</p></li>
-<li><p><strong>optional</strong> – Flag which indicates if replay data is contained in channels 1, 2 and 3, by default False</p></li>
-</ul>
+<dd class="field-odd"><p><strong>sequence</strong> – Instance of <cite>UnrolledSequence</cite> object containing the replay data and digital signals.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>Matplotlib figure</p>
@@ -589,10 +538,7 @@ pypulseq parameters.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.get_rx_card"><code class="docutils literal notranslate"><span class="pre">get_rx_card()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.get_sequence_provider"><code class="docutils literal notranslate"><span class="pre">get_sequence_provider()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.get_tx_card"><code class="docutils literal notranslate"><span class="pre">get_tx_card()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.read_config"><code class="docutils literal notranslate"><span class="pre">read_config()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.get_instances"><code class="docutils literal notranslate"><span class="pre">get_instances()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.sequence_plot.TraceData"><code class="docutils literal notranslate"><span class="pre">TraceData</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.sequence_plot.TraceData.name"><code class="docutils literal notranslate"><span class="pre">TraceData.name</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.sequence_plot.TraceData.signal_values"><code class="docutils literal notranslate"><span class="pre">TraceData.signal_values</span></code></a></li>

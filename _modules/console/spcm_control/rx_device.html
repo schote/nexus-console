@@ -391,7 +391,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">threading</span>
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">console.spcm_control.device_interface</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
@@ -411,7 +411,7 @@ document.write(`
     <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">memory_size</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">loops</span><span class="p">:</span> <span class="nb">int</span>
-
+    <span class="n">timeStampMode</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;RxCard&quot;</span>
 
     <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -450,21 +450,13 @@ document.write(`
         <span class="c1"># Setup channels</span>
         <span class="c1"># Input impdefance and voltage setting for channel0</span>
         <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_CHENABLE    , CHANNEL0 | CHANNEL1 | CHANNEL2 | CHANNEL3) #Todo for all channels</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CHENABLE</span><span class="p">,</span> <span class="n">CHANNEL0</span> <span class="o">|</span> <span class="n">CHANNEL1</span><span class="p">)</span>  <span class="c1"># Todo for all channels</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_50OHM0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Todo make it variable or input impedance always 50 ohms?</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CHENABLE</span><span class="p">,</span> <span class="n">CHANNEL0</span> <span class="o">|</span> <span class="n">CHANNEL1</span><span class="p">)</span>  <span class="c1"># Todo for all channels selectable?</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_50OHM0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_AMP0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-        <span class="c1"># Input impdefance and voltage setting for channel1</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_50OHM1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Todo make it variable or input impedance always 50 ohms?</span>
+        <span class="c1"># Input impdefance and voltage setting for channel1, More channels can be added later. TBD.</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_50OHM1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> 
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_AMP1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
-        <span class="c1"># Input impdefance and voltage setting for channel2</span>
-        <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_50OHM2      , 0) #Todo make it variable or input impedance always 50 ohms?</span>
-        <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_AMP2        , self.max_amplitude[2])</span>
-
-        <span class="c1"># #Input impdefance and voltage setting for channel3</span>
-        <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_50OHM3      , 0) #Todo make it variable or input impedance always 50 ohms?</span>
-        <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_AMP3        , self.max_amplitude[3])</span>
 
         <span class="c1"># Get the number of active channels. This will be needed for handling the buffer size</span>
         <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CHCOUNT</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">))</span>
@@ -472,9 +464,7 @@ document.write(`
 
         <span class="c1"># Some general cards settings</span>
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DIGITALBWFILTER</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Digital filter setting for receiver</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">SPC_CM_INTPLL</span><span class="p">)</span>  <span class="c1"># Set clock mode</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CLOCKOUT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Output clock</span>
-
+        
         <span class="c1"># Set card sampling rate in MHz</span>
         <span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span>
 
@@ -487,86 +477,232 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;Rx device sample rate                </span><span class="si">{</span><span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz does not match set sample rate of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="si">}</span><span class="s2"> MHz...&quot;</span>
             <span class="p">)</span>
 
-        <span class="c1"># Setup the card mode</span>
-        <span class="c1"># self.post_trigger = self.memory_size - 8000 #Maybe make it variable?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c1"># (1/self.sample_rate)*8000 #Maybe make it variable?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="o">=</span> <span class="mi">8</span>  <span class="c1"># (1/self.sample_rate)*8000 #Maybe make it variable?</span>
-        <span class="c1"># FIFO mode</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">SPC_REC_FIFO_GATE</span><span class="p">)</span>
-        <span class="c1"># Single mode</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_STD_SINGLE    )</span>
+        <span class="c1"># Set up the pre and post trigger values. Post trigger size is at least one notify size to avoid data loss. </span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">4096</span>  
+        <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="o">=</span> <span class="mi">8</span>  
+        
+        <span class="c1"># Set the memory size, pre and post trigger and loop paramaters</span>
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_MEMSIZE</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_size</span><span class="p">)</span>
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_POSTTRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span><span class="p">)</span>
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_PRETRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_POSTTRIGGER , 0)</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_PRETRIGGER , 0)</span>
-        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_LOOPS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loops</span><span class="p">)</span>
-
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_LOOPS</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loops</span><span class="p">)</span> <span class="c1"># Loop parameter is zero for infinite loop</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">SPC_CM_INTPLL</span><span class="p">)</span>  <span class="c1"># Set clock mode</span>
+        <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_CLOCKOUT, 1)  # Output clock , TBD if we need to sync the cards.</span>
+        
+        <span class="c1"># Setup timestamp mode to read number of samples per gate if available</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeStampMode</span><span class="p">):</span>
+            <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span><span class="n">SPC_TIMESTAMP_CMD</span><span class="p">,</span><span class="n">SPC_TSMODE_STARTRESET</span> <span class="o">|</span> <span class="n">SPC_TSCNT_INTERNAL</span><span class="p">)</span>
+            <span class="c1">#spcm_dwSetParam_i32(self.card,SPC_TIMESTAMP_CMD,SPC_TS_RESET)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time Stamps are enabled&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time Stamps are not enabled&quot;</span><span class="p">)</span>
+            
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TRIG_EXT1_MODE</span><span class="p">,</span> <span class="n">SPC_TM_POS</span><span class="p">)</span>
         <span class="c1">#        spcm_dwSetParam_i32 (self.card, SPC_TRIG_TERM, 1)     #If we use analog trigger</span>
         <span class="c1">#        spcm_dwSetParam_i32 (self.card, SPC_TRIG_EXT0_LEVEL0, 1000)</span>
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TRIG_ORMASK</span><span class="p">,</span> <span class="n">SPC_TMASK_EXT1</span><span class="p">)</span>
 
-        <span class="c1"># spcm_dwGetParam_i32 (self.card, SPC_MEMSIZE     , byref(self.lmemory_size   )) # Read memory size</span>
-        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_POSTTRIGGER</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpost_trigger</span><span class="p">))</span>  <span class="c1"># Read post trigger</span>
-        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TRIG_DELAY</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ltrigger_delay</span><span class="p">))</span>  <span class="c1"># Trigger delay</span>
-        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPCM_X1_MODE</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lx0_mode</span><span class="p">))</span>  <span class="c1"># X0_mode , Can be used as trigger.</span>
+        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_MEMSIZE</span>      <span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lmemory_size</span><span class="p">))</span> <span class="c1"># Read memory size</span>
+        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_POSTTRIGGER</span>  <span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lpost_trigger</span><span class="p">))</span>    <span class="c1"># Read post trigger</span>
+        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TRIG_DELAY</span>   <span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ltrigger_delay</span><span class="p">))</span>   <span class="c1"># Trigger delay</span>
+        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPCM_X1_MODE</span>     <span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lx0_mode</span><span class="p">))</span>         <span class="c1"># X0_mode , Can be used as trigger.</span>
 
-        <span class="c1"># print(f&quot;Rx device memory size:                  {self.lmemory_size}&quot;   )</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rx device memory size:                  </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lmemory_size</span><span class="si">}</span><span class="s2">&quot;</span>   <span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Post trigger time:                      </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lpost_trigger</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># todo calculate and write time units</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Trigger delay is:                       </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ltrigger_delay</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>  <span class="c1"># todo calculate and write time units</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X0 mode is:                             </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lx0_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;X0 mode is:                             </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lx0_mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+       
+        <span class="c1"># FIFO mode</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">SPC_REC_FIFO_GATE</span><span class="p">)</span></div>
 
-
-        <span class="c1"># Multi purpose I/O lines</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPCM_X0_MODE, SPCM_XMODE_TRIGOUT) # X0 as gate signal, SPCM_XMODE_ASYNCOUT?</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPCM_X1_MODE, SPCM_XMODE_DISABLE)</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPCM_X2_MODE, SPCM_XMODE_DISABLE)</span>
-        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPCM_X3_MODE, SPCM_XMODE_DISABLE)</span>
+        <span class="c1"># Single mode</span>
+        <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_CARDMODE    , SPC_REC_STD_SINGLE    )</span>
 
 <div class="viewcode-block" id="RxCard.start_operation">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.start_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>  <span class="c1"># self note: Add type?</span>
         <span class="c1"># event = threading.Event()</span>
+        
+        <span class="c1"># Clear the emergency stop flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_FIFO_gated_mode_example</span><span class="p">)</span>  <span class="c1"># , args=(None)) #</span>
+        
+        <span class="c1"># Start card thread. if time stamp mode is not available use the example function.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeStampMode</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_FIFO_gated_mode_TS</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_FIFO_gated_mode_example</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
-
-        <span class="c1"># Join after timeout of 10 seconds</span>
-        <span class="c1"># worker.join()</span>
-        <span class="c1"># event.set()</span>
-        <span class="c1"># worker.join()</span>
-        <span class="c1"># print(&quot;\nThread closed, stopping receiver card...&quot;)</span>
-
-        <span class="c1"># print(rx_buffer.value)</span>
-
+        
 <div class="viewcode-block" id="RxCard.stop_operation">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.stop_operation">[docs]</a>
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Stop card thread. Check if thread is running</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
-            <span class="n">error</span> <span class="o">=</span> <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_CARD_STOP</span> <span class="o">|</span> <span class="n">M2CMD_DATA_STOPDMA</span><span class="p">)</span>
+            
+            <span class="c1"># Stop the card. We will stop the card in two steps. First we will stop the data transfer and then we will stop the card. If time stamp mode is enabled, we need to stop the extra data transfer as well.</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timeStampMode</span><span class="p">):</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_CARD_STOP</span> <span class="o">|</span> <span class="n">M2CMD_DATA_STOPDMA</span> <span class="o">|</span> <span class="n">M2CMD_EXTRA_STOPDMA</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_CARD_STOP</span> <span class="o">|</span> <span class="n">M2CMD_DATA_STOPDMA</span><span class="p">)</span>
+            
+            <span class="c1">#Handle error</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="kc">None</span>
+            
+        <span class="c1"># No thread is running</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No active process found...&quot;</span><span class="p">)</span></div>
 
+    
+    <span class="k">def</span> <span class="nf">_FIFO_gated_mode_TS</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Define the Rx buffer size. It should be at multiple of 4096 bytes notify size.</span>
+        <span class="n">rx_size</span> <span class="o">=</span> <span class="mi">204800</span>
+        <span class="n">rx_buffer_size</span> <span class="o">=</span> <span class="n">uint64</span><span class="p">(</span><span class="n">rx_size</span><span class="p">)</span>
+        <span class="n">ts_buffer_size</span> <span class="o">=</span> <span class="n">uint64</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
+        
+        <span class="c1"># Define Rx Buffer</span>
+        <span class="n">rx_data</span>         <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="n">rx_buffer</span>       <span class="o">=</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int16</span><span class="p">))</span>
+        
+        <span class="c1"># Define Timestamp buffer</span>
+        <span class="n">ts_data</span>         <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ts_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="n">ts_buffer</span>       <span class="o">=</span> <span class="n">ts_data</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int16</span><span class="p">))</span>
+                
+        <span class="c1"># Define the notify size for rx buffer and timestamps. They should be at multiple of 4096 bytes.</span>
+        <span class="n">rx_notify</span><span class="o">=</span> <span class="mi">4096</span>
+        <span class="n">rx_notify_size</span> <span class="o">=</span> <span class="n">int32</span><span class="p">(</span><span class="n">rx_notify</span><span class="p">)</span>
+        <span class="n">ts_notify_size</span> <span class="o">=</span> <span class="n">int32</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
+                
+        <span class="c1"># Write Rx buffer to the card</span>
+        <span class="n">spcm_dwDefTransfer_i64</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPCM_BUF_DATA</span><span class="p">,</span> <span class="n">SPCM_DIR_CARDTOPC</span><span class="p">,</span> <span class="n">rx_notify_size</span><span class="p">,</span> <span class="n">rx_buffer</span><span class="p">,</span> <span class="n">uint64</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">rx_buffer_size</span><span class="p">)</span>
+                
+        <span class="c1"># Define the transfer buffer for the cards. Please note that the notify size is 4096 bytes, which should be a single page (minimum value for the cards). </span>
+        <span class="n">spcm_dwDefTransfer_i64</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPCM_BUF_TIMESTAMP</span><span class="p">,</span> <span class="n">SPCM_DIR_CARDTOPC</span><span class="p">,</span> <span class="n">ts_notify_size</span><span class="p">,</span> <span class="n">ts_buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ts_buffer_size</span><span class="p">)</span>
+        
+        <span class="c1"># Define a timeout for the DMA. We will not wait more than 10 seconds if there is no upcoming data. </span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">5000</span>
+        <span class="p">)</span>
+        <span class="c1"># Enable the polling mode for timestamp data because the data rate for timestamp is very low.</span>
+        <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_EXTRA_POLL</span><span class="p">)</span>
+        
+        <span class="c1"># The required settings are complete. We can start the cards now</span>
+        <span class="n">err</span> <span class="o">=</span> <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_CARD_START</span> <span class="o">|</span> <span class="n">M2CMD_CARD_ENABLETRIGGER</span> <span class="o">|</span><span class="n">M2CMD_DATA_STARTDMA</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Rx card is started....&quot;</span><span class="p">)</span>
+        <span class="c1">#spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_STARTDMA | M2CMD_DATA_WAITDMA)</span>
+        <span class="c1"># Card status register</span>
+        <span class="n">card_staus</span>                      <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># The following registers are used to read the data from the card.</span>
+        <span class="n">available_user_databytes</span>        <span class="o">=</span> <span class="n">int32</span><span class="p">()</span>
+        <span class="n">data_user_position</span>              <span class="o">=</span> <span class="n">int32</span><span class="p">()</span>
+        <span class="n">number_of_samples_transferred</span>   <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">total_transferred</span>               <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1"># The following registers are used to read the timestamp data from the card.</span>
+        <span class="n">available_timestamp_bytes</span>       <span class="o">=</span> <span class="n">int32</span><span class="p">()</span>
+        <span class="n">available_timestamp_postion</span>     <span class="o">=</span> <span class="n">int32</span><span class="p">()</span>
+        
+        <span class="n">f0_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+        <span class="n">f1_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">counter2</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Define an infinite loop to read continously the card data. Until user stops the process.</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
+            
+            <span class="c1"># Wait for data to be available by cards. The data should be at least 4K for the current notify size setting. Please check Notify size for further data. </span>
+            <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span>  <span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+            <span class="c1">#spcm_dwGetParam_i32 (self.card, SPC_M2STATUS,            byref (card_staus))</span>
+            <span class="n">card_staus</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>
+            <span class="n">msg</span><span class="p">,</span> <span class="n">bit_reg_rev</span> <span class="o">=</span> <span class="n">translate_status</span><span class="p">(</span><span class="n">card_staus</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="c1">#print(bit_reg_rev[8])</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">bit_reg_rev</span><span class="p">[</span><span class="mi">8</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;1&#39;</span><span class="p">):</span> <span class="c1">#M2STAT_DATA_BLOCKREADY</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="k">if</span><span class="p">(</span><span class="n">card_staus</span> <span class="o">==</span> <span class="n">M2STAT_DATA_OVERRUN</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data overrun error&quot;</span><span class="p">)</span> <span class="c1">#Todo: Handle error</span>
+                <span class="k">elif</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;=</span> <span class="n">rx_notify</span><span class="p">):</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got total samples...        </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got samples per channel...  </span><span class="si">{</span><span class="n">counter2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">rx_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rx_</span><span class="si">{</span><span class="n">rx_time</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span> <span class="n">f1_i</span><span class="p">)</span> <span class="c1">#Channel 1</span>
+                    <span class="n">f0_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+                    <span class="n">f1_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+                    <span class="n">total_transferred</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">number_of_samples_transferred</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;End of data reached&quot;</span><span class="p">)</span>
+                <span class="c1">#else:</span>
+                <span class="c1">#    print(&quot;Unknown error&quot;)</span>
+            <span class="c1"># Read the number of samples available in the card.</span>
+            <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">))</span>
+            
+            <span class="c1"># Check if there is sufficient data is available to read.</span>
+            <span class="k">if</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">rx_notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                
+                <span class="c1"># the data is available. We can read the data now. Get the data position in the card.</span>
+                <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">data_user_position</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">bufferIndex</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span><span class="p">),</span><span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span><span class="o">+</span><span class="n">rx_notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">):</span>
+                    <span class="n">counterX</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="n">bufferIndex</span>
+                    <span class="n">f0_i</span><span class="p">[</span><span class="n">total_transferred</span><span class="o">+</span><span class="n">bufferIndex</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex_</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rx_buffer</span><span class="p">[</span><span class="n">total_transferred</span><span class="o">+</span><span class="n">counterX</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+                    <span class="p">)</span>  <span class="c1"># Type is complex at the moment we can change it later</span>
+                    <span class="n">f1_i</span><span class="p">[</span><span class="n">total_transferred</span><span class="o">+</span><span class="n">bufferIndex</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">complex_</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">rx_buffer</span><span class="p">[</span><span class="n">total_transferred</span><span class="o">+</span><span class="n">counterX</span><span class="p">]))</span>
+                    <span class="n">counter</span> <span class="o">+=</span> <span class="n">counterX</span>
+                    <span class="n">counter2</span> <span class="o">+=</span> <span class="n">bufferIndex</span>
+                <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">rx_notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                <span class="c1"># Count the number of samples. This is useful when we know how many samples are transferred from the Txcard.</span>
+                <span class="n">total_transferred</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">((</span><span class="n">rx_notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span><span class="o">/</span><span class="mi">4</span><span class="p">)</span>
+                <span class="n">number_of_samples_transferred</span> <span class="o">+=</span> <span class="n">rx_notify_size</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="mi">2</span>
+            <span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">))</span>
+            
+            <span class="k">if</span> <span class="n">available_timestamp_bytes</span><span class="o">.</span><span class="n">value</span><span class="o">/</span><span class="mi">16</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="c1"># Get the timestamp data position in the card.</span>
+                <span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TS_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">16</span><span class="p">),</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">lIndex</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">2</span>
+                    <span class="c1">#timestamp1          = timeStampBuffer[timeStampUserPos.value]  </span>
+                    <span class="c1">#timestamp0          = timeStampBuffer[timeStampUserPos.value+16]</span>
+                    <span class="c1">#timeStampDifference = timestamp1- timestamp0</span>
+                    <span class="n">timestampVal</span> <span class="o">=</span> <span class="n">ts_buffer</span><span class="p">[</span><span class="n">lIndex</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10000000</span>
+                    <span class="c1">#print(f&quot;Calculated time       :        {timestampVal}&quot;)</span>
+                    <span class="c1">#timestampVal = timeStampBuffer[1] / self.sample_rate</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Calculated time       :        </span><span class="si">{</span><span class="n">timestampVal</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got total samples...        </span><span class="si">{</span><span class="n">counter</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got samples per channel...  </span><span class="si">{</span><span class="n">counter2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">rx_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rx_</span><span class="si">{</span><span class="n">rx_time</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span> <span class="n">f1_i</span><span class="p">)</span> <span class="c1">#Channel 1</span>
+                <span class="n">f0_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+                <span class="n">f1_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">complex128</span><span class="p">)</span>
+                <span class="c1">#total_transferred = 0</span>
+                <span class="n">number_of_samples_transferred</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;End of data reached&quot;</span><span class="p">)</span>
+                <span class="c1">#availableTimestamps     -= (2*16)</span>
+                <span class="c1">#timeStampBuffpos     = cast(timeStampBuffer, c_void_p).value + (2*16)</span>
 
+                <span class="c1"># Move memory: Current ring buffer position,</span>
+                <span class="c1"># position in sequence data and amount to transfer (=&gt; notify size)</span>
+                <span class="c1"># ctypes.memmove(ring_buffer_position, timeStampBuffpos, 2*16)</span>
+ 
+                <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span><span class="n">available_timestamp_bytes</span><span class="p">)</span>
+    
+                           
     <span class="k">def</span> <span class="nf">_FIFO_gated_mode_example</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Read available memory first</span>
+        
+        <span class="c1">#Define rx buffer</span>
         <span class="n">rx_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
         <span class="n">rx_buffer</span> <span class="o">=</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">ctypes</span><span class="o">.</span><span class="n">data_as</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">POINTER</span><span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">c_int16</span><span class="p">))</span>
         <span class="n">lNotifySize</span> <span class="o">=</span> <span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">RxBufferSize</span> <span class="o">=</span> <span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-
+        <span class="n">RxBufferSize</span> <span class="o">=</span> <span class="n">uint64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory_size</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>       <span class="c1">#Todo make multiples of 4096 kB.  </span>
         <span class="n">spcm_dwDefTransfer_i64</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPCM_BUF_DATA</span><span class="p">,</span> <span class="n">SPCM_DIR_CARDTOPC</span><span class="p">,</span> <span class="n">lNotifySize</span><span class="p">,</span> <span class="n">rx_buffer</span><span class="p">,</span> <span class="n">uint64</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">RxBufferSize</span>
         <span class="p">)</span>
 
+        
+        
         <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">10000</span>
         <span class="p">)</span>  <span class="c1"># Todo: trigger timeout set to 10 seconds. Maybe make it variable?</span>
@@ -580,14 +716,17 @@ document.write(`
         <span class="n">lPCPos</span> <span class="o">=</span> <span class="n">int32</span><span class="p">()</span>
         <span class="n">rxCounter</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
-            <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 1000)</span>
+            <span class="c1"># </span>
             <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">M2CMD_DATA_STARTDMA</span> <span class="o">|</span> <span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
+            <span class="c1">#spcm_dwSetParam_i32 (self.card, SPC_TIMEOUT, 100)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
             <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2STATUS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">lStatus</span><span class="p">))</span>
             <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">lAvailUser</span><span class="p">))</span>
             <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">lPCPos</span><span class="p">))</span>
-
+            <span class="n">rxCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Rx Counter is: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">rxCounter</span><span class="p">))</span> 
             <span class="k">if</span> <span class="n">lAvailUser</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">lNotifySize</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+                <span class="c1">#print(&quot;Rx Counter is: &quot; + str(rxCounter)) </span>
                 <span class="n">qwTotalMem</span><span class="o">.</span><span class="n">value</span> <span class="o">+=</span> <span class="n">lNotifySize</span><span class="o">.</span><span class="n">value</span>
                 <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
                     <span class="s2">&quot;Stat:</span><span class="si">{0:08x}</span><span class="s2"> Pos:</span><span class="si">{1:08x}</span><span class="s2"> Avail:</span><span class="si">{2:08x}</span><span class="s2"> Total:</span><span class="si">{3:.2f}</span><span class="s2">MB/</span><span class="si">{4:.2f}</span><span class="s2">MB</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
@@ -619,11 +758,13 @@ document.write(`
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got samples per channel...  </span><span class="si">{</span><span class="n">counter2</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">rx_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span>
                 <span class="c1"># np.save(&quot;rx_channel_&quot; + str(rxCounter+1)+ &quot;_1.npy&quot;, f0_i) #Channel 2 #Berk Note fix</span>
-                <span class="c1"># np.save(f&quot;rx_{rx_time}.npy&quot;, f1_i) #Channel 1</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rx_debug.npy&quot;</span><span class="p">,</span> <span class="n">f1_i</span><span class="p">)</span>
-                <span class="n">rxCounter</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;rx_</span><span class="si">{</span><span class="n">rx_time</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span> <span class="n">f1_i</span><span class="p">)</span> <span class="c1">#Channel 1</span>
+                <span class="c1">#np.save(f&quot;rx_debug.npy&quot;, f1_i)</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Done&quot;</span><span class="p">)</span>
-                <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">lNotifySize</span><span class="p">)</span>
+                <span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">lNotifySize</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                
+                <span class="c1">#err = spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_CARD_START)</span>
+                
         <span class="c1"># spcm_dwSetParam_i32 (self.card, SPC_M2CMD, M2CMD_CARD_STOP | M2CMD_DATA_STOPDMA)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
 
@@ -700,7 +841,37 @@ document.write(`
 <div class="viewcode-block" id="RxCard.get_status">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">[docs]</a>
     <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current card status.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            String with status description.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No spectrum card found.&quot;</span><span class="p">)</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">SPC_M2STATUS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">status</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">status</span><span class="o">.</span><span class="n">value</span></div>
+
+    
+<div class="viewcode-block" id="RxCard.print_status">
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.print_status">[docs]</a>
+    <span class="k">def</span> <span class="nf">print_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_desc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Print current card status.</span>
+<span class="sd">        </span>
+<span class="sd">        The status is represented by a list. Each entry represents a possible card status in form</span>
+<span class="sd">        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum</span>
+<span class="sd">        instrumentation manual.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        include_desc, optional</span>
+<span class="sd">            Flag which indicates if description string should be contained in status entry, by default False</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>
+        <span class="n">msg</span><span class="p">,</span> <span class="n">bit_reg_rev</span> <span class="o">=</span> <span class="n">translate_status</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">include_desc</span><span class="o">=</span><span class="n">include_desc</span><span class="p">)</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status code: </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">, Bit register (reversed): </span><span class="si">{</span><span class="n">bit_reg_rev</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

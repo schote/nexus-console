@@ -396,7 +396,7 @@ document.write(`
 
 <span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">spcm</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.device_interface</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.spcm.spcm_tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.spcm.spcm_tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
 
 
 <div class="viewcode-block" id="TxCard">
@@ -444,7 +444,7 @@ document.write(`
         <span class="c1"># Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span>
-                <span class="s2">&quot;Ring buffer size is not a multiple of channel sample product </span><span class="se">\</span>
+                <span class="s2">&quot;TX:&gt; Ring buffer size is not a multiple of channel sample product </span><span class="se">\</span>
 <span class="s2">                (number of enables channels times 2 byte per sample)&quot;</span>
             <span class="p">)</span>
 
@@ -454,11 +454,13 @@ document.write(`
             <span class="c1"># Set default fraktion to 16, notify size equals 1/16 of ring buffer size</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">notify_size</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">16</span><span class="p">))</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ring buffer size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, notify size: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Ring buffer size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, notify size: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 
         <span class="c1"># Threading class attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_type</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TxCard.setup_card">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">[docs]</a>
@@ -478,6 +480,11 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Reset card</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_RESET</span><span class="p">)</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="p">))</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="s1">&#39;M2p.65&#39;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Device with path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> is of type </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2">, no transmit card...&quot;</span><span class="p">)</span>
+
 
         <span class="c1"># self.print_status() # debug</span>
         <span class="c1"># &gt;&gt; TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?</span>
@@ -493,7 +500,7 @@ document.write(`
         <span class="c1"># Check actual sampling rate</span>
         <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Tx device sampling rate: </span><span class="si">{</span><span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Device sampling rate: </span><span class="si">{</span><span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Tx device sample rate </span><span class="si">{</span><span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz does not match set sample rate </span><span class="se">\</span>
@@ -546,77 +553,72 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X2_MODE</span><span class="p">,</span>
             <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
-        <span class="p">)</span>
-
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setup done, reading status...&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">print_status</span><span class="p">()</span></div>
+        <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="TxCard.prepare_sequence">
-<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.prepare_sequence">[docs]</a>
-    <span class="k">def</span> <span class="nf">prepare_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">adc_gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare sequence data for replay.</span>
+        <span class="c1"># print(&quot;Setup done, reading status...&quot;)</span>
+        <span class="c1"># self.print_status()</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        sequence</span>
-<span class="sd">            Replay data as float values in correctly ordered numpy array.</span>
+    <span class="c1"># def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -&gt; np.ndarray:</span>
+    <span class="c1">#     &quot;&quot;&quot;Prepare sequence data for replay.</span>
 
-<span class="sd">        adc_gate</span>
-<span class="sd">            ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</span>
-<span class="sd">            The gate signal is replayed on digital outputs X0, X1, X2</span>
+    <span class="c1">#     Parameters</span>
+    <span class="c1">#     ----------</span>
+    <span class="c1">#     sequence</span>
+    <span class="c1">#         Replay data as float values in correctly ordered numpy array.</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            Recombined sequence as numpy array with digital adc gate signal (if provided)</span>
+    <span class="c1">#     adc_gate</span>
+    <span class="c1">#         ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</span>
+    <span class="c1">#         The gate signal is replayed on digital outputs X0, X1, X2</span>
 
-<span class="sd">        Example</span>
-<span class="sd">        -------</span>
-<span class="sd">            For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows</span>
+    <span class="c1">#     Returns</span>
+    <span class="c1">#     -------</span>
+    <span class="c1">#         Recombined sequence as numpy array with digital adc gate signal (if provided)</span>
 
-<span class="sd">            &gt;&gt;&gt; data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]</span>
+    <span class="c1">#     Example</span>
+    <span class="c1">#     -------</span>
+    <span class="c1">#         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows</span>
 
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Raised if maximum voltage exceeds the channel maximum</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Raised if</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            _description_</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Check if max value in data does not exceed max amplitude, set per channel</span>
-        <span class="c1"># Convert voltage float values to int16, according to max amplitude per channel</span>
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">rel_values</span> <span class="o">:=</span> <span class="n">sequence</span><span class="p">[</span><span class="n">k</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Value in replay data channel </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> exceeds max. amplitude value configured for this channel...&quot;</span>
-                <span class="p">)</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="n">k</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rel_values</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
+    <span class="c1">#         &gt;&gt;&gt; data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]</span>
 
-        <span class="c1"># Convert float to int16</span>
-        <span class="n">sequence</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="c1">#     Raises</span>
+    <span class="c1">#     ------</span>
+    <span class="c1">#     ValueError</span>
+    <span class="c1">#         Raised if maximum voltage exceeds the channel maximum</span>
+    <span class="c1">#     ValueError</span>
+    <span class="c1">#         Raised if</span>
+    <span class="c1">#     ValueError</span>
+    <span class="c1">#         _description_</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     replay_data = np.zeros_like(sequence, dtype=np.int16)</span>
+    <span class="c1">#     # Check if max value in data does not exceed max amplitude, set per channel</span>
+    <span class="c1">#     # Convert voltage float values to int16, according to max amplitude per channel</span>
+    <span class="c1">#     for k in range(4):</span>
+    <span class="c1">#         if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) &gt; 1:</span>
+    <span class="c1">#             raise ValueError(</span>
+    <span class="c1">#                 f&quot;TX:&gt; Value in replay data channel {k} exceeds max. amplitude value configured for this channel...&quot;</span>
+    <span class="c1">#             )</span>
+    <span class="c1">#         replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)</span>
 
-        <span class="k">if</span> <span class="n">adc_gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Check if lengths of data and gate signal are matching</span>
-            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">adc_gate</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Miss match between replay data and adc gate length...&quot;</span><span class="p">)</span>
+    <span class="c1">#     if adc_gate is not None:</span>
+    <span class="c1">#         # Check if lengths of data and gate signal are matching</span>
+    <span class="c1">#         if (len(replay_data) / 4) != len(adc_gate):</span>
+    <span class="c1">#             raise ValueError(&quot;TX:&gt; Miss match between replay data and adc gate length...&quot;)</span>
 
-            <span class="c1"># ADC gate must be in range [0, 1]</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">array_equal</span><span class="p">(</span><span class="n">adc_gate</span><span class="p">,</span> <span class="n">adc_gate</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ADC gate signal is not a binary signal...&quot;</span><span class="p">)</span>
+    <span class="c1">#         # ADC gate must be in range [0, 1]</span>
+    <span class="c1">#         if not np.array_equal(adc_gate, adc_gate.astype(bool)):</span>
+    <span class="c1">#             raise ValueError(&quot;TX:&gt; ADC gate signal is not a binary signal...&quot;)</span>
 
-            <span class="c1"># int16 (!) =&gt; -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)</span>
-            <span class="n">adc_gate</span> <span class="o">=</span> <span class="p">((</span><span class="o">-</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">))</span> <span class="o">*</span> <span class="n">adc_gate</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="c1">#         # int16 (!) =&gt; -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)</span>
+    <span class="c1">#         adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)</span>
 
-            <span class="c1"># Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)</span>
-            <span class="c1"># Leave channel 0 (RF) as is</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="n">adc_gate</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="n">adc_gate</span>
-            <span class="n">sequence</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="n">adc_gate</span>
+    <span class="c1">#         # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)</span>
+    <span class="c1">#         # Leave channel 0 (RF) as is</span>
+    <span class="c1">#         replay_data[1::4] = replay_data[1::4] &gt;&gt; 1 | adc_gate</span>
+    <span class="c1">#         replay_data[2::4] = replay_data[2::4] &gt;&gt; 1 | adc_gate</span>
+    <span class="c1">#         replay_data[3::4] = replay_data[3::4] &gt;&gt; 1 | adc_gate</span>
 
-        <span class="k">return</span> <span class="n">sequence</span></div>
-
+    <span class="c1">#     return replay_data</span>
 
 <div class="viewcode-block" id="TxCard.start_operation">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
@@ -640,10 +642,10 @@ document.write(`
 <span class="sd">            Raised if replay data is not provided as numpy int16 values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Replay data was not provided or not in int16 format...&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Replay data was not provided or not in int16 format...&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No connection to card established...&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; No connection to card established...&quot;</span><span class="p">)</span>
 
         <span class="c1"># Setup card, clear emergency stop thread event and start thread</span>
         <span class="c1"># self.setup_card()</span>
@@ -657,6 +659,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card operation by thread event and stop card.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Stopping card...&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 
@@ -665,7 +668,7 @@ document.write(`
 
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No active process found...&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TX:&gt; No active replay thread found...&quot;</span><span class="p">)</span></div>
 
 
     <span class="k">def</span> <span class="nf">_streaming</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -684,22 +687,20 @@ document.write(`
         <span class="k">if</span> <span class="p">(</span><span class="n">rest</span> <span class="o">:=</span> <span class="n">data</span><span class="o">.</span><span class="n">nbytes</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">rest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">-</span> <span class="n">rest</span>
             <span class="k">if</span> <span class="n">rest</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="s2">&quot;Providet data array size is not a multiple of 2 bytes (size of one sample)&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Providet data array size is not a multiple of 2 bytes (size of one sample)&quot;</span><span class="p">)</span>
 
             <span class="n">fill_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">rest</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fill_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Appended </span><span class="si">{</span><span class="n">fill_size</span><span class="si">}</span><span class="s2"> zeros to data array...&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Appended </span><span class="si">{</span><span class="n">fill_size</span><span class="si">}</span><span class="s2"> zeros to data array...&quot;</span><span class="p">)</span>
 
         <span class="c1"># Get total size of data buffer to be played out</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="s2">&quot;Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...&quot;</span><span class="p">)</span>
         <span class="n">data_buffer_samples_per_ch</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)))</span>
         <span class="c1"># Report replay buffer size and samples</span>
-        <span class="nb">print</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Replay data buffer size in bytes: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="si">}</span><span class="s2">, </span><span class="se">\</span>
-<span class="s2">                number of samples per channel: </span><span class="si">{</span><span class="n">data_buffer_samples_per_ch</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">...&quot;</span>
-        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Replay data buffer: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Samples per channel: </span><span class="si">{</span><span class="n">data_buffer_samples_per_ch</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># &gt;&gt; Define software buffer</span>
         <span class="c1"># Setup replay data buffer</span>
@@ -714,7 +715,7 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">transferred_bytes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initially transferred bytes: &quot;</span><span class="p">,</span> <span class="n">transferred_bytes</span><span class="p">)</span>
+        <span class="c1"># print(&quot;TX:&gt; Initially transferred bytes: &quot;, transferred_bytes)</span>
 
         <span class="c1"># Perform initial data transfer to completely fill continuous buffer</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwDefTransfer_i64</span><span class="p">(</span>
@@ -728,12 +729,12 @@ document.write(`
         <span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting DMA...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;TX:&gt; Starting DMA...&quot;)</span>
         <span class="n">error</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_DATA_STARTDMA</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
         <span class="c1"># Start card</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting card...&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Starting card...&quot;</span><span class="p">)</span>
         <span class="n">error</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_START</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_ENABLETRIGGER</span>
         <span class="p">)</span>
@@ -771,11 +772,11 @@ document.write(`
                 <span class="n">error</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;FIFO LOOP FINISHED...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;TX:&gt; FIFO LOOP FINISHED...&quot;)</span>
         <span class="c1"># Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt; Transferred bytes: </span><span class="si">{</span><span class="n">transferred_bytes</span><span class="si">}</span><span class="s2">, number of transfers: </span><span class="si">{</span><span class="n">transfer_count</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;TX:&gt; Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}&quot;)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">print_status</span><span class="p">()</span>
+        <span class="c1"># self.print_status()</span>
 
 <div class="viewcode-block" id="TxCard.get_status">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">[docs]</a>
@@ -787,7 +788,7 @@ document.write(`
 <span class="sd">            String with status description.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No spectrum card found.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; No spectrum card found.&quot;</span><span class="p">)</span>
         <span class="n">status</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2STATUS</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">status</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">status</span><span class="o">.</span><span class="n">value</span></div>
@@ -810,7 +811,7 @@ document.write(`
         <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_status</span><span class="p">()</span>
         <span class="n">msg</span><span class="p">,</span> <span class="n">bit_reg_rev</span> <span class="o">=</span> <span class="n">translate_status</span><span class="p">(</span><span class="n">code</span><span class="p">,</span> <span class="n">include_desc</span><span class="o">=</span><span class="n">include_desc</span><span class="p">)</span>
         <span class="n">pprint</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Status code: </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">, Bit register (reversed): </span><span class="si">{</span><span class="n">bit_reg_rev</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Status code: </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

@@ -393,7 +393,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">pypulseq.opts</span> <span class="kn">import</span> <span class="n">Opts</span>
 
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">SequenceProvider</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.rx_device</span> <span class="kn">import</span> <span class="n">RxCard</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.rx_device_2</span> <span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
 
 <span class="c1"># &gt;&gt; Create yaml loader object</span>
@@ -411,13 +411,14 @@ document.write(`
 <span class="c1"># &gt;&gt; Helper functions to read configuration file</span>
 
 
-<div class="viewcode-block" id="read_config">
-<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.read_config">[docs]</a>
-<span class="k">def</span> <span class="nf">read_config</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read configuration yaml file with custom yaml loader.</span>
+<div class="viewcode-block" id="get_instances">
+<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.get_instances">[docs]</a>
+<span class="k">def</span> <span class="nf">get_instances</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SequenceProvider</span><span class="p">,</span> <span class="n">TxCard</span><span class="p">,</span> <span class="n">RxCard</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct object instances from yaml configuration file.</span>
 
-<span class="sd">    Custom yaml loader contains constructors for transmit and receive cards and for sequence provider and</span>
-<span class="sd">    pypulseq parameters.</span>
+<span class="sd">    Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.</span>
+<span class="sd">    Object instances are created according to the parameterization from yaml configuration file.</span>
+<span class="sd">    This function returns object instances for all the different constructors.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -426,69 +427,17 @@ document.write(`
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        Dictionary with all entries from configuration yaml file</span>
+<span class="sd">        Tuple of instances: SequenceProvider, TxCard and RxCard</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">)</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">Loader</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">config</span></div>
-
-
-
-<span class="c1"># &gt;&gt; Helper functions to get instances</span>
-
-
-<div class="viewcode-block" id="get_sequence_provider">
-<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.get_sequence_provider">[docs]</a>
-<span class="k">def</span> <span class="nf">get_sequence_provider</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SequenceProvider</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a sequence provider class instance.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path_to_config, optional</span>
-<span class="sd">        Path to configuration yaml file, by default &quot;../device_config.yaml&quot;</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">        Sequence provider class instance with configuration from yaml file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">read_config</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">)[</span><span class="s2">&quot;SequenceProvider&quot;</span><span class="p">]</span></div>
-
-
-
-<div class="viewcode-block" id="get_tx_card">
-<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.get_tx_card">[docs]</a>
-<span class="k">def</span> <span class="nf">get_tx_card</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TxCard</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a transmit card class instance.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path_to_config, optional</span>
-<span class="sd">        Path to configuration yaml file, by default &quot;../device_config.yaml&quot;</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">        Transmit card class instance with configuration from yaml file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">read_config</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">)[</span><span class="s2">&quot;TxCard&quot;</span><span class="p">]</span></div>
-
-
-
-<div class="viewcode-block" id="get_rx_card">
-<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.get_rx_card">[docs]</a>
-<span class="k">def</span> <span class="nf">get_rx_card</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RxCard</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a receive card class instance.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path_to_config, optional</span>
-<span class="sd">        Path to configuration yaml file, by default &quot;../device_config.yaml&quot;</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">        Receive card class instance with configuration from yaml file.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">read_config</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">)[</span><span class="s2">&quot;RxCard&quot;</span><span class="p">]</span></div>
+        
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;SequenceProvider&quot;</span><span class="p">],</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;TxCard&quot;</span><span class="p">],</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;RxCard&quot;</span><span class="p">]</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 
