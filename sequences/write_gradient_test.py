@@ -13,6 +13,8 @@ seq = Sequence()
 # Parameters
 num_samples = 1000
 adc_duration = 4e-3
+# Note. adc_duration2 must be equal to adc_duration otherwise does not work
+adc_duration2 = 4e-3
 amp1 = 50000
 amp2 = 100000
 amp3 = 150000
@@ -21,6 +23,7 @@ flat_time = 400e-6
 rise_time = 200e-6
 
 adc = make_adc(num_samples=num_samples, duration=adc_duration)
+adc2 = make_adc(num_samples=num_samples, duration=adc_duration2)
 
 g1_t = np.array([
     0, 
@@ -51,11 +54,38 @@ g2_t = np.array([
 g2_amps = np.array([0, amp2, amp2, amp4, amp4, 0])
 g2 = make_extended_trapezoid(channel="x", times=g2_t, amplitudes=g2_amps)
 
+
+g3_t = np.array([
+    0,
+    2*rise_time,
+    2*rise_time+2*flat_time,
+    4*rise_time+2*flat_time,
+    4*rise_time+6*flat_time,
+    8*rise_time+6*flat_time
+])
+g3_amps = np.array([0, amp4, amp4, amp2, amp2, 0])
+g3 = make_extended_trapezoid(channel="x", times=g3_t, amplitudes=g3_amps)
+
 # Define sequence
 seq.add_block(g1, adc)
-seq.add_block(make_delay(20e-3))
+seq.add_block(make_delay(8e-3))
 seq.add_block(g2, adc)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g3, adc2)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g2, adc)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g1, adc)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g2, adc)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g1, adc)
+seq.add_block(make_delay(8e-3))
+seq.add_block(g3, adc)
+seq.add_block(make_delay(1e-3))
 seq.set_definition('Name', 'gradient_test')
+
+
 
 # %%
 # Check sequence timing and plot

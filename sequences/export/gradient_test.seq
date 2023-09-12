@@ -16,9 +16,22 @@ RadiofrequencyRasterTime 1e-06
 # Format of blocks:
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
 [BLOCKS]
-1 400   0   1   0   0  1  0
-2 2000   0   0   0   0  0  0
-3 400   0   2   0   0  1  0
+ 1 400   0   1   0   0  1  0
+ 2 800   0   0   0   0  0  0
+ 3 400   0   2   0   0  1  0
+ 4 800   0   0   0   0  0  0
+ 5 400   0   3   0   0  1  0
+ 6 800   0   0   0   0  0  0
+ 7 400   0   2   0   0  1  0
+ 8 800   0   0   0   0  0  0
+ 9 400   0   1   0   0  1  0
+10 800   0   0   0   0  0  0
+11 400   0   2   0   0  1  0
+12 800   0   0   0   0  0  0
+13 400   0   1   0   0  1  0
+14 800   0   0   0   0  0  0
+15 400   0   3   0   0  1  0
+16 100   0   0   0   0  0  0
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
@@ -27,6 +40,7 @@ RadiofrequencyRasterTime 1e-06
 [GRADIENTS]
 1       150000 1 2 0
 2       200000 3 4 0
+3       200000 5 4 0
 
 # Format of ADC events:
 # id num dwell delay freq phase
@@ -85,10 +99,19 @@ num_samples 6
 320
 400
 
+shape_id 5
+num_samples 6
+0
+1
+1
+0.5
+0.5
+0
+
 
 [SIGNATURE]
 # This is the hash of the Pulseq file, calculated right before the [SIGNATURE] section was added
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 3859b49e7aa0a9d7a4231b69384a9313
+Hash 683aab5be456b231c677b2857e41012c
