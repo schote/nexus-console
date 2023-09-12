@@ -207,9 +207,7 @@ class RxCard(SpectrumDevice):
             
             spcm_dwSetParam_i32(self.card, SPC_M2CMD, M2CMD_DATA_WAITDMA)
             spcm_dwGetParam_i64(self.card, SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
-            
             if available_timestamp_bytes.value >= 32:
-                
                 # read position 
                 spcm_dwGetParam_i64(self.card, SPC_TS_AVAIL_USER_POS, byref(available_timestamp_postion))
                 
