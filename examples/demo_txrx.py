@@ -1,29 +1,27 @@
+"""Demonstraction of transmit and receive devices."""
 # %%
 # imports
-import os
 import time
 
 import matplotlib.pyplot as plt
-import numpy as np
 from console.utilities.load_config import get_instances
 from console.utilities.spcm_data_plot import plot_spcm_data
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 # %%
 # Get instances from configuration file
 seq, tx_card, rx_card = get_instances("../device_config.yaml")
 
+# Set max amplitude per channel from TX card to unroll sequence directly to int16
+seq.max_amp_per_channel = tx_card.max_amplitude
+
 # Read sequence
 seq.read("../sequences/export/gradient_test.seq")
 
 # Unrolling the sequence...
-sqnc, gate, total_samples = seq.unroll_sequence()
+sqnc: UnrolledSequence = seq.unroll_sequence(return_as_int16=True)
 
-# Sequence and adc gate are returned as list of numpy arrays => concatenate them
-sqnc = np.concatenate(sqnc)
-gate = np.concatenate(gate)
-
-data = tx_card.prepare_sequence(sqnc, gate)
-fig = plot_spcm_data(data, contains_gate=True)
+fig, ax = plot_spcm_data(sqnc, use_time=True)
 fig.show()
 
 # %%
@@ -37,7 +35,7 @@ rx_card.start_operation()
 # Wait 1s starting the tx sequence
 time.sleep(1)
 
-tx_card.start_operation(data)
+tx_card.start_operation(sqnc)
 
 # Wait 3s to finish tx operation
 time.sleep(3)

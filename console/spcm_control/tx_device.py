@@ -9,6 +9,7 @@ import numpy as np
 import console.spcm_control.spcm.pyspcm as spcm
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status, type_to_name
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 
 @dataclass
@@ -145,8 +146,8 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Analog channel 1, 2, 3 for digital ADC gate signal
-        # TODO: Invert ADC gate signal on one channel (e.g. for un-blanking) ?
+        # Analog channel 1, 2 for digital ADC gate and RF unblanking signal
+        # RF unblanking is provided on X0 and X1, ADC gate is provided on X2 and X3
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X0_MODE,
@@ -155,79 +156,20 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X2_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        )
+        spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPCM_X3_MODE,
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
-        # print("Setup done, reading status...")
-        # self.print_status()
-
-    # def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -> np.ndarray:
-    #     """Prepare sequence data for replay.
-
-    #     Parameters
-    #     ----------
-    #     sequence
-    #         Replay data as float values in correctly ordered numpy array.
-
-    #     adc_gate
-    #         ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
-    #         The gate signal is replayed on digital outputs X0, X1, X2
-
-    #     Returns
-    #     -------
-    #         Recombined sequence as numpy array with digital adc gate signal (if provided)
-
-    #     Example
-    #     -------
-    #         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows
-
-    #         >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
-
-    #     Raises
-    #     ------
-    #     ValueError
-    #         Raised if maximum voltage exceeds the channel maximum
-    #     ValueError
-    #         Raised if
-    #     ValueError
-    #         _description_
-    #     """
-    #     replay_data = np.zeros_like(sequence, dtype=np.int16)
-    #     # Check if max value in data does not exceed max amplitude, set per channel
-    #     # Convert voltage float values to int16, according to max amplitude per channel
-    #     for k in range(4):
-    #         if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) > 1:
-    #             raise ValueError(
-    #                 f"TX:> Value in replay data channel {k} exceeds max. amplitude value configured for this channel..."
-    #             )
-    #         replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)
-
-    #     if adc_gate is not None:
-    #         # Check if lengths of data and gate signal are matching
-    #         if (len(replay_data) / 4) != len(adc_gate):
-    #             raise ValueError("TX:> Miss match between replay data and adc gate length...")
-
-    #         # ADC gate must be in range [0, 1]
-    #         if not np.array_equal(adc_gate, adc_gate.astype(bool)):
-    #             raise ValueError("TX:> ADC gate signal is not a binary signal...")
-
-    #         # int16 (!) => -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)
-    #         adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)
-
-    #         # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)
-    #         # Leave channel 0 (RF) as is
-    #         replay_data[1::4] = replay_data[1::4] >> 1 | adc_gate
-    #         replay_data[2::4] = replay_data[2::4] >> 1 | adc_gate
-    #         replay_data[3::4] = replay_data[3::4] >> 1 | adc_gate
-
-    #     return replay_data
-
-    def start_operation(self, data: np.ndarray | None = None) -> None:
+    def start_operation(self, sequence: UnrolledSequence) -> None:
         """Start transmit (TX) card operation.
 
         Steps:
@@ -246,16 +188,24 @@ class TxCard(SpectrumDevice):
         ValueError
             Raised if replay data is not provided as numpy int16 values
         """
-        if data is None or not data.dtype == np.int16:
-            raise ValueError("TX:> Replay data was not provided or not in int16 format...")
+        sqnc = np.concatenate(sequence.seq)
+        
+        # Check if sequence datatype is valid
+        if sqnc.dtype != np.int16:
+            raise ValueError("TX:> Sequence replay data is not int16, please unroll sequence to int16.")
+        
+        # Check if sequence dwell time is valid
+        if sqnc_sample_rate := 1/(sequence.dwell_time*1e6) != self.sample_rate:
+            raise Warning(f"TX:> Sequence sample rate ({sqnc_sample_rate} MHz) differs from \
+                device sample rate ({self.sample_rate} MHz).")
 
+        # Check if card connection is established
         if not self.card:
             raise ConnectionError("TX:> No connection to card established...")
 
         # Setup card, clear emergency stop thread event and start thread
-        # self.setup_card()
         self.emergency_stop.clear()
-        self.worker = threading.Thread(target=self._streaming, args=(data,))
+        self.worker = threading.Thread(target=self._streaming, args=(sqnc, ))
         self.worker.start()
 
     def stop_operation(self) -> None:

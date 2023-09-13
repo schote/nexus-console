@@ -1,50 +1,60 @@
+"""Replay demonstration of FID sequence with projection gradient."""
 # %%
 # imports
 import time
 
-import numpy as np
-
-from console.utilities.load_config import get_sequence_provider, SequenceProvider
-from console.utilities.load_config import get_tx_card, TxCard
+from console.utilities.load_config import get_instances
 from console.utilities.spcm_data_plot import plot_spcm_data
-
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 # %%
 # Get sequence provider object and read sequence
-seq: SequenceProvider = get_sequence_provider("../device_config.yaml")
-seq.read("./pulseq/fid_proj.seq")
+provider, tx_card, _ = get_instances("../device_config.yaml")
+
+provider.max_amp_per_channel = tx_card.max_amplitude
+provider.read("../sequences/export/fid_proj.seq")
 
 # %%
+# Unroll and plot the sequence
 t0 = time.time()
-sqnc, gate, total_samples = seq.unroll_sequence()
+sqnc: UnrolledSequence = provider.unroll_sequence(return_as_int16=True)
 t_execution = time.time() - t0
 
-# Sequence and adc gate are returned as list of numpy arrays => concatenate them
-sqnc = np.concatenate(sqnc)
-gate = np.concatenate(gate)
-
 print(f"Sequence unrolling: {t_execution} s")
-print(f"Total number of sampling points (per channel): {total_samples}")
 
-# %%
-tx_card: TxCard = get_tx_card("../device_config.yaml")
-
-# %%
-data = tx_card.prepare_sequence(sqnc, gate)
-fig = plot_spcm_data(data, contains_gate=True)
+fig, ax = plot_spcm_data(sqnc, use_time=True)
 fig.show()
 
 # %%
 # Connect to card and replay sequence
-# TODO: Test this...
-
 tx_card.connect()
-
-# %%
-tx_card.start_operation(data)
+time.sleep(1)
+tx_card.start_operation(sqnc)
 time.sleep(3)
 tx_card.stop_operation()
-
-# %%
 tx_card.disconnect()
 # %%
+
+
+# Get sequence provider and tx device instances
+provider, tx_card, _ = get_instances("../device_config.yaml")
+
+# Max. amplitudes of TX card channels need to be set at sequence provider.
+# This ensures correct amplitude scaling of the pulseq sequence.
+provider.max_amp_per_channel = tx_card.max_amplitude
+provider.read("../sequences/export/fid_proj.seq")
+
+# Unroll and plot the sequence
+sqnc: UnrolledSequence = provider.unroll_sequence(return_as_int16=True)
+
+# Plot the sequence
+fig, ax = plot_spcm_data(sqnc, use_time=True)
+fig.show()
+
+# Replay the sequence
+tx_card.connect()
+time.sleep(1)
+tx_card.start_operation(sqnc)
+time.sleep(3)
+tx_card.stop_operation()
+tx_card.disconnect()

@@ -7,7 +7,7 @@ from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
 
-from console.utilities.sequence_plot import get_sequence_plot
+from console.utilities.plotly_sequence import get_sequence_plot
 
 # %%
 
@@ -29,7 +29,7 @@ rf_bandwidth = 20e3 # 20 kHz
 rf_flip_angle = pi/2
 rf_phase = pi/2
 ro_bw = 50e3   # 20 kHz bandwidth
-num_samples = 1e3
+num_samples = 128
 adc_dwell_time = 1 / ro_bw
 adc_duration = adc_dwell_time * num_samples
 fov = 0.255     # 25.5 cm

@@ -17,7 +17,7 @@ RadiofrequencyRasterTime 1e-06
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
 [BLOCKS]
 1  40   1   0   0   0  0  0
-2 2040   0   1   0   0  1  0
+2 296   0   1   0   0  1  0
 
 # Format of RF events:
 # id amplitude mag_id phase_id time_shape_id delay freq phase
@@ -29,13 +29,13 @@ RadiofrequencyRasterTime 1e-06
 # id amplitude rise flat fall delay
 # ..      Hz/m   us   us   us    us
 [TRAP]
- 1       196078 200 20000 200   0
+ 1       196078 200 2560 200   0
 
 # Format of ADC events:
 # id num dwell delay freq phase
 # ..  ..    ns    us   Hz   rad
 [ADC]
-1 1000 20000 200 0 0
+1 128 20000 200 0 0
 
 # Sequence Shapes
 [SHAPES]
@@ -264,4 +264,4 @@ num_samples 200
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash a5272c717a5a1ec86b6b0e786cd4b348
+Hash 80b26dfe49fbde7ef8271f0bb95b18cf
