@@ -366,6 +366,7 @@ document.write(`
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -385,7 +386,7 @@ document.write(`
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl">AcquistionControl (class in console.spcm_control.acquisition_control)</a>
 </li>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">add_adc_gate() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_gate">adc_gate (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -393,32 +394,12 @@ document.write(`
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">calculate_gradient() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
-</li>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">calculate_rf() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
-</li>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.channel_enable">channel_enable (console.spcm_control.rx_device.RxCard attribute)</a>
-</li>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.channel_maxima">channel_maxima (console.pulseq_interpreter.sequence_provider.SequenceProvider property)</a>
 </li>
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.connect">connect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li>
-    console.utilities.load_config
-
-      <ul>
-        <li><a href="utilities.html#module-console.utilities.load_config">module</a>
-</li>
-      </ul></li>
-      <li>
-    console.utilities.sequence_plot
-
-      <ul>
-        <li><a href="utilities.html#module-console.utilities.sequence_plot">module</a>
-</li>
-      </ul></li>
       <li>
     console.utilities.spcm_data_plot
 
@@ -435,6 +416,10 @@ document.write(`
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.disconnect">disconnect() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.dwell_time">dwell_time (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="F">F</h2>
@@ -448,14 +433,6 @@ document.write(`
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="utilities.html#console.utilities.sequence_plot.generate_plotly_figure">generate_plotly_figure() (in module console.utilities.sequence_plot)</a>
-</li>
-      <li><a href="utilities.html#console.utilities.load_config.get_instances">get_instances() (in module console.utilities.load_config)</a>
-</li>
-      <li><a href="utilities.html#console.utilities.sequence_plot.get_sequence_plot">get_sequence_plot() (in module console.utilities.sequence_plot)</a>
-</li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.get_status">get_status() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
       <ul>
@@ -464,6 +441,10 @@ document.write(`
         <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.grad_to_volt">grad_to_volt (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -475,8 +456,20 @@ document.write(`
   </ul></td>
 </tr></table>
 
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.is_int16">is_int16 (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.larmor_frequency">larmor_frequency (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.loops">loops (console.spcm_control.rx_device.RxCard attribute)</a>
 </li>
@@ -492,18 +485,14 @@ document.write(`
         <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.max_amplitude">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
-      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.memory_size">memory_size (console.spcm_control.rx_device.RxCard attribute)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.memory_size">memory_size (console.spcm_control.rx_device.RxCard attribute)</a>
+</li>
       <li>
     module
 
       <ul>
-        <li><a href="utilities.html#module-console.utilities.load_config">console.utilities.load_config</a>
-</li>
-        <li><a href="utilities.html#module-console.utilities.sequence_plot">console.utilities.sequence_plot</a>
-</li>
         <li><a href="utilities.html#module-console.utilities.spcm_data_plot">console.utilities.spcm_data_plot</a>
 </li>
       </ul></li>
@@ -512,10 +501,6 @@ document.write(`
 
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.name">name (console.utilities.sequence_plot.TraceData attribute)</a>
-</li>
-  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.notify_rate">notify_rate (console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
@@ -531,11 +516,9 @@ document.write(`
         <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.path">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
-      <li><a href="utilities.html#console.utilities.spcm_data_plot.plot_spcm_data">plot_spcm_data() (in module console.utilities.spcm_data_plot)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">precalculate_carrier() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="utilities.html#console.utilities.spcm_data_plot.plot_spcm_data">plot_spcm_data() (in module console.utilities.spcm_data_plot)</a>
 </li>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.print_status">print_status() (console.spcm_control.rx_device.RxCard method)</a>
 
@@ -549,6 +532,12 @@ document.write(`
 <h2 id="R">R</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.rf_to_volt">rf_to_volt (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.rf_unblanking">rf_unblanking (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard">RxCard (class in console.spcm_control.rx_device)</a>
 </li>
   </ul></td>
@@ -557,15 +546,15 @@ document.write(`
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.sample_count">sample_count (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
+</li>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.sample_rate">sample_rate (console.spcm_control.rx_device.RxCard attribute)</a>
 
       <ul>
         <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard.sample_rate">(console.spcm_control.tx_device.TxCard attribute)</a>
 </li>
       </ul></li>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">SequenceProvider (class in console.pulseq_interpreter.sequence_provider)</a>
-</li>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.set_channel_maxima">set_channel_maxima (console.pulseq_interpreter.sequence_provider.SequenceProvider property)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.seq">seq (console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence attribute)</a>
 </li>
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.setup_card">setup_card() (console.spcm_control.device_interface.SpectrumDevice method)</a>
 
@@ -577,8 +566,6 @@ document.write(`
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.signal_values">signal_values (console.utilities.sequence_plot.TraceData attribute)</a>
-</li>
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice">SpectrumDevice (class in console.spcm_control.device_interface)</a>
 </li>
       <li><a href="spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">start_operation() (console.spcm_control.device_interface.SpectrumDevice method)</a>
@@ -603,14 +590,10 @@ document.write(`
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData.time_points">time_points (console.utilities.sequence_plot.TraceData attribute)</a>
-</li>
       <li><a href="spcm_control.html#console.spcm_control.rx_device.RxCard.timeStampMode">timeStampMode (console.spcm_control.rx_device.RxCard attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="utilities.html#console.utilities.sequence_plot.TraceData">TraceData (class in console.utilities.sequence_plot)</a>
-</li>
       <li><a href="spcm_control.html#console.spcm_control.tx_device.TxCard">TxCard (class in console.spcm_control.tx_device)</a>
 </li>
   </ul></td>
@@ -619,7 +602,7 @@ document.write(`
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">unroll_sequence() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
+      <li><a href="sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence">UnrolledSequence (class in console.pulseq_interpreter.interface_unrolled_sequence)</a>
 </li>
   </ul></td>
 </tr></table>

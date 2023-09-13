@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>console.utilities.load_config &#8212; Spectrum-Pypulseq MRI Console 01.09.2023 documentation</title>
+    <title>console.pulseq_interpreter.interface_unrolled_sequence &#8212; Spectrum-Pypulseq MRI Console 01.09.2023 documentation</title>
   
   
   
@@ -36,7 +36,7 @@
     <script src="../../../_static/documentation_options.js?v=dfcfd79d"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/utilities/load_config';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/pulseq_interpreter/interface_unrolled_sequence';</script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -368,7 +368,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">console.utilities.load_config</li>
+    <li class="breadcrumb-item active" aria-current="page">console.pulseq_interpreter.interface_unrolled_sequence</li>
   </ul>
 </nav>
 </div>
@@ -385,59 +385,70 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <h1>Source code for console.utilities.load_config</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Utility functions for loading configuration and adding constructors.&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">os</span>
+  <h1>Source code for console.pulseq_interpreter.interface_unrolled_sequence</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Interface class for an unrolled sequence.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">yaml</span>
-<span class="kn">from</span> <span class="nn">pypulseq.opts</span> <span class="kn">import</span> <span class="n">Opts</span>
-
-<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">SequenceProvider</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.rx_device_2</span> <span class="kn">import</span> <span class="n">RxCard</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
-
-<span class="c1"># &gt;&gt; Create yaml loader object</span>
-<span class="n">Loader</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">SafeLoader</span>
-
-<span class="c1"># &gt;&gt; Add constructors to PyYAML loader</span>
-<span class="n">Loader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span><span class="s2">&quot;!RxCard&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">RxCard</span><span class="p">(</span><span class="o">**</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_mapping</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
-<span class="n">Loader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span><span class="s2">&quot;!TxCard&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">TxCard</span><span class="p">(</span><span class="o">**</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_mapping</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
-<span class="n">Loader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span>
-    <span class="s2">&quot;!SequenceProvider&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">SequenceProvider</span><span class="p">(</span><span class="o">**</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_mapping</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="p">)</span>
-<span class="n">Loader</span><span class="o">.</span><span class="n">add_constructor</span><span class="p">(</span><span class="s2">&quot;!Opts&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">loader</span><span class="p">,</span> <span class="n">node</span><span class="p">:</span> <span class="n">Opts</span><span class="p">(</span><span class="o">**</span><span class="n">loader</span><span class="o">.</span><span class="n">construct_mapping</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">True</span><span class="p">)))</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
-<span class="c1"># &gt;&gt; Helper functions to read configuration file</span>
-
-
-<div class="viewcode-block" id="get_instances">
-<a class="viewcode-back" href="../../../utilities.html#console.utilities.load_config.get_instances">[docs]</a>
-<span class="k">def</span> <span class="nf">get_instances</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SequenceProvider</span><span class="p">,</span> <span class="n">TxCard</span><span class="p">,</span> <span class="n">RxCard</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct object instances from yaml configuration file.</span>
-
-<span class="sd">    Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.</span>
-<span class="sd">    Object instances are created according to the parameterization from yaml configuration file.</span>
-<span class="sd">    This function returns object instances for all the different constructors.</span>
-
+<div class="viewcode-block" id="UnrolledSequence">
+<a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">UnrolledSequence</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unrolled sequence interface.</span>
+<span class="sd">    </span>
+<span class="sd">    This interface is used to share the unrolled sequence between the </span>
+<span class="sd">    different components like TxEngine, SequenceProvider and AcquisitionControl.</span>
+<span class="sd">    An unrolled sequence is generated by a `SequenceProvider()` instance using the </span>
+<span class="sd">    `unroll_sequence` function.</span>
+<span class="sd">    </span>
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    path_to_config</span>
-<span class="sd">        Path to configuration yaml file</span>
+<span class="sd">    seq</span>
+<span class="sd">        Replay data as float or int16 values as list of numpy arrays. If `is_int16` flag is set,</span>
+<span class="sd">        the sequence data also already contains the digital adc and unblanking signals in channels</span>
+<span class="sd">        gx and gy.</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">        Tuple of instances: SequenceProvider, TxCard and RxCard</span>
+<span class="sd">    adc_gate</span>
+<span class="sd">        ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</span>
+<span class="sd">    </span>
+<span class="sd">    rf_unblanking</span>
+<span class="sd">        Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state</span>
+<span class="sd">        and 1 to unblanking state.</span>
+<span class="sd">    </span>
+<span class="sd">    is_int16</span>
+<span class="sd">        Flag which indicates if `seq` values are given as int16 values.</span>
+<span class="sd">    </span>
+<span class="sd">    sample_count</span>
+<span class="sd">        Total number of samples per channel.</span>
+<span class="sd">    </span>
+<span class="sd">    grad_to_volt</span>
+<span class="sd">        If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.</span>
+<span class="sd">        This conversion factor represents the scaling from original pulseq gradient values [kHz/m] to </span>
+<span class="sd">        card output voltage.</span>
+<span class="sd">        </span>
+<span class="sd">    rf_to_volt</span>
+<span class="sd">        If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.</span>
+<span class="sd">        This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage.</span>
+<span class="sd">    </span>
+<span class="sd">    dwell_time</span>
+<span class="sd">        Dwell time of the spectrum card replay data (unrolled sequence). Defines the distance in time between to sample points.</span>
+<span class="sd">        Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem </span>
+<span class="sd">        `dwell_time &lt; 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen.</span>
+<span class="sd">        </span>
+<span class="sd">    larmor_frequency</span>
+<span class="sd">        Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">path_to_config</span><span class="p">)</span>
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
-        <span class="n">config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">Loader</span><span class="o">=</span><span class="n">Loader</span><span class="p">)</span>
-        
-    <span class="k">return</span> <span class="p">(</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;SequenceProvider&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;TxCard&quot;</span><span class="p">],</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;RxCard&quot;</span><span class="p">]</span>
-    <span class="p">)</span></div>
+    <span class="n">seq</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">adc_gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">rf_unblanking</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="n">is_int16</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">grad_to_volt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">rf_to_volt</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">dwell_time</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">larmor_frequency</span><span class="p">:</span> <span class="nb">float</span></div>
 
 </pre></div>
 

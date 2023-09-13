@@ -397,6 +397,7 @@ document.write(`
 <span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">spcm</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.device_interface</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.spcm.spcm_tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
+<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 
 
 <div class="viewcode-block" id="TxCard">
@@ -537,8 +538,8 @@ document.write(`
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_REP_FIFO_SINGLE</span><span class="p">)</span>
 
         <span class="c1"># &gt;&gt; Setup digital output channels</span>
-        <span class="c1"># Analog channel 1, 2, 3 for digital ADC gate signal</span>
-        <span class="c1"># TODO: Invert ADC gate signal on one channel (e.g. for un-blanking) ?</span>
+        <span class="c1"># Analog channel 1, 2 for digital ADC gate and RF unblanking signal</span>
+        <span class="c1"># RF unblanking is provided on X0 and X1, ADC gate is provided on X2 and X3</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X0_MODE</span><span class="p">,</span>
@@ -547,82 +548,23 @@ document.write(`
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X1_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X2_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
+            <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X3_MODE</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 
-        <span class="c1"># print(&quot;Setup done, reading status...&quot;)</span>
-        <span class="c1"># self.print_status()</span>
-
-    <span class="c1"># def prepare_sequence(self, sequence: np.ndarray, adc_gate: np.ndarray | None = None) -&gt; np.ndarray:</span>
-    <span class="c1">#     &quot;&quot;&quot;Prepare sequence data for replay.</span>
-
-    <span class="c1">#     Parameters</span>
-    <span class="c1">#     ----------</span>
-    <span class="c1">#     sequence</span>
-    <span class="c1">#         Replay data as float values in correctly ordered numpy array.</span>
-
-    <span class="c1">#     adc_gate</span>
-    <span class="c1">#         ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</span>
-    <span class="c1">#         The gate signal is replayed on digital outputs X0, X1, X2</span>
-
-    <span class="c1">#     Returns</span>
-    <span class="c1">#     -------</span>
-    <span class="c1">#         Recombined sequence as numpy array with digital adc gate signal (if provided)</span>
-
-    <span class="c1">#     Example</span>
-    <span class="c1">#     -------</span>
-    <span class="c1">#         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are to be ordered as follows</span>
-
-    <span class="c1">#         &gt;&gt;&gt; data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]</span>
-
-    <span class="c1">#     Raises</span>
-    <span class="c1">#     ------</span>
-    <span class="c1">#     ValueError</span>
-    <span class="c1">#         Raised if maximum voltage exceeds the channel maximum</span>
-    <span class="c1">#     ValueError</span>
-    <span class="c1">#         Raised if</span>
-    <span class="c1">#     ValueError</span>
-    <span class="c1">#         _description_</span>
-    <span class="c1">#     &quot;&quot;&quot;</span>
-    <span class="c1">#     replay_data = np.zeros_like(sequence, dtype=np.int16)</span>
-    <span class="c1">#     # Check if max value in data does not exceed max amplitude, set per channel</span>
-    <span class="c1">#     # Convert voltage float values to int16, according to max amplitude per channel</span>
-    <span class="c1">#     for k in range(4):</span>
-    <span class="c1">#         if np.max(rel_values := sequence[k::4] / self.max_amplitude[k]) &gt; 1:</span>
-    <span class="c1">#             raise ValueError(</span>
-    <span class="c1">#                 f&quot;TX:&gt; Value in replay data channel {k} exceeds max. amplitude value configured for this channel...&quot;</span>
-    <span class="c1">#             )</span>
-    <span class="c1">#         replay_data[k::4] = (rel_values * np.iinfo(np.int16).max).astype(np.int16)</span>
-
-    <span class="c1">#     if adc_gate is not None:</span>
-    <span class="c1">#         # Check if lengths of data and gate signal are matching</span>
-    <span class="c1">#         if (len(replay_data) / 4) != len(adc_gate):</span>
-    <span class="c1">#             raise ValueError(&quot;TX:&gt; Miss match between replay data and adc gate length...&quot;)</span>
-
-    <span class="c1">#         # ADC gate must be in range [0, 1]</span>
-    <span class="c1">#         if not np.array_equal(adc_gate, adc_gate.astype(bool)):</span>
-    <span class="c1">#             raise ValueError(&quot;TX:&gt; ADC gate signal is not a binary signal...&quot;)</span>
-
-    <span class="c1">#         # int16 (!) =&gt; -2**15 = -32768 = 1000 0000 0000 0000 (15th bit)</span>
-    <span class="c1">#         adc_gate = ((-(2**15)) * adc_gate).astype(np.int16)</span>
-
-    <span class="c1">#         # Add adc gate signal to all 3 gradient channels (gate signal encoded by 15th bit)</span>
-    <span class="c1">#         # Leave channel 0 (RF) as is</span>
-    <span class="c1">#         replay_data[1::4] = replay_data[1::4] &gt;&gt; 1 | adc_gate</span>
-    <span class="c1">#         replay_data[2::4] = replay_data[2::4] &gt;&gt; 1 | adc_gate</span>
-    <span class="c1">#         replay_data[3::4] = replay_data[3::4] &gt;&gt; 1 | adc_gate</span>
-
-    <span class="c1">#     return replay_data</span>
-
 <div class="viewcode-block" id="TxCard.start_operation">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">UnrolledSequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start transmit (TX) card operation.</span>
 
 <span class="sd">        Steps:</span>
@@ -641,16 +583,24 @@ document.write(`
 <span class="sd">        ValueError</span>
 <span class="sd">            Raised if replay data is not provided as numpy int16 values</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Replay data was not provided or not in int16 format...&quot;</span><span class="p">)</span>
+        <span class="n">sqnc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        
+        <span class="c1"># Check if sequence datatype is valid</span>
+        <span class="k">if</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Sequence replay data is not int16, please unroll sequence to int16.&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Check if sequence dwell time is valid</span>
+        <span class="k">if</span> <span class="n">sqnc_sample_rate</span> <span class="o">:=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">sequence</span><span class="o">.</span><span class="n">dwell_time</span><span class="o">*</span><span class="mf">1e6</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Sequence sample rate (</span><span class="si">{</span><span class="n">sqnc_sample_rate</span><span class="si">}</span><span class="s2"> MHz) differs from </span><span class="se">\</span>
+<span class="s2">                device sample rate (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="si">}</span><span class="s2"> MHz).&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Check if card connection is established</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;TX:&gt; No connection to card established...&quot;</span><span class="p">)</span>
 
         <span class="c1"># Setup card, clear emergency stop thread event and start thread</span>
-        <span class="c1"># self.setup_card()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_streaming</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">data</span><span class="p">,))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_streaming</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">sqnc</span><span class="p">,</span> <span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
 
