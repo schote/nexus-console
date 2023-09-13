@@ -233,10 +233,10 @@ class RxCard(SpectrumDevice):
                 spcm_dwGetParam_i64(self.card, SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
                 print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
                 
-                gate_sample = gate_length * self.sample_rate * 1e6    # number of adc gate sample points per channel
+                gate_sample = int(gate_length * self.sample_rate * 1e6)    # number of adc gate sample points per channel
                 
                 #------------- Check for rounding errors
-                total_bytes = int((gate_sample + self.pre_trigger) * 2 * self.num_channels.value)
+                total_bytes = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 page_allign = total_bytes + (rx_notify-int(total_bytes % rx_notify))
                 #-------------  
                 # Read/update available user bytes
