@@ -226,25 +226,15 @@ class SequenceProvider(Sequence):
 
         Returns
         -------
-            Instance of `UnrolledSequence` which contains a list of numpy arrays containing the block-wise \
-                calculated sample points in correct spectrum card order.
-                
-            The unrolled sequence may already be returned as int16 values. In this case it contains the digital signals \
-                for the adc gate signal and the unblanking. 
-                
-            Independent of the returned sequence datatype, the adc and unblanking signals are returned as list of numpy arrays \
-                in the unrolled sequence instance. 
-                
-            Overall the `UnrolledSequence` instance gathers the following attributes:
-                seq: np.ndarray
-                adc_gate: np.ndarray
-                rf_blanking: np.ndarray
-                is_int16: bool
-                sample_count: int
-                grad_to_volt: float
-                rf_to_volt: float
-                sample_rate: float
-                larmor_frequency: float
+        UnrolledSequence
+            Instance of an unrolled sequence object which contains a list of numpy arrays with
+            the block-wise calculated sample points in correct spectrum card order.
+
+            The unrolled sequence may already be returned as int16 values. In this case it contains the
+            digital signals for the adc gate signal and the unblanking.
+
+            Independent of the returned sequence datatype, the adc and unblanking signals are returned as
+            list of numpy arrays in the unrolled sequence instance.
 
         Raises
         ------
@@ -259,20 +249,23 @@ class SequenceProvider(Sequence):
         
         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are ordered the following way.
 
-            >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
+        >>> data = [ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ..., ch0_n, ..., ch3_N]
             
-            Per channel data can be extracted by the following code.
+        Per channel data can be extracted by the following code.
             
-            >>> rf = seq[0::4]
-            >>> gx = seq[1::4]
-            >>> gy = seq[2::4]
-            >>> gz = seq[3::4]
+        >>> rf = seq[0::4]
+        >>> gx = seq[1::4]
+        >>> gy = seq[2::4]
+        >>> gz = seq[3::4]
             
-            If `return_as_int16` flag was set, channel `gx` contains the digital adc gate signal and 
-            `gy` the digital unblanking signal. The following example shows, how to extract the digital signals.
-            
-            >>> adc = 
-            >>> unblanking = 
+        If `return_as_int16` flag was set, channel `gx` contains the digital adc gate signal and 
+        `gy` the digital unblanking signal. The following example shows, how to extract the gradients and
+        digital signals in this case.
+        
+        >>> gx = seq[1::4] << 1
+        >>> gy = seq[2::4] << 1
+        >>> adc = -1 * (seq[1::4] >> 15)
+        >>> unblanking = -1 * (seq[2::4] >> 15)
         
         """
         print("Unrolling sequnce...")
@@ -297,7 +290,7 @@ class SequenceProvider(Sequence):
 
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
-        gx_const = 0
+        tgx_const = 0
         gy_const = 0
         gz_const = 0
 
