@@ -42,8 +42,10 @@ class UnrolledSequence:
         If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
         This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage.
     
-    sample_rate
-        Sample rate of spectrum card the sequence is calculated for. Defines the distance in time between to sample points.
+    dwell_time
+        Dwell time of the spectrum card replay data (unrolled sequence). Defines the distance in time between to sample points.
+        Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem 
+        `dwell_time < 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen.
         
     larmor_frequency
         Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.    
@@ -55,5 +57,5 @@ class UnrolledSequence:
     sample_count: int
     grad_to_volt: float
     rf_to_volt: float
-    sample_rate: float
+    dwell_time: float
     larmor_frequency: float

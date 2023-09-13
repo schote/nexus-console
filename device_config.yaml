@@ -22,7 +22,7 @@ RxCard: !RxCard
 
 # Sequence provider configuration
 SequenceProvider: !SequenceProvider
-  spcm_sample_rate: 0.00000005 # 5e-8 => 20 MHz
+  spcm_dwell_time: 0.00000005 # 5e-8 => 20 MHz
   rf_double_precision: True
   grad_to_volt: 0.005
   rf_to_volt: 0.1

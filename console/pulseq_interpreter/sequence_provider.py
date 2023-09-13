@@ -28,7 +28,7 @@ class SequenceProvider(Sequence):
     def __init__(
         self,
         # larmor_frequency: float = 2e6,
-        spcm_sample_rate: float = 1 / 20e6,
+        spcm_dwell_time: float = 1 / 20e6,
         rf_double_precision: bool = True,
         grad_to_volt: float = 1,
         rf_to_volt: float = 1,
@@ -40,8 +40,8 @@ class SequenceProvider(Sequence):
         self.grad_to_volt = grad_to_volt
         self.rf_to_volt = rf_to_volt
 
-        self.spcm_freq = 1 / spcm_sample_rate
-        self.spcm_sample_rate = spcm_sample_rate
+        self.spcm_freq = 1 / spcm_dwell_time
+        self.spcm_dwell_time = spcm_dwell_time
         self.larmor_freq = self.system.B0 * self.system.gamma
 
         self.dtype = np.double if rf_double_precision else np.single
@@ -49,17 +49,17 @@ class SequenceProvider(Sequence):
         self.carrier_time: np.ndarray | None = None
         self.carrier: np.ndarray | None = None
         
-        self.max_amp_per_channel: list[int, int, int, int] | None = None
+        self._max_amp_per_channel: list[int, int, int, int] | None = None
     
     @property
-    def channel_maxima(self) -> list[int, int, int, int] | None:
-        return self.max_amp_per_channel
+    def max_amp_per_channel(self) -> list[int, int, int, int] | None:
+        return self._max_amp_per_channel
 
-    @channel_maxima.setter
-    def set_channel_maxima(self, amplitudes: list[int, int, int, int]) -> None:
+    @max_amp_per_channel.setter
+    def max_amp_per_channel(self, amplitudes: list[int, int, int, int]) -> None:
         if not len(amplitudes) == 4:
             raise AttributeError(f"Only {len(amplitudes)} amplitude values are given but 4 are required.")
-        self.max_amp_per_channel = amplitudes
+        self._max_amp_per_channel = amplitudes
 
     def precalculate_carrier(self) -> None:
         """Pre-calculation of carrier signal.
@@ -75,7 +75,7 @@ class SequenceProvider(Sequence):
 
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
-            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_sample_rate, dtype=self.dtype)
+            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=self.dtype)
             self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
 
     def calculate_rf(self, rf_block, unblanking: np.ndarray, num_total_samples: int) -> np.ndarray:
@@ -104,22 +104,24 @@ class SequenceProvider(Sequence):
         # TODO: Take into account the phase starting point depending on the end-time of the last RF (!)
 
         # Calculate zero filling for RF delay
-        num_samples_delay = int(rf_block.delay / self.spcm_sample_rate)
+        num_samples_delay = int(rf_block.delay / self.spcm_dwell_time)
         delay = np.zeros(num_samples_delay, dtype=self.dtype)
+        
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
         ringdown_dur = max(self.system.rf_ringdown_time, rf_block.ringdown_time)
-        num_samgles_ringdown = int(ringdown_dur / self.spcm_sample_rate)
+        num_samgles_ringdown = int(ringdown_dur / self.spcm_dwell_time)
         ringdown_time = np.zeros(num_samgles_ringdown, dtype=self.dtype)
+        
         # Zero filling for ADC dead-time (maximum of dead time defined in RF event and system)
         dead_dur = max(self.system.rf_dead_time, rf_block.dead_time)
-        num_samples_dead = int(dead_dur / self.spcm_sample_rate)
+        num_samples_dead = int(dead_dur / self.spcm_dwell_time)
         dead_time = np.zeros(num_samples_dead, dtype=self.dtype)
         
         # Calculate the number of shape sample points
-        num_samples = int(rf_block.shape_dur / self.spcm_sample_rate)
+        num_samples = int(rf_block.shape_dur / self.spcm_dwell_time)
         
         # Set unblanking signal
-        unblanking[num_samples_delay : num_samples_delay + num_samples] = 1
+        unblanking[:num_samples_delay + num_samples] = 1
 
         # Calculate the static phase offset, defined in RF pulse
         phase_offset = np.exp(1j * rf_block.phase_offset)
@@ -172,12 +174,12 @@ class SequenceProvider(Sequence):
         """
         # Both gradient types have a delay
         # delay = [amp_offset] * int(block.delay/self.spcm_sample_rate)
-        delay = np.full(int(block.delay / self.spcm_sample_rate), fill_value=amp_offset, dtype=float)
+        delay = np.full(int(block.delay / self.spcm_dwell_time), fill_value=amp_offset, dtype=float)
 
         if block.type == "grad":
             # Arbitrary gradient waveform, interpolate linearly
             waveform = np.interp(
-                x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_sample_rate)),
+                x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                 xp=block.tt,
                 fp=block.waveform + amp_offset,
             )
@@ -186,9 +188,9 @@ class SequenceProvider(Sequence):
 
         elif block.type == "trap":
             # Trapezoidal gradient, combine resampled rise, flat and fall sections
-            rise = np.linspace(amp_offset, amp_offset + block.amplitude, int(block.rise_time / self.spcm_sample_rate))
-            flat = np.full(int(block.flat_time / self.spcm_sample_rate), fill_value=block.amplitude + amp_offset)
-            fall = np.linspace(amp_offset + block.amplitude, amp_offset, int(block.fall_time / self.spcm_sample_rate))
+            rise = np.linspace(amp_offset, amp_offset + block.amplitude, int(block.rise_time / self.spcm_dwell_time))
+            flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=block.amplitude + amp_offset)
+            fall = np.linspace(amp_offset + block.amplitude, amp_offset, int(block.fall_time / self.spcm_dwell_time))
             gradient = np.concatenate((delay, rise, flat, fall))
 
         else:
@@ -213,33 +215,36 @@ class SequenceProvider(Sequence):
         gate
             Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.
         """
-        delay = int(block.delay / self.spcm_sample_rate)
+        delay = int(block.delay / self.spcm_dwell_time)
         # dead_dur = max(self.system.adc_dead_time, block.dead_time)
         # dead_time = int(dead_dur / self.spcm_sample_rate)
-        adc_len = int(block.num_samples * block.dwell / self.spcm_sample_rate)
+        adc_len = int(block.num_samples * block.dwell / self.spcm_dwell_time)
         gate[delay : delay + adc_len] = 1
 
-    def unroll_sequence(self, return_as_int16: bool = True) -> UnrolledSequence:
+    def unroll_sequence(self, return_as_int16: bool = False) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
         Returns
         -------
-            Instance of `UnrolledSequence` which contains a list of numpy arrays containing the 
-            block-wise calculated sample points in correct spectrum card order.
-            The unrolled sequence may already be returned as int16 values. in this case it contains 
-            the digital signals for the adc gate signal and the unblanking. Independent of the returned
-            sequence datatype, the adc and unblanking signals are returned as list of numpy arrays
-            in the unrolled sequence instance. Overall the `UnrolledSequence` instance gathers the following
-            attributes:
-            - seq: np.ndarray
-            - adc_gate: np.ndarray
-            - rf_blanking: np.ndarray
-            - is_int16: bool
-            - sample_count: int
-            - grad_to_volt: float
-            - rf_to_volt: float
-            - sample_rate: float
-            - larmor_frequency: float
+            Instance of `UnrolledSequence` which contains a list of numpy arrays containing the block-wise \
+                calculated sample points in correct spectrum card order.
+                
+            The unrolled sequence may already be returned as int16 values. In this case it contains the digital signals \
+                for the adc gate signal and the unblanking. 
+                
+            Independent of the returned sequence datatype, the adc and unblanking signals are returned as list of numpy arrays \
+                in the unrolled sequence instance. 
+                
+            Overall the `UnrolledSequence` instance gathers the following attributes:
+                seq: np.ndarray
+                adc_gate: np.ndarray
+                rf_blanking: np.ndarray
+                is_int16: bool
+                sample_count: int
+                grad_to_volt: float
+                rf_to_volt: float
+                sample_rate: float
+                larmor_frequency: float
 
         Raises
         ------
@@ -276,7 +281,7 @@ class SequenceProvider(Sequence):
             raise AttributeError("No sequence loaded.")
         
         # Raise error if sequence values are to be returned as int16 but no channel max. values are given
-        if return_as_int16 and self.max_amp_per_channel is None:
+        if return_as_int16 and self._max_amp_per_channel is None:
             raise AttributeError("Error converting sequence to int16: Maximum values per channel not set...")
 
         # Pre-calculate the carrier signal to save computation time
@@ -285,7 +290,7 @@ class SequenceProvider(Sequence):
         # Get all blocks in a list and pre-calculate number of sample points per block
         # to allocate empty sequence array.
         blocks = [self.get_block(k) for k in list(self.block_events.keys())]
-        samples_per_block = [int(block.block_duration / self.spcm_sample_rate) for block in blocks]
+        samples_per_block = [int(block.block_duration / self.spcm_dwell_time) for block in blocks]
         _seq = [np.empty(4 * n) for n in samples_per_block]  # empty list of list, 4 channels => 4 times n_samples
         _adc = [np.zeros(n) for n in samples_per_block]
         _unblanking = [np.zeros(n) for n in samples_per_block]
@@ -323,30 +328,34 @@ class SequenceProvider(Sequence):
 
             if return_as_int16:
                 # Convert RF to int16
-                if np.max(x := rf_tmp / self.max_amp_per_channel[0]) > 1:
-                    raise ValueError(f"RF exceeds max. amplitude value configured for the channel...")
+                if np.max(x := rf_tmp / self._max_amp_per_channel[0]) > 1:
+                    raise ValueError(f"RF exceeds max. amplitude value configured for channel 0.")
                 rf_tmp = (x * np.iinfo(np.int16).max).astype(np.int16)
                 
                 # Convert x gradient to int16
-                if np.max(x := gx_tmp / self.max_amp_per_channel[1]) > 1:
-                    raise ValueError(f"RF exceeds max. amplitude value configured for the channel...")
+                if np.max(x := gx_tmp / self._max_amp_per_channel[1]) > 1:
+                    raise ValueError(f"Gx exceeds max. amplitude value configured for channel 1.")
                 gx_tmp = (x * np.iinfo(np.int16).max).astype(np.int16)
                 # Add adc to gx_tmp
                 gx_tmp = gx_tmp >> 1 | ((-(2**15)) * _adc[k]).astype(np.int16)
                 
                 # Convert y gradient to int16
-                if np.max(x := gy_tmp / self.max_amp_per_channel[2]) > 1:
-                    raise ValueError(f"RF exceeds max. amplitude value configured for the channel...")
+                if np.max(x := gy_tmp / self._max_amp_per_channel[2]) > 1:
+                    raise ValueError(f"Gy exceeds max. amplitude value configured for channel 2.")
                 gy_tmp = (x * np.iinfo(np.int16).max).astype(np.int16)
                 # Add unblanking to gy_tmp
                 gy_tmp = gy_tmp >> 1 | ((-(2**15)) * _unblanking[k]).astype(np.int16)
                 
                 # Convert z gradient to int16
-                if np.max(x := gz_tmp / self.max_amp_per_channel[3]) > 1:
-                    raise ValueError(f"RF exceeds max. amplitude value configured for the channel...")
+                if np.max(x := gz_tmp / self._max_amp_per_channel[3]) > 1:
+                    raise ValueError(f"Gz exceeds max. amplitude value configured for channel 3.")
                 gz_tmp = (x * np.iinfo(np.int16).max).astype(np.int16)
 
-                # Use 15th bit of gz_tmp to store the clock? (simple sequence of 0, 1, 0, 1, ...)
+                # TODO: Use 15th bit of gz_tmp to store the clock? (simple sequence of 0, 1, 0, 1, ...)
+                
+            else:
+                raise Warning("Sequence data points were unrolled to floats, \
+                    but int16 values are required to replay sequence.")
 
             _seq[k] = np.stack((rf_tmp, gx_tmp, gy_tmp, gz_tmp)).flatten(order="F")
 
@@ -358,6 +367,6 @@ class SequenceProvider(Sequence):
             sample_count=sample_count,
             grad_to_volt=self.grad_to_volt,
             rf_to_volt=self.rf_to_volt,
-            sample_rate=self.spcm_sample_rate,
+            dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq
         )
