@@ -19,7 +19,7 @@ seq.max_amp_per_channel = tx_card.max_amplitude
 seq.read("../sequences/export/gradient_test.seq")
 
 # Unrolling the sequence...
-sqnc: UnrolledSequence = seq.unroll_sequence(return_as_int16=True)
+sqnc: UnrolledSequence = seq.unroll_sequence()
 
 fig, ax = plot_spcm_data(sqnc, use_time=True)
 fig.show()

@@ -17,7 +17,7 @@ seq.read("../sequences/export/fid_proj.seq")
 
 # %%
 seq.max_amp_per_channel = [1000, 1000, 1000, 1000]
-sqnc: UnrolledSequence = seq.unroll_sequence(return_as_int16=False)
+sqnc: UnrolledSequence = seq.unroll_sequence()
 
 # %%
 

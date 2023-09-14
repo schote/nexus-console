@@ -17,7 +17,7 @@ provider.read("../sequences/export/fid_proj.seq")
 # %%
 # Unroll and plot the sequence
 t0 = time.time()
-sqnc: UnrolledSequence = provider.unroll_sequence(return_as_int16=True)
+sqnc: UnrolledSequence = provider.unroll_sequence()
 t_execution = time.time() - t0
 
 print(f"Sequence unrolling: {t_execution} s")
