@@ -204,7 +204,7 @@ class SequenceProvider(Sequence):
             waveform = np.interp(
                 x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                 xp=block.tt,
-                fp=block.waveform,
+                fp=waveform,
             )
             gradient = np.concatenate((delay, np.int16(waveform)))
 
