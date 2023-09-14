@@ -406,9 +406,8 @@ document.write(`
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    seq</span>
-<span class="sd">        Replay data as float or int16 values as list of numpy arrays. If `is_int16` flag is set,</span>
-<span class="sd">        the sequence data also already contains the digital adc and unblanking signals in channels</span>
-<span class="sd">        gx and gy.</span>
+<span class="sd">        Replay data as int16 values in a list of numpy arrays. The sequence data already </span>
+<span class="sd">        contains the digital adc and unblanking signals in the channels gx and gy.</span>
 
 <span class="sd">    adc_gate</span>
 <span class="sd">        ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</span>
@@ -416,9 +415,6 @@ document.write(`
 <span class="sd">    rf_unblanking</span>
 <span class="sd">        Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state</span>
 <span class="sd">        and 1 to unblanking state.</span>
-<span class="sd">    </span>
-<span class="sd">    is_int16</span>
-<span class="sd">        Flag which indicates if `seq` values are given as int16 values.</span>
 <span class="sd">    </span>
 <span class="sd">    sample_count</span>
 <span class="sd">        Total number of samples per channel.</span>
@@ -443,7 +439,6 @@ document.write(`
     <span class="n">seq</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">adc_gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
     <span class="n">rf_unblanking</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
-    <span class="n">is_int16</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">grad_to_volt</span><span class="p">:</span> <span class="nb">float</span>
     <span class="n">rf_to_volt</span><span class="p">:</span> <span class="nb">float</span>
