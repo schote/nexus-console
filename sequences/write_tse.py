@@ -26,7 +26,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
 
     seq = pp.Sequence(system)  # Create a new sequence object
     fov = 256e-3  # Define FOV and resolution
-    Nx, Ny = 128, 128
+    Nx, Ny = 64, 64
     n_echo = 16  # Number of echoes
     n_slices = 1
     rf_flip = 180  # Flip angle
@@ -34,7 +34,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
         rf_flip = np.zeros(n_echo) + rf_flip
     slice_thickness = 5e-3
     TE = 12e-3  # Echo time
-    TR = 2000e-3  # Repetition time
+    TR = 1000e-3  # Repetition time
 
     sampling_time = 6.4e-3
     readout_time = sampling_time + 2 * system.adc_dead_time
