@@ -3,6 +3,7 @@
 # imports
 import os
 import time
+from timeit import timeit
 from pprint import pprint
 
 import numpy as np
@@ -12,9 +13,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
+%load_ext line_profiler
+
 # %%
 # Read sequence
-seq = SequenceProvider(rf_double_precision=False)
+seq = SequenceProvider(rf_double_precision=False, grad_to_volt=0.001)
+seq.max_amp_per_channel = [1000]*4
 seq_path = os.path.normpath("/Users/schote01/code/spectrum-pulseq/console/pulseq_interpreter/seq/fid.seq")
 seq.read("../sequences/export/tse.seq")
 
@@ -25,32 +29,50 @@ t_execution = time.time() - t0
 print(f"Precalculation of carrier signal: {t_execution} s")
 
 # %%
+
+
+
 # Test RF calculation
 block = seq.get_block(2)    # block 2 contains rf
 n_samples = int(block.block_duration/seq.spcm_dwell_time)
 
 unblanking = np.zeros(n_samples, dtype=np.int8)
 
-print("Test rf block:")
-pprint(block.rf)
+# print("Test rf block:")
+# pprint(block.rf)
+
+%lprun -f seq.calculate_rf seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)
 
 # Calculate RF waveform
-rf = seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)
-time = list(np.arange(n_samples)*seq.spcm_dwell_time*1e3)
+# t0 = time.time()
+# rf = seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)
+# t_execution = time.time() - t0
+# print("RF unrolling duration: ", t_execution)
 
-# Plot RF event
-fig = make_subplots(specs=[[{"secondary_y": True}]])
+t = timeit(
+    "seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)", 
+    number=1000, 
+    globals=globals()
+)
+print(f"RF unrolling 1k calls: {t}s")
 
-# Add traces
-fig.add_trace(go.Scatter(x=time, y=rf, mode="lines", name="RF amplitude"), secondary_y=False)
-fig.add_trace(go.Scatter(x=time, y=unblanking, mode="lines", name="RF unblanking"), secondary_y=True)
 
-# Set labels
-fig.update_layout(title_text="RF")
-fig.update_xaxes(title_text="Time (ms)")
-fig.update_yaxes(title_text="Amplitude (Hz)", secondary_y=False)
-fig.update_yaxes(title_text="Unblanking (boolean)", secondary_y=True)
-fig.show()
+
+# time = list(np.arange(n_samples)*seq.spcm_dwell_time*1e3)
+
+# # Plot RF event
+# fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+# # Add traces
+# fig.add_trace(go.Scatter(x=time, y=rf, mode="lines", name="RF amplitude"), secondary_y=False)
+# fig.add_trace(go.Scatter(x=time, y=unblanking, mode="lines", name="RF unblanking"), secondary_y=True)
+
+# # Set labels
+# fig.update_layout(title_text="RF")
+# fig.update_xaxes(title_text="Time (ms)")
+# fig.update_yaxes(title_text="Amplitude (Hz)", secondary_y=False)
+# fig.update_yaxes(title_text="Unblanking (boolean)", secondary_y=True)
+# fig.show()
 
 
 # %%
@@ -62,6 +84,61 @@ fig.show()
 # print(f"Total RF duration: {total_rf_duration}\nBlock duration: {block_duration}")
 # print("RF samples: ", len(rf))
 # print("Block samples: ", n_samples)
+
+
+
+
+
+
+
+
+
+
+# %%
+# Performance of arbitrary gradient unrolling
+
+block = seq.get_block(1)    # block 1 contains arbitrary gradient
+n_samples = int(block.block_duration / seq.spcm_dwell_time)
+
+# Line profiler
+%lprun -f seq.calculate_gradient seq.calculate_gradient(block.gz, n_samples)
+
+# Time the execution of 1k samples
+t = timeit(
+    "seq.calculate_gradient(block.gz, n_samples)", 
+    number=1000, 
+    globals=globals()
+)
+print(f"RF unrolling 1k calls: {t}s")
+
+# %%
+# Performance of trapezoidal gradient unrolling
+
+block = seq.get_block(3)    # block 3 contains trapezoidal gradient
+n_samples = int(block.block_duration / seq.spcm_dwell_time)
+
+# Line profiler
+%lprun -f seq.calculate_gradient seq.calculate_gradient(block.gx, n_samples)
+
+# Time the execution of 1k samples
+t = timeit(
+    "seq.calculate_gradient(block.gx, n_samples)", 
+    number=1000, 
+    globals=globals()
+)
+print(f"RF unrolling 1k calls: {t}s")
+
+
+
+
+
+
+
+
+
+
+
+
 
 # %%
 # Test arbitrary gradient unrolling event

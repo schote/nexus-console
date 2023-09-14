@@ -6,6 +6,7 @@ import time
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.spcm_data_plot import plot_spcm_data
 
+%load_ext line_profiler
 # %%
 # Read sequence
 seq = SequenceProvider(rf_to_volt=0.2, grad_to_volt=0.001)
@@ -33,11 +34,14 @@ seq.read(seq_path)
 # >> in an additional step. Instead, we could try to calculate the unrolled sequence directly in int16
 # >> datatype (casting gradient amplitudes before resampling for instance). This would also save memory.
 
-t0 = time.time()
-seq_unrolled = seq.unroll_sequence(return_as_int16=True)
-t_execution = time.time() - t0
+# t0 = time.time()
+# seq_unrolled = seq.unroll_sequence(return_as_int16=True)
+# t_execution = time.time() - t0
+# print(f"Sequence unrolling to int16: {t_execution} s")
 
-print(f"Sequence unrolling to int16: {t_execution} s")
+%lprun -f seq.unroll_sequence seq.unroll_sequence()
+
+
 
 # %%
 # Plot result

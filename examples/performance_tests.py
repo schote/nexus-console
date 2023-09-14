@@ -4,6 +4,7 @@ from timeit import timeit
 
 import numpy as np
 from scipy.signal import resample
+from scipy.interpolate import interpn
 
 
 # Define function to test calls 
@@ -28,6 +29,10 @@ list_a = [0.] * n_samples
 list_b = [0.] * n_samples
 
 x = np.arange(2*np.pi, step=(2*np.pi)/n_samples)
+
+t = np.linspace(0, 1, 50)
+y = 2 * t + 3
+t_interp = np.linspace(0, 1, n_samples)
 
 results = dict()
 
@@ -82,6 +87,12 @@ results.update(test_calls([
     "np.array([list_a, list_b]).flatten(order=order)",
 ]))
 
+# %% 
+# Interpolation functions
+results.update(test_calls([
+    "interpn(points=(t, ), values=y, xi=t_interp)",
+    "np.interp(xp=t, fp=y, x=t_interp)"
+]))
 
 # %%
 # Write results to csv table
