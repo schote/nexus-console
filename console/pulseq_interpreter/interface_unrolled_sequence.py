@@ -16,9 +16,8 @@ class UnrolledSequence:
     Parameters
     ----------
     seq
-        Replay data as float or int16 values as list of numpy arrays. If `is_int16` flag is set,
-        the sequence data also already contains the digital adc and unblanking signals in channels
-        gx and gy.
+        Replay data as int16 values in a list of numpy arrays. The sequence data already 
+        contains the digital adc and unblanking signals in the channels gx and gy.
 
     adc_gate
         ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.
@@ -26,9 +25,6 @@ class UnrolledSequence:
     rf_unblanking
         Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state
         and 1 to unblanking state.
-    
-    is_int16
-        Flag which indicates if `seq` values are given as int16 values.
     
     sample_count
         Total number of samples per channel.
@@ -53,7 +49,6 @@ class UnrolledSequence:
     seq: np.ndarray
     adc_gate: np.ndarray
     rf_unblanking: np.ndarray
-    is_int16: bool
     sample_count: int
     grad_to_volt: float
     rf_to_volt: float

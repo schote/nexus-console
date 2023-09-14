@@ -51,20 +51,20 @@ def plot_spcm_data(
     gy = sqncs[2::num_channels][seq_range[0]:seq_range[1]]
     gz = sqncs[3::num_channels][seq_range[0]:seq_range[1]]
 
-    if sequence.is_int16:
-        if not sqncs.dtype == np.int16:
-            raise ValueError("Require int16 values to decode digital signal...")
-        
-        adc = -1 * (gx >> 15)
-        unblanking = -1 * (gy >> 15) 
-        
-        gx = gx << 1
-        gy = gy << 1
-        gz = gz << 1
 
-    else:
-        adc = np.concatenate(sequence.adc_gate)[seq_range[0]:seq_range[1]]
-        unblanking = np.concatenate(sequence.rf_unblanking)[seq_range[0]:seq_range[1]]
+    if not sqncs.dtype == np.int16:
+        raise ValueError("Require int16 values to decode digital signal...")
+    
+    adc = -(gx >> 15)
+    unblanking = -(gy >> 15) 
+    
+    gx = gx << 1
+    gy = gy << 1
+    gz = gz << 1
+
+    # else:
+    #     adc = np.concatenate(sequence.adc_gate)[seq_range[0]:seq_range[1]]
+    #     unblanking = np.concatenate(sequence.rf_unblanking)[seq_range[0]:seq_range[1]]
 
 
     axis[0].plot(x, rf)
