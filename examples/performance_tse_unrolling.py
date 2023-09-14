@@ -19,11 +19,11 @@ seq.read(seq_path)
 
 # %%
 # Time unrolling with return_as_int equals False
-t0 = time.time()
-seq_unrolled = seq.unroll_sequence(return_as_int16=False)
-t_execution = time.time() - t0
+# t0 = time.time()
+# seq_unrolled = seq.unroll_sequence(return_as_int16=False)
+# t_execution = time.time() - t0
 
-print(f"Sequence unrolling to float: {t_execution} s")
+# print(f"Sequence unrolling to float: {t_execution} s")
 
 # %%
 # Time unrolling with return_as_int equals True
@@ -41,7 +41,7 @@ print(f"Sequence unrolling to int16: {t_execution} s")
 
 # %%
 # Plot result
-fig, ax = plot_spcm_data(seq_unrolled, use_time=True)
-fig.show()
+# fig, ax = plot_spcm_data(seq_unrolled, use_time=True)
+# fig.show()
 
 # %%

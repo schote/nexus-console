@@ -1,11 +1,12 @@
 """Sequence provider class."""
-
+import warnings
 import numpy as np
 from console.pulseq_interpreter.interface_unrolled_sequence import \
     UnrolledSequence
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
+from line_profiler import profile
 
 
 class SequenceProvider(Sequence):
@@ -221,6 +222,7 @@ class SequenceProvider(Sequence):
         adc_len = int(block.num_samples * block.dwell / self.spcm_dwell_time)
         gate[delay : delay + adc_len] = 1
 
+    @profile
     def unroll_sequence(self, return_as_int16: bool = False) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
@@ -290,7 +292,7 @@ class SequenceProvider(Sequence):
 
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
-        tgx_const = 0
+        gx_const = 0
         gy_const = 0
         gz_const = 0
 
@@ -347,8 +349,9 @@ class SequenceProvider(Sequence):
                 # TODO: Use 15th bit of gz_tmp to store the clock? (simple sequence of 0, 1, 0, 1, ...)
                 
             else:
-                raise Warning("Sequence data points were unrolled to floats, \
-                    but int16 values are required to replay sequence.")
+                warnings.warn(
+                    "Sequence data points were unrolled to floats, but int16 values are required to replay sequence."
+                )
 
             _seq[k] = np.stack((rf_tmp, gx_tmp, gy_tmp, gz_tmp)).flatten(order="F")
 
