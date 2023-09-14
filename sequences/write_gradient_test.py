@@ -68,7 +68,7 @@ g3 = make_extended_trapezoid(channel="x", times=g3_t, amplitudes=g3_amps)
 
 # Define sequence
 seq.add_block(g1, adc)
-seq.add_block(make_delay(108e-3))
+seq.add_block(make_delay(8e-3))
 seq.add_block(g2, adc)
 seq.add_block(make_delay(8e-3))
 seq.add_block(g3, adc2)
