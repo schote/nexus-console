@@ -43,6 +43,7 @@ tx_card.stop_operation()
 time.sleep(1)
 rx_card.stop_operation()
 
+# %%
 # Disconnect cards
 tx_card.disconnect()
 rx_card.disconnect()
