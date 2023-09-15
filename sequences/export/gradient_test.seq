@@ -17,7 +17,7 @@ RadiofrequencyRasterTime 1e-06
 # NUM DUR RF  GX  GY  GZ  ADC  EXT
 [BLOCKS]
  1 400   0   1   0   0  1  0
- 2 800   0   0   0   0  0  0
+ 2 10800   0   0   0   0  0  0
  3 400   0   2   0   0  1  0
  4 800   0   0   0   0  0  0
  5 400   0   3   0   0  1  0
@@ -31,7 +31,39 @@ RadiofrequencyRasterTime 1e-06
 13 400   0   1   0   0  1  0
 14 800   0   0   0   0  0  0
 15 400   0   3   0   0  1  0
-16 100   0   0   0   0  0  0
+16 800   0   0   0   0  0  0
+17 400   0   1   0   0  1  0
+18 800   0   0   0   0  0  0
+19 400   0   1   0   0  1  0
+20 800   0   0   0   0  0  0
+21 400   0   1   0   0  1  0
+22 800   0   0   0   0  0  0
+23 400   0   1   0   0  1  0
+24 800   0   0   0   0  0  0
+25 400   0   1   0   0  1  0
+26 800   0   0   0   0  0  0
+27 400   0   1   0   0  1  0
+28 800   0   0   0   0  0  0
+29 400   0   1   0   0  1  0
+30 800   0   0   0   0  0  0
+31 400   0   1   0   0  1  0
+32 800   0   0   0   0  0  0
+33 400   0   1   0   0  1  0
+34 800   0   0   0   0  0  0
+35 400   0   1   0   0  1  0
+36 800   0   0   0   0  0  0
+37 400   0   1   0   0  1  0
+38 800   0   0   0   0  0  0
+39 400   0   1   0   0  1  0
+40 800   0   0   0   0  0  0
+41 400   0   1   0   0  1  0
+42 800   0   0   0   0  0  0
+43 400   0   1   0   0  1  0
+44 800   0   0   0   0  0  0
+45 400   0   1   0   0  1  0
+46 800   0   0   0   0  0  0
+47 400   0   1   0   0  1  0
+48 800   0   0   0   0  0  0
 
 # Format of arbitrary gradients:
 #   time_shape_id of 0 means default timing (stepping with grad_raster starting at 1/2 of grad_raster)
@@ -114,4 +146,4 @@ num_samples 6
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash 683aab5be456b231c677b2857e41012c
+Hash 3ab57c2c772121448ebce4bdf3aa7faf

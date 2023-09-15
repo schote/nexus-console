@@ -2,7 +2,7 @@
 # %%
 # imports
 import time
-
+import numpy as np
 import matplotlib.pyplot as plt
 from console.utilities.load_config import get_instances
 from console.utilities.spcm_data_plot import plot_spcm_data
@@ -17,12 +17,13 @@ seq.max_amp_per_channel = tx_card.max_amplitude
 
 # Read sequence
 seq.read("../sequences/export/gradient_test.seq")
+#seq.read("../sequences/export/tse.seq")
 
 # Unrolling the sequence...
 sqnc: UnrolledSequence = seq.unroll_sequence()
 
-fig, ax = plot_spcm_data(sqnc, use_time=True)
-fig.show()
+#fig, ax = plot_spcm_data(sqnc, use_time=True)
+#fig.show()
 
 # %%
 # Connect to tx and rx card
@@ -53,28 +54,26 @@ rx_card.disconnect()
 
 # %%
 
-# TODO: Plot acquired data
-gate1 = rx_card.rx_data[0]
-gate2 = rx_card.rx_data[1]
-gate3 = rx_card.rx_data[2]
-gate4 = rx_card.rx_data[3]
-gate5 = rx_card.rx_data[4]
-gate6 = rx_card.rx_data[5]
-gate7 = rx_card.rx_data[6]
-gate8 = rx_card.rx_data[7]
+gateAll = []
+n_pulses_display = len(rx_card.rx_data)
+for i in range(n_pulses_display):
+    gateAll.append(rx_card.rx_data[i])
 
-# TODO : Automate this
-fig, ax = plt.subplots(2, 4, figsize=(10,3))
-ax[0,0].plot(gate1)
-ax[0,1].plot(gate2)
-ax[0,2].plot(gate3)
-ax[0,3].plot(gate4)
-ax[1,0].plot(gate5)
-ax[1,1].plot(gate6)
-ax[1,2].plot(gate7)
-ax[1,3].plot(gate8)
+# Plot all gates make subplots of 4 columns according to the number of gates
+fig, ax = plt.subplots(int(np.ceil(n_pulses_display/4)), 4, figsize=(10,3))
+for i in range(n_pulses_display):
+    ax[i//4, i%4].plot(np.linspace(0,len(rx_card.rx_data[i])/(rx_card.sample_rate*1e6),len(rx_card.rx_data[i]/(rx_card.sample_rate*1e6))),gateAll[i])
+    # Hide x labels and tick labels for top plots and y ticks for right plots.
+    ax[i//4, i%4].label_outer()
+    ax[i//4, i%4].set_xlabel("Time / ms")
+    #ax[i//4, i%4].set_ylabel("Amp / V")
+    
+    
+# Plot all gates in one plot
 plt.show()
 # %%
+plt.figure()
+plt.plot(rx_card.rx_data[9])
 # # Plot rx data
 # # rx_file = "./rx_20230824-141639.npy"
 # rx_file = "./rx_20230904-233221.npy"

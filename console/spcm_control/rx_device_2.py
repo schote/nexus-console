@@ -94,8 +94,8 @@ class RxCard(SpectrumDevice):
         # Set up the pre and post trigger values. Post trigger size is at least one notify size to avoid data loss. 
         self.pre_trigger = 8
         self.post_trigger = 4096 // self.num_channels.value        
+        #self.post_trigger = 4096         
         self.post_trigger_size = self.post_trigger * 2 
-        
         # Set the memory size, pre and post trigger and loop paramaters
         # spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, self.memory_size)
         spcm_dwSetParam_i32(self.card, SPC_POSTTRIGGER, self.post_trigger)
@@ -201,10 +201,11 @@ class RxCard(SpectrumDevice):
         available_timestamp_postion = int32(0)
         available_user_databytes = int32(0)
         data_user_position = int32(0)
-
+        total_gates = 0
         bytes_leftover = 0
         total_bytes_read = 0
         self.rx_data = []
+        total_leftover = 0
         # Todo check sequence parameters.
         print("RX:> Starting receiver...")
         
@@ -224,7 +225,7 @@ class RxCard(SpectrumDevice):
                 timestamp1 = pll_data[int(available_timestamp_postion.value/8)+2] / (self.sample_rate*1e6)
 
                 gate_length = timestamp1 - timestamp0
-                print("------------------------------------------")
+                print(f"------------------------------------------{total_gates+1}------------------------------------------")
                 print(f"RX:> Timestamps: {(timestamp0, timestamp1)}s, difference: {round(gate_length*1e3, 2)}ms")
                 
                 spcm_dwSetParam_i32(self.card, SPC_TS_AVAIL_CARD_LEN, 32)
@@ -238,6 +239,8 @@ class RxCard(SpectrumDevice):
                 #------------- Check for rounding errors
                 total_bytes = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 page_allign = total_bytes + (rx_notify-int(total_bytes % rx_notify))
+                
+                bytes_sequence = (gate_sample + self.pre_trigger+ self.post_trigger) * 2 * self.num_channels.value
                 #-------------  
                 # Read/update available user bytes
                 spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))      
@@ -246,7 +249,7 @@ class RxCard(SpectrumDevice):
                 print("RX:> User position: ", data_user_position.value)
                 print(f"RX:> Expected gate data in bytes: {total_bytes}")
                 print(f"RX:> Segments in notify size: {(total_bytes//rx_notify)}")
-                print(f"RX:> Left Over: {int(total_bytes%rx_notify)}")
+                print(f"RX:> Left Over: {bytes_leftover}")
                 print(f"RX:> Page align: {page_allign}")
                 
                 while not self.emergency_stop.is_set():
@@ -255,6 +258,7 @@ class RxCard(SpectrumDevice):
                     spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
                     print("RX:> Available user length: ", available_user_databytes.value)
                     if available_user_databytes.value >= total_bytes:
+                        total_gates += 1
                         #self.print_status()
                         gate_data = [] 
                         t0 = time.time()
@@ -262,36 +266,48 @@ class RxCard(SpectrumDevice):
                         print("RX:> Getting RX buffer read position and RX data...")
                         spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
                         
-                        bytes_in_buffer     = data_user_position.value // 2
-                        print(bytes_in_buffer)
+                        byte_position     = data_user_position.value // 2
+                        #print(bytes_in_buffer)
                         
                         total_bytes_to_read = available_user_databytes.value
-                        index_0             = bytes_in_buffer + bytes_leftover
+                        index_0             = byte_position + total_leftover //2
                         
-                        if(total_bytes_to_read + bytes_in_buffer >= rx_size):
-                            index_1                            = (rx_size - bytes_in_buffer)//2
-                            index_2                            = (bytes_in_buffer - index_1)//2
-                            print(f"RX:> indexes:               {index_1, index_2}")
+                        if(total_bytes_to_read + data_user_position.value >= rx_size):
+                            print(f"RX:> Rx_size:               {rx_size}")
+                            index_1                            = (rx_size//2 - (index_0))
+                            index_2                            = (total_bytes_to_read//2 - index_1)
+                            print(f"RX:> indexes:               {index_1, index_2,(index_0-bytes_leftover)}")
                             gate_data[0:index_1]               = rx_data[index_0:index_0 + index_1]   
                             gate_data[index_1:index_2+index_1] = rx_data[0:index_2]   
-                            total_bytes_read                   = index_2+index_1
+                            #total_bytes_read                   = 0
                         else:
                             gate_data = rx_data[index_0:index_0 + int(total_bytes/2)]
-                            total_bytes_read = total_bytes_read + bytes_in_buffer
+                            #total_bytes_read = total_bytes_read + bytes_in_buffer
                         # gate_data = rx_data[:int(available_user_databytes.value / 2)]
                         #gate_data = rx_data[:int(rx_buffer_size.value/2)]
-                        
+                        dummy_data_read = rx_data[index_0:index_0+int(total_bytes/2)+self.post_trigger_size]
                         # Extract channel 0 and convert data from int16 to floats [V]
-                        channel_0 = (np.array(gate_data[::2]) / np.iinfo(np.int16).max) * self.max_amplitude[0]
+                        channel_0 = (np.array(gate_data[0::2]) / np.iinfo(np.int16).max) * self.max_amplitude[0]
                         # Truncate gate signal, throw pre- and post-trigger
                         self.rx_data.append(channel_0[self.pre_trigger:])
+                        bytes_leftover = (total_bytes+self.post_trigger_size)%rx_notify
+                        total_leftover += bytes_leftover 
+                        if (total_leftover >= rx_notify):
+                            total_leftover = total_leftover - rx_notify
+                            available_card_len = bytes_sequence - (bytes_leftover) + rx_notify
+                        else:
+                            available_card_len = bytes_sequence - (bytes_leftover)
+                        print(f"RX:> Bytes leftover: {bytes_leftover}")
 
+                        
                         # Tell the card that we have read the data. The card length should be in the order of notify size.
                         #spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, (available_user_databytes.value//rx_notify)*rx_notify)
                         #update_card_length = (available_user_databytes.value//rx_notify)*rx_notify
-                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, page_allign+rx_notify)
+                        spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         #spcm_dwSetParam_i32(self.card, SPC_DATA_AVAIL_CARD_LEN, available_user_databytes.value)
                         bytes_leftover = (total_bytes+self.post_trigger_size)%rx_notify
+                        
+                        #bytes_leftover = 0
                         spcm_dwGetParam_i32(self.card, SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
                         print("RX:> Available user length: ", available_user_databytes.value)
                         

@@ -5,7 +5,7 @@ from pypulseq.make_extended_trapezoid import make_extended_trapezoid
 from pypulseq.make_delay import make_delay
 import numpy as np
 
-from console.utilities.sequence_plot import get_sequence_plot
+#from console.utilities.sequence_plot import get_sequence_plot
 
 # %%
 seq = Sequence()
@@ -82,7 +82,12 @@ seq.add_block(make_delay(8e-3))
 seq.add_block(g1, adc)
 seq.add_block(make_delay(8e-3))
 seq.add_block(g3, adc)
-seq.add_block(make_delay(1e-3))
+seq.add_block(make_delay(8e-3))
+
+for i in range (0, 16):
+    seq.add_block(g1, adc)
+    seq.add_block(make_delay(8e-3))
+
 seq.set_definition('Name', 'gradient_test')
 
 
