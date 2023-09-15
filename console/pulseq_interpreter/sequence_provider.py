@@ -113,21 +113,22 @@ class SequenceProvider(Sequence):
         num_samples_delay = int(rf_block.delay / self.spcm_dwell_time)
         delay = np.zeros(num_samples_delay, dtype=np.int16)
         
+        # Zero filling for RF dead-time (maximum of dead time defined in RF event and system)
+        # Time between start of unblanking and start of RF
+        dead_dur = max(self.system.rf_dead_time, rf_block.dead_time)
+        num_samples_dead = int(dead_dur / self.spcm_dwell_time)
+        dead_time = np.zeros(num_samples_dead, dtype=np.int16)
+        
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
         ringdown_dur = max(self.system.rf_ringdown_time, rf_block.ringdown_time)
         num_samgles_ringdown = int(ringdown_dur / self.spcm_dwell_time)
         ringdown_time = np.zeros(num_samgles_ringdown, dtype=np.int16)
         
-        # Zero filling for ADC dead-time (maximum of dead time defined in RF event and system)
-        dead_dur = max(self.system.rf_dead_time, rf_block.dead_time)
-        num_samples_dead = int(dead_dur / self.spcm_dwell_time)
-        dead_time = np.zeros(num_samples_dead, dtype=np.int16)
-        
         # Calculate the number of shape sample points
         num_samples = int(rf_block.shape_dur / self.spcm_dwell_time)
         
         # Set unblanking signal
-        unblanking[:num_samples_delay + num_samples] = -(2**15) # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
+        unblanking[num_samples_delay:-(num_samgles_ringdown+1)] = -(2**15) # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
 
         # Calculate the static phase offset, defined in RF pulse
         phase_offset = np.exp(1j * rf_block.phase_offset)
@@ -152,7 +153,7 @@ class SequenceProvider(Sequence):
         signal = np.int16((envelope * carrier).real)
 
         # Combine signal from delays and rf
-        rf_pulse = np.concatenate((delay, signal, ringdown_time, dead_time))
+        rf_pulse = np.concatenate((delay, dead_time, signal, ringdown_time))
 
         if (num_signal_samples := len(rf_pulse)) < num_total_samples:
             # Zero-fill rf signal
@@ -251,7 +252,7 @@ class SequenceProvider(Sequence):
         gate[delay : delay + adc_len] = -(2**15) # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
 
     @profile
-    def unroll_sequence(self) -> UnrolledSequence:
+    def unroll_sequence(self, larmor_freq: float | None = None) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
         Returns
@@ -299,6 +300,9 @@ class SequenceProvider(Sequence):
         The last two lines convert the digital signal from 15th bit value to 1 or 0 respectively.
         """
         print("Unrolling sequnce...")
+        
+        if larmor_freq is not None:
+            self.larmor_freq = larmor_freq
 
         if len(self.block_events) == 0:
             raise AttributeError("No sequence loaded.")

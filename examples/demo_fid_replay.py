@@ -14,14 +14,8 @@ provider, tx_card, _ = get_instances("../device_config.yaml")
 provider.max_amp_per_channel = tx_card.max_amplitude
 provider.read("../sequences/export/fid_proj.seq")
 
-# %%
-# Unroll and plot the sequence
-
-t0 = time.time()
+# Unroll and plot sequence
 sqnc: UnrolledSequence = provider.unroll_sequence()
-t_execution = time.time() - t0
-
-print(f"Sequence unrolling: {t_execution} s")
 
 fig, ax = plot_spcm_data(sqnc, use_time=True)
 fig.show()
