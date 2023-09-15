@@ -14,7 +14,7 @@ from pypulseq.opts import Opts
 # Define system
 system = Opts(
     rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
-    rf_dead_time=100e-6,        # time delay at the end of RF event
+    rf_dead_time=200e-6,        # time delay at the end of RF event
     adc_dead_time=100e-6,       # time delay at the beginning of ADC event
 )
 
@@ -75,4 +75,4 @@ seq.plot(time_disp='us')
 
 # %% 
 # Write sequence
-seq.write('./export/fid.seq')
+# seq.write('./export/fid.seq')

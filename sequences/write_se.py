@@ -31,45 +31,45 @@ te = 10e-3
 
 # >> RF signals with varying amplitudes
 # 90 degree RF sinc pulse
-rf_block_1 = make_sinc_pulse(
-    flip_angle=rf_flip,
-    system=system,
-    duration=rf_duration,
-    slice_thickness=10,
-    apodization=0.5,
-    phase_offset=rf_phase,
-    return_gz=False,
-)
-
-# 180 degree RF sinc pulse
-rf_block_2 = make_sinc_pulse(
-    flip_angle=rf_flip*2,   # twice the flip angle => 180°
-    system=system,
-    duration=rf_duration,   # same rf duration
-    slice_thickness=10,
-    apodization=0.5,
-    phase_offset=rf_phase,
-    return_gz=False,
-)
-
-# # >> RF signals with varying duration
-# # 90 degree RF sinc pulse
 # rf_block_1 = make_sinc_pulse(
 #     flip_angle=rf_flip,
+#     system=system,
 #     duration=rf_duration,
+#     slice_thickness=10,
 #     apodization=0.5,
 #     phase_offset=rf_phase,
-#     system=system,
+#     return_gz=False,
 # )
 
 # # 180 degree RF sinc pulse
 # rf_block_2 = make_sinc_pulse(
 #     flip_angle=rf_flip*2,   # twice the flip angle => 180°
-#     duration=rf_duration*2, # twice the duration => equal amplitudes
+#     system=system,
+#     duration=rf_duration,   # same rf duration
+#     slice_thickness=10,
 #     apodization=0.5,
 #     phase_offset=rf_phase,
-#     system=system,
+#     return_gz=False,
 # )
+
+# >> RF signals with varying duration
+# 90 degree RF sinc pulse
+rf_block_1 = make_sinc_pulse(
+    flip_angle=rf_flip,
+    duration=rf_duration,
+    apodization=0.5,
+    phase_offset=rf_phase,
+    system=system,
+)
+
+# 180 degree RF sinc pulse
+rf_block_2 = make_sinc_pulse(
+    flip_angle=rf_flip*2,   # twice the flip angle => 180°
+    duration=rf_duration*2, # twice the duration => equal amplitudes
+    apodization=0.5,
+    phase_offset=rf_phase,
+    system=system,
+)
 
 # # >> RF signals with varying duration
 # # 90 degree RF sinc pulse
@@ -129,5 +129,5 @@ seq.plot(time_disp='us')
 
 # %% 
 # Write sequence
-seq.write('./export/se_spectrum.seq')
+# seq.write('./export/se_spectrum.seq')
 # %%
