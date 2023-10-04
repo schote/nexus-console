@@ -17,7 +17,7 @@ RxCard: !RxCard
   sample_rate: 10         # in MHz
   memory_size: 4096000    # memory size in cycles, Please note that step size is 8. 
   loops: 0          # number of loops, 0 for infinite loop for FIFO gated mode. 
-  timeStampMode: True
+  timestamp_mode: True
   # post_trigger: !!python/object/apply:eval [memory_size - 8000] ##Todo #Note that step size is 8
 
 # Sequence provider configuration

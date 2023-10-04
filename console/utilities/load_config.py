@@ -5,7 +5,7 @@ import yaml
 from pypulseq.opts import Opts
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.spcm_control.rx_device_2 import RxCard
+from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 
 # >> Create yaml loader object
@@ -42,9 +42,5 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
     file_path = os.path.normpath(path_to_config)
     with open(file_path, "rb") as file:
         config = yaml.load(file, Loader=Loader)
-        
-    return (
-        config["SequenceProvider"],
-        config["TxCard"],
-        config["RxCard"]
-    )
+
+    return (config["SequenceProvider"], config["TxCard"], config["RxCard"])

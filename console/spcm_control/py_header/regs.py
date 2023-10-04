@@ -1,7 +1,7 @@
 """Spectrum card registers provided by spectrum instrumentation."""
 
 
-def KILO(k):
+def KILO(val: int) -> int:
     """Translate value to kilo.
 
     Example
@@ -18,10 +18,10 @@ def KILO(k):
     -------
         Value in kilo
     """
-    return 1000 * (k)
+    return 1000 * val
 
 
-def MEGA(m):
+def MEGA(val: int) -> int:
     """Translate value to mega.
 
     Example
@@ -38,10 +38,10 @@ def MEGA(m):
     -------
         Value in mega
     """
-    return 1000 * 1000 * (m)
+    return 1000 * 1000 * val
 
 
-def GIGA(g):
+def GIGA(val: int) -> int:
     """Translate value to giga.
 
     Example
@@ -58,10 +58,10 @@ def GIGA(g):
     -------
         Value in giga
     """
-    return 1000 * 1000 * 1000 * (g)
+    return 1000 * 1000 * 1000 * val
 
 
-def KILO_B(k):
+def KILO_B(val: int) -> int:
     """Translate value to kilo bytes.
 
     Example
@@ -78,10 +78,10 @@ def KILO_B(k):
     -------
         Value in kilo bytes
     """
-    return 1024 * (k)
+    return 1024 * val
 
 
-def MEGA_B(m):
+def MEGA_B(val: int) -> int:
     """Translate value to mega bytes.
 
     Example
@@ -98,10 +98,10 @@ def MEGA_B(m):
     -------
         Value in mega bytes
     """
-    return 1024 * 1024 * (m)
+    return 1024 * 1024 * val
 
 
-def GIGA_B(g):
+def GIGA_B(val: int) -> int:
     """Translate value to giga bytes.
 
     Example
@@ -118,7 +118,7 @@ def GIGA_B(g):
     -------
         Value in giga bytes
     """
-    return 1024 * 1024 * 1024 * (g)
+    return 1024 * 1024 * 1024 * val
 
 
 # Card registers

@@ -7,9 +7,9 @@ from pprint import pprint
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status, type_to_name
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 
 @dataclass
@@ -70,7 +70,7 @@ class TxCard(SpectrumDevice):
         # Threading class attributes
         self.worker: threading.Thread | None = None
         self.emergency_stop = threading.Event()
-        
+
         self.card_type = spcm.int32(0)
 
     def setup_card(self) -> None:
@@ -89,11 +89,10 @@ class TxCard(SpectrumDevice):
         """
         # Reset card
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
-        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, spcm.byref(self.card_type))
-        
-        if not 'M2p.65' in (device_type := type_to_name(self.card_type.value)):
-            raise ConnectionError(f"TX:> Device with path {self.path} is of type {device_type}, no transmit card...")
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
 
+        if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
+            raise ConnectionError(f"TX:> Device with path {self.path} is of type {device_type}, no transmit card...")
 
         # self.print_status() # debug
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
@@ -108,7 +107,7 @@ class TxCard(SpectrumDevice):
 
         # Check actual sampling rate
         sample_rate = spcm.int64(0)
-        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.byref(sample_rate))
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_SAMPLERATE, ctypes.byref(sample_rate))
         print(f"TX:> Device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != spcm.MEGA(self.sample_rate):
             raise Warning(
@@ -169,7 +168,7 @@ class TxCard(SpectrumDevice):
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
-    def start_operation(self, sequence: UnrolledSequence) -> None:
+    def start_operation(self, data: UnrolledSequence | None = None) -> None:
         """Start transmit (TX) card operation.
 
         Steps:
@@ -180,24 +179,29 @@ class TxCard(SpectrumDevice):
         Parameters
         ----------
         data
-            Replay data as int16 numpy array in correct order.
+            Sequence replay data as int16 numpy array in correct order.
             Checkout `prepare_sequence` function for reference of correct replay data format.
+            This value is None per default
 
         Raises
         ------
         ValueError
             Raised if replay data is not provided as numpy int16 values
         """
-        sqnc = np.concatenate(sequence.seq)
-        
+        if not data:
+            raise AttributeError("No unrolled sequence data provided.")
+        sqnc = np.concatenate(data.seq)
+
         # Check if sequence datatype is valid
         if sqnc.dtype != np.int16:
             raise ValueError("TX:> Sequence replay data is not int16, please unroll sequence to int16.")
-        
+
         # Check if sequence dwell time is valid
-        if sqnc_sample_rate := 1/(sequence.dwell_time*1e6) != self.sample_rate:
-            raise Warning(f"TX:> Sequence sample rate ({sqnc_sample_rate} MHz) differs from \
-                device sample rate ({self.sample_rate} MHz).")
+        if sqnc_sample_rate := 1 / (data.dwell_time * 1e6) != self.sample_rate:
+            raise Warning(
+                f"TX:> Sequence sample rate ({sqnc_sample_rate} MHz) differs from \
+                device sample rate ({self.sample_rate} MHz)."
+            )
 
         # Check if card connection is established
         if not self.card:
@@ -205,7 +209,7 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.emergency_stop.clear()
-        self.worker = threading.Thread(target=self._streaming, args=(sqnc, ))
+        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
         self.worker.start()
 
     def stop_operation(self) -> None:
@@ -222,7 +226,7 @@ class TxCard(SpectrumDevice):
         else:
             print("TX:> No active replay thread found...")
 
-    def _streaming(self, data: np.ndarray) -> None:
+    def _fifo_stream_worker(self, data: np.ndarray) -> None:
         """Continuous FIFO mode examples.
 
         Parameters
@@ -247,7 +251,9 @@ class TxCard(SpectrumDevice):
         # Get total size of data buffer to be played out
         self.data_buffer_size = int(data.nbytes)
         if self.data_buffer_size % (self.num_ch * 2) != 0:
-            raise MemoryError("TX:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...")
+            raise MemoryError(
+                "TX:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
+            )
         data_buffer_samples_per_ch = spcm.uint64(int(self.data_buffer_size / (self.num_ch * 2)))
         # Report replay buffer size and samples
         print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
@@ -260,13 +266,14 @@ class TxCard(SpectrumDevice):
         ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
 
         # Perform initial memory transfer: Fill the whole ring buffer
-        ctypes.memmove(
-            spcm.cast(ring_buffer, spcm.c_void_p).value,
-            spcm.cast(data_buffer, spcm.c_void_p).value,
-            self.ring_buffer_size.value,
-        )
-        transferred_bytes = self.ring_buffer_size.value
-        # print("TX:> Initially transferred bytes: ", transferred_bytes)
+        if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
+            if _data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value:
+                ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.ring_buffer_size.value)
+                transferred_bytes = self.ring_buffer_size.value
+            else:
+                raise RuntimeError("Could not get data buffer position")
+        else:
+            raise RuntimeError("Could not get ring buffer position")
 
         # Perform initial data transfer to completely fill continuous buffer
         spcm.spcm_dwDefTransfer_i64(
@@ -297,37 +304,32 @@ class TxCard(SpectrumDevice):
 
         while (transferred_bytes < self.data_buffer_size) and not self.emergency_stop.is_set():
             # Read available bytes and user position
-            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, spcm.byref(avail_bytes))
-            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, spcm.byref(usr_position))
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
 
             # Calculate new data for the transfer, when notify_size is available on continous buffer
             if avail_bytes.value >= self.notify_size.value:
                 transfer_count += 1
 
                 # Get new buffer positions
-                ring_buffer_position = spcm.cast(
-                    (spcm.c_char * (self.ring_buffer_size.value - usr_position.value)).from_buffer(
+                if ring_buffer_position := ctypes.cast(
+                    (ctypes.c_char * (self.ring_buffer_size.value - usr_position.value)).from_buffer(
                         ring_buffer, usr_position.value
                     ),
-                    spcm.c_void_p,
-                ).value
-                data_buffer_position = spcm.cast(data_buffer, spcm.c_void_p).value + transferred_bytes
+                    ctypes.c_void_p,
+                ).value:
+                    if current_data_buffer := ctypes.cast(data_buffer, ctypes.c_void_p).value:
+                        data_buffer_position = current_data_buffer + transferred_bytes
 
-                # Move memory: Current ring buffer position,
-                # position in sequence data and amount to transfer (=> notify size)
-                ctypes.memmove(ring_buffer_position, data_buffer_position, self.notify_size.value)
+                        # Move memory: Current ring buffer position,
+                        # position in sequence data and amount to transfer (=> notify size)
+                        ctypes.memmove(ring_buffer_position, data_buffer_position, self.notify_size.value)
 
                 spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.notify_size)
                 transferred_bytes += self.notify_size.value
 
                 error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
                 self.handle_error(error)
-
-        # print("TX:> FIFO LOOP FINISHED...")
-        # Number of transfers equals replay data size / notify size - ring buffer size (initial transfer)
-        # print(f"TX:> Transferred bytes: {transferred_bytes}, number of transfers: {transfer_count}")
-
-        # self.print_status()
 
     def get_status(self) -> int:
         """Get the current card status.
@@ -339,7 +341,7 @@ class TxCard(SpectrumDevice):
         if not self.card:
             raise ConnectionError("TX:> No spectrum card found.")
         status = spcm.int32(0)
-        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_M2STATUS, spcm.byref(status))
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_M2STATUS, ctypes.byref(status))
         return status.value
 
     def print_status(self, include_desc: bool = False) -> None:
@@ -355,6 +357,6 @@ class TxCard(SpectrumDevice):
             Flag which indicates if description string should be contained in status entry, by default False
         """
         code = self.get_status()
-        msg, bit_reg_rev = translate_status(code, include_desc=include_desc)
+        msg, _ = translate_status(code, include_desc=include_desc)
         pprint(msg)
         print(f"TX:> Status code: {code}")

@@ -1,7 +1,6 @@
 """Device interface class."""
 from abc import ABC, abstractmethod
-
-import numpy as np
+from ctypes import byref, c_char_p, create_string_buffer
 
 import console.spcm_control.spcm.pyspcm as spcm
 from console.spcm_control.spcm.spcm_tools import translate_error, type_to_name
@@ -19,7 +18,7 @@ class SpectrumDevice(ABC):
             Path of the spectrum card device, e.g. /dev/spcm1
         """
         super().__init__()
-        self.card: str | None = None
+        self.card: c_char_p | None = None
         self.name: str | None = None
         self.path = path
 
@@ -49,11 +48,11 @@ class SpectrumDevice(ABC):
             # Raise connection error if card object already exists
             raise ConnectionError("Already connected to card")
         # Only connect, if card is not already defined
-        self.card = spcm.spcm_hOpen(spcm.create_string_buffer(str.encode(self.path)))
+        self.card = spcm.spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
             # Read card information
             card_type = spcm.int32(0)
-            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, spcm.byref(card_type))
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, byref(card_type))
 
             # write values to settings
             self.name = type_to_name(card_type.value)
@@ -64,11 +63,11 @@ class SpectrumDevice(ABC):
         else:
             raise ConnectionError("Could not connect to card...")
 
-    def handle_error(self, error):
+    def handle_error(self, error: int):
         """General error handling function."""
         if error:
             # Read error message from card
-            err_msg = spcm.create_string_buffer(spcm.ERRORTEXTLEN)
+            err_msg = create_string_buffer(spcm.ERRORTEXTLEN)
             spcm.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg)
 
             # Disconnect and raise error
@@ -78,7 +77,7 @@ class SpectrumDevice(ABC):
             raise Warning(translate_error(error))
 
     @abstractmethod
-    def get_status(self):
+    def get_status(self) -> int:
         """Abstract method to obtain card status."""
 
     @abstractmethod
@@ -86,7 +85,7 @@ class SpectrumDevice(ABC):
         """Abstract method to setup the card."""
 
     @abstractmethod
-    def start_operation(self, data: np.ndarray | None = None):
+    def start_operation(self):
         """Abstract method to start card operation.
 
         Parameters
