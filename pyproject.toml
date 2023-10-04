@@ -42,9 +42,10 @@ convention = "numpy"
 [tool.pylint]
 py-version = "3.10"
 max-args=10
-max-locals = 25
+max-locals = 50
 max-attributes = 20
 max-line-length = 120
+max-statements = 100
 ignore-paths = ["console/spcm_control/py_header/.*$", "console/spcm_control/spcm/.*$"]
 extension-pkg-allow-list = ["pydantic"]
 disable = [
@@ -91,18 +92,11 @@ typeCheckingMode = "strict"
 # ignore_missing_imports = true   # missing 3rd party stubs
 
 
-# Definition of Poe task for linting
+# Definition of Poe task for linting and formatting
 [tool.poe.tasks]
-lint.sequence = ["isort", "black", "pylint", "flake8", "mypy", "pydocstyle"]
+format.sequence = ["black", "isort"]
+lint.sequence = ["pylint", "flake8", "mypy", "pydocstyle"]
 lint.ignore_fail = "return_non_zero"
-
-    [tool.poe.tasks.isort]
-    help = "Run isort"
-    cmd  = "isort console/"
-
-    [tool.poe.tasks.black]
-    help = "Run black"
-    cmd  = "black console/"
 
     [tool.poe.tasks.pylint]
     help = "Run pylint"
@@ -119,3 +113,11 @@ lint.ignore_fail = "return_non_zero"
     [tool.poe.tasks.pydocstyle]
     help = "Run pydocstyle"
     cmd  = "pydocstyle console/"
+
+    [tool.poe.tasks.isort]
+    help = "Run isort"
+    cmd  = "isort console/"
+
+    [tool.poe.tasks.black]
+    help = "Run black"
+    cmd  = "black console/"
