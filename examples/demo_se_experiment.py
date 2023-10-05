@@ -17,6 +17,7 @@ seq.max_amp_per_channel = tx_card.max_amplitude
 seq.read("../sequences/export/se_spectrum.seq")
 
 # Unroll and plot the sequence
+seq.rf_to_volt = 0.1    #0.005
 sqnc: UnrolledSequence = seq.unroll_sequence(2.02e6)
 
 fig, ax = plot_spcm_data(sqnc, use_time=True)
