@@ -20,16 +20,16 @@ system = Opts(
 seq = Sequence(system)
 
 # Parameters
-rf_duration = 200e-6 # 200 us
+rf_duration = 100e-6 # 200 us
 rf_bandwidth = 20e3 # 20 kHz
 rf_flip = pi/2
 rf_phase = pi/2
 
 num_samples = 5000
 adc_duration = 1e-3 # 4 ms
-te = 10e-3
+te = 5e-3
 
-# >> RF signals with varying amplitudes
+# >> RF sinc pulse with varying amplitudes
 # 90 degree RF sinc pulse
 # rf_block_1 = make_sinc_pulse(
 #     flip_angle=rf_flip,
@@ -52,50 +52,42 @@ te = 10e-3
 #     return_gz=False,
 # )
 
-# >> RF signals with varying duration
+# >> RF sinc pulse with varying duration
 # 90 degree RF sinc pulse
-rf_block_1 = make_sinc_pulse(
+# rf_block_1 = make_sinc_pulse(
+#     flip_angle=rf_flip,
+#     duration=rf_duration,
+#     apodization=0.5,
+#     phase_offset=rf_phase,
+#     system=system,
+# )
+
+# 180 degree RF sinc pulse
+# rf_block_2 = make_sinc_pulse(
+#     flip_angle=rf_flip*2,   # twice the flip angle => 180°
+#     duration=rf_duration*2, # twice the duration => equal amplitudes
+#     apodization=0.5,
+#     phase_offset=rf_phase,
+#     system=system,
+# )
+
+# >> RF rect pulse with varying duration
+# 90 degree RF sinc pulse
+rf_block_1 = make_block_pulse(
     flip_angle=rf_flip,
     duration=rf_duration,
-    apodization=0.5,
     phase_offset=rf_phase,
     system=system,
 )
 
 # 180 degree RF sinc pulse
-rf_block_2 = make_sinc_pulse(
+rf_block_2 = make_block_pulse(
     flip_angle=rf_flip*2,   # twice the flip angle => 180°
     duration=rf_duration*2, # twice the duration => equal amplitudes
-    apodization=0.5,
     phase_offset=rf_phase,
     system=system,
 )
 
-# # >> RF signals with varying duration
-# # 90 degree RF sinc pulse
-# rf_block_1 = make_block_pulse(
-#     flip_angle=rf_flip,
-#     duration=rf_duration,
-#     phase_offset=rf_phase,
-#     system=system,
-# )
-
-# # 180 degree RF sinc pulse
-# rf_block_2 = make_block_pulse(
-#     flip_angle=rf_flip*2,   # twice the flip angle => 180°
-#     duration=rf_duration*2, # twice the duration => equal amplitudes
-#     phase_offset=rf_phase,
-#     system=system,
-# )
-
-# # 90 degree RF block pulse
-# rf_block = make_block_pulse(
-#     flip_angle=rf_flip_angle, 
-#     duration=rf_duration,
-#     bandwidth=rf_bandwidth, 
-#     use='excitation', 
-#     system=system
-# )
 
 # ADC event
 adc = make_adc(
@@ -123,11 +115,11 @@ seq.set_definition('Name', 'se_spectrum')
 # Check sequence timing and plot
 
 seq.plot(time_disp='us')
-# ok, e = seq.check_timing()
-# seq.plot(time_range=(0, 1e-3), time_disp='us') if ok else print(e)
+ok, e = seq.check_timing()
+seq.plot(time_range=(0, 1e-3), time_disp='us') if ok else print(e)
 
 
 # %% 
 # Write sequence
-# seq.write('./export/se_spectrum.seq')
+seq.write('./export/se_spectrum.seq')
 # %%

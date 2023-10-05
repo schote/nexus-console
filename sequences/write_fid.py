@@ -21,7 +21,7 @@ system = Opts(
 seq = Sequence(system)
 
 # Parameters
-rf_duration = 0.2e-3 # 200 us
+rf_duration = 100e-6 # 100 us
 rf_bandwidth = 20e3 # 20 kHz
 rf_flip_angle = pi/2
 rf_phase = pi/2
@@ -31,25 +31,25 @@ adc_duration = 1e-3 # 4 ms
 
 
 # 90 degree RF sinc pulse
-rf_block = make_sinc_pulse(
-    flip_angle=rf_flip_angle,
-    system=system,
-    duration=rf_duration,
-    slice_thickness=10,
-    apodization=0.5,
-    time_bw_product=4,
-    phase_offset=rf_phase,
-    return_gz=False,
-)
-
-# # 90 degree RF block pulse
-# rf_block = make_block_pulse(
-#     flip_angle=rf_flip_angle, 
-#     duration=rf_duration, 
-#     bandwidth=rf_bandwidth, 
-#     use='excitation', 
-#     system=system
+# rf_block = make_sinc_pulse(
+#     flip_angle=rf_flip_angle,
+#     system=system,
+#     duration=rf_duration,
+#     slice_thickness=10,
+#     apodization=0.5,
+#     time_bw_product=4,
+#     phase_offset=rf_phase,
+#     return_gz=False,
 # )
+
+# 90 degree RF block pulse
+rf_block = make_block_pulse(
+    flip_angle=rf_flip_angle, 
+    duration=rf_duration, 
+    bandwidth=rf_bandwidth, 
+    use='excitation', 
+    system=system
+)
 
 # ADC event
 adc = make_adc(

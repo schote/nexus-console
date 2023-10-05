@@ -29,15 +29,12 @@ dependencies = [
 test = ["coverage", "codecov", "pre-commit"]
 lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet"]
 docs = ["sphinx", "pydata-sphinx-theme"]
-examples = ["nbformat>=4.2.0", "ipykernel", "ipython"]
-dev = ["line_profiler[ipython]"]
+dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython"]
 
 
 # >> Tool configuration
-
 [tool.pydocstyle]
 convention = "numpy"
-
 
 [tool.pylint]
 py-version = "3.10"
@@ -54,18 +51,16 @@ disable = [
     "fixme" # fixme warning is thrown on each TODO: ..., comment to see todo's
 ] 
 
-
 [tool.flake8]
 max-line-length = 120
 exclude = "console/spcm_control/py_header/,console/spcm_control/spcm/"
-
+ignore = ["E203", "W503"]   # E203 not PEP8 conform (whitespace before colon), W503 line break before binary operator
 
 [tool.mypy]
 check_untyped_defs = "True"
 warn_unreachable = "True"
 python_version = "3.10"
 ignore_missing_imports = true
-# exclude = ['console/utilities', 'console/spcm_control']
 exclude = ['^pyspcm\.py$']
 
 [tool.mypy-mycode.console.spcm_control.spcm]
@@ -81,10 +76,6 @@ target-version = ['py310']
 line_length = 120
 py_version=310
 
-
-[tool.pyright]
-typeCheckingMode = "strict"
-
 # [tool.mypy-plotly]
 # ignore_missing_imports = true   # missing 3rd party stubs
 
@@ -94,30 +85,34 @@ typeCheckingMode = "strict"
 
 # Definition of Poe task for linting and formatting
 [tool.poe.tasks]
-format.sequence = ["black", "isort"]
+format.sequence = ["black", "isort", "autopep8"]
 lint.sequence = ["pylint", "flake8", "mypy", "pydocstyle"]
 lint.ignore_fail = "return_non_zero"
 
     [tool.poe.tasks.pylint]
     help = "Run pylint"
-    cmd  = "pylint console/"
+    cmd = "pylint console/"
 
     [tool.poe.tasks.mypy]
     help = "Run mypy, python type checker..."
-    cmd  = "mypy console/"
+    cmd = "mypy console/"
 
     [tool.poe.tasks.flake8]
     help = "Run flake8"
-    cmd  = "flake8 console/"
+    cmd = "flake8 console/"
+
+    [tool.poe.tasks.autopep8]
+    help = "Run autopep8 which automatically formats Python code to conform to the PEP 8 style guide."
+    cmd = "autopep8 console/"
 
     [tool.poe.tasks.pydocstyle]
     help = "Run pydocstyle"
-    cmd  = "pydocstyle console/"
+    cmd = "pydocstyle console/"
 
     [tool.poe.tasks.isort]
     help = "Run isort"
-    cmd  = "isort console/"
+    cmd = "isort console/"
 
     [tool.poe.tasks.black]
     help = "Run black"
-    cmd  = "black console/"
+    cmd = "black console/"
