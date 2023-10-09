@@ -6,8 +6,8 @@ import platform
 import sys
 from typing import Any
 
-from console.spcm_control.py_header.errors import *
-from console.spcm_control.py_header.regs import *
+from console.spcm_control.spcm.errors import *
+from console.spcm_control.spcm.registers import *
 
 SPCM_DIR_PCTOCARD = 0
 SPCM_DIR_CARDTOPC = 1
@@ -55,16 +55,16 @@ if not os.getenv("GITHUB_ACTIONS"):
         # define card handle type
         if bIs64Bit:
             # for unknown reasons c_void_p gets messed up on Win7/64bit, but this works:
-            drv_handle = ctypes.POINTER(ctypes.c_uint64)
+            drv_handle = uptr64  # type: ignore
         else:
-            drv_handle = ctypes.c_void_p
+            drv_handle = ctypes.c_void_p  # type: ignore
 
         # Load DLL into memory.
         # use windll because all driver access functions use _stdcall calling convention under windows
         if bIs64Bit == 1:
-            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win64.dll")
+            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win64.dll")  # type: ignore
         else:
-            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win32.dll")
+            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win32.dll")  # type: ignore
 
         # load spcm_hOpen
         if bIs64Bit:
@@ -191,9 +191,9 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # define card handle type
         if bIs64Bit:
-            drv_handle = ctypes.POINTER(ctypes.c_uint64)
+            drv_handle = ctypes.POINTER(ctypes.c_uint64)  # type: ignore
         else:
-            drv_handle = ctypes.c_void_p
+            drv_handle = ctypes.c_void_p  # type: ignore
 
         # Load DLL into memory.
         # use cdll because all driver access functions use cdecl calling convention under linux
@@ -231,8 +231,8 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # load spcm_dwSetParam_i64
         spcm_dwSetParam_i64 = getattr(spcmDll, "spcm_dwSetParam_i64")
-        spcm_dwSetParam_i64.argtype = [drv_handle, int32, int64]
-        spcm_dwSetParam_i64.restype = uint32
+        spcm_dwSetParam_i64.argtype = [drv_handle, int32, int64]  # type: ignore
+        spcm_dwSetParam_i64.restype = uint32  # type: ignore
 
         # load spcm_dwSetParam_i64m
         spcm_dwSetParam_i64m = getattr(spcmDll, "spcm_dwSetParam_i64m")

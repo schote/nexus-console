@@ -4,6 +4,7 @@ from pypulseq.Sequence.sequence import Sequence
 from pypulseq.make_adc import make_adc
 from pypulseq.make_block_pulse import make_block_pulse
 from pypulseq.make_sinc_pulse import make_sinc_pulse
+from pypulseq.make_delay import make_delay
 from pypulseq.opts import Opts
 
 # %%
@@ -15,7 +16,7 @@ from pypulseq.opts import Opts
 system = Opts(
     rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
     rf_dead_time=100e-6,        # time delay at the end of RF event
-    adc_dead_time=100e-6,       # time delay at the beginning of ADC event
+    adc_dead_time=200e-6,       # time delay at the beginning of ADC event
 )
 seq = Sequence(system)
 
@@ -26,8 +27,8 @@ rf_flip = pi/2
 rf_phase = pi/2
 
 num_samples = 5000
-adc_duration = 1e-3 # 4 ms
-te = 5e-3
+adc_duration = 2e-3 # 4 ms
+te = 10e-3
 
 # >> RF sinc pulse with varying amplitudes
 # 90 degree RF sinc pulse
@@ -71,8 +72,8 @@ te = 5e-3
 #     system=system,
 # )
 
-# >> RF rect pulse with varying duration
-# 90 degree RF sinc pulse
+# >> RF rect pulse 
+# 90 degree
 rf_block_1 = make_block_pulse(
     flip_angle=rf_flip,
     duration=rf_duration,
@@ -80,10 +81,18 @@ rf_block_1 = make_block_pulse(
     system=system,
 )
 
-# 180 degree RF sinc pulse
+# # 180 degree with two times the duration
+# rf_block_2 = make_block_pulse(
+#     flip_angle=rf_flip*2,   # twice the flip angle => 180°
+#     duration=rf_duration*2, # twice the duration => equal amplitudes
+#     phase_offset=rf_phase,
+#     system=system,
+# )
+
+# 180 degree with two times the amplitude
 rf_block_2 = make_block_pulse(
     flip_angle=rf_flip*2,   # twice the flip angle => 180°
-    duration=rf_duration*2, # twice the duration => equal amplitudes
+    duration=rf_duration,   # keep duration -> doubles amplitude
     phase_offset=rf_phase,
     system=system,
 )
@@ -93,8 +102,7 @@ rf_block_2 = make_block_pulse(
 adc = make_adc(
     num_samples=num_samples,
     duration=adc_duration, 
-    system=system, 
-    delay=system.adc_dead_time
+    system=system
 )
 
 # %%
@@ -102,11 +110,14 @@ adc = make_adc(
 delay_1 = te / 2 - rf_block_1.shape_dur / 2 - rf_block_2.shape_dur / 2
 delay_2 = te / 2 - rf_block_2.shape_dur / 2 - adc_duration / 2
 
+print("Delay between 90 and 180: ", delay_1)
+print("Delay between 180 and adc: ", delay_2)
+
 # Define sequence
 seq.add_block(rf_block_1)
-seq.add_block(delay_1)
+seq.add_block(make_delay(delay_1))
 seq.add_block(rf_block_2)
-seq.add_block(delay_2)
+seq.add_block(make_delay(delay_2))
 seq.add_block(adc)
 seq.set_definition('Name', 'se_spectrum')
 

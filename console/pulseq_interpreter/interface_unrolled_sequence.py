@@ -2,8 +2,6 @@
 
 from dataclasses import dataclass
 
-import numpy as np
-
 
 @dataclass(slots=True, frozen=True)
 class UnrolledSequence:
@@ -49,9 +47,9 @@ class UnrolledSequence:
         Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.
     """
 
-    seq: np.ndarray
-    adc_gate: np.ndarray
-    rf_unblanking: np.ndarray
+    seq: list
+    adc_gate: list
+    rf_unblanking: list
     sample_count: int
     grad_to_volt: float
     rf_to_volt: float

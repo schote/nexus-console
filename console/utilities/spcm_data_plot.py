@@ -9,7 +9,7 @@ from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSeque
 
 def plot_spcm_data(
     sequence: UnrolledSequence, seq_range: tuple[int, int] = (0, -1), use_time: bool = True
-) -> (matplotlib.figure.Figure, matplotlib.axes.Axes):
+) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Plot replay data for spectrum-instrumentation data in final card format.
 
     Parameters
@@ -36,8 +36,9 @@ def plot_spcm_data(
     num_channels = 4
     fig, axis = plt.subplots(num_channels + 1, 1, figsize=(16, 9))
 
-    seq_range = [int(limit) for limit in seq_range]
-    samples = np.arange(sequence.sample_count)[seq_range[0] : seq_range[1]]
+    seq_start = int(seq_range[0])
+    seq_end = int(seq_range[1])
+    samples = np.arange(sequence.sample_count, dtype=float)[seq_start:seq_end]
 
     if use_time:
         # Convert sample points to time axis in ms
@@ -45,10 +46,12 @@ def plot_spcm_data(
 
     sqncs = np.concatenate(sequence.seq)
 
-    rf_signal = sqncs[0::num_channels][seq_range[0] : seq_range[1]]
-    gx_signal = sqncs[1::num_channels][seq_range[0] : seq_range[1]]
-    gy_signal = sqncs[2::num_channels][seq_range[0] : seq_range[1]]
-    gz_signal = sqncs[3::num_channels][seq_range[0] : seq_range[1]]
+    # TODO: Display % of output level
+
+    rf_signal = sqncs[0::num_channels][seq_start:seq_end]
+    gx_signal = sqncs[1::num_channels][seq_start:seq_end]
+    gy_signal = sqncs[2::num_channels][seq_start:seq_end]
+    gz_signal = sqncs[3::num_channels][seq_start:seq_end]
 
     if not sqncs.dtype == np.int16:
         raise ValueError("Require int16 values to decode digital signal...")

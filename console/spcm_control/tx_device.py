@@ -9,7 +9,7 @@ import numpy as np
 import console.spcm_control.spcm.pyspcm as spcm
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.device_interface import SpectrumDevice
-from console.spcm_control.spcm.spcm_tools import create_dma_buffer, translate_status, type_to_name
+from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
 
 @dataclass

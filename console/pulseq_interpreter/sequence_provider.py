@@ -181,10 +181,10 @@ class SequenceProvider(Sequence):
         # Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency offset of an RF block event
         carrier = np.exp(2j * np.pi * (self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples])
-        signal = np.int16((envelope * carrier).real)
+        signal = (envelope * carrier).real.astype(np.int16)
 
         # Combine signal from delays and rf
-        rf_pulse = np.concatenate((delay, dead_time, signal, ringdown_time))
+        rf_pulse = np.concatenate((delay, dead_time, signal, ringdown_time)).astype(np.int16)
 
         if (num_signal_samples := len(rf_pulse)) < num_total_samples:
             # Zero-fill rf signal
@@ -239,7 +239,7 @@ class SequenceProvider(Sequence):
                 xp=block.tt,
                 fp=waveform,
             )
-            gradient = np.concatenate((delay, np.int16(waveform)))
+            gradient = np.concatenate((delay, waveform.astype(np.int16))).astype(np.int16)
 
         elif block.type == "trap":
             # Check and scale trapezoid flat amplitude (including offset)
@@ -276,7 +276,7 @@ class SequenceProvider(Sequence):
         gate
             Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.
         """
-        delay = int(block.delay / self.spcm_dwell_time)
+        delay = max(int(block.delay / self.spcm_dwell_time), int(block.dead_time / self.spcm_dwell_time))
         # dead_dur = max(self.system.adc_dead_time, block.dead_time)
         # dead_time = int(dead_dur / self.spcm_sample_rate)
         adc_len = int(block.num_samples * block.dwell / self.spcm_dwell_time)

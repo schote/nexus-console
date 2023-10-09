@@ -8,21 +8,79 @@ from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 
-# >> Create yaml loader object
-Loader = yaml.SafeLoader
 
-# >> Add constructors to PyYAML loader
-Loader.add_constructor("!RxCard", lambda loader, node: RxCard(**loader.construct_mapping(node, deep=True)))
-Loader.add_constructor("!TxCard", lambda loader, node: TxCard(**loader.construct_mapping(node, deep=True)))
-Loader.add_constructor(
-    "!SequenceProvider", lambda loader, node: SequenceProvider(**loader.construct_mapping(node, deep=True))
-)
-Loader.add_constructor("!Opts", lambda loader, node: Opts(**loader.construct_mapping(node, deep=True)))
+def tx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> TxCard:
+    """Construct a transmit card object.
+
+    Parameters
+    ----------
+    loader
+        yaml loader
+    node
+        constructor mapping
+
+    Returns
+    -------
+        TxCard object
+    """
+    # Ignore type checking here since mypy requires keywords to be strings
+    return TxCard(**loader.construct_mapping(node, deep=True))  # type: ignore
 
 
-# >> Helper functions to read configuration file
+def rx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> RxCard:
+    """Construct a receive card object.
+
+    Parameters
+    ----------
+    loader
+        yaml loader
+    node
+        constructor mapping
+
+    Returns
+    -------
+        RxCard object
+    """
+    # Ignore type checking here since mypy requires keywords to be strings
+    return RxCard(**loader.construct_mapping(node, deep=True))  # type: ignore
 
 
+def sequence_provider_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> SequenceProvider:
+    """Construct a sequence provider.
+
+    Parameters
+    ----------
+    loader
+        yaml loader
+    node
+        constructor mapping
+
+    Returns
+    -------
+        SequenceProvider object
+    """
+    # Ignore type checking here since mypy requires keywords to be strings
+    return SequenceProvider(**loader.construct_mapping(node, deep=True))  # type: ignore
+
+
+def opts_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> Opts:
+    """Construct an options object.
+
+    Parameters
+    ----------
+    loader
+        yaml loader
+    node
+        constructor mapping
+
+    Returns
+    -------
+        Options object
+    """
+    return Opts(**loader.construct_mapping(node, deep=True))
+
+
+# >> Helper function to read configuration file
 def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard]:
     """Construct object instances from yaml configuration file.
 
@@ -44,3 +102,13 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
         config = yaml.load(file, Loader=Loader)
 
     return (config["SequenceProvider"], config["TxCard"], config["RxCard"])
+
+
+# >> Create yaml loader object
+Loader = yaml.SafeLoader
+
+# >> Add constructors to PyYAML loader
+Loader.add_constructor("!RxCard", rx_card_constructor)
+Loader.add_constructor("!TxCard", tx_card_constructor)
+Loader.add_constructor("!SequenceProvider", sequence_provider_constructor)
+Loader.add_constructor("!Opts", opts_constructor)

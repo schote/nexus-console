@@ -2,8 +2,8 @@
 from abc import ABC, abstractmethod
 from ctypes import byref, c_char_p, create_string_buffer
 
-import console.spcm_control.spcm.pyspcm as spcm
-from console.spcm_control.spcm.spcm_tools import translate_error, type_to_name
+import console.spcm_control.spcm.pyspcm as sp
+from console.spcm_control.spcm.tools import translate_error, type_to_name
 
 
 class SpectrumDevice(ABC):
@@ -27,8 +27,8 @@ class SpectrumDevice(ABC):
         # Closing the card
         if self.card:
             print(f"Stopping and closing card {self.name}...")
-            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_STOP)
-            spcm.spcm_vClose(self.card)
+            sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
+            sp.spcm_vClose(self.card)
             # Reset card information
             self.card = None
             self.name = None
@@ -48,11 +48,11 @@ class SpectrumDevice(ABC):
             # Raise connection error if card object already exists
             raise ConnectionError("Already connected to card")
         # Only connect, if card is not already defined
-        self.card = spcm.spcm_hOpen(create_string_buffer(str.encode(self.path)))
+        self.card = sp.spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
             # Read card information
-            card_type = spcm.int32(0)
-            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, byref(card_type))
+            card_type = sp.int32(0)
+            sp.spcm_dwGetParam_i32(self.card, sp.SPC_PCITYP, byref(card_type))
 
             # write values to settings
             self.name = type_to_name(card_type.value)
@@ -67,12 +67,12 @@ class SpectrumDevice(ABC):
         """General error handling function."""
         if error:
             # Read error message from card
-            err_msg = create_string_buffer(spcm.ERRORTEXTLEN)
-            spcm.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg)
+            err_msg = create_string_buffer(sp.ERRORTEXTLEN)
+            sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg)
 
             # Disconnect and raise error
             print(f"Catched error:\n{err_msg}\nStopping card {self.name}...")
-            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_STOP)
+            sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
 
             raise Warning(translate_error(error))
 
