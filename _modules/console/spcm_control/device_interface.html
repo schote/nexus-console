@@ -17,12 +17,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -30,9 +30,9 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=927b94d3fcb96560df09" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=927b94d3fcb96560df09" />
-  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=927b94d3fcb96560df09"></script>
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script src="../../../_static/documentation_options.js?v=dfcfd79d"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
@@ -156,8 +156,8 @@
  document.write(`
    <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__kbd-shortcut">Search</span>
-    <span><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
    </button>
  `);
  </script>
@@ -224,8 +224,8 @@ document.write(`
  document.write(`
    <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__kbd-shortcut">Search</span>
-    <span><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
    </button>
  `);
  </script>
@@ -382,7 +382,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">console.spcm_control.device_interface</li>
+    <li class="breadcrumb-item active" aria-current="page">console.spcm...</li>
   </ul>
 </nav>
 </div>
@@ -402,11 +402,10 @@ document.write(`
   <h1>Source code for console.spcm_control.device_interface</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Device interface class.&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="n">byref</span><span class="p">,</span> <span class="n">c_char_p</span><span class="p">,</span> <span class="n">create_string_buffer</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">spcm</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.spcm.spcm_tools</span> <span class="kn">import</span> <span class="n">translate_error</span><span class="p">,</span> <span class="n">type_to_name</span>
+<span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">sp</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.spcm.tools</span> <span class="kn">import</span> <span class="n">translate_error</span><span class="p">,</span> <span class="n">type_to_name</span>
 
 
 <div class="viewcode-block" id="SpectrumDevice">
@@ -423,7 +422,7 @@ document.write(`
 <span class="sd">            Path of the spectrum card device, e.g. /dev/spcm1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span> <span class="n">c_char_p</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
@@ -434,8 +433,8 @@ document.write(`
         <span class="c1"># Closing the card</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping and closing card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_vClose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_vClose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">)</span>
             <span class="c1"># Reset card information</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span></div>
@@ -458,11 +457,11 @@ document.write(`
             <span class="c1"># Raise connection error if card object already exists</span>
             <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;Already connected to card&quot;</span><span class="p">)</span>
         <span class="c1"># Only connect, if card is not already defined</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_hOpen</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">spcm_hOpen</span><span class="p">(</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="c1"># Read card information</span>
-            <span class="n">card_type</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">card_type</span><span class="p">))</span>
+            <span class="n">card_type</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">card_type</span><span class="p">))</span>
 
             <span class="c1"># write values to settings</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
@@ -476,16 +475,16 @@ document.write(`
 
 <div class="viewcode-block" id="SpectrumDevice.handle_error">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.handle_error">[docs]</a>
-    <span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;General error handling function.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
             <span class="c1"># Read error message from card</span>
-            <span class="n">err_msg</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">ERRORTEXTLEN</span><span class="p">)</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetErrorInfo_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">ERRORTEXTLEN</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetErrorInfo_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span>
 
             <span class="c1"># Disconnect and raise error</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Catched error:</span><span class="se">\n</span><span class="si">{</span><span class="n">err_msg</span><span class="si">}</span><span class="se">\n</span><span class="s2">Stopping card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
 
             <span class="k">raise</span> <span class="ne">Warning</span><span class="p">(</span><span class="n">translate_error</span><span class="p">(</span><span class="n">error</span><span class="p">))</span></div>
 
@@ -493,7 +492,7 @@ document.write(`
 <div class="viewcode-block" id="SpectrumDevice.get_status">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.get_status">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to obtain card status.&quot;&quot;&quot;</span></div>
 
 
@@ -507,7 +506,7 @@ document.write(`
 <div class="viewcode-block" id="SpectrumDevice.start_operation">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.start_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to start card operation.</span>
 
 <span class="sd">        Parameters</span>
@@ -553,8 +552,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=927b94d3fcb96560df09"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=927b94d3fcb96560df09"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -577,7 +576,7 @@ document.write(`
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>

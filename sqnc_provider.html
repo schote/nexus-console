@@ -18,12 +18,12 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=ac02cc09edc035673794" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=ac02cc09edc035673794" rel="stylesheet" />
 
   
-  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=927b94d3fcb96560df09" rel="stylesheet" />
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=ac02cc09edc035673794" rel="stylesheet" />
   <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
@@ -31,9 +31,9 @@
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=927b94d3fcb96560df09" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=927b94d3fcb96560df09" />
-  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=927b94d3fcb96560df09"></script>
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
+  <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
     <script src="_static/documentation_options.js?v=dfcfd79d"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
@@ -159,8 +159,8 @@
  document.write(`
    <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__kbd-shortcut">Search</span>
-    <span><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
    </button>
  `);
  </script>
@@ -227,8 +227,8 @@ document.write(`
  document.write(`
    <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__kbd-shortcut">Search</span>
-    <span><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
    </button>
  `);
  </script>
@@ -399,7 +399,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="api.html" class="nav-link">Spectrum-Console API</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Pulseq Sequence Provider</li>
+    <li class="breadcrumb-item active" aria-current="page">Pulseq...</li>
   </ul>
 </nav>
 </div>
@@ -427,7 +427,7 @@ required to calculate the waveforms, which are replayable by our console.</p>
 <p>Once a pulseq sequence was unrolled, the replayable sequence data is provided by the following interface.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.pulseq_interpreter.interface_unrolled_sequence.</span></span><span class="sig-name descname"><span class="pre">UnrolledSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adc_gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_unblanking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_to_volt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_to_volt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/pulseq_interpreter/interface_unrolled_sequence.html#UnrolledSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.pulseq_interpreter.interface_unrolled_sequence.</span></span><span class="sig-name descname"><span class="pre">UnrolledSequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adc_gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_unblanking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_to_volt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_to_volt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">larmor_frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/pulseq_interpreter/interface_unrolled_sequence.html#UnrolledSequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Unrolled sequence interface.</p>
 <p>This interface is used to share the unrolled sequence between the
@@ -437,10 +437,10 @@ An unrolled sequence is generated by a <cite>SequenceProvider()</cite> instance 
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>seq</strong> (<em>numpy.ndarray</em>) – Replay data as int16 values in a list of numpy arrays. The sequence data already
+<li><p><strong>seq</strong> (<em>list</em>) – Replay data as int16 values in a list of numpy arrays. The sequence data already
 contains the digital adc and unblanking signals in the channels gx and gy.</p></li>
-<li><p><strong>adc_gate</strong> (<em>numpy.ndarray</em>) – ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</p></li>
-<li><p><strong>rf_unblanking</strong> (<em>numpy.ndarray</em>) – Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state
+<li><p><strong>adc_gate</strong> (<em>list</em>) – ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on.</p></li>
+<li><p><strong>rf_unblanking</strong> (<em>list</em>) – Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state
 and 1 to unblanking state.</p></li>
 <li><p><strong>sample_count</strong> (<em>int</em>) – Total number of samples per channel.</p></li>
 <li><p><strong>grad_to_volt</strong> (<em>float</em>) – If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
@@ -448,7 +448,8 @@ This conversion factor represents the scaling from original pulseq gradient valu
 card output voltage.</p></li>
 <li><p><strong>rf_to_volt</strong> (<em>float</em>) – If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
 This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage.</p></li>
-<li><p><strong>dwell_time</strong> (<em>float</em>) – Dwell time of the spectrum card replay data (unrolled sequence). Defines the distance in time between to sample points.
+<li><p><strong>dwell_time</strong> (<em>float</em>) – Dwell time of the spectrum card replay data (unrolled sequence).
+Defines the distance in time between to sample points.
 Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem
 <cite>dwell_time &lt; 1/(2*larmor_frequency)</cite> must be satisfied. Usually a higher factor is chosen.</p></li>
 <li><p><strong>larmor_frequency</strong> (<em>float</em>) – Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.</p></li>
@@ -457,7 +458,7 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_gate">
-<span class="sig-name descname"><span class="pre">adc_gate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_gate" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">adc_gate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_gate" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -482,7 +483,7 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.rf_unblanking">
-<span class="sig-name descname"><span class="pre">rf_unblanking</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.rf_unblanking" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">rf_unblanking</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.rf_unblanking" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
@@ -492,7 +493,7 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.seq">
-<span class="sig-name descname"><span class="pre">seq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.seq" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">seq</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.seq" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -577,8 +578,8 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=927b94d3fcb96560df09"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=927b94d3fcb96560df09"></script>
+  <script src="_static/scripts/bootstrap.js?digest=ac02cc09edc035673794"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -601,7 +602,7 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
     <div class="footer-items__end">
       
         <div class="footer-item"><p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.1.
 </p></div>
       
     </div>
