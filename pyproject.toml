@@ -100,7 +100,7 @@ lint.ignore_fail = "return_non_zero"
 
     [tool.poe.tasks.mypy]
     help = "Run mypy, python type checker..."
-    cmd = "mypy console/"
+    cmd = "mypy --install-types console/"
 
     [tool.poe.tasks.flake8]
     help = "Run flake8"

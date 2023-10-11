@@ -194,9 +194,9 @@ class SequenceProvider(Sequence):
 
         return rf_pulse
 
-    @profile
+    # @profile
     def calculate_gradient(
-        self, block: SimpleNamespace, num_total_samples: int, amp_offset: np.int16 = np.int16(0)
+        self, block: SimpleNamespace, num_total_samples: int, amp_offset: int = 0
     ) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
@@ -225,7 +225,7 @@ class SequenceProvider(Sequence):
         delay = np.full(int(block.delay / self.spcm_dwell_time), fill_value=amp_offset, dtype=np.int16)
 
         idx = ["x", "y", "z"].index(block.channel)
-        offset = amp_offset / self.int16_max
+        offset = np.int16(amp_offset / self.int16_max)
 
         if block.type == "grad":
             if np.amax(waveform := block.waveform * self.grad_to_volt / self._amp_per_ch[idx] + offset) > 1:
@@ -238,8 +238,8 @@ class SequenceProvider(Sequence):
                 x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                 xp=block.tt,
                 fp=waveform,
-            )
-            gradient = np.concatenate((delay, waveform.astype(np.int16))).astype(np.int16)
+            ).astype(np.int16)
+            gradient = np.concatenate((delay, waveform))
 
         elif block.type == "trap":
             # Check and scale trapezoid flat amplitude (including offset)
@@ -282,7 +282,7 @@ class SequenceProvider(Sequence):
         adc_len = int(block.num_samples * block.dwell / self.spcm_dwell_time)
         gate[delay : delay + adc_len] = -(2**15)  # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
 
-    @profile
+    # @profile
     def unroll_sequence(self, larmor_freq: float | None = None) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
