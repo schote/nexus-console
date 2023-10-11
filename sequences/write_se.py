@@ -27,7 +27,7 @@ rf_flip = pi/2
 rf_phase = pi/2
 
 num_samples = 5000
-adc_duration = 2e-3 # 4 ms
+adc_duration = 4e-3 # 4 ms
 te = 10e-3
 
 # >> RF sinc pulse with varying amplitudes
