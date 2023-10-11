@@ -8,6 +8,7 @@ before_script:
   - python --version
   - pip install --upgrade pip
   - pip install ".[lint, docs]"
+  - mypy --install-types
 
 stages:
   - static_tests

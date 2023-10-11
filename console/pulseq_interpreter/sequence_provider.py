@@ -3,7 +3,7 @@ import warnings
 from types import SimpleNamespace
 
 import numpy as np
-from line_profiler import profile
+# from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
