@@ -27,7 +27,7 @@ dependencies = [
 # Dependencies and options
 [project.optional-dependencies]
 test = ["coverage", "codecov", "pre-commit"]
-lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet"]
+lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython"]
 
