@@ -2,6 +2,7 @@
 from math import pi
 from pypulseq.Sequence.sequence import Sequence
 from pypulseq.make_adc import make_adc
+from pypulseq.make_delay import make_delay
 from pypulseq.make_block_pulse import make_block_pulse
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.make_trapezoid import make_trapezoid
@@ -23,11 +24,15 @@ system = Opts(
 
 seq = Sequence(system)
 
-# Parameters
+# ----- Parameters
+# RF parameters
 rf_duration = 100e-6 # 200 us
 rf_bandwidth = 20e3 # 20 kHz
-rf_flip_angle = pi/2
+rf_flip = pi/2
 rf_phase = pi/2
+
+# Sequence specific timing
+te = 10e-3
 
 # Readout/ADC
 ro_bw = 50e3   # 50 kHz bandwidth
@@ -38,25 +43,22 @@ fov = 0.255     # 25.5 cm
 k_width = num_samples / fov
 rise_time = 200e-6
 
-# 90 degree RF sinc pulse
-# rf_block = make_sinc_pulse(
-#     flip_angle=rf_flip_angle,
-#     system=system,
-#     duration=rf_duration,
-#     slice_thickness=10,
-#     apodization=0.5,
-#     time_bw_product=4,
-#     phase_offset=rf_phase,
-#     return_gz=False,
-# )
 
+
+# >> Definition of block events
 # 90 degree RF block pulse
-rf_block = make_block_pulse(
-    flip_angle=rf_flip_angle, 
-    duration=rf_duration, 
-    bandwidth=rf_bandwidth, 
-    use='excitation', 
-    system=system
+rf_block_90 = make_block_pulse(
+    flip_angle=rf_flip,
+    duration=rf_duration,
+    phase_offset=rf_phase,
+    system=system,
+)
+
+rf_block_180 = make_block_pulse(
+    flip_angle=rf_flip*2,   # twice the flip angle => 180°
+    duration=rf_duration,   # keep duration -> doubles amplitude
+    phase_offset=rf_phase,
+    system=system,
 )
 
 # Calculate readout gradient:
@@ -66,7 +68,6 @@ rf_block = make_block_pulse(
 # Gx = 1 / (gamma * FOV * delta_t_RO)
 # delta_t_RO = 1 / BW
 # Gx = BW / (gamma * FOV)
-
 gr_ro = make_trapezoid(
     channel="x",
     system=system,
@@ -75,9 +76,11 @@ gr_ro = make_trapezoid(
     rise_time=rise_time
 )
 
+
+
+# Calculate 
+
 # ADC event
-# TODO: Add dead time at the beginning? Currently ADC starts at 1/2 of gradient rise time
-# => Add 1/2 of gradient rise time
 adc = make_adc(
     num_samples=num_samples,
     duration=adc_duration, 
@@ -85,24 +88,28 @@ adc = make_adc(
     delay=rise_time
 )
 
-# Define sequence
-seq.add_block(rf_block)
+# Define delays
+delay_1 = make_delay(te / 2 - rf_block_90.shape_dur / 2 - rf_block_180.shape_dur / 2)
+delay_2 = make_delay(te / 2 - rf_block_180.shape_dur / 2 - adc_duration / 2)
+
+
+# >> Define sequence
+seq.add_block(rf_block_90)
+seq.add_block(delay_1)
+seq.add_block(rf_block_180)
+seq.add_block(delay_2)
 seq.add_block(gr_ro, adc)
-seq.set_definition('Name', 'fid_projection_block-pulse')
+
+seq.set_definition('Name', 'se_projection_block-pulse')
 
 
 # %%
 # Check sequence timing and plot
-
-# fig = get_sequence_plot(seq)
-# fig.show()
-
-seq.plot(time_range=(0, 1e-3), time_disp='ms')
-# ok, e = seq.check_timing()
-# seq.plot(time_range=(0, 1e-3), time_disp='us') if ok else print(e)
+ok, e = seq.check_timing()
+seq.plot(time_range=(0, 100e-3), time_disp='us') if ok else print(e)
 
 
 # %% 
 # Write sequence
-seq.write('./export/fid_projection_block-pulse.seq')
+seq.write('./export/se_projection_block-pulse.seq')
 # %%

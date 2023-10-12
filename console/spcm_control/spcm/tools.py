@@ -4,9 +4,9 @@ from ctypes import *
 from typing import Any
 
 # load registers for easier access
-import console.spcm_control.py_header.regs as regs
-from console.spcm_control.py_header.errors import error_reg, ERR_OK
-from console.spcm_control.py_header.status import status_reg, status_reg_desc
+import console.spcm_control.spcm.registers as regs
+from console.spcm_control.spcm.errors import ERR_OK, error_reg
+from console.spcm_control.spcm.status import status_reg, status_reg_desc
 
 
 def translate_status(status: int, include_desc: bool = False) -> tuple[dict[int, list[Any]], list[str]]:
@@ -40,7 +40,7 @@ def translate_status(status: int, include_desc: bool = False) -> tuple[dict[int,
     return status_dict, bit_reg
 
 
-def translate_error(error: int) -> str:
+def translate_error(error: int) -> str | None:
     """Translate error code to description string from manual.
 
     Parameters
@@ -54,9 +54,9 @@ def translate_error(error: int) -> str:
     """
     if error in error_reg.keys():
         if error_reg[error] is not ERR_OK:
-                return f"ERROR: {error_reg[error]}"
-    else:
-        return "Unknown error"
+            return f"ERROR: {error_reg[error]}"
+        return None
+    return "Unknown error"
 
 
 def type_to_name(card_type: int) -> str:

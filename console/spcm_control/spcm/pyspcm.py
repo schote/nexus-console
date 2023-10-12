@@ -1,16 +1,13 @@
 """Setup of spectrum-instrumentation card driver."""
 
+import ctypes
 import os
 import platform
 import sys
-from ctypes import *
 from typing import Any
 
-# load registers for easier access
-from console.spcm_control.py_header.errors import *
-
-# load registers for easier access
-from console.spcm_control.py_header.regs import *
+from console.spcm_control.spcm.errors import *
+from console.spcm_control.spcm.registers import *
 
 SPCM_DIR_PCTOCARD = 0
 SPCM_DIR_CARDTOPC = 1
@@ -28,25 +25,25 @@ else:
     bIs64Bit = 0
 
 # define pointer aliases
-int8 = c_int8
-int16 = c_int16
-int32 = c_int32
-int64 = c_int64
+int8 = ctypes.c_int8
+int16 = ctypes.c_int16
+int32 = ctypes.c_int32
+int64 = ctypes.c_int64
 
-ptr8 = POINTER(int8)
-ptr16 = POINTER(int16)
-ptr32 = POINTER(int32)
-ptr64 = POINTER(int64)
+ptr8 = ctypes.POINTER(int8)
+ptr16 = ctypes.POINTER(int16)
+ptr32 = ctypes.POINTER(int32)
+ptr64 = ctypes.POINTER(int64)
 
-uint8 = c_uint8
-uint16 = c_uint16
-uint32 = c_uint32
-uint64 = c_uint64
+uint8 = ctypes.c_uint8
+uint16 = ctypes.c_uint16
+uint32 = ctypes.c_uint32
+uint64 = ctypes.c_uint64
 
-uptr8 = POINTER(uint8)
-uptr16 = POINTER(uint16)
-uptr32 = POINTER(uint32)
-uptr64 = POINTER(uint64)
+uptr8 = ctypes.POINTER(uint8)
+uptr16 = ctypes.POINTER(uint16)
+uptr32 = ctypes.POINTER(uint32)
+uptr64 = ctypes.POINTER(uint64)
 
 
 # Check if code is running in an github actions
@@ -58,23 +55,23 @@ if not os.getenv("GITHUB_ACTIONS"):
         # define card handle type
         if bIs64Bit:
             # for unknown reasons c_void_p gets messed up on Win7/64bit, but this works:
-            drv_handle = POINTER(c_uint64)
+            drv_handle = uptr64  # type: ignore
         else:
-            drv_handle = c_void_p
+            drv_handle = ctypes.c_void_p  # type: ignore
 
         # Load DLL into memory.
         # use windll because all driver access functions use _stdcall calling convention under windows
         if bIs64Bit == 1:
-            spcmDll = windll.LoadLibrary("c:\\windows\\system32\\spcm_win64.dll")
+            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win64.dll")  # type: ignore
         else:
-            spcmDll = windll.LoadLibrary("c:\\windows\\system32\\spcm_win32.dll")
+            spcmDll = ctypes.windll.LoadLibrary("c:\\windows\\system32\\spcm_win32.dll")  # type: ignore
 
         # load spcm_hOpen
         if bIs64Bit:
             spcm_hOpen = getattr(spcmDll, "spcm_hOpen")
         else:
             spcm_hOpen = getattr(spcmDll, "_spcm_hOpen@4")
-        spcm_hOpen.argtype = [c_char_p]
+        spcm_hOpen.argtype = [ctypes.c_char_p]
         spcm_hOpen.restype = drv_handle
 
         # load spcm_vClose
@@ -90,7 +87,7 @@ if not os.getenv("GITHUB_ACTIONS"):
             spcm_dwGetErrorInfo_i32 = getattr(spcmDll, "spcm_dwGetErrorInfo_i32")
         else:
             spcm_dwGetErrorInfo_i32 = getattr(spcmDll, "_spcm_dwGetErrorInfo_i32@16")
-        spcm_dwGetErrorInfo_i32.argtype = [drv_handle, uptr32, ptr32, c_char_p]
+        spcm_dwGetErrorInfo_i32.argtype = [drv_handle, uptr32, ptr32, ctypes.c_char_p]
         spcm_dwGetErrorInfo_i32.restype = uint32
 
         # load spcm_dwGetParam_i32
@@ -125,27 +122,29 @@ if not os.getenv("GITHUB_ACTIONS"):
         spcm_dwSetParam_i64_.argtype = [drv_handle, int32, int64]
         spcm_dwSetParam_i64_.restype = uint32
 
-        def spcm_dwSetParam_i64(hDrv, lReg, Val) -> Any:
+        def spcm_dwSetParam_i64(device: ctypes.c_char_p | None, register: int, value: uint64 | int) -> Any:
             """Set card parameter.
 
             Parameters
             ----------
-            hDrv
-                Opene device/card
-            lReg
+            device
+                Opened device/card pointer, TODO: Check datatype
+            register
                 Register to be set
-            Val
-                Value
+            value
+                Value to be set
 
             Returns
             -------
-                Any
+                Any/Error
             """
-            try:
-                llVal = int64(Val.value)
-            except AttributeError:
-                llVal = int64(Val)
-            return spcm_dwSetParam_i64_(hDrv, lReg, llVal)
+            if not device:
+                raise ConnectionError("No device.")
+            if isinstance(value, int):
+                val = int64(value)
+            else:
+                val = int64(value.value)
+            return spcm_dwSetParam_i64_(device, register, val)
 
         # load spcm_dwSetParam_i64m
         if bIs64Bit:
@@ -165,7 +164,7 @@ if not os.getenv("GITHUB_ACTIONS"):
             uint32,
             uint32,
             uint32,
-            c_void_p,
+            ctypes.c_void_p,
             uint64,
             uint64,
         ]
@@ -184,7 +183,7 @@ if not os.getenv("GITHUB_ACTIONS"):
             spcm_dwGetContBuf_i64 = getattr(spcmDll, "spcm_dwGetContBuf_i64")
         else:
             spcm_dwGetContBuf_i64 = getattr(spcmDll, "_spcm_dwGetContBuf_i64@16")
-        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, POINTER(c_void_p), uptr64]
+        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, ctypes.POINTER(ctypes.c_void_p), uptr64]
         spcm_dwGetContBuf_i64.restype = uint32
 
     elif os.name == "posix":
@@ -192,17 +191,17 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # define card handle type
         if bIs64Bit:
-            drv_handle = POINTER(c_uint64)
+            drv_handle = ctypes.POINTER(ctypes.c_uint64)  # type: ignore
         else:
-            drv_handle = c_void_p
+            drv_handle = ctypes.c_void_p  # type: ignore
 
         # Load DLL into memory.
         # use cdll because all driver access functions use cdecl calling convention under linux
-        spcmDll = cdll.LoadLibrary("libspcm_linux.so")
+        spcmDll = ctypes.cdll.LoadLibrary("libspcm_linux.so")   # type: ignore
 
         # load spcm_hOpen
         spcm_hOpen = getattr(spcmDll, "spcm_hOpen")
-        spcm_hOpen.argtype = [c_char_p]
+        spcm_hOpen.argtype = [ctypes.c_char_p]
         spcm_hOpen.restype = drv_handle
 
         # load spcm_vClose
@@ -212,7 +211,7 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # load spcm_dwGetErrorInfo
         spcm_dwGetErrorInfo_i32 = getattr(spcmDll, "spcm_dwGetErrorInfo_i32")
-        spcm_dwGetErrorInfo_i32.argtype = [drv_handle, uptr32, ptr32, c_char_p]
+        spcm_dwGetErrorInfo_i32.argtype = [drv_handle, uptr32, ptr32, ctypes.c_char_p]
         spcm_dwGetErrorInfo_i32.restype = uint32
 
         # load spcm_dwGetParam_i32
@@ -232,8 +231,8 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # load spcm_dwSetParam_i64
         spcm_dwSetParam_i64 = getattr(spcmDll, "spcm_dwSetParam_i64")
-        spcm_dwSetParam_i64.argtype = [drv_handle, int32, int64]
-        spcm_dwSetParam_i64.restype = uint32
+        spcm_dwSetParam_i64.argtype = [drv_handle, int32, int64]  # type: ignore
+        spcm_dwSetParam_i64.restype = uint32  # type: ignore
 
         # load spcm_dwSetParam_i64m
         spcm_dwSetParam_i64m = getattr(spcmDll, "spcm_dwSetParam_i64m")
@@ -247,7 +246,7 @@ if not os.getenv("GITHUB_ACTIONS"):
             uint32,
             uint32,
             uint32,
-            c_void_p,
+            ctypes.c_void_p,
             uint64,
             uint64,
         ]
@@ -260,7 +259,7 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # load spcm_dwGetContBuf_i64
         spcm_dwGetContBuf_i64 = getattr(spcmDll, "spcm_dwGetContBuf_i64")
-        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, POINTER(c_void_p), uptr64]
+        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, ctypes.POINTER(ctypes.c_void_p), uptr64]
         spcm_dwGetContBuf_i64.restype = uint32
 
     else:
