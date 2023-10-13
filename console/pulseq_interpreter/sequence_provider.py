@@ -361,8 +361,9 @@ class SequenceProvider(Sequence):
         grad_y_const = 0
         grad_z_const = 0
 
-        # Count the total number of sample points
-        sample_count = 0
+        # Count the total number of sample points and gate signals
+        sample_count: int = 0
+        adc_count: int = 0
 
         # for k, (n_samples, block) in tqdm(enumerate(zip(samples_per_block, blocks))):
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
@@ -377,6 +378,7 @@ class SequenceProvider(Sequence):
 
             if block.adc:
                 self.add_adc_gate(block.adc, _adc[k])
+                adc_count += 1
 
             if grad_x := block.gx:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
@@ -401,4 +403,6 @@ class SequenceProvider(Sequence):
             rf_to_volt=self.rf_to_volt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
+            duration=self.duration()[0],
+            adc_count=adc_count
         )
