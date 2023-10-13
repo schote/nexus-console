@@ -25,18 +25,9 @@ seq_path = f"../sequences/export/{filename}.seq"
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=2.031e6,
-    # b1_scaling=0.0035,
-    b1_scaling=0.007,
-    fov_scaling=Dimensions(
-        x=0.,   #0.0001,
-        y=0.0001,
-        z=0.0001,
-    ),
-    fov_offset=Dimensions(
-        x=0,
-        y=0,
-        z=0,
-    ),
+    b1_scaling=1.,
+    fov_scaling=Dimensions(x=1., y=1., z=1.),
+    fov_offset=Dimensions(x=0., y=0., z=0.),
     downsampling_rate=200
 )
 

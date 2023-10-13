@@ -110,7 +110,9 @@ class AcquistionControl:
         self.seq_provider.read(sequence)
         self.seq_provider.rf_to_volt = parameter.b1_scaling
         self.seq_provider.grad_to_volt = parameter.fov_scaling.x
-        sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(parameter.larmor_frequency)
+        sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
+            larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
+        )
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration

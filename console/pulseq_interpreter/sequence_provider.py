@@ -9,6 +9,7 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.spcm_control.interface_acquisition_parameter import Dimensions
 
 
 class SequenceProvider(Sequence):
@@ -31,7 +32,6 @@ class SequenceProvider(Sequence):
     def __init__(
         self,
         spcm_dwell_time: float = 1 / 20e6,
-        rf_double_precision: bool = True,
         grad_to_volt: float = 1,
         rf_to_volt: float = 1,
         max_amp_per_channel: list[int] | None = None,
@@ -46,8 +46,6 @@ class SequenceProvider(Sequence):
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
         self.larmor_freq = self.system.B0 * self.system.gamma
-
-        self.dtype = np.double if rf_double_precision else np.single
 
         self.carrier_time: np.ndarray | None = None
         self.carrier: np.ndarray | None = None
@@ -109,17 +107,23 @@ class SequenceProvider(Sequence):
 
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
-            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=self.dtype)
+            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=float)
             self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
 
     # @profile
-    def calculate_rf(self, rf_block: SimpleNamespace, unblanking: np.ndarray, num_total_samples: int) -> np.ndarray:
+    def calculate_rf(
+        self, rf_block: SimpleNamespace, b1_scaling: float, unblanking: np.ndarray, num_total_samples: int
+    ) -> np.ndarray:
         """Calculate RF sample points to be played by TX card.
 
         Parameters
         ----------
         rf_block
             Pulseq RF block
+        b1_scaling
+            Experiment dependent scaling factor of the RF amplitude
+        unblanking
+            Unblanking signal which is updated in-place for the calculated RF event
 
         Returns
         -------
@@ -164,9 +168,11 @@ class SequenceProvider(Sequence):
         # Calculate the static phase offset, defined in RF pulse
         phase_offset = np.exp(1j * rf_block.phase_offset)
 
+        rf_scaling = b1_scaling * self.rf_to_volt / self._amp_per_ch[0]
+
         # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
-        if np.amax(envelope_scaled := rf_block.signal * phase_offset * self.rf_to_volt / self._amp_per_ch[0]) > 1:
+        if np.amax(envelope_scaled := rf_block.signal * phase_offset * rf_scaling) > 1:
             raise ValueError("RF amplitude exceeded max. amplitude of channel 0.")
         envelope_scaled = envelope_scaled * self.int16_max
 
@@ -195,7 +201,9 @@ class SequenceProvider(Sequence):
         return rf_pulse
 
     # @profile
-    def calculate_gradient(self, block: SimpleNamespace, num_total_samples: int, amp_offset: int = 0) -> np.ndarray:
+    def calculate_gradient(
+        self, block: SimpleNamespace, fov_scaling: float, num_total_samples: int, amp_offset: int = 0
+    ) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
         Parameters
@@ -225,8 +233,10 @@ class SequenceProvider(Sequence):
         idx = ["x", "y", "z"].index(block.channel)
         offset = np.int16(amp_offset / self.int16_max)
 
+        grad_scaling = fov_scaling * self.grad_to_volt / self._amp_per_ch[idx]
+
         if block.type == "grad":
-            if np.amax(waveform := block.waveform * self.grad_to_volt / self._amp_per_ch[idx] + offset) > 1:
+            if np.amax(waveform := block.waveform * grad_scaling + offset) > 1:
                 raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
             waveform *= self.int16_max
 
@@ -242,7 +252,7 @@ class SequenceProvider(Sequence):
         elif block.type == "trap":
             # Check and scale trapezoid flat amplitude (including offset)
             # At this point, only a single value needs to be scaled
-            if np.amax(flat_amp := block.amplitude * self.grad_to_volt / self._amp_per_ch[idx] + offset) > 1:
+            if np.amax(flat_amp := block.amplitude * grad_scaling + offset) > 1:
                 raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
             flat_amp = np.int16(flat_amp * self.int16_max)
 
@@ -281,7 +291,9 @@ class SequenceProvider(Sequence):
         gate[delay : delay + adc_len] = -(2**15)  # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
 
     # @profile
-    def unroll_sequence(self, larmor_freq: float | None = None) -> UnrolledSequence:
+    def unroll_sequence(
+        self, larmor_freq: float, b1_scaling: float = 1.0, fov_scaling: Dimensions = Dimensions(1.0, 1.0, 1.0)
+    ) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
         Returns
@@ -327,10 +339,11 @@ class SequenceProvider(Sequence):
 
         The last two lines convert the digital signal from 15th bit value to 1 or 0 respectively.
         """
-        print("Unrolling sequnce...")
-
-        if larmor_freq is not None:
-            self.larmor_freq = larmor_freq
+        print("Unrolling sequence...")
+        # Check and set larmor frequency
+        if larmor_freq > 5e6:
+            warnings.warn(f"Larmor frequency is above 5 MHz: {larmor_freq*1e-6} MHz")
+        self.larmor_freq = larmor_freq
 
         if len(self.block_events) == 0:
             raise AttributeError("No sequence loaded.")
@@ -371,7 +384,7 @@ class SequenceProvider(Sequence):
             if block.rf:
                 # Every 4th value in _seq starting at index 0 belongs to RF
                 _seq[k][0::4] = self.calculate_rf(
-                    rf_block=block.rf, unblanking=_unblanking[k], num_total_samples=n_samples
+                    rf_block=block.rf, unblanking=_unblanking[k], num_total_samples=n_samples, b1_scaling=b1_scaling
                 )
 
             if block.adc:
@@ -380,13 +393,13 @@ class SequenceProvider(Sequence):
 
             if grad_x := block.gx:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
-                _seq[k][1::4] = self.calculate_gradient(grad_x, n_samples, grad_x_const)
+                _seq[k][1::4] = self.calculate_gradient(grad_x, fov_scaling.x, n_samples, grad_x_const)
             if grad_y := block.gy:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
-                _seq[k][2::4] = self.calculate_gradient(grad_y, n_samples, grad_y_const)
+                _seq[k][2::4] = self.calculate_gradient(grad_y, fov_scaling.y, n_samples, grad_y_const)
             if grad_z := block.gz:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
-                _seq[k][3::4] = self.calculate_gradient(grad_z, n_samples, grad_z_const)
+                _seq[k][3::4] = self.calculate_gradient(grad_z, fov_scaling.z, n_samples, grad_z_const)
 
             # Bitwise operations to merge gx with adc and gy with unblanking
             _seq[k][1::4] = _seq[k][1::4] >> 1 | _adc[k]

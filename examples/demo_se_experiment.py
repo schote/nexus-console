@@ -56,7 +56,7 @@ seq.rf_to_volt = 0.0035
 seq.grad_to_volt = 0.0
 
 
-sqnc: UnrolledSequence = seq.unroll_sequence(f_0)
+sqnc: UnrolledSequence = seq.unroll_sequence(f_0, b1_scaling=0.5)
 # sqnc.seq[-1][1::4] = sqnc.seq[-1][1::4] * -1
 
 print("Relative RF output max.: ", np.max(np.concatenate(sqnc.seq)[0::4])/np.iinfo(np.int16).max)
