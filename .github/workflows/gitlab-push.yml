@@ -1,0 +1,26 @@
+name: Push to GitLab
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  ptb-gitlab:
+    name: "PTB GitLab"
+    
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: 'spectrum-console'
+          ref: 'main'
+          token:  ${{ secrets.ACTIONS_GITHUB_TOKEN }}
+          
+      - name: setup git config
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "david.schote@ptb.de"
+          
+      - run: git push https://gitlab1.ptb.de/mri-lab/spectrum-console main
