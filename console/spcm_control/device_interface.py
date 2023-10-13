@@ -33,7 +33,7 @@ class SpectrumDevice(ABC):
             self.card = None
             self.name = None
 
-    def connect(self):
+    def connect(self) -> bool:
         """Establish card connection.
 
         Raises
@@ -62,6 +62,7 @@ class SpectrumDevice(ABC):
             self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")
+        return True
 
     def handle_error(self, error: int):
         """General error handling function."""
