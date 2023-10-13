@@ -7,72 +7,33 @@ This project aims to implement a console for magnetic resonance imaging (MRI) ac
 
 ## Installation
 
-It is recommended to install the package within a virtual environment. There are many options to create and manage virtual environments. Examples are [virtualenv](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html), [venv](https://docs.python.org/3/library/venv.html), [conda](https://docs.conda.io/projects/conda/en/stable/) or [miniconda](https://docs.conda.io/en/latest/miniconda.html).
-Here we briefly show, how to setup a virtual environment with miniconda. To get started, please ensure that a version of [miniconda](https://docs.conda.io/en/latest/miniconda.html) is installed at your system. You can verify the installation by running `conda --version`. Futher documentation on how to install and use miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html).
+It is recommended to install the package in a virtual environment. There are many options to create and manage virtual environments. Examples are [virtualenv](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html), [venv](https://docs.python.org/3/library/venv.html), [conda](https://docs.conda.io/projects/conda/en/stable/) or [miniconda](https://docs.conda.io/en/latest/miniconda.html). Further documentation on miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html).
 
-You can check your python version by running `python --version`.
+You can check your python version by running `python --version`, `python > 3.10` is required.
 
-Install `spectrum-console`:
+To install the console application, ensure that you are in the repository directory (`*/spectrum-console/`). Use one of the following commands to install the package with the dependencies needed:
 
-1. **Open a new terminal/command prompt to create a new virtual environment.**
-   
-   We are using conda, but of course you can use any other tool to create a virtual environment as well. We create the environment with python version [3.11](https://peps.python.org/pep-0664/).
-   
-   ```
-   conda create <env-name> python==3.11
-   ```
+### `pip install -e .`
 
-   _Hint: 
-   We use the defalt environment directory, but you can also create it in custom environments folder (configurable in the `.condarc` file which should be located in your home directory). Use `--prefix <custom/destination/>` to choose an individual path for the conda enironment._
+Installs all the necessary base dependencies to use the package (minimum required).
 
-2. **Activate the virtual environment**
-   ```
-   conda activate <env-name>
-   ```
-   Now the name of the virtual environment should appear in front of the current path in your terminal/command prompt.
-   
-   _Hint: You can check your python version by running `python --version`, it should print some version of `3.10.XX`._
+### `pip install -e ".[lint]"`
 
-3. **Install the package**
-   
-   To install the console application, ensure that you are in the repository directory (`*/spectrum-console/`). The enter the following command.
-    
-    ```
-    pip install -e .
-    ```
+Installs additional (optional) dependencies that are required to run the linter.
 
-    To install optional dependencies you can use one of the following commands or similar:
-    ```
-    pip install -e ".[lint]"
-    pip install -e ".[test]"
-    pip install -e ".[lint, test]"
-    ```
-    
-    _Hint: Within the activated virtual environment you can install additional [packages](https://pypi.org/) with `pip`. Anything you install within the virtual environment is only available if the environment is active. Packages which should be installed with the project should be added to the `pyproject.toml` file_
+### `pip install -e ".[test]"`
+
+Installs additional (optional) dependencies that are required to run the linter.
+
+### `pip install -e ".[docs]"`
+
+Installs additional (optional) dependencies that are required to build the sphinx documentation locally.
+
+### `pip install -e ".[dev]"`
+
+Installs additional (optional) developer dependencies for profiling and developing in vs code.
 
 
-## Troubleshooting
-
-### Installation
-
-<details>
-<summary>Miniconda was installed but the command `conda` cannot be found.</summary>
-Ensure that you added conda to your system path. You may also want to restart your terminal/command prompt.
-</details>
-
-<details>
-<summary>Timeout during creation of conda environment or package installation.</summary>
-If you are at PTB, ensure that your proxy is configured correctly to install packages with pip or conda respectively.
-</details>
-
-<details>
-<summary>ValueError: Mime type rendering requires nbformat>=4.2.0 but it is not installed</summary>
-If you are at PTB, ensure that your proxy is configured correctly to install packages with pip or conda respectively.
-</details>
-
+    Hint: Multiple dependency groups can be installed using `[lint, test]` for instance.
 
 ---
-
-## Repository Structure
-
-...
