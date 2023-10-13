@@ -195,9 +195,7 @@ class SequenceProvider(Sequence):
         return rf_pulse
 
     # @profile
-    def calculate_gradient(
-        self, block: SimpleNamespace, num_total_samples: int, amp_offset: int = 0
-    ) -> np.ndarray:
+    def calculate_gradient(self, block: SimpleNamespace, num_total_samples: int, amp_offset: int = 0) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
         Parameters
@@ -404,5 +402,5 @@ class SequenceProvider(Sequence):
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
             duration=self.duration()[0],
-            adc_count=adc_count
+            adc_count=adc_count,
         )

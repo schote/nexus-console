@@ -197,7 +197,7 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # Load DLL into memory.
         # use cdll because all driver access functions use cdecl calling convention under linux
-        spcmDll = ctypes.cdll.LoadLibrary("libspcm_linux.so")   # type: ignore
+        spcmDll = ctypes.cdll.LoadLibrary("libspcm_linux.so")  # type: ignore
 
         # load spcm_hOpen
         spcm_hOpen = getattr(spcmDll, "spcm_hOpen")

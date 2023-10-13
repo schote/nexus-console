@@ -28,7 +28,7 @@ def window(data: float):
 
 def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: float) -> np.ndarray:
     """Apply digital downsampling.
-    
+
     This function demodulates the raw NMR signal, applies a bandpass filter and does the down-sampling.
 
     Parameters
@@ -47,11 +47,11 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
         Filtered and down-sampled signal
     """
     # Exponential function for demodulation
-    demod = np.exp(2j*np.pi*f_0*np.arange(kernel_size)/f_spcm)
+    demod = np.exp(2j * np.pi * f_0 * np.arange(kernel_size) / f_spcm)
 
-    # Exponential function for resampling
-    x = np.linspace(-1, 1, kernel_size)
-    mixer = np.exp(-1 / (1 - x**2)) * np.sinc(x * 2.073 * np.pi)
+    # Exponential function for resampling, don't use [-1, 1] because it leads to a division by zero warning.
+    kernel_space = np.linspace(-1 - 1e-20, 1 - 1e-20, kernel_size)
+    mixer = np.exp(-1 / (1 - kernel_space**2)) * np.sinc(kernel_space * 2.073 * np.pi)
 
     # Integral for normalization
     norm = np.sum(mixer)
@@ -60,15 +60,16 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
     kernel = demod * mixer
 
     # Calculate size of down-sampled signal
-    num_ddc_samples = raw_signal.size // int(kernel_size/2)    
+    num_ddc_samples = raw_signal.size // int(kernel_size / 2)
     signal_filtered = np.zeros(num_ddc_samples, dtype=complex)
 
     # 1D strided convolution
-    for i, k in zip(range(num_ddc_samples), range(0, raw_signal.size, int(kernel_size/2))):
+    for i, k in zip(range(num_ddc_samples), range(0, raw_signal.size, int(kernel_size / 2))):
         # Skip the last samples of the raw signal
-        if (p := k+kernel_size) > raw_signal.size:
+        if (position := k + kernel_size) > raw_signal.size:
+            # Position in raw data array exceeded index, truncate leftover
             break
-        _tmp = np.sum(raw_signal[k:p] * kernel)
-        signal_filtered[i] = _tmp * 2 * np.exp(2j * np.pi * f_0 * (k+int(kernel_size/2))/f_spcm) / norm
-        
+        _tmp = np.sum(raw_signal[k:position] * kernel)
+        signal_filtered[i] = _tmp * 2 * np.exp(2j * np.pi * f_0 * (k + int(kernel_size / 2)) / f_spcm) / norm
+
     return signal_filtered
