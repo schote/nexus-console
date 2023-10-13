@@ -100,8 +100,8 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)  # Loop parameter is zero for infinite loop
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)  # Set clock mode
 
-        # Set timeout to 5s
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 5000)
+        # Set timeout to 10ms
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         # Setup timestamp mode to read number of samples per gate if available
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMESTAMP_CMD, sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL)
@@ -283,7 +283,7 @@ class RxCard(SpectrumDevice):
                         else:
                             available_card_len = bytes_sequence - (bytes_leftover)
 
-                        print(f"RX:> Bytes leftover: {bytes_leftover}")
+                        # print(f"RX:> Bytes leftover: {bytes_leftover}")
 
                         # Tell the card that we have read the data.
                         # The card length should be in the order of notify size.
