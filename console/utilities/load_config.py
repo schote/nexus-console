@@ -98,6 +98,8 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
         Tuple of instances: SequenceProvider, TxCard and RxCard
     """
     file_path = os.path.normpath(path_to_config)
+    if not file_path.endswith(".yaml"):
+        raise FileNotFoundError("Invalid configuration file, yaml file required.")
     with open(file_path, "rb") as file:
         config = yaml.load(file, Loader=Loader)
 
