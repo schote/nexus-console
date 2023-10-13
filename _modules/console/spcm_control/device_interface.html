@@ -442,7 +442,7 @@ document.write(`
 
 <div class="viewcode-block" id="SpectrumDevice.connect">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.device_interface.SpectrumDevice.connect">[docs]</a>
-    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Establish card connection.</span>
 
 <span class="sd">        Raises</span>
@@ -470,7 +470,8 @@ document.write(`
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection to card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> established!&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">setup_card</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;Could not connect to card...&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;Could not connect to card...&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.handle_error">

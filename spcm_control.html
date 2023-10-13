@@ -425,7 +425,7 @@ document.write(`
 <p>Spectrum device abstract base class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.device_interface.SpectrumDevice.connect">
-<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.connect" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/console/spcm_control/device_interface.html#SpectrumDevice.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.device_interface.SpectrumDevice.connect" title="Link to this definition">#</a></dt>
 <dd><p>Establish card connection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -692,30 +692,6 @@ Two receive channels are enables and configured by max. amplitude according to c
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquistionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tx_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">rx_engine</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.rx_device.RxCard" title="console.spcm_control.rx_device.RxCard"><span class="pre">RxCard</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Acquisition control class.</p>
-<p>The main functionality of the acquisition control is to orchestrate transmit and receive cards using
-<code class="docutils literal notranslate"><span class="pre">TxCard</span></code> and <code class="docutils literal notranslate"><span class="pre">RxCard</span></code> instances.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.acquire">
-<span class="sig-name descname"><span class="pre">acquire</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.acquire"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.acquire" title="Link to this definition">#</a></dt>
-<dd><p>Handle the acquisition of an unrolled pulseq sequence.</p>
-<p>This function is yet a prototypic skeleton.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>sequence</strong> – Numpy array with unrolled replay data (pulseq sequence)</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Path of the receive data file as string</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </section>
 
 
@@ -797,10 +773,6 @@ Two receive channels are enables and configured by max. amplitude according to c
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.start_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.start_operation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.stop_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.stop_operation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.timestamp_mode"><code class="docutils literal notranslate"><span class="pre">RxCard.timestamp_mode</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl"><code class="docutils literal notranslate"><span class="pre">AcquistionControl</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.acquire"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.acquire()</span></code></a></li>
 </ul>
 </li>
 </ul>

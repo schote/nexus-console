@@ -506,8 +506,8 @@ document.write(`
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_LOOPS</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Loop parameter is zero for infinite loop</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>  <span class="c1"># Set clock mode</span>
 
-        <span class="c1"># Set timeout to 5s</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)</span>
+        <span class="c1"># Set timeout to 10ms</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
         <span class="c1"># Setup timestamp mode to read number of samples per gate if available</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMESTAMP_CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TSMODE_STARTRESET</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TSCNT_INTERNAL</span><span class="p">)</span>
@@ -696,7 +696,7 @@ document.write(`
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">available_card_len</span> <span class="o">=</span> <span class="n">bytes_sequence</span> <span class="o">-</span> <span class="p">(</span><span class="n">bytes_leftover</span><span class="p">)</span>
 
-                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Bytes leftover: </span><span class="si">{</span><span class="n">bytes_leftover</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="c1"># print(f&quot;RX:&gt; Bytes leftover: {bytes_leftover}&quot;)</span>
 
                         <span class="c1"># Tell the card that we have read the data.</span>
                         <span class="c1"># The card length should be in the order of notify size.</span>
