@@ -10,7 +10,7 @@ from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
 
 def get_frequency_calibration_sequence(
-    center_freq: float = 2.048e6, 
+    center_freq: float = 2.031e6, 
     span: float = 50e3,
     tr: float = 5,
     rf_bandwidth: float = 50e3

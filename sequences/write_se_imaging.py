@@ -36,7 +36,7 @@ te = 10e-3
 
 # Readout/ADC
 ro_bw = 50e3   # 50 kHz bandwidth
-num_samples = 128
+num_samples = 256
 adc_dwell_time = 1 / ro_bw
 adc_duration = adc_dwell_time * num_samples
 fov = 0.255     # 25.5 cm
