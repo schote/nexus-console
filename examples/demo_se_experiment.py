@@ -18,11 +18,8 @@ seq, tx_card, rx_card = get_instances("../device_config.yaml")
 # %%
 # Connect to tx and rx card
 if not is_setup:
-    tx_card.connect()
-    rx_card.connect()
-    is_setup = True
-
-
+    if tx_card.connect() and rx_card.connect():
+        is_setup = True
 
 
 # %%
@@ -33,33 +30,31 @@ seq.max_amp_per_channel = tx_card.max_amplitude
 # filename = "se_spectrum_400us_sinc_20ms-te"
 # filename = "se_spectrum_400us_sinc_30ms-te"
 # filename = "se_proj_400us-sinc_20ms-te"
-filename = "se_proj_400us_sinc_12ms-te"
+# filename = "se_proj_400us_sinc_12ms-te"
 # filename = "se_spectrum_200us-rect"
+
+filename = "dual-se_spec"
 
 seq.read(f"../sequences/export/{filename}.seq")
 
 # %%
 # Unroll and plot the sequence
 
-# f_0 = 2033520   # larmor frequency
-# f_0 = 2031536
+# Adjust larmor frequency
 f_0 = 2031000
-# f_0 = 2031146
 
+# Adjust RF calibration
 # seq.rf_to_volt = 0.03     # large phantom, sinc 400us
 # seq.rf_to_volt = 0.08     # small phantom, sinc 400us
 seq.rf_to_volt = 0.0035
 
+# Adjust gradient calibration
 # seq.grad_to_volt = 0.000015
 # seq.grad_to_volt = -0.00025
 # seq.grad_to_volt = -0.0001
 seq.grad_to_volt = 0.0
 
-
-sqnc: UnrolledSequence = seq.unroll_sequence(f_0, b1_scaling=0.5)
-# sqnc.seq[-1][1::4] = sqnc.seq[-1][1::4] * -1
-
-print("Relative RF output max.: ", np.max(np.concatenate(sqnc.seq)[0::4])/np.iinfo(np.int16).max)
+sqnc: UnrolledSequence = seq.unroll_sequence(f_0, b1_scaling=1.)
 
 fig, ax = plot_spcm_data(sqnc, use_time=True)
 fig.show()

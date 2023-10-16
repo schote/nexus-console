@@ -43,7 +43,6 @@ class TxCard(SpectrumDevice):
         super().__init__(self.path)
 
         self.num_ch = 4
-        self.channel_enable = [1, 1, 1, 1]
 
         # Size of the current sequence
         self.data_buffer_size = int(0)
@@ -52,7 +51,7 @@ class TxCard(SpectrumDevice):
         self.ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)  # => 512 MSamples * 2 Bytes = 1024 MB
         # self.ring_buffer_size: uint64 = uint64(1024**2)
 
-        # Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)
+        # Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)
         if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
             raise MemoryError(
                 "TX:> Ring buffer size is not a multiple of channel sample product \
@@ -122,22 +121,22 @@ class TxCard(SpectrumDevice):
 
         # Use loop to enable and setup active channels
         # Channel 0: RF
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT0, self.channel_enable[0])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT0, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP0, self.max_amplitude[0])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER0, self.filter_type[0])
 
         # Channel 1: Gradient x, synchronus digital output: gate trigger
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, self.channel_enable[1])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP1, self.max_amplitude[1])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER1, self.filter_type[1])
 
         # Channel 2: Gradient y, synchronus digital output: un-blanking
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, self.channel_enable[2])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP2, self.max_amplitude[2])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER2, self.filter_type[2])
 
         # Channel 3: Gradient z
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT3, self.channel_enable[3])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT3, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP3, self.max_amplitude[3])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER3, self.filter_type[3])
 

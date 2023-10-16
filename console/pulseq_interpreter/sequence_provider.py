@@ -108,7 +108,7 @@ class SequenceProvider(Sequence):
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
             self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=float)
-            self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
+            # self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
 
     # @profile
     def calculate_rf(
