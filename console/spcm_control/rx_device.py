@@ -250,9 +250,9 @@ class RxCard(SpectrumDevice):
                     print("RX:> Available user length: ", available_user_databytes.value)
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
-                        gate_data: list[np.ndarray] = []
+                        # gate_data: list[np.ndarray] = []
 
-                        print("RX:> Getting RX buffer read position and RX data...")
+                        # print("RX:> Getting RX buffer read position and RX data...")
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
 
                         byte_position = data_user_position.value // 2
@@ -260,20 +260,25 @@ class RxCard(SpectrumDevice):
                         index_0 = byte_position + total_leftover // 2
 
                         if total_bytes_to_read + data_user_position.value >= rx_size:
-                            print(f"RX:> Rx_size: {rx_size}")
+                            # print(f"RX:> Rx_size: {rx_size}")
+                            # >> We need two indices in case of memory overflow
                             index_1 = rx_size // 2 - (index_0)
                             index_2 = total_bytes_to_read // 2 - index_1
-                            print(f"RX:> indexes: {index_1, index_2,(index_0-bytes_leftover)}")
+                            # print(f"RX:> indexes: {index_1, index_2,(index_0-bytes_leftover)}")
                             gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]
                             gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]
+                            # gate_data = rx_data[index_0 : index_0 + index_1]
+                            # gate_data = np.append(gate_data, rx_data[0:index_2])
                         else:
                             gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
 
-                        # Extract channel 0 and convert data from int16 to floats [V]
-                        channel_0 = (np.array(gate_data[0::2]) / np.iinfo(np.int16).max) * self.max_amplitude[0]
+                        # Extract channels, convert data from int16 to floats [V] and truncate pre-trigger
+                        channel_0 = (np.array(gate_data[0::2]) / 2**15 * self.max_amplitude[0])[self.pre_trigger :]
+                        channel_1 = (np.array(gate_data[1::2]) / 2**15 * self.max_amplitude[1])[self.pre_trigger :]
 
                         # Truncate gate signal, throw pre- and post-trigger
-                        self.rx_data.append(channel_0[self.pre_trigger :])
+                        self.rx_data.append([channel_0, channel_1])
+                        
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
                         total_leftover += bytes_leftover
 
