@@ -418,7 +418,152 @@ document.write(`
   <section id="utilities">
 <h1>Utilities<a class="headerlink" href="#utilities" title="Link to this heading">#</a></h1>
 <p>Utility functions to load a configuration file and provide the instances of <cite>SequenceProvider</cite>, <cite>TxDevice</cite> and <cite>RxDevice</cite>.</p>
+<p id="module-console.utilities.load_config">Utility functions for loading configuration and adding constructors.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.load_config.get_instances">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">get_instances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="spcm_control.html#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="spcm_control.html#console.spcm_control.rx_device.RxCard" title="console.spcm_control.rx_device.RxCard"><span class="pre">RxCard</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#get_instances"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.get_instances" title="Link to this definition">#</a></dt>
+<dd><p>Construct object instances from yaml configuration file.</p>
+<p>Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.
+Object instances are created according to the parameterization from yaml configuration file.
+This function returns object instances for all the different constructors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>path_to_config</strong> – Path to configuration yaml file</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>Tuple of instances</strong></p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider">SequenceProvider</a>, TxCard and RxCard</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.load_config.opts_constructor">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">opts_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SafeLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MappingNode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Opts</span></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#opts_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.opts_constructor" title="Link to this definition">#</a></dt>
+<dd><p>Construct an options object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loader</strong> – yaml loader</p></li>
+<li><p><strong>node</strong> – constructor mapping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Options object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.load_config.rx_card_constructor">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">rx_card_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SafeLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MappingNode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="spcm_control.html#console.spcm_control.rx_device.RxCard" title="console.spcm_control.rx_device.RxCard"><span class="pre">RxCard</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#rx_card_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.rx_card_constructor" title="Link to this definition">#</a></dt>
+<dd><p>Construct a receive card object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loader</strong> – yaml loader</p></li>
+<li><p><strong>node</strong> – constructor mapping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>RxCard object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.load_config.sequence_provider_constructor">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">sequence_provider_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SafeLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MappingNode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#sequence_provider_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.sequence_provider_constructor" title="Link to this definition">#</a></dt>
+<dd><p>Construct a sequence provider.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loader</strong> – yaml loader</p></li>
+<li><p><strong>node</strong> – constructor mapping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>SequenceProvider object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.load_config.tx_card_constructor">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.load_config.</span></span><span class="sig-name descname"><span class="pre">tx_card_constructor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SafeLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MappingNode</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="spcm_control.html#console.spcm_control.tx_device.TxCard" title="console.spcm_control.tx_device.TxCard"><span class="pre">TxCard</span></a></span></span><a class="reference internal" href="_modules/console/utilities/load_config.html#tx_card_constructor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.load_config.tx_card_constructor" title="Link to this definition">#</a></dt>
+<dd><p>Construct a transmit card object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loader</strong> – yaml loader</p></li>
+<li><p><strong>node</strong> – constructor mapping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>TxCard object</p>
+</dd>
+</dl>
+</dd></dl>
+
 <p>Create a plotly plot of a pulseq <cite>Sequence</cite> or <cite>SequenceProvider</cite> object.</p>
+<p id="module-console.utilities.plotly_sequence">Utility function to create a sequence plot with plotly.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.TraceData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.utilities.plotly_sequence.</span></span><span class="sig-name descname"><span class="pre">TraceData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_points</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">signal_values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/utilities/plotly_sequence.html#TraceData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.plotly_sequence.TraceData" title="Link to this definition">#</a></dt>
+<dd><p>Numpy model for trace data.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.TraceData.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#console.utilities.plotly_sequence.TraceData.name" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.TraceData.signal_values">
+<span class="sig-name descname"><span class="pre">signal_values</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.utilities.plotly_sequence.TraceData.signal_values" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.TraceData.time_points">
+<span class="sig-name descname"><span class="pre">time_points</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.utilities.plotly_sequence.TraceData.time_points" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.generate_plotly_figure">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.plotly_sequence.</span></span><span class="sig-name descname"><span class="pre">generate_plotly_figure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">traces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#console.utilities.plotly_sequence.TraceData" title="console.utilities.plotly_sequence.TraceData"><span class="pre">TraceData</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/utilities/plotly_sequence.html#generate_plotly_figure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.plotly_sequence.generate_plotly_figure" title="Link to this definition">#</a></dt>
+<dd><p>Generate plotly figure of traces.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>traces</strong> – List of trace data</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Plotly figure</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.utilities.plotly_sequence.get_sequence_plot">
+<span class="sig-prename descclassname"><span class="pre">console.utilities.plotly_sequence.</span></span><span class="sig-name descname"><span class="pre">get_sequence_plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_range</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.0,</span> <span class="pre">inf)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#console.utilities.plotly_sequence.TraceData" title="console.utilities.plotly_sequence.TraceData"><span class="pre">TraceData</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/utilities/plotly_sequence.html#get_sequence_plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.plotly_sequence.get_sequence_plot" title="Link to this definition">#</a></dt>
+<dd><p>Compute a sequence dictionary from pulseq sequence object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>seq</strong> – pypulseq sequence object</p></li>
+<li><p><strong>time_range</strong> – time span of the sequence plot, by default (0., np.inf)</p></li>
+<li><p><strong>optional</strong> – time span of the sequence plot, by default (0., np.inf)</p></li>
+<li><p><strong>time_factor</strong> – time prefix, by default 1e3</p></li>
+<li><p><strong>optional</strong> – time prefix, by default 1e3</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of plot data models</p>
+</dd>
+</dl>
+</dd></dl>
+
 <p>Plot an <cite>UnrolledSequence</cite> object.</p>
 <p id="module-console.utilities.spcm_data_plot">Plot function for spcm formatted data array.</p>
 <dl class="py function">
@@ -484,6 +629,19 @@ If the second element equals -1, the (time) course is plotted until the end.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.get_instances"><code class="docutils literal notranslate"><span class="pre">get_instances()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.opts_constructor"><code class="docutils literal notranslate"><span class="pre">opts_constructor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.rx_card_constructor"><code class="docutils literal notranslate"><span class="pre">rx_card_constructor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.sequence_provider_constructor"><code class="docutils literal notranslate"><span class="pre">sequence_provider_constructor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.load_config.tx_card_constructor"><code class="docutils literal notranslate"><span class="pre">tx_card_constructor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.TraceData"><code class="docutils literal notranslate"><span class="pre">TraceData</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.TraceData.name"><code class="docutils literal notranslate"><span class="pre">TraceData.name</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.TraceData.signal_values"><code class="docutils literal notranslate"><span class="pre">TraceData.signal_values</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.TraceData.time_points"><code class="docutils literal notranslate"><span class="pre">TraceData.time_points</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.generate_plotly_figure"><code class="docutils literal notranslate"><span class="pre">generate_plotly_figure()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.plotly_sequence.get_sequence_plot"><code class="docutils literal notranslate"><span class="pre">get_sequence_plot()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.spcm_data_plot.plot_spcm_data"><code class="docutils literal notranslate"><span class="pre">plot_spcm_data()</span></code></a></li>
 </ul>
   </nav></div>

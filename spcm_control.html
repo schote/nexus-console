@@ -692,6 +692,77 @@ Two receive channels are enables and configured by max. amplitude according to c
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquistionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Acquisition control class.</p>
+<p>The main functionality of the acquisition control is to orchestrate transmit and receive cards using
+<code class="docutils literal notranslate"><span class="pre">TxCard</span></code> and <code class="docutils literal notranslate"><span class="pre">RxCard</span></code> instances.</p>
+<p>TODO: Implementation of logging mechanism.
+Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.data" title="Link to this definition">#</a></dt>
+<dd><p>Get data acquired by acquisition control, read-only property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of numpy arrays with acquired data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.dwell_time">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dwell_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.dwell_time" title="Link to this definition">#</a></dt>
+<dd><p>Get dwell time of down-sampled data, read-only property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dwell time of down-sampled signal.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.post_processing">
+<span class="sig-name descname"><span class="pre">post_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AcquisitionParameter</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.post_processing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.post_processing" title="Link to this definition">#</a></dt>
+<dd><p>Perform data post processing.</p>
+<p>Apply the digital downconversion, filtering an downsampling per numpy array in the list of the received data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> – Received list of adc data samples</p></li>
+<li><p><strong>parameter</strong> – Acquistion parameter to setup the filter</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of processed data arrays</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AcquisitionParameter</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.run" title="Link to this definition">#</a></dt>
+<dd><p>Run an acquisition job.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sequence</strong> – Path to pulseq sequence file.</p></li>
+<li><p><strong>parameter</strong> – Set of acquisition parameters which are required for the acquisition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – The measurement cards are not setup properly.</p></li>
+<li><p><strong>FileNotFoundError</strong> – Invalid file ending of sequence file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -773,6 +844,13 @@ Two receive channels are enables and configured by max. amplitude according to c
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.start_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.start_operation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.stop_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.stop_operation()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.timestamp_mode"><code class="docutils literal notranslate"><span class="pre">RxCard.timestamp_mode</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl"><code class="docutils literal notranslate"><span class="pre">AcquistionControl</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.data"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.data</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.dwell_time"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.dwell_time</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.post_processing"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.post_processing()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.run"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.run()</span></code></a></li>
 </ul>
 </li>
 </ul>

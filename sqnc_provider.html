@@ -424,6 +424,153 @@ pulseq need to concern themselves with a compiler to translates the pulseq file 
 <p>However, with this console application we’ve decided to implemnt native pulseq support. The replay sample points of this console are directly calculated from
 the provided pulseq sequence. The following sequence provider class is an extension of a pulseq sequence object and gathers all the methods
 required to calculate the waveforms, which are replayable by our console.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.pulseq_interpreter.sequence_provider.</span></span><span class="sig-name descname"><span class="pre">SequenceProvider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spcm_dwell_time:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">5e-08</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad_to_volt:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_to_volt:</span> <span class="pre">float</span> <span class="pre">=</span> <span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_amp_per_channel:</span> <span class="pre">list[int]</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system:</span> <span class="pre">~pypulseq.opts.Opts</span> <span class="pre">=</span> <span class="pre">&lt;pypulseq.opts.Opts</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></p>
+<p>Sequence provider class.</p>
+<p>This object is inherited from pulseq sequence object, so that all methods of the
+pypulseq <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> object can be accessed.</p>
+<p>The main functionality of the <code class="docutils literal notranslate"><span class="pre">SequenceProvider</span></code> is to unroll a given pulseq sequence.
+Usually the first step is to read a sequence file. The unrolling step can be achieved using
+the <code class="docutils literal notranslate"><span class="pre">unroll_sequence()</span></code> function.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span> <span class="o">=</span> <span class="n">SequenceProvider</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">seq</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="s2">&quot;./seq_file.seq&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqnc</span><span class="p">,</span> <span class="n">gate</span><span class="p">,</span> <span class="n">total_samples</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">
+<span class="sig-name descname"><span class="pre">add_adc_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimpleNamespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clk_ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.add_adc_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate" title="Link to this definition">#</a></dt>
+<dd><p>Add ADC gate signal inplace to gate array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – ADC event of sequence block.</p></li>
+<li><p><strong>gate</strong> – Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.</p></li>
+<li><p><strong>clk_ref</strong> – Phase reference array, predefined by zeros. Digital signal during ADC which encodes the signal phase.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">
+<span class="sig-name descname"><span class="pre">calculate_gradient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimpleNamespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_gradient"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient" title="Link to this definition">#</a></dt>
+<dd><p>Calculate spectrum-card sample points of a gradient waveform.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>block</strong> – Gradient block from sequence, type must be grad or trap</p></li>
+<li><p><strong>num_total_samples</strong> – Total number of block samples points to verify calculation</p></li>
+<li><p><strong>amp_offset</strong> – Amplitude offset, last value of last gradient, by default 0.</p></li>
+<li><p><strong>optional</strong> – Amplitude offset, last value of last gradient, by default 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of gradient waveform values</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>AttributeError</strong> – Block type is not grad or trap</p></li>
+<li><p><strong>ArithmeticError</strong> – Number of calculated sample points is greater then number of block sample points</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">
+<span class="sig-name descname"><span class="pre">calculate_rf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rf_block</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">SimpleNamespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b1_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unblanking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_total_samples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.calculate_rf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf" title="Link to this definition">#</a></dt>
+<dd><p>Calculate RF sample points to be played by TX card.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>rf_block</strong> – Pulseq RF block</p></li>
+<li><p><strong>b1_scaling</strong> – Experiment dependent scaling factor of the RF amplitude</p></li>
+<li><p><strong>unblanking</strong> – Unblanking signal which is updated in-place for the calculated RF event</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of RF samples</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AttributeError</strong> – Invalid RF block</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.max_amp_per_channel">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">max_amp_per_channel</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.max_amp_per_channel" title="Link to this definition">#</a></dt>
+<dd><p>Property getter.</p>
+<p>Maximum amplitude per channel in mV</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List of amplitude values in mV</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier">
+<span class="sig-name descname"><span class="pre">precalculate_carrier</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.precalculate_carrier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier" title="Link to this definition">#</a></dt>
+<dd><p>Pre-calculation of carrier signal.</p>
+<p>Calculation is done for the longest occurring RF event
+Each RF event then reuses the pre-calculated carrier signal.
+Dependent on the specific RF event it might be truncated and modulated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">
+<span class="sig-name descname"><span class="pre">unroll_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">larmor_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b1_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dimensions</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Dimensions(x=1.0,</span> <span class="pre">y=1.0,</span> <span class="pre">z=1.0)</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence" title="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence"><span class="pre">UnrolledSequence</span></a></span></span><a class="reference internal" href="_modules/console/pulseq_interpreter/sequence_provider.html#SequenceProvider.unroll_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence" title="Link to this definition">#</a></dt>
+<dd><p>Unroll a pypulseq sequence object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p>Instance of an unrolled sequence object which contains a list of numpy arrays with
+the block-wise calculated sample points in correct spectrum card order.</p>
+<p>The unrolled sequence may already be returned as int16 values. In this case it contains the
+digital signals for the adc gate signal and the unblanking.</p>
+<p>Independent of the returned sequence datatype, the adc and unblanking signals are returned as
+list of numpy arrays in the unrolled sequence instance.</p>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence" title="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence">UnrolledSequence</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>AttributeError</strong> – No sequence loaded</p></li>
+<li><p><strong>AttributeError</strong> – Error converting sequence to int16: Maximum values per channel not set…</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>For channels ch0, ch1, ch2, ch3, data values n = 0, 1, …, N are ordered the following way.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch0_0</span><span class="p">,</span> <span class="n">ch1_0</span><span class="p">,</span> <span class="n">ch2_0</span><span class="p">,</span> <span class="n">ch3_0</span><span class="p">,</span> <span class="n">ch0_1</span><span class="p">,</span> <span class="n">ch1_1</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch0_n</span><span class="p">,</span> <span class="o">...</span><span class="p">,</span> <span class="n">ch3_N</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Per channel data can be extracted by the following code.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rf</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gx</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gy</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gz</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Channel <cite>gx</cite> contains the digital adc gate signal and <cite>gy</cite> the digital unblanking signal.
+The following example shows, how to extract the gradients and digital signals in this case.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">gx</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gy</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">adc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">unblanking</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The last two lines convert the digital signal from 15th bit value to 1 or 0 respectively.</p>
+</dd></dl>
+
+</dd></dl>
+
 <p>Once a pulseq sequence was unrolled, the replayable sequence data is provided by the following interface.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence">
@@ -553,6 +700,15 @@ Note that this dwell time does not correlate to the larmor frequecy. Due to the 
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider"><code class="docutils literal notranslate"><span class="pre">SequenceProvider</span></code></a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.add_adc_gate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_gradient()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.calculate_rf()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.max_amp_per_channel"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.max_amp_per_channel</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.precalculate_carrier"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.precalculate_carrier()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence"><code class="docutils literal notranslate"><span class="pre">SequenceProvider.unroll_sequence()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence"><code class="docutils literal notranslate"><span class="pre">UnrolledSequence</span></code></a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_count"><code class="docutils literal notranslate"><span class="pre">UnrolledSequence.adc_count</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.pulseq_interpreter.interface_unrolled_sequence.UnrolledSequence.adc_gate"><code class="docutils literal notranslate"><span class="pre">UnrolledSequence.adc_gate</span></code></a></li>
