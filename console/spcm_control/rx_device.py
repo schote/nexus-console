@@ -40,6 +40,7 @@ class RxCard(SpectrumDevice):
         self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
         self.rx_data = []
+        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     def setup_card(self):
         """Set up spectrum card in transmit (TX) mode.
@@ -265,19 +266,24 @@ class RxCard(SpectrumDevice):
                             index_1 = rx_size // 2 - (index_0)
                             index_2 = total_bytes_to_read // 2 - index_1
                             # print(f"RX:> indexes: {index_1, index_2,(index_0-bytes_leftover)}")
-                            gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]
-                            gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]
-                            # gate_data = rx_data[index_0 : index_0 + index_1]
-                            # gate_data = np.append(gate_data, rx_data[0:index_2])
+                            # gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]
+                            # gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]
+                            gate_data = rx_data[index_0 : index_0 + index_1]
+                            gate_data.append(rx_data[0:index_2])
                         else:
                             gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
 
-                        # Extract channels, convert data from int16 to floats [V] and truncate pre-trigger
-                        channel_0 = (np.array(gate_data[0::2]) / 2**15 * self.max_amplitude[0])[self.pre_trigger :]
-                        channel_1 = (np.array(gate_data[1::2]) / 2**15 * self.max_amplitude[1])[self.pre_trigger :]
+                        self.test = gate_data
 
-                        # Truncate gate signal, throw pre- and post-trigger
-                        self.rx_data.append([channel_0, channel_1])
+                        # Extract channels, convert data from int16 to floats [V] and truncate pre-trigger
+                        # channel_0 = (np.array(gate_data[0::2]) / 2**15 * self.max_amplitude[0])[self.pre_trigger :]
+                        # channel_1 = (np.array(gate_data[1::2]) / 2**15 * self.max_amplitude[1])[self.pre_trigger :]
+                        
+                        # Truncate gate signal, throw pre-trigger
+                        self.rx_data.append([
+                            gate_data[0::2][self.pre_trigger :], 
+                            gate_data[1::2][self.pre_trigger :]
+                        ])
                         
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
                         total_leftover += bytes_leftover

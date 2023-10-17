@@ -7,10 +7,10 @@ import numpy as np
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
-from console.utilities.processing import apply_ddc
 
 
 class AcquistionControl:
@@ -176,7 +176,11 @@ class AcquistionControl:
         for channel in range(n_channels):
             _tmp = []
             for samples in data:
-                _tmp.append(apply_ddc(samples[channel], kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+                # Cast data to numpy array
+                gate = np.array(samples[channel]) * self.rx_card.rx_scaling[channel]
+                _tmp.append(apply_ddc(gate, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
             processed.append(_tmp)
+
+        # TODO: Construct proper kspace, maybe numpy array [n_avg, n_coils, n_read, n_phase, n_slice]
 
         return processed
