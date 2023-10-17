@@ -144,8 +144,9 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Analog channel 1, 2 for digital ADC gate and RF unblanking signal
-        # RF unblanking is provided on X0 and X1, ADC gate is provided on X2 and X3
+        # Channel 1 (gradient): digital ADC gate => X0
+        # Channel 2 (gradient): digital RF unblanking signal => X1, X2
+        # Channel 3 (gradient): digital phase reference => X3
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X0_MODE,
@@ -154,7 +155,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
         spcm.spcm_dwSetParam_i32(
             self.card,
@@ -164,7 +165,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X3_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
     def start_operation(self, data: UnrolledSequence | None = None) -> None:

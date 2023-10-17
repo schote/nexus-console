@@ -52,6 +52,8 @@ class AcquistionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
+        self.unrolled_sequence: UnrolledSequence | None = None
+
         # Read only attributes for data and dwell time of downsampled signal
         self._data: list = []
         self._dwell: float | None = None
@@ -114,6 +116,8 @@ class AcquistionControl:
             larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
         )
 
+        self.unrolled_sequence = sqnc if sqnc else None
+
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
 
@@ -147,7 +151,7 @@ class AcquistionControl:
         # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
         self._dwell = parameter.downsampling_rate / self.f_spcm
 
-    def post_processing(self, data: list[np.ndarray], parameter: AcquisitionParameter) -> list[np.ndarray]:
+    def post_processing(self, data: list[list[np.ndarray]], parameter: AcquisitionParameter) -> list[np.ndarray]:
         """Perform data post processing.
 
         Apply the digital downconversion, filtering an downsampling per numpy array in the list of the received data.
@@ -166,8 +170,13 @@ class AcquistionControl:
         processed: list = []
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
+        
+        n_channels = len(data[0])
 
-        for samples in data:
-            processed.append(apply_ddc(samples, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+        for channel in range(n_channels):
+            _tmp = []
+            for samples in data:
+                _tmp.append(apply_ddc(samples[channel], kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+            processed.append(_tmp)
 
         return processed
