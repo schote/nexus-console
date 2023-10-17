@@ -50,7 +50,7 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
     demod = np.exp(2j * np.pi * f_0 * np.arange(kernel_size) / f_spcm)
 
     # Exponential function for resampling, don't use [-1, 1] because it leads to a division by zero warning.
-    kernel_space = np.linspace(-1 - 1e-20, 1 - 1e-20, kernel_size)
+    kernel_space = np.linspace(-1 + 1e-15, 1 - 1e-15, kernel_size)
     mixer = np.exp(-1 / (1 - kernel_space**2)) * np.sinc(kernel_space * 2.073 * np.pi)
 
     # Integral for normalization
