@@ -56,6 +56,7 @@ class AcquistionControl:
 
         # Read only attributes for data and dwell time of downsampled signal
         self._data: list = []
+        self._data_phase_corr: list = []
         self._dwell: float | None = None
 
     def __del__(self):
@@ -67,14 +68,18 @@ class AcquistionControl:
         print("Measurement cards disconnected.")
 
     @property
-    def data(self) -> list[np.ndarray]:
+    def data(self) -> tuple[list[np.ndarray]]:
         """Get data acquired by acquisition control, read-only property.
 
         Returns
         -------
-            List of numpy arrays with acquired data.
+            List of list of numpy arrays which contains the raw data.
+            Raw data is already post-processed with DDC filter.
+            Outermost list object contains all the gates.
+            Each gate contains a list of channels and each channel a numpy data array.
+            
         """
-        return self._data
+        return (self._data, self._data_phase_corr) 
 
     @property
     def dwell_time(self) -> float | None:
@@ -135,14 +140,14 @@ class AcquistionControl:
 
             if len(self.rx_card.rx_data) >= sqnc.adc_count:
                 # All the data was received, start post processing
-                self._data = self.post_processing(self.rx_card.rx_data, parameter)
+                self.post_processing(self.rx_card.rx_data, parameter)
                 break
 
             if time.time() - time_start > timeout:
                 # Could not receive all the data before timeout
                 print(f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...")
                 if len(self.rx_card.rx_data) > 0:
-                    self._data = self.post_processing(self.rx_card.rx_data, parameter)
+                    self.post_processing(self.rx_card.rx_data, parameter)
                 break
 
         self.tx_card.stop_operation()
@@ -168,19 +173,34 @@ class AcquistionControl:
             List of processed data arrays
         """
         processed: list = []
+        phase_corrected: list = []
+        
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
-        
-        n_channels = len(data[0])
+        _time = np.arange(kernel_size) * kernel_size/self.f_spcm
 
-        for channel in range(n_channels):
+        for gate in data:
             _tmp = []
-            for samples in data:
-                # Cast data to numpy array
-                gate = np.array(samples[channel]) * self.rx_card.rx_scaling[channel]
-                _tmp.append(apply_ddc(gate, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+            for channel, channel_data in enumerate(gate):
+                channel_data = np.array(channel_data) * self.rx_card.rx_scaling[channel]
+                _tmp.append(apply_ddc(channel_data, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+            
             processed.append(_tmp)
-
+            
+            # Channel 1 measures the reference signal
+            # TODO: Rearrange the channel ordering: Channel 0 is reference, channel 1 and ongoing for MR signal
+            # Currently the reference signal is at channel 1
+            ref_phase = np.angle(_tmp[1])
+            # Do a linear fit of the reference phase
+            m, b = np.polyfit(_time, np.angle(_tmp[0]), 1)
+            phase_fit = m * _time + b
+            
+            # Times e^{-i*phi} is equivilent to division by e^{i*phi}
+            phase_corrected.append(_tmp[0]*np.exp(-1j*phase_fit))
+            
         # TODO: Construct proper kspace, maybe numpy array [n_avg, n_coils, n_read, n_phase, n_slice]
 
-        return processed
+        self._data_phase_corr = phase_corrected
+        self._data = processed
+        
+        # return processed, phase_corrected

@@ -41,7 +41,7 @@ class RxCard(SpectrumDevice):
 
         self.rx_data = []
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
-
+        
     def setup_card(self):
         """Set up spectrum card in transmit (TX) mode.
 
@@ -117,6 +117,7 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.emergency_stop.clear()
+        self.rx_data = []
 
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
@@ -136,7 +137,7 @@ class RxCard(SpectrumDevice):
             error = sp.spcm_dwSetParam_i32(
                 self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA
             )
-
+            
             # Handle error
             self.handle_error(error)
             self.worker = None
@@ -151,7 +152,6 @@ class RxCard(SpectrumDevice):
         rx_notify = sp.int32(sp.KILO_B(4))
         rx_size = rx_notify.value * 400
         rx_buffer_size = sp.uint64(rx_size)
-        # rx_buffer_size = uint64(1024**2) # 1 MB == 512 KSamples, max. buffer size
 
         rx_buffer = create_dma_buffer(rx_buffer_size.value)
         sp.spcm_dwDefTransfer_i64(
@@ -201,7 +201,6 @@ class RxCard(SpectrumDevice):
         data_user_position = sp.int32(0)
         total_gates = 0
         bytes_leftover = 0
-        self.rx_data = []
         total_leftover = 0
 
         print("RX:> Starting receiver...")
