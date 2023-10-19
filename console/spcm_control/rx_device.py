@@ -268,7 +268,7 @@ class RxCard(SpectrumDevice):
                             # gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]
                             # gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]
                             gate_data = rx_data[index_0 : index_0 + index_1]
-                            gate_data.append(rx_data[0:index_2])
+                            gate_data += rx_data[0:index_2]
                         else:
                             gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
 
