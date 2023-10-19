@@ -115,8 +115,7 @@ class AcquistionControl:
             raise FileNotFoundError("Invalid sequence file.")
 
         self.seq_provider.read(sequence)
-        self.seq_provider.rf_to_volt = parameter.b1_scaling
-        self.seq_provider.grad_to_volt = parameter.fov_scaling.x
+
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
         )
@@ -177,19 +176,19 @@ class AcquistionControl:
         
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
-        _time = np.arange(kernel_size) * kernel_size/self.f_spcm
 
         for gate in data:
             _tmp = []
             for channel, channel_data in enumerate(gate):
-                channel_data = np.array(channel_data) * self.rx_card.rx_scaling[channel]
-                _tmp.append(apply_ddc(channel_data, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+                _data = np.array(channel_data) * self.rx_card.rx_scaling[channel]
+                _tmp.append(apply_ddc(_data, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
             
             processed.append(_tmp)
             
             # Channel 1 measures the reference signal
             # TODO: Rearrange the channel ordering: Channel 0 is reference, channel 1 and ongoing for MR signal
             # Currently the reference signal is at channel 1
+            _time = np.arange(_tmp[1].size) * kernel_size/self.f_spcm
             ref_phase = np.angle(_tmp[1])
             # Do a linear fit of the reference phase
             m, b = np.polyfit(_time, np.angle(_tmp[0]), 1)
