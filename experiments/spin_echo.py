@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.utilities.spcm_data_plot import plot_spcm_data
+from console.spcm_control.ddc import apply_ddc
+
+from scipy.signal import butter, filtfilt
 
 # %%
 # Create acquisition control instance
@@ -16,19 +19,24 @@ acq = AcquistionControl(configuration)
 # Sequence filename
 
 # filename = "se_spectrum_400us_sinc_8ms-te"
-# filename = "se_spectrum_400us_sinc_20ms-te"
 # filename = "se_spectrum_400us_sinc_30ms-te"
 # filename = "se_proj_400us-sinc_20ms-te"
 # filename = "se_proj_400us_sinc_12ms-te"
 # filename = "se_spectrum_200us-rect"
-filename = "dual-se_spec"
+
+
+# filename = "se_spectrum_400us_sinc_20ms-te"
+filename = "se_spectrum_2500us_sinc_12ms-te"
+# filename = "dual-se_spec"
+
 
 seq_path = f"../sequences/export/{filename}.seq"
 
 # Define acquisition parameters
 params = AcquisitionParameter(
-    larmor_frequency=2.031e6,
-    b1_scaling=.1,
+    larmor_frequency=2032800,
+    # b1_scaling=7.0,
+    b1_scaling=7.5,
     fov_scaling=Dimensions(x=1., y=1., z=1.),
     fov_offset=Dimensions(x=0., y=0., z=0.),
     downsampling_rate=200
@@ -37,42 +45,69 @@ params = AcquisitionParameter(
 # Perform acquisition
 acq.run(parameter=params, sequence=seq_path)
 
-# %%
+# First argument data from channel 0 and 1,
+# second argument contains the phase corrected echo
+data, echo_corr = acq.data
 
-# Gate 0, channel 1
-raw = acq.rx_card.rx_data[0][1]
-# Filtered: Channel 1, gate 0
-filtered = acq.data[1][0][:-350]
-
-n_raw_samples = 100
-t_raw = 1e3 * np.arange(n_raw_samples) / acq.f_spcm
-t_filered = 1e3 * np.arange(filtered.size) * acq.dwell_time
-
-fig, ax = plt.subplots(1, 3, figsize=(12, 3))
-ax[0].plot(t_raw, raw[:n_raw_samples]),ax[0].set_title("Raw signal")
-ax[1].plot(t_filered, np.abs(filtered)), ax[1].set_title("Magnitude, filtered")
-ax[2].plot(t_filered, np.angle(filtered)), ax[2].set_title("Phase, filtered")
-_ = [a.set_xlabel("t [ms]") for a in ax]
-ax[0].set_ylabel("Magnitude [mV]")
-
-
-with open('data_1.txt', 'wb') as fh:
-    np.savetxt(fh, raw)
-
-
-# data_fft = np.fft.fftshift(np.fft.fft(acq.data[0]))
-# fft_freq = np.fft.fftshift(np.fft.fftfreq(acq.data[0].size, acq.dwell_time))
-
-# fig, ax = plt.subplots(1, 2, figsize=(10, 4))
-# ax[0].plot(acq.rx_card.rx_data[0])
-# ax[1].plot(fft_freq, np.abs(data_fft))
-# ax[1].set_xlim([-10e3, 10e3])
 
 # %%
+data_fft = []
+fft_freq = []
 
-# fig, ax = plot_spcm_data(acq.unrolled_sequence)
+# Do FFT
+for echo in echo_corr:
+    data_fft.append(np.fft.fftshift(np.fft.fft(echo)))
+    fft_freq.append(np.fft.fftshift(np.fft.fftfreq(echo.size, acq.dwell_time)))
+
+# Print peak height and center frequency
+max_spec = np.max(np.abs(data_fft[0]))
+true_f_0 = fft_freq[0][np.argmax(np.abs(data_fft[0]))]
+
+print(f"Frequency offset: {true_f_0} Hz")
+print(f"Frequency spectrum max.: {max_spec}")
+
+# %%
+# Plot frequency spectrum
+fig, ax = plt.subplots(len(data_fft), 1, figsize=(10, 5*len(data_fft)))
+
+if len(data_fft) == 1:
+    ax.plot(fft_freq[0], np.abs(data_fft[0]))    
+    ax.set_xlim([-20e3, 20e3])
+    ax.set_ylim([0, max_spec*1.05])
+    ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
+    ax.set_xlabel("Frequency [Hz]")
+else:
+    for a, _data, _freq in zip(ax, data_fft, fft_freq):
+        a.plot(_freq, np.abs(_data))    
+        a.set_xlim([-20e3, 20e3])
+        a.set_ylim([0, max_spec*1.05])
+        a.set_ylabel("Abs. FFT Spectrum [a.u.]")
+        
+    _ = ax[-1].set_xlabel("Frequency [Hz]")
+
+
+# %%
+# Compare phase corrected vs. uncorrected time domain signal:
+
+phase_uncor_1 = np.angle(data[0][0])
+phase_uncor_2 = np.angle(data[1][0])
+
+phase_cor_1 = np.angle(echo_corr[0])
+phase_cor_2 = np.angle(echo_corr[1])
+
+fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+ax[0].plot(phase_uncor_1, label="uncorrected")
+ax[0].plot(phase_cor_1, label="corrected")
+ax[0].legend()
+
+ax[1].plot(phase_uncor_1, label="uncorrected")
+ax[1].plot(phase_cor_1, label="corrected")
+ax[1].legend()
+
+# %%
+
+plot_spcm_data(acq.unrolled_sequence)
 
 # %%
 # Delete acquisition control instance to disconnect from cards
 del acq
-# %%

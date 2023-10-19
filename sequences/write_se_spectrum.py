@@ -21,14 +21,16 @@ system = Opts(
 seq = Sequence(system)
 
 # Parameters
-rf_duration = 400e-6 # 200 us
-rf_bandwidth = 20e3 # 20 kHz
+# rf_duration = 400e-6
+rf_duration = 2.5e-3
+rf_bandwidth = 20e3
 rf_flip = pi/2
 rf_phase = pi/2
 
 num_samples = 5000
 adc_duration = 4e-3 # 4 ms
-te = 20e-3
+# te = 20e-3
+te = 12e-3
 
 # >> RF sinc pulse with varying amplitudes
 # 90 degree RF sinc pulse
@@ -133,5 +135,5 @@ seq.plot(time_range=(0, 1e-3), time_disp='us') if ok else print(e)
 # %% 
 # Write sequence
 # seq.write('./export/se_spectrum_100us.seq')
-seq.write(f'./export/se_spectrum_400us_sinc_{int(te*1e3)}ms-te.seq')
+seq.write(f'./export/se_spectrum_2500us_sinc_{int(te*1e3)}ms-te.seq')
 # %%

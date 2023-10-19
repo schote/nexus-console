@@ -29,7 +29,7 @@ rf_bandwidth = 20e3
 
 # Sequence specific timing
 te = 20e-3
-tr = 1
+tr = 500e-3
 
 # Readout/ADC
 fov = 250e-3     # 25 cm
