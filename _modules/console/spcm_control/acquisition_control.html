@@ -409,10 +409,10 @@ document.write(`
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">SequenceProvider</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.ddc</span> <span class="kn">import</span> <span class="n">apply_ddc</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.rx_device</span> <span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
 <span class="kn">from</span> <span class="nn">console.utilities.load_config</span> <span class="kn">import</span> <span class="n">get_instances</span>
-<span class="kn">from</span> <span class="nn">console.utilities.processing</span> <span class="kn">import</span> <span class="n">apply_ddc</span>
 
 
 <div class="viewcode-block" id="AcquistionControl">
@@ -460,6 +460,7 @@ document.write(`
 
         <span class="c1"># Read only attributes for data and dwell time of downsampled signal</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_phase_corr</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dwell</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -471,14 +472,18 @@ document.write(`
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Measurement cards disconnected.&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data acquired by acquisition control, read-only property.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            List of numpy arrays with acquired data.</span>
+<span class="sd">            List of list of numpy arrays which contains the raw data.</span>
+<span class="sd">            Raw data is already post-processed with DDC filter.</span>
+<span class="sd">            Outermost list object contains all the gates.</span>
+<span class="sd">            Each gate contains a list of channels and each channel a numpy data array.</span>
+<span class="sd">            </span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_phase_corr</span><span class="p">)</span> 
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">dwell_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
@@ -516,8 +521,7 @@ document.write(`
             <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;Invalid sequence file.&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">rf_to_volt</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">grad_to_volt</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">x</span>
+
         <span class="n">sqnc</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">(</span>
             <span class="n">larmor_freq</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span> <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span>
         <span class="p">)</span>
@@ -541,14 +545,14 @@ document.write(`
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">adc_count</span><span class="p">:</span>
                 <span class="c1"># All the data was received, start post processing</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
                 <span class="k">break</span>
 
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
                 <span class="c1"># Could not receive all the data before timeout</span>
                 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Acquisition Timeout: Only received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sqnc</span><span class="o">.</span><span class="n">adc_count</span><span class="si">}</span><span class="s2"> adc events...&quot;</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
                 <span class="k">break</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
@@ -577,20 +581,39 @@ document.write(`
 <span class="sd">            List of processed data arrays</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">processed</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">phase_corrected</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        
         <span class="n">kernel_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">downsampling_rate</span><span class="p">)</span>
         <span class="n">f_0</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span>
-        
-        <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
             <span class="n">_tmp</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">for</span> <span class="n">samples</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
-                <span class="n">_tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apply_ddc</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="n">channel</span><span class="p">],</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">f_0</span><span class="o">=</span><span class="n">f_0</span><span class="p">,</span> <span class="n">f_spcm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">channel_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gate</span><span class="p">):</span>
+                <span class="n">_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">channel_data</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_scaling</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span>
+                <span class="n">_tmp</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apply_ddc</span><span class="p">(</span><span class="n">_data</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">f_0</span><span class="o">=</span><span class="n">f_0</span><span class="p">,</span> <span class="n">f_spcm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">))</span>
+            
             <span class="n">processed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_tmp</span><span class="p">)</span>
+            
+            <span class="c1"># Channel 1 measures the reference signal</span>
+            <span class="c1"># TODO: Rearrange the channel ordering: Channel 0 is reference, channel 1 and ongoing for MR signal</span>
+            <span class="c1"># Currently the reference signal is at channel 1</span>
+            <span class="n">_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">_tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">*</span> <span class="n">kernel_size</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span>
+            <span class="n">ref_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">_tmp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Do a linear fit of the reference phase</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">_time</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">_tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">phase_fit</span> <span class="o">=</span> <span class="n">m</span> <span class="o">*</span> <span class="n">_time</span> <span class="o">+</span> <span class="n">b</span>
+            
+            <span class="c1"># Times e^{-i*phi} is equivilent to division by e^{i*phi}</span>
+            <span class="n">phase_corrected</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_tmp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span><span class="o">*</span><span class="n">phase_fit</span><span class="p">))</span>
+            
+        <span class="c1"># TODO: Construct proper kspace, maybe numpy array [n_avg, n_coils, n_read, n_phase, n_slice]</span>
 
-        <span class="k">return</span> <span class="n">processed</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data_phase_corr</span> <span class="o">=</span> <span class="n">phase_corrected</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_data</span> <span class="o">=</span> <span class="n">processed</span></div>
 </div>
 
+        
+        <span class="c1"># return processed, phase_corrected</span>
 </pre></div>
 
                 </article>

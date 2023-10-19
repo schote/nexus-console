@@ -703,11 +703,17 @@ Two receive channels are enables and configured by max. amplitude according to c
 Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <dl class="py property">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.data">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.data" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.data" title="Link to this definition">#</a></dt>
 <dd><p>Get data acquired by acquisition control, read-only property.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>List of numpy arrays with acquired data.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><em>List of list of numpy arrays which contains the raw data.</em></p></li>
+<li><p><em>Raw data is already post-processed with DDC filter.</em></p></li>
+<li><p><em>Outermost list object contains all the gates.</em></p></li>
+<li><p><em>Each gate contains a list of channels and each channel a numpy data array.</em></p></li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>
