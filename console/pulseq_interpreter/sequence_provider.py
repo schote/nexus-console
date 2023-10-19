@@ -354,9 +354,15 @@ class SequenceProvider(Sequence):
         if larmor_freq > 5e6:
             warnings.warn(f"Larmor frequency is above 5 MHz: {larmor_freq*1e-6} MHz")
         self.larmor_freq = larmor_freq
-
-        if len(self.block_events) == 0:
-            raise AttributeError("No sequence loaded.")
+        
+        # Check if there exist any block events
+        if not len(self.block_events) > 0:
+            raise AttributeError("No block events found.")
+        
+        # Check sequence timing
+        check, e = self.check_timing()
+        if not check:
+            raise ValueError("Sequence timing check failed:\n", e)
 
         if self._amp_per_ch is None:
             raise ValueError("Max. amplitudes per channel is not defined.")
@@ -387,25 +393,25 @@ class SequenceProvider(Sequence):
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
             # Calculate rf events of current block, zero-fill channels if not defined
-            if block.rf:
+            if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
                 _seq[k][0::4] = self.calculate_rf(
                     rf_block=block.rf, unblanking=_unblanking[k], num_total_samples=n_samples, b1_scaling=b1_scaling
                 )
 
-            if block.adc:
+            if block.adc is not None:
                 self.add_adc_gate(block.adc, _adc[k], _ref[k])
                 adc_count += 1
 
-            if grad_x := block.gx:
+            if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
-                _seq[k][1::4] = self.calculate_gradient(grad_x, fov_scaling.x, n_samples, grad_offset.x)
-            if grad_y := block.gy:
+                _seq[k][1::4] = self.calculate_gradient(block.gx, fov_scaling.x, n_samples, grad_offset.x)
+            if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
-                _seq[k][2::4] = self.calculate_gradient(grad_y, fov_scaling.y, n_samples, grad_offset.y)
-            if grad_z := block.gz:
+                _seq[k][2::4] = self.calculate_gradient(block.gy, fov_scaling.y, n_samples, grad_offset.y)
+            if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
-                _seq[k][3::4] = self.calculate_gradient(grad_z, fov_scaling.z, n_samples, grad_offset.z)
+                _seq[k][3::4] = self.calculate_gradient(block.gz, fov_scaling.z, n_samples, grad_offset.z)
 
             # Bitwise operations to merge gx with adc and gy with unblanking
             _seq[k][1::4] = _seq[k][1::4] >> 1 | _adc[k]
