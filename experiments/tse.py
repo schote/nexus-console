@@ -18,18 +18,21 @@ acq = AcquistionControl(configuration)
 # %%
 # Sequence filename
 # filename = "se_cartesian"
-filename = "tse_low-field"
+filename = "tse_low-field-scanner_tr1s"
 
 seq_path = f"../sequences/export/{filename}.seq"
 
 # Define acquisition parameters
 params = AcquisitionParameter(
-    larmor_frequency=2032800,
-    b1_scaling=7.5, # tSE
+    larmor_frequency=2036750,
+    b1_scaling=7.0, # tSE
     fov_scaling=Dimensions(
-        x=2., 
-        y=200., 
-        z=20.
+        # x=0.01,
+        # y=200.,
+        # z=20.
+        x=40,
+        y=40.,
+        z=10.,
     ),
     fov_offset=Dimensions(x=0., y=0., z=0.),
     downsampling_rate=200
@@ -41,8 +44,6 @@ acq.run(parameter=params, sequence=seq_path)
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
 _, echo_corr = acq.data
-
-
 
 
 # %%
@@ -61,7 +62,8 @@ true_f_0 = fft_freq[0][np.argmax(np.abs(data_fft[0]))]
 print(f"Frequency offset: {true_f_0} Hz")
 print(f"Frequency spectrum max.: {max_spec}")
 
-
+idx = 0
+plt.plot(fft_freq[idx], np.abs(data_fft[idx]))
 
 # %%
 # Construct k-space
@@ -69,12 +71,13 @@ n_samples = 512
 kspace = []
 
 for pe in echo_corr:
-    ro_start = int(len(pe)/2 - n_samples/2)
+    ro_start = int(pe.size/2 - n_samples/2)
     kspace.append(pe[ro_start:ro_start+n_samples])
 
 ksp = np.stack(kspace)
 
 # %%
+# ksp = ksp[:4]
 plt.imshow(np.abs(ksp), cmap="gray", aspect=ksp.shape[1]/ksp.shape[0])
 
 # %%

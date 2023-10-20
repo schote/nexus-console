@@ -7,7 +7,7 @@ from console.spcm_control.interface_acquisition_parameter import AcquisitionPara
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.utilities.spcm_data_plot import plot_spcm_data
 from console.spcm_control.ddc import apply_ddc
-
+import time
 from scipy.signal import butter, filtfilt
 
 # %%
@@ -21,23 +21,29 @@ acq = AcquistionControl(configuration)
 # filename = "se_spectrum_400us_sinc_8ms-te"
 # filename = "se_spectrum_400us_sinc_30ms-te"
 # filename = "se_proj_400us-sinc_20ms-te"
-# filename = "se_proj_400us_sinc_12ms-te"
+filename = "se_proj_400us_sinc_12ms-te"
 # filename = "se_spectrum_200us-rect"
 
 
 # filename = "se_spectrum_400us_sinc_20ms-te"
-filename = "se_spectrum_2500us_sinc_12ms-te"
+# filename = "se_spectrum_2500us_sinc_12ms-te"
 # filename = "dual-se_spec"
 
 
 seq_path = f"../sequences/export/{filename}.seq"
 
+f_0 = 2037612
+
 # Define acquisition parameters
 params = AcquisitionParameter(
-    larmor_frequency=2032800,
+    larmor_frequency=f_0,
+    b1_scaling=5.0,
     # b1_scaling=7.0,
-    b1_scaling=7.5,
-    fov_scaling=Dimensions(x=1., y=1., z=1.),
+    fov_scaling=Dimensions(
+        x=0.,
+        y=0., 
+        z=0.
+    ),
     fov_offset=Dimensions(x=0., y=0., z=0.),
     downsampling_rate=200
 )
@@ -47,24 +53,24 @@ acq.run(parameter=params, sequence=seq_path)
 
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
-data, echo_corr = acq.data
-
-
-# %%
+_, echos = acq.data
+    
 data_fft = []
 fft_freq = []
 
 # Do FFT
-for echo in echo_corr:
+# for echo in echo_corr:
+for echo in echos:
     data_fft.append(np.fft.fftshift(np.fft.fft(echo)))
     fft_freq.append(np.fft.fftshift(np.fft.fftfreq(echo.size, acq.dwell_time)))
 
 # Print peak height and center frequency
 max_spec = np.max(np.abs(data_fft[0]))
-true_f_0 = fft_freq[0][np.argmax(np.abs(data_fft[0]))]
+f_0_offset = fft_freq[0][np.argmax(np.abs(data_fft[0]))]
 
-print(f"Frequency offset: {true_f_0} Hz")
-print(f"Frequency spectrum max.: {max_spec}")
+print(f"\n>> Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
+print(f">> Frequency spectrum max.: {max_spec}")
+
 
 # %%
 # Plot frequency spectrum
@@ -85,8 +91,8 @@ else:
         
     _ = ax[-1].set_xlabel("Frequency [Hz]")
 
-
 # %%
+# In case of two echos
 # Compare phase corrected vs. uncorrected time domain signal:
 
 phase_uncor_1 = np.angle(data[0][0])
