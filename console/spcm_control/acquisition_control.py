@@ -190,6 +190,7 @@ class AcquistionControl:
             # Currently the reference signal is at channel 1
             _time = np.arange(_tmp[1].size) * kernel_size/self.f_spcm
             ref_phase = np.angle(_tmp[1])
+            
             # Do a linear fit of the reference phase
             m, b = np.polyfit(_time, np.angle(_tmp[0]), 1)
             phase_fit = m * _time + b

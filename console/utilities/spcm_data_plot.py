@@ -58,10 +58,11 @@ def plot_spcm_data(
 
     adc = -(gx_signal >> 15)
     unblanking = -(gy_signal >> 15)
+    ref_clk = -(gz_signal >> 15)
 
-    gx_signal = gx_signal << 1
-    gy_signal = gy_signal << 1
-    gz_signal = gz_signal << 1
+    gx_signal = np.int16(gx_signal << 1)
+    gy_signal = np.int16(gy_signal << 1)
+    gz_signal = np.int16(gz_signal << 1)
 
     # else:
     #     adc = np.concatenate(sequence.adc_gate)[seq_range[0]:seq_range[1]]

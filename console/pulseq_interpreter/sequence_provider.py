@@ -161,8 +161,8 @@ class SequenceProvider(Sequence):
         num_samples = int(rf_block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal
-        # 16th bit set to 1 (high) => 1000 0000 0000 0000
-        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = -(1 << 15)
+        # 16th bit set to 1 (high)
+        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * rf_block.phase_offset)
@@ -295,10 +295,10 @@ class SequenceProvider(Sequence):
         ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
         
         # Digital reference signal, sin > 0 is high
-        # 16th bit set to 1 (high) => 1000 0000 0000 0000
-        clk_ref[ref_signal > 0] = -(1 << 15)
+        # 16th bit set to 1 (high)
+        clk_ref[ref_signal > 0] = 1
         # Gate signal
-        gate[delay : delay + adc_len] = -(1 << 15)  
+        gate[delay : delay + adc_len] = 1
 
 
     # @profile
@@ -414,9 +414,9 @@ class SequenceProvider(Sequence):
                 _seq[k][3::4] = self.calculate_gradient(block.gz, fov_scaling.z, n_samples, grad_offset.z)
 
             # Bitwise operations to merge gx with adc and gy with unblanking
-            _seq[k][1::4] = _seq[k][1::4] >> 1 | _adc[k]
-            _seq[k][2::4] = _seq[k][2::4] >> 1 | _unblanking[k]
-            _seq[k][3::4] = _seq[k][3::4] >> 1 | _ref[k]
+            _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)
+            _seq[k][2::4] = _seq[k][2::4].view(np.uint16) >> 1 | (_unblanking[k] << 15)
+            _seq[k][3::4] = _seq[k][3::4].view(np.uint16) >> 1 | (_ref[k] << 15)
             
             # Count the total amount of samples (for one channel) to keep track of the phase
             self.sample_count += n_samples
