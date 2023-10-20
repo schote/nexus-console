@@ -8,13 +8,51 @@ from console.spcm_control.ddc import apply_ddc
 # filename = "se_signal_05-10-2023"
 # raw = np.load(f"/home/schote01/data/spec/{filename}.npy")
 
-filepath = "../experiments/data_1.txt"
-raw = np.loadtxt(filepath)
+# filepath = "../experiments/data_1.txt"
+# raw = np.loadtxt(filepath)
+
+raw = np.load("/home/schote01/data/phase_sync/ref_signal/raw_xgrad-0mV.npy")
 
 f_spcm = 20e6   # Spectrum measurement cards sampling frequency; 20 MHz
 f_0 = 2.031e6   # Larmorfrequency; 2.031 MHz
-num_raw_samples = raw.size
+num_raw_samples = raw.shape[-1]
 adc_duration = num_raw_samples / f_spcm
+
+# %%
+# Plot phase of measured signal
+
+_time = (np.arange(num_raw_samples) / num_raw_samples) * adc_duration
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+for k in range(raw.shape[0]):
+    ax.plot(_time*1e3, np.degrees(np.angle(raw[k, ...])), label=f"k: {k}")
+ax.legend(loc="center left")
+ax.set_ylabel("Phase [°]")
+ax.set_xlabel("Time [ms]")
+
+# %%
+# Reference signal
+ref = np.load("/home/schote01/data/phase_sync/ref_signal/ref_xgrad-0mV.npy")
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+for k in range(ref.shape[0]):
+    ax.plot(_time*1e3, np.degrees(np.angle(ref[k, ...])), label=f"k: {k}")
+ax.legend(loc="center left")
+ax.set_ylabel("Phase [°]")
+ax.set_xlabel("Time [ms]")
+
+# %%
+# Normalized phase
+
+normalized = raw * np.exp(-1j*np.angle(ref))
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+for k in range(normalized.shape[0]):
+    ax.plot(_time*1e3, np.degrees(np.angle(normalized[k, ...])), label=f"k: {k}")
+ax.legend(loc="center left")
+ax.set_ylabel("Phase [°]")
+ax.set_xlabel("Time [ms]")
+
+
 
 
 # %%
