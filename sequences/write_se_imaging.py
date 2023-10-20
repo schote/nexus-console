@@ -23,33 +23,36 @@ seq = Sequence(system)
 
 # >> Parameters
 
-# RF parameters
+# RF
 rf_duration = 800e-6
 rf_bandwidth = 20e3
 
-# Sequence specific timing
-te = 20e-3
-tr = 500e-3
+# Timing
+# Echo time
+te = 10e-3
+# Repetition time 
+tr = 300e-3
 
-# Readout/ADC
-fov = 250e-3     # 25 cm
+# k-Space
+# 25 cm field of view
+fov = 250e-3
+# 256 readout sample points
 n_ro = 256
+# 64 phase encoding steps
 n_pe = 64
-
+# Set slice thickness to 5 mm (?)
+slice_thickness = 5e-3
+slice_select = True
+# Readout bandwidth, used to calculate adc duration
 ro_bw = 50e3   # 50 kHz bandwidth
 adc_duration = n_ro / ro_bw
-# k_width = n_ro / fov
 delta_k = 1 / fov
-
-slice_thickness = 3e-3
-spoiler_area = 1000
 
 
 # >> Definition of block events
-
 # 90 degree excitation rf pulse
 rf_excitation, grad_slice, grad_slice_re = make_sinc_pulse(
-    flip_angle=pi/2,                 # 90 °
+    flip_angle=pi/2, # 90 °
     duration=rf_duration,               
     slice_thickness=slice_thickness,    
     system=system,
@@ -66,26 +69,11 @@ rf_refocussing = make_sinc_pulse(
     use='refocusing'
 )
 
-# Calculate spoiler gradients
-grad_spoiler_1 = make_trapezoid(
-    channel='z', 
-    area=spoiler_area + grad_slice_re.area, 
-    system=system
-)
-grad_spoiler_2 = make_trapezoid(
-    channel='z', 
-    area=spoiler_area, 
-    system=system
-)
-
-rf_refocussing.delay = max(calc_duration(grad_spoiler_1), rf_refocussing.delay)
-
 # Define delays
-delay_te_1 = te / 2 - (calc_duration(grad_slice) - calc_rf_center(rf_excitation)[0] - rf_excitation.delay) - rf_refocussing.delay - calc_rf_center(rf_refocussing)[0]
-delay_te_2 = te / 2 - calc_duration(rf_refocussing) + rf_refocussing.delay + calc_rf_center(rf_refocussing)[0] - adc_duration / 2
+delay_te_1 = te / 2 - rf_excitation.shape_dur / 2 - rf_refocussing.shape_dur / 2
+delay_te_2 = te / 2 - rf_refocussing.shape_dur / 2 - adc_duration / 2
 
 # Define readout gradient and prewinder
-# z is defined as readout axis (!)
 grad_ro = make_trapezoid(
     channel='x', 
     system=system, 
@@ -107,12 +95,15 @@ adc = make_adc(
     delay=delay_te_2
 )
 
+# TE/2 delay included in readout gradient
 grad_ro.delay = delay_te_2 - grad_ro.rise_time
-delay_tr = tr - calc_duration(rf_excitation) - delay_te_1 - calc_duration(rf_refocussing)
+# Define TR as the time delay until the next ADC window/readout
+delay_tr = tr - te - calc_rf_center(rf_excitation)[0]
 
 pe_flat_area = n_pe * (delta_k / 2)
 pe_area_values = np.linspace(-1, 1, n_pe) * pe_flat_area
 
+# Iterate over phase encoding steps
 for pe_area in pe_area_values:
     # Define phase encoding gradient
     # Precomputed area, duration equals slice select rephaser
@@ -124,20 +115,23 @@ for pe_area in pe_area_values:
     )
     
     # Add sequence blocks
-    seq.add_block(rf_excitation, grad_slice)
+    if slice_select:
+        seq.add_block(rf_excitation, grad_slice)
+    else:
+        seq.add_block(rf_excitation)
     seq.add_block(grad_ro_pre, grad_pe)
-    seq.add_block(rf_refocussing, grad_spoiler_1)
-    seq.add_block(adc, grad_ro, grad_spoiler_2, make_delay(delay_tr))
+    seq.add_block(rf_refocussing)
+    seq.add_block(adc, grad_ro, make_delay(delay_tr))
 
-seq.set_definition('Name', 'Cartesian SE')
+seq.set_definition('Name', 'cartesian spin-echo')
 
 # %%
 # Check sequence timing and plot
 ok, e = seq.check_timing()
-seq.plot(time_disp='ms') if ok else print(e)
+seq.plot(time_disp='ms', time_range=(0, 0.03)) if ok else print(e)
 
 
 # %% 
 # Write sequence
-seq.write('./export/se_cartesian.seq')
+seq.write(f'./export/se_cartesian_{n_pe}-pe.seq')
 # %%
