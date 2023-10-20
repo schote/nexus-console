@@ -469,11 +469,11 @@ document.write(`
 
         <span class="c1"># Setup the clockmode</span>
         <span class="c1"># Internal:</span>
-        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
         <span class="c1"># Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_EXTERNAL</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCK50OHM</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCK_THRESHOLD</span><span class="p">,</span> <span class="mi">1500</span><span class="p">)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)</span>
 
 
         <span class="c1"># Setup channels</span>
@@ -547,7 +547,7 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card thread.&quot;&quot;&quot;</span>
         <span class="c1"># Check if thread is running</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Stopping card...&quot;</span><span class="p">)</span>
+            <span class="c1"># print(&quot;RX:&gt; Stopping card...&quot;)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 
@@ -624,7 +624,7 @@ document.write(`
         <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">total_leftover</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Starting receiver...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;RX:&gt; Starting receiver...&quot;)</span>
 
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
@@ -638,12 +638,13 @@ document.write(`
                 <span class="n">timestamp_1</span> <span class="o">=</span> <span class="n">pll_data</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
                 <span class="n">gate_length</span> <span class="o">=</span> <span class="n">timestamp_1</span> <span class="o">-</span> <span class="n">timestamp_0</span>
 
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Timestamps: </span><span class="si">{</span><span class="p">(</span><span class="n">timestamp_0</span><span class="p">,</span><span class="w"> </span><span class="n">timestamp_1</span><span class="p">)</span><span class="si">}</span><span class="s2">s, difference: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+                <span class="c1"># print(f&quot;RX:&gt; Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms&quot;)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Gate timestamps: (</span><span class="si">{</span><span class="n">timestamp_0</span><span class="si">}</span><span class="s2">s, </span><span class="si">{</span><span class="n">timestamp_1</span><span class="si">}</span><span class="s2">s); ADC duration: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
 
                 <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
 
                 <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">))</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Available TS buffer size: </span><span class="si">{</span><span class="n">available_timestamp_bytes</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># print(f&quot;RX:&gt; Available TS buffer size: {available_timestamp_bytes.value}&quot;)</span>
 
                 <span class="n">gate_sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gate_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>  <span class="c1"># number of adc gate sample points per channel</span>
 
@@ -668,7 +669,7 @@ document.write(`
                 <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
                     <span class="c1"># Read/update available user bytes</span>
                     <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Available user length: &quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="c1"># print(&quot;RX:&gt; Available user length: &quot;, available_user_databytes.value)</span>
                     <span class="k">if</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">total_bytes</span><span class="p">:</span>
                         <span class="n">total_gates</span> <span class="o">+=</span> <span class="mi">1</span>
 
@@ -711,12 +712,12 @@ document.write(`
 
                         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">))</span>
 
-                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Available user length: &quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                        <span class="c1"># print(&quot;RX:&gt; Available user length: &quot;, available_user_databytes.value)</span>
                         <span class="k">break</span>
 
                     <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Stopping acquisition...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;RX:&gt; Stopping acquisition...&quot;)</span>
 
 <div class="viewcode-block" id="RxCard.get_status">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">[docs]</a>

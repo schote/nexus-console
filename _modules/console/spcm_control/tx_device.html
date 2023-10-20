@@ -468,7 +468,7 @@ document.write(`
             <span class="c1"># Set default fraktion to 16, notify size equals 1/16 of ring buffer size</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">notify_size</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">16</span><span class="p">))</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Ring buffer size: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, notify size: &quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;TX:&gt; Ring buffer size: {self.ring_buffer_size.value}, notify size: &quot;, self.notify_size.value)</span>
 
         <span class="c1"># Threading class attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -507,7 +507,7 @@ document.write(`
 
         <span class="c1"># Set clock mode</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
-        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CLOCKOUT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)</span>
         
         <span class="c1"># set card sampling rate in MHz</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span>
@@ -552,14 +552,14 @@ document.write(`
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_REP_FIFO_SINGLE</span><span class="p">)</span>
 
         <span class="c1"># &gt;&gt; Setup digital output channels</span>
-        <span class="c1"># Channel 1 (gradient): digital ADC gate =&gt; X0</span>
-        <span class="c1"># Channel 2 (gradient): digital RF unblanking signal =&gt; X1, X2</span>
-        <span class="c1"># Channel 3 (gradient): digital phase reference =&gt; X3</span>
-        <span class="c1"># spcm.spcm_dwSetParam_i32(</span>
-        <span class="c1">#     self.card,</span>
-        <span class="c1">#     spcm.SPCM_X0_MODE,</span>
-        <span class="c1">#     (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),</span>
-        <span class="c1"># )</span>
+        <span class="c1"># Channel 1 (gradient): digital phase reference =&gt; X0 </span>
+        <span class="c1"># Channel 2 (gradient): digital ADC gate =&gt; X1</span>
+        <span class="c1"># Channel 3 (gradient): digital RF unblanking signal =&gt; X2, X3</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
+            <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X0_MODE</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+        <span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X1_MODE</span><span class="p">,</span>
@@ -573,7 +573,7 @@ document.write(`
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X3_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span></div>
 
 
@@ -629,7 +629,7 @@ document.write(`
     <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card operation by thread event and stop card.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Stopping card...&quot;</span><span class="p">)</span>
+            <span class="c1"># print(&quot;TX:&gt; Stopping card...&quot;)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 
@@ -661,7 +661,7 @@ document.write(`
 
             <span class="n">fill_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">rest</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">fill_size</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Appended </span><span class="si">{</span><span class="n">fill_size</span><span class="si">}</span><span class="s2"> zeros to data array...&quot;</span><span class="p">)</span>
+            <span class="c1"># print(f&quot;TX:&gt; Appended {fill_size} zeros to data array...&quot;)</span>
 
         <span class="c1"># Get total size of data buffer to be played out</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">nbytes</span><span class="p">)</span>
@@ -671,8 +671,8 @@ document.write(`
             <span class="p">)</span>
         <span class="n">data_buffer_samples_per_ch</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)))</span>
         <span class="c1"># Report replay buffer size and samples</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Replay data buffer: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="si">}</span><span class="s2"> bytes&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;TX:&gt; Samples per channel: </span><span class="si">{</span><span class="n">data_buffer_samples_per_ch</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;TX:&gt; Replay data buffer: {self.data_buffer_size} bytes&quot;)</span>
+        <span class="c1"># print(f&quot;TX:&gt; Samples per channel: {data_buffer_samples_per_ch.value}&quot;)</span>
 
         <span class="c1"># &gt;&gt; Define software buffer</span>
         <span class="c1"># Setup replay data buffer</span>
@@ -707,7 +707,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
 
         <span class="c1"># Start card</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;TX:&gt; Starting card...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;TX:&gt; Starting card...&quot;)</span>
         <span class="n">error</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_START</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_ENABLETRIGGER</span>
         <span class="p">)</span>

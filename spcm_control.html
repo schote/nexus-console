@@ -702,23 +702,6 @@ Two receive channels are enables and configured by max. amplitude according to c
 <p>TODO: Implementation of logging mechanism.
 Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <dl class="py property">
-<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.data">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.data" title="Link to this definition">#</a></dt>
-<dd><p>Get data acquired by acquisition control, read-only property.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><em>List of list of numpy arrays which contains the raw data.</em></p></li>
-<li><p><em>Raw data is already post-processed with DDC filter.</em></p></li>
-<li><p><em>Outermost list object contains all the gates.</em></p></li>
-<li><p><em>Each gate contains a list of channels and each channel a numpy data array.</em></p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py property">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.dwell_time">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">dwell_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.dwell_time" title="Link to this definition">#</a></dt>
 <dd><p>Get dwell time of down-sampled data, read-only property.</p>
@@ -747,9 +730,31 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 </dl>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.raw_data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.raw_data" title="Link to this definition">#</a></dt>
+<dd><p>Get pre-processed raw data acquired by acquisition control, read-only property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Numpy array of down-sampled, phase corrected raw data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.reference_data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reference_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.reference_data" title="Link to this definition">#</a></dt>
+<dd><p>Get reference signal data acquired by acquisition control, read-only property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Numpy array of down-sampled reference signal used for phase correction.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AcquisitionParameter</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.run" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AcquisitionParameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_averages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/console/spcm_control/acquisition_control.html#AcquistionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.run" title="Link to this definition">#</a></dt>
 <dd><p>Run an acquisition job.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -763,6 +768,17 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <li><p><strong>RuntimeError</strong> – The measurement cards are not setup properly.</p></li>
 <li><p><strong>FileNotFoundError</strong> – Invalid file ending of sequence file.</p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.signal_data">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">signal_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.signal_data" title="Link to this definition">#</a></dt>
+<dd><p>Get signal data acquired by acquisition control, read-only property.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Numpy array of down-sampled signal data, which has not been phase corrected.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -853,10 +869,12 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl"><code class="docutils literal notranslate"><span class="pre">AcquistionControl</span></code></a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.data"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.dwell_time"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.dwell_time</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.post_processing"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.post_processing()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.raw_data"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.raw_data</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.reference_data"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.reference_data</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.run"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.signal_data"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.signal_data</span></code></a></li>
 </ul>
 </li>
 </ul>
