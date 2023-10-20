@@ -4,7 +4,7 @@
 # M2p.6546-x4 -> /dev/spcm1 (AWG)
 TxCard: !TxCard
   path: "/dev/spcm1"
-  max_amplitude: [200, 2000, 2000, 2000] # Max. amplitude per channel
+  max_amplitude: [200, 6000, 6000, 4000] # Max. amplitude per channel
   filter_type: [0, 2, 2, 2] # Filter per channel
   sample_rate: 20  # in MHz
   notify_rate: 16
