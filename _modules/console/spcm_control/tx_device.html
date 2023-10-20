@@ -507,6 +507,8 @@ document.write(`
 
         <span class="c1"># Set clock mode</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CLOCKOUT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
         <span class="c1"># set card sampling rate in MHz</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span>
 
@@ -553,15 +555,15 @@ document.write(`
         <span class="c1"># Channel 1 (gradient): digital ADC gate =&gt; X0</span>
         <span class="c1"># Channel 2 (gradient): digital RF unblanking signal =&gt; X1, X2</span>
         <span class="c1"># Channel 3 (gradient): digital phase reference =&gt; X3</span>
-        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X0_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="c1"># spcm.spcm_dwSetParam_i32(</span>
+        <span class="c1">#     self.card,</span>
+        <span class="c1">#     spcm.SPCM_X0_MODE,</span>
+        <span class="c1">#     (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),</span>
+        <span class="c1"># )</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X1_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
