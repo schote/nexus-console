@@ -43,7 +43,7 @@ class SpectrumDevice(ABC):
         ConnectionError
             Connection could not be established
         """
-        print("Connecting to card...")
+        # print("Connecting to card...")
         if self.card:
             # Raise connection error if card object already exists
             raise ConnectionError("Already connected to card")
@@ -58,7 +58,7 @@ class SpectrumDevice(ABC):
             self.name = type_to_name(card_type.value)
 
             # Print card values
-            print(f"Connection to card {self.name} established!")
+            # print(f"Connection to card {self.name} established!")
             self.setup_card()
         else:
             raise ConnectionError("Could not connect to card...")

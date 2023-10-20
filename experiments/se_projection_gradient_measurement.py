@@ -30,8 +30,10 @@ f_0 = 2037612
 
 n_samples = 500
 n_avg = 10
-grad_fovs = np.arange(30) * 0.05
+# grad_fovs = np.arange(30) * 0.05
+grad_fovs = [0] # no gradients
 
+save_data = False
 result_path = "/home/schote01/data/phase_sync/ref_signal/"
 
 for alpha in grad_fovs:
@@ -101,10 +103,27 @@ for alpha in grad_fovs:
 
 
     # Save to file
-    np.save(f"{result_path}raw_xgrad-{grad_amp}mV.npy", raw)
-    np.save(f"{result_path}ref_xgrad-{grad_amp}mV.npy", ref)
-    plt.savefig(f"{result_path}/spectrum_xgrad-{grad_amp}mV.png")
+    if save_data:
+        np.save(f"{result_path}raw_xgrad-{grad_amp}mV.npy", raw)
+        np.save(f"{result_path}ref_xgrad-{grad_amp}mV.npy", ref)
+        plt.savefig(f"{result_path}/spectrum_xgrad-{grad_amp}mV.png")
     
-    plt.close()
+        plt.close()
 
 # %%
+# Plot phase
+
+_time = np.arange(n_samples) * acq.dwell_time
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+for k in range(raw.shape[0]):
+    ax.plot(_time*1e3, np.degrees(np.angle(raw[k, ...])), label=f"k: {k}")
+ax.legend()
+ax.set_ylabel("Phase [°]")
+ax.set_xlabel("Time [ms]")
+
+# # Save phase plot
+# plt.savefig("/home/schote01/data/phase_sync/joint_clock/phase_plot.png")
+
+# # Save raw data to text
+# for k in range(raw.shape[0]):
+#     np.savetxt(f"/home/schote01/data/phase_sync/joint_clocks/raw_{k}.txt", raw[k, ...])

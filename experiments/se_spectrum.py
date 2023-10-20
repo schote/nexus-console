@@ -40,6 +40,7 @@ params = AcquisitionParameter(
     b1_scaling=5.0,
     # b1_scaling=7.0,
     fov_scaling=Dimensions(
+        # x=5.,
         x=0.,
         y=0., 
         z=0.

@@ -17,7 +17,8 @@ seq, _, _ = get_instances("../device_config.yaml")
 # seq.read("../sequences/export/fid_proj.seq")
 # seq.read("../sequences/export/gradient_test.seq")
 # seq.read("../sequences/export/tse_low-field.seq")
-seq.read("../sequences/export/se_proj_400us_sinc_12ms-te.seq")
+# seq.read("../sequences/export/se_proj_400us_sinc_12ms-te.seq")
+seq.read("../sequences/export/se_cartesian_64-pe.seq")
 
 # %%
 f_0 = 2.031e6
@@ -27,13 +28,19 @@ sqnc: UnrolledSequence = seq.unroll_sequence(f_0)
 # %%
 
 # fig, _ = plot_spcm_data(sqnc, use_time=False, seq_range=[20e6, 22e6])
-fig, _ = plot_spcm_data(sqnc, use_time=False, seq_range=[0, 2e6])
+
+# time range in ms
+time_range = (0, 18)
+
+seq_range = [t*1e-3*seq.spcm_freq for t in time_range]
+
+fig, _ = plot_spcm_data(sqnc, use_time=True, seq_range=seq_range)
 fig.show()
 
 # %%
 # Check reference clock
-seq = np.concatenate(sqnc.seq)
-reference_clk = -(seq[3::4] >> 15)
+# seq = np.concatenate(sqnc.seq)
+# reference_clk = -(seq[3::4] >> 15)
 
-plt.plot(reference_clk[200800:201000])
+# plt.plot(reference_clk[200800:201000])
 # %%
