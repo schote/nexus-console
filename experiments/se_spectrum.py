@@ -23,16 +23,11 @@ acq = AcquistionControl(configuration)
 # filename = "se_proj_400us-sinc_20ms-te"
 filename = "se_proj_400us_sinc_12ms-te"
 # filename = "se_spectrum_200us-rect"
-
-
 # filename = "se_spectrum_400us_sinc_20ms-te"
 # filename = "se_spectrum_2500us_sinc_12ms-te"
 # filename = "dual-se_spec"
 
-
-seq_path = f"../sequences/export/{filename}.seq"
-
-f_0 = 2037612
+f_0 = 2037529.6875
 
 # Define acquisition parameters
 params = AcquisitionParameter(
@@ -46,28 +41,23 @@ params = AcquisitionParameter(
         z=0.
     ),
     fov_offset=Dimensions(x=0., y=0., z=0.),
-    downsampling_rate=200
+    downsampling_rate=200,
+    adc_samples=500,
 )
 
 # Perform acquisition
-acq.run(parameter=params, sequence=seq_path)
+acq.run(parameter=params, sequence=f"../sequences/export/{filename}.seq")
 
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
-_, echos = acq.data
-    
-data_fft = []
-fft_freq = []
+data = acq.raw_data.squeeze()
 
-# Do FFT
-# for echo in echo_corr:
-for echo in echos:
-    data_fft.append(np.fft.fftshift(np.fft.fft(echo)))
-    fft_freq.append(np.fft.fftshift(np.fft.fftfreq(echo.size, acq.dwell_time)))
+data_fft = np.fft.fftshift(np.fft.fft(data))
+fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq.dwell_time))
 
 # Print peak height and center frequency
-max_spec = np.max(np.abs(data_fft[0]))
-f_0_offset = fft_freq[0][np.argmax(np.abs(data_fft[0]))]
+max_spec = np.max(np.abs(data_fft))
+f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 print(f"\n>> Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f">> Frequency spectrum max.: {max_spec}")
@@ -75,44 +65,15 @@ print(f">> Frequency spectrum max.: {max_spec}")
 
 # %%
 # Plot frequency spectrum
-fig, ax = plt.subplots(len(data_fft), 1, figsize=(10, 5*len(data_fft)))
-
-if len(data_fft) == 1:
-    ax.plot(fft_freq[0], np.abs(data_fft[0]))    
-    ax.set_xlim([-20e3, 20e3])
-    ax.set_ylim([0, max_spec*1.05])
-    ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
-    ax.set_xlabel("Frequency [Hz]")
-else:
-    for a, _data, _freq in zip(ax, data_fft, fft_freq):
-        a.plot(_freq, np.abs(_data))    
-        a.set_xlim([-20e3, 20e3])
-        a.set_ylim([0, max_spec*1.05])
-        a.set_ylabel("Abs. FFT Spectrum [a.u.]")
-        
-    _ = ax[-1].set_xlabel("Frequency [Hz]")
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+ax.plot(fft_freq, np.abs(data_fft))    
+ax.set_xlim([-20e3, 20e3])
+ax.set_ylim([0, max_spec*1.05])
+ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
+_ = ax.set_xlabel("Frequency [Hz]")
 
 # %%
-# In case of two echos
-# Compare phase corrected vs. uncorrected time domain signal:
-
-phase_uncor_1 = np.angle(data[0][0])
-phase_uncor_2 = np.angle(data[1][0])
-
-phase_cor_1 = np.angle(echo_corr[0])
-phase_cor_2 = np.angle(echo_corr[1])
-
-fig, ax = plt.subplots(1, 2, figsize=(12, 4))
-ax[0].plot(phase_uncor_1, label="uncorrected")
-ax[0].plot(phase_cor_1, label="corrected")
-ax[0].legend()
-
-ax[1].plot(phase_uncor_1, label="uncorrected")
-ax[1].plot(phase_cor_1, label="corrected")
-ax[1].legend()
-
-# %%
-
+# Plot sequence
 plot_spcm_data(acq.unrolled_sequence)
 
 # %%

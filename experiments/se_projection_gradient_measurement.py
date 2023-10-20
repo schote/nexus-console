@@ -44,6 +44,7 @@ for alpha in grad_fovs:
     
     ref = []
     raw = []
+    fit = []
 
     for k in range(n_avg):
 
@@ -51,7 +52,6 @@ for alpha in grad_fovs:
         params = AcquisitionParameter(
             larmor_frequency=f_0,
             b1_scaling=5.0,
-            # b1_scaling=7.0,
             fov_scaling=Dimensions(
                 x=alpha,
                 # x=0.,
@@ -59,7 +59,8 @@ for alpha in grad_fovs:
                 z=0.
             ),
             fov_offset=Dimensions(x=0., y=0., z=0.),
-            downsampling_rate=200
+            downsampling_rate=200,
+            adc_samples=n_samples
         )
 
         # Perform acquisition
@@ -67,21 +68,18 @@ for alpha in grad_fovs:
 
         # First argument data from channel 0 and 1,
         # second argument contains the phase corrected echo
-        _raw, _ref = acq.data[0][0]
-        
-        # Truncate signals
-        ro_start = int(_raw.size/2 - n_samples/2)
-        raw.append(_raw[ro_start:ro_start+n_samples])
-        ref.append(_ref[ro_start:ro_start+n_samples])
+        raw.append(acq.raw_data)
         
         # Wait for next iteraton of average
         time.sleep(0.3)
         
     raw = np.stack(raw)
-    ref = np.stack(ref)
+    
+    # Squeeze phase encoding dimension because it is 1
+    raw = np.squeeze(raw, axis=1)
+    raw_avg = np.mean(np.stack(raw), axis=0)
 
     # Calculate average and spectrum of average
-    raw_avg = np.mean(np.stack(raw), axis=0)
     data_fft = np.fft.fftshift(np.fft.fft(raw_avg))
     fft_freq = np.fft.fftshift(np.fft.fftfreq(raw_avg.size, acq.dwell_time))
 
@@ -100,6 +98,17 @@ for alpha in grad_fovs:
     ax.set_xlabel("Frequency [Hz]")
     ax.set_title("1D Projection")
     ax.legend()
+    plt.show()
+    
+    _time = np.arange(n_samples) * acq.dwell_time
+    
+    fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+    for k in range(raw.shape[0]):
+        ax.plot(_time*1e3, np.degrees(np.angle(raw[k, ...])), label=f"k: {k}")
+    ax.legend(loc="center left")
+    ax.set_ylabel("Phase [°]")
+    ax.set_xlabel("Time [ms]")
+    plt.show()
 
 
     # Save to file
@@ -111,19 +120,3 @@ for alpha in grad_fovs:
         plt.close()
 
 # %%
-# Plot phase
-
-_time = np.arange(n_samples) * acq.dwell_time
-fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-for k in range(raw.shape[0]):
-    ax.plot(_time*1e3, np.degrees(np.angle(raw[k, ...])), label=f"k: {k}")
-ax.legend()
-ax.set_ylabel("Phase [°]")
-ax.set_xlabel("Time [ms]")
-
-# # Save phase plot
-# plt.savefig("/home/schote01/data/phase_sync/joint_clock/phase_plot.png")
-
-# # Save raw data to text
-# for k in range(raw.shape[0]):
-#     np.savetxt(f"/home/schote01/data/phase_sync/joint_clocks/raw_{k}.txt", raw[k, ...])
