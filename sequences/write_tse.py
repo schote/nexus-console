@@ -27,7 +27,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
     seq = pp.Sequence(system)  # Create a new sequence object
     fov = 256e-3  # Define FOV and resolution
     Nx, Ny = 64, 64
-    n_echo = 16  # Number of echoes
+    n_echo = 4  # Number of echoes
     n_slices = 1
     rf_flip = 180  # Flip angle
     if isinstance(rf_flip, int):
@@ -44,7 +44,8 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
     t_refwd = t_ref + system.rf_ringdown_time + system.rf_dead_time
     t_sp = 0.5 * (TE - readout_time - t_refwd)
     t_spex = 0.5 * (TE - t_exwd - t_refwd)
-    fsp_r = 1
+    # fsp_r = 1
+    fsp_r = 0
     fsp_s = 0.5
 
     rf_ex_phase = np.pi / 2
@@ -137,6 +138,7 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
     if divmod(n_echo, 2)[1] == 0:
         pe_steps = np.roll(pe_steps, [0, int(-np.round(n_ex / 2))])
     pe_order = pe_steps.reshape((n_ex, n_echo), order="F").T
+    # pe_order = pe_steps
     phase_areas = pe_order * delta_k
 
     # Split gradients and recombine into blocks
@@ -323,5 +325,5 @@ def main(plot: bool, write_seq: bool, seq_filename: str = "tse.seq"):
 # %%
 if __name__ == "__main__":
     
-    seq = main(plot=True, write_seq=True)
+    seq = main(plot=True, write_seq=True, seq_filename="tse_low-field-scanner_tr1s.seq")
 # %%
