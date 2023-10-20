@@ -269,7 +269,7 @@ class SequenceProvider(Sequence):
         # TODO: Is this a valid assumption? Gradients are zero-filled at the end?
         if (num_gradient_samples := len(gradient)) < num_total_samples:
             # gradient += [gradient[-1]] * (num_total_samples-num_gradient_samples)
-            np.concatenate((gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1])))
+            gradient = np.concatenate((gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1])))
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
 
