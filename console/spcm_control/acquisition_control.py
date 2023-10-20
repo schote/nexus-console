@@ -55,8 +55,10 @@ class AcquistionControl:
         self.unrolled_sequence: UnrolledSequence | None = None
 
         # Read only attributes for data and dwell time of downsampled signal
-        self._data: list = []
-        self._data_phase_corr: list = []
+        self._raw: np.array | None = None
+        self._sig: np.array | None = None
+        self._ref: np.array | None = None
+
         self._dwell: float | None = None
 
     def __del__(self):
@@ -68,18 +70,37 @@ class AcquistionControl:
         print("Measurement cards disconnected.")
 
     @property
-    def data(self) -> tuple[list, list]:
-        """Get data acquired by acquisition control, read-only property.
+    def raw_data(self) -> np.ndarray | None:
+        """Get pre-processed raw data acquired by acquisition control, read-only property.
 
         Returns
         -------
-            List of list of numpy arrays which contains the raw data.
-            Raw data is already post-processed with DDC filter.
-            Outermost list object contains all the gates.
-            Each gate contains a list of channels and each channel a numpy data array.
+            Numpy array of down-sampled, phase corrected raw data.
 
         """
-        return (self._data, self._data_phase_corr)
+        return self._raw
+    
+    @property
+    def reference_data(self) -> np.ndarray | None:
+        """Get reference signal data acquired by acquisition control, read-only property.
+
+        Returns
+        -------
+            Numpy array of down-sampled reference signal used for phase correction.
+
+        """
+        return self._ref
+    
+    @property
+    def signal_data(self) -> np.ndarray | None:
+        """Get signal data acquired by acquisition control, read-only property.
+
+        Returns
+        -------
+            Numpy array of down-sampled signal data, which has not been phase corrected.
+
+        """
+        return self._sig
 
     @property
     def dwell_time(self) -> float | None:
@@ -91,7 +112,7 @@ class AcquistionControl:
         """
         return self._dwell
 
-    def run(self, sequence: str, parameter: AcquisitionParameter) -> None:
+    def run(self, sequence: str, parameter: AcquisitionParameter, num_averages: int = 1) -> None:
         """Run an acquisition job.
 
         Parameters
@@ -115,7 +136,7 @@ class AcquistionControl:
             raise FileNotFoundError("Invalid sequence file.")
 
         self.seq_provider.read(sequence)
-
+        # self.seq_provider.set
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
         )
@@ -124,33 +145,41 @@ class AcquistionControl:
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
+        
+        self._raw = None
+        self._ref = None
+        self._sig = None
+        
+        for k in range(num_averages):
+            
+            print(f">> Acquisition {k+1}/{num_averages}")
 
-        # Start masurement card operations
-        self.rx_card.start_operation()
-        time.sleep(0.5)
-        self.tx_card.start_operation(sqnc)
+            # Start masurement card operations
+            self.rx_card.start_operation()
+            time.sleep(0.5)
+            self.tx_card.start_operation(sqnc)
 
-        # Get start time of acquisition
-        time_start = time.time()
+            # Get start time of acquisition
+            time_start = time.time()
 
-        while len(self.rx_card.rx_data) < sqnc.adc_count:
-            # Delay poll by 10 ms
-            time.sleep(0.01)
+            while len(self.rx_card.rx_data) < sqnc.adc_count:
+                # Delay poll by 10 ms
+                time.sleep(0.01)
 
-            if len(self.rx_card.rx_data) >= sqnc.adc_count:
-                # All the data was received, start post processing
-                self.post_processing(self.rx_card.rx_data, parameter)
-                break
-
-            if time.time() - time_start > timeout:
-                # Could not receive all the data before timeout
-                print(f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...")
-                if len(self.rx_card.rx_data) > 0:
+                if len(self.rx_card.rx_data) >= sqnc.adc_count:
+                    # All the data was received, start post processing
                     self.post_processing(self.rx_card.rx_data, parameter)
-                break
+                    break
 
-        self.tx_card.stop_operation()
-        self.rx_card.stop_operation()
+                if time.time() - time_start > timeout:
+                    # Could not receive all the data before timeout
+                    print(f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...")
+                    if len(self.rx_card.rx_data) > 0:
+                        self.post_processing(self.rx_card.rx_data, parameter)
+                    break
+
+            self.tx_card.stop_operation()
+            self.rx_card.stop_operation()
 
         # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
         self._dwell = parameter.downsampling_rate / self.f_spcm
@@ -171,36 +200,39 @@ class AcquistionControl:
         -------
             List of processed data arrays
         """
-        processed: list = []
-        phase_corrected: list = []
-
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
+        ro_start = int(parameter.adc_samples / 2)
+        
+        sig, ref = [], []
 
         for gate in data:
-            _tmp = []
-            for channel, channel_data in enumerate(gate):
-                _data = np.array(channel_data) * self.rx_card.rx_scaling[channel]
-                _tmp.append(apply_ddc(_data, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
+            # Read raw and reference signal per gate
+            _sig = np.array(gate[0]) * self.rx_card.rx_scaling[0]
+            _ref = np.array(gate[1]) * self.rx_card.rx_scaling[1]
+            # Down-sampling of raw and reference signal
+            _sig = apply_ddc(_sig, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+            _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+            # Calculate start point of readout for adc truncation
+            ro_start = int(_sig.size/2 - parameter.adc_samples / 2)
+            # Truncate raw and reference signal
+            sig.append(_sig[ro_start:ro_start+parameter.adc_samples])
+            ref.append(_ref[ro_start:ro_start+parameter.adc_samples])
+        
+        sig = np.stack(sig)
+        ref = np.stack(ref)
+        
+        # Phase correction
+        raw = sig * np.exp(-1j * np.angle(ref))
+        
+        # Assign processed data to private class attributes
+        # Add dimension for averages 
+        self._sig = sig[None, ...] if self._sig is None else np.concatenate((self._sig, sig[None, ...]), axis=0)
+        self._ref = ref[None, ...] if self._ref is None else np.concatenate((self._ref, ref[None, ...]), axis=0)
+        self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)
 
-            processed.append(_tmp)
-
-            # Channel 1 measures the reference signal
-            # TODO: Rearrange the channel ordering: Channel 0 is reference, channel 1 and ongoing for MR signal
-            # Currently the reference signal is at channel 1
-            _time = np.arange(_tmp[1].size) * kernel_size / self.f_spcm
-            ref_phase = np.angle(_tmp[1])
-
-            # Do a linear fit of the reference phase
-            m_phase, b_phase = np.polyfit(_time, ref_phase, 1)
-            phase_fit = m_phase * _time + b_phase
-
-            # Times e^{-i*phi} is equivilent to division by e^{i*phi}
-            phase_corrected.append(_tmp[0] * np.exp(-1j * phase_fit))
-
-        # TODO: Construct proper kspace, maybe numpy array [n_avg, n_coils, n_read, n_phase, n_slice]
-
-        self._data_phase_corr = phase_corrected
-        self._data = processed
-
-        # return processed, phase_corrected
+        # Save the following code for later, linear fit was not the best practice so far
+        # # Do a linear fit of the reference phase
+        # _time = np.arange(_tmp[1].size) * kernel_size / self.f_spcm
+        # m_phase, b_phase = np.polyfit(_time, ref_phase, 1)
+        # phase_fit = m_phase * _time + b_phase

@@ -20,4 +20,5 @@ class AcquisitionParameter:
     b1_scaling: float
     fov_offset: Dimensions
     fov_scaling: Dimensions
+    adc_samples: int
     downsampling_rate: int = 200
