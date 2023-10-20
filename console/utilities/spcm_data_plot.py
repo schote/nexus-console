@@ -58,7 +58,7 @@ def plot_spcm_data(
 
     adc = -(gx_signal >> 15)
     unblanking = -(gy_signal >> 15)
-    ref_clk = -(gz_signal >> 15)
+    # ref_clk = -(gz_signal >> 15)
 
     gx_signal = np.int16(gx_signal << 1)
     gy_signal = np.int16(gy_signal << 1)

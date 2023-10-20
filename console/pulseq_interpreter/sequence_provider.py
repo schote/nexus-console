@@ -108,7 +108,7 @@ class SequenceProvider(Sequence):
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
             self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=float)
-            
+
     # @profile
     def calculate_rf(
         self, rf_block: SimpleNamespace, b1_scaling: float, unblanking: np.ndarray, num_total_samples: int
@@ -185,7 +185,9 @@ class SequenceProvider(Sequence):
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency and phase offsets of an RF block event
-        carrier = np.exp(2j * np.pi * ((self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples] + phase_offset))
+        carrier = np.exp(
+            2j * np.pi * ((self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples] + phase_offset)
+        )
         signal = (envelope * carrier).real.astype(np.int16)
 
         # Combine signal from delays and rf
@@ -201,7 +203,7 @@ class SequenceProvider(Sequence):
 
     # @profile
     def calculate_gradient(
-        self, block: SimpleNamespace, fov_scaling: float, num_total_samples: int, amp_offset: int = 0
+        self, block: SimpleNamespace, fov_scaling: float, num_total_samples: int, amp_offset: int | float = 0
     ) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
@@ -288,18 +290,17 @@ class SequenceProvider(Sequence):
         delay = max(int(block.delay * self.spcm_freq), int(block.dead_time * self.spcm_freq))
         adc_dur = block.num_samples * block.dwell
         adc_len = int(adc_dur * self.spcm_freq)
-        
-        # Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc) 
+
+        # Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)
         offset = self.sample_count * self.spcm_dwell_time
         ref_time = np.arange(clk_ref.size) * self.spcm_dwell_time
         ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
-        
+
         # Digital reference signal, sin > 0 is high
         # 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
         # Gate signal
         gate[delay : delay + adc_len] = 1
-
 
     # @profile
     def unroll_sequence(
@@ -354,15 +355,15 @@ class SequenceProvider(Sequence):
         if larmor_freq > 5e6:
             warnings.warn(f"Larmor frequency is above 5 MHz: {larmor_freq*1e-6} MHz")
         self.larmor_freq = larmor_freq
-        
+
         # Check if there exist any block events
         if not len(self.block_events) > 0:
             raise AttributeError("No block events found.")
-        
+
         # Check sequence timing
-        check, e = self.check_timing()
+        check, error = self.check_timing()
         if not check:
-            raise ValueError("Sequence timing check failed:\n", e)
+            raise ValueError("Sequence timing check failed:\n", error)
 
         if self._amp_per_ch is None:
             raise ValueError("Max. amplitudes per channel is not defined.")
@@ -377,12 +378,12 @@ class SequenceProvider(Sequence):
 
         # Internal list of arrays to store sequence and digital signals
         # Empty list of list, 4 channels => 4 times n_samples
-        # Sequence, ADC events, unblanking and reference signal (for phase synchronization) 
+        # Sequence, ADC events, unblanking and reference signal (for phase synchronization)
         _seq = [np.zeros(4 * n, dtype=np.int16) for n in samples_per_block]
         _adc = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
         _unblanking = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
         _ref = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
-        
+
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
         grad_offset = Dimensions(x=0, y=0, z=0)
@@ -417,7 +418,7 @@ class SequenceProvider(Sequence):
             _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)
             _seq[k][2::4] = _seq[k][2::4].view(np.uint16) >> 1 | (_unblanking[k] << 15)
             _seq[k][3::4] = _seq[k][3::4].view(np.uint16) >> 1 | (_ref[k] << 15)
-            
+
             # Count the total amount of samples (for one channel) to keep track of the phase
             self.sample_count += n_samples
 

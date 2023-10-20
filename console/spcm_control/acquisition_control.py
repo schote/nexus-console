@@ -6,8 +6,8 @@ import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.ddc import apply_ddc
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
@@ -68,7 +68,7 @@ class AcquistionControl:
         print("Measurement cards disconnected.")
 
     @property
-    def data(self) -> tuple[list[np.ndarray]]:
+    def data(self) -> tuple[list, list]:
         """Get data acquired by acquisition control, read-only property.
 
         Returns
@@ -77,9 +77,9 @@ class AcquistionControl:
             Raw data is already post-processed with DDC filter.
             Outermost list object contains all the gates.
             Each gate contains a list of channels and each channel a numpy data array.
-            
+
         """
-        return (self._data, self._data_phase_corr) 
+        return (self._data, self._data_phase_corr)
 
     @property
     def dwell_time(self) -> float | None:
@@ -155,7 +155,7 @@ class AcquistionControl:
         # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
         self._dwell = parameter.downsampling_rate / self.f_spcm
 
-    def post_processing(self, data: list[list[np.ndarray]], parameter: AcquisitionParameter) -> list[np.ndarray]:
+    def post_processing(self, data: list[list[np.ndarray]], parameter: AcquisitionParameter) -> None:
         """Perform data post processing.
 
         Apply the digital downconversion, filtering an downsampling per numpy array in the list of the received data.
@@ -173,7 +173,7 @@ class AcquistionControl:
         """
         processed: list = []
         phase_corrected: list = []
-        
+
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
 
@@ -182,25 +182,25 @@ class AcquistionControl:
             for channel, channel_data in enumerate(gate):
                 _data = np.array(channel_data) * self.rx_card.rx_scaling[channel]
                 _tmp.append(apply_ddc(_data, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm))
-            
+
             processed.append(_tmp)
-            
+
             # Channel 1 measures the reference signal
             # TODO: Rearrange the channel ordering: Channel 0 is reference, channel 1 and ongoing for MR signal
             # Currently the reference signal is at channel 1
-            _time = np.arange(_tmp[1].size) * kernel_size/self.f_spcm
+            _time = np.arange(_tmp[1].size) * kernel_size / self.f_spcm
             ref_phase = np.angle(_tmp[1])
-            
+
             # Do a linear fit of the reference phase
-            m, b = np.polyfit(_time, np.angle(_tmp[0]), 1)
-            phase_fit = m * _time + b
-            
+            m_phase, b_phase = np.polyfit(_time, ref_phase, 1)
+            phase_fit = m_phase * _time + b_phase
+
             # Times e^{-i*phi} is equivilent to division by e^{i*phi}
-            phase_corrected.append(_tmp[0]*np.exp(-1j*phase_fit))
-            
+            phase_corrected.append(_tmp[0] * np.exp(-1j * phase_fit))
+
         # TODO: Construct proper kspace, maybe numpy array [n_avg, n_coils, n_read, n_phase, n_slice]
 
         self._data_phase_corr = phase_corrected
         self._data = processed
-        
+
         # return processed, phase_corrected

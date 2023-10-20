@@ -1,6 +1,7 @@
 """Digital down converter (DDC) function."""
 import numpy as np
 
+
 def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: float) -> np.ndarray:
     """Apply digital downsampling.
 
@@ -26,8 +27,8 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
 
     # Exponential function for resampling, don't use [-1, 1] because it leads to a division by zero warning.
     kernel_space = np.linspace(-1 + 1e-12, 1 - 1e-12, kernel_size)
-    kernel_space[kernel_space==0] = 1e-12
-    mixer = np.exp(-1 / (1 - kernel_space**2)) * np.sin(kernel_space*2.073*np.pi) / kernel_space
+    kernel_space[kernel_space == 0] = 1e-12
+    mixer = np.exp(-1 / (1 - kernel_space**2)) * np.sin(kernel_space * 2.073 * np.pi) / kernel_space
 
     # Integral for normalization
     norm = np.sum(mixer)
@@ -37,7 +38,7 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
 
     # Calculate the stride size/overlap, 2 -> half overlap, 4 -> quarter overlap, ...
     stride = 2
-    
+
     # Calculate size of down-sampled signal
     num_ddc_samples = raw_signal.size // int(kernel_size / stride)
     signal_filtered = np.zeros(num_ddc_samples, dtype=complex)
