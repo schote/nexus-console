@@ -60,6 +60,16 @@ class RxCard(SpectrumDevice):
         if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
             raise ConnectionError(f"RX:> Device with path {self.path} is of type {device_type}, no receive card...")
 
+
+        # Setup the clockmode
+        # Internal:
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+
+
         # Setup channels
         # Enable channel 0 and 1, set impedance and max. amplitude
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CHENABLE, sp.CHANNEL0 | sp.CHANNEL1)
@@ -70,7 +80,7 @@ class RxCard(SpectrumDevice):
 
         # Get the number of active channels. This will be needed for handling the buffer size
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
-        print(f"RX:> Number of active channels: {self.num_channels.value}")
+        # print(f"RX:> Number of active channels: {self.num_channels.value}")
 
         # Some general cards settings
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)  # Digital filter setting for receiver
@@ -96,8 +106,8 @@ class RxCard(SpectrumDevice):
         # spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, self.memory_size)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)  # Loop parameter is zero for infinite loop
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)  # Set clock mode
+        # Loop parameter is zero for infinite loop
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
 
         # Set timeout to 10ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)

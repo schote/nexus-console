@@ -101,6 +101,8 @@ class TxCard(SpectrumDevice):
 
         # Set clock mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
 
@@ -147,15 +149,15 @@ class TxCard(SpectrumDevice):
         # Channel 1 (gradient): digital ADC gate => X0
         # Channel 2 (gradient): digital RF unblanking signal => X1, X2
         # Channel 3 (gradient): digital phase reference => X3
-        spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X0_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        )
+        # spcm.spcm_dwSetParam_i32(
+        #     self.card,
+        #     spcm.SPCM_X0_MODE,
+        #     (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        # )
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
         spcm.spcm_dwSetParam_i32(
             self.card,
