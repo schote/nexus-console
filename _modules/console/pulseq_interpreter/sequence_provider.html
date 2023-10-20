@@ -515,7 +515,7 @@ document.write(`
             <span class="n">rf_dur_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">rf_durations</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">carrier_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">rf_dur_max</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span></div>
 
-            
+
     <span class="c1"># @profile</span>
 <div class="viewcode-block" id="SequenceProvider.calculate_rf">
 <a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">[docs]</a>
@@ -594,7 +594,9 @@ document.write(`
 
         <span class="c1"># Only precalculate carrier time array, calculate carriere here to take into account the</span>
         <span class="c1"># frequency and phase offsets of an RF block event</span>
-        <span class="n">carrier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">+</span> <span class="n">rf_block</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">carrier_time</span><span class="p">[:</span><span class="n">num_samples</span><span class="p">]</span> <span class="o">+</span> <span class="n">phase_offset</span><span class="p">))</span>
+        <span class="n">carrier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+            <span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">+</span> <span class="n">rf_block</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">carrier_time</span><span class="p">[:</span><span class="n">num_samples</span><span class="p">]</span> <span class="o">+</span> <span class="n">phase_offset</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">envelope</span> <span class="o">*</span> <span class="n">carrier</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
         <span class="c1"># Combine signal from delays and rf</span>
@@ -613,7 +615,7 @@ document.write(`
 <div class="viewcode-block" id="SequenceProvider.calculate_gradient">
 <a class="viewcode-back" href="../../../sqnc_provider.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">[docs]</a>
     <span class="k">def</span> <span class="nf">calculate_gradient</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">amp_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">num_total_samples</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">amp_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate spectrum-card sample points of a gradient waveform.</span>
 
@@ -703,18 +705,17 @@ document.write(`
         <span class="n">delay</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
         <span class="n">adc_dur</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">dwell</span>
         <span class="n">adc_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">adc_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
-        
-        <span class="c1"># Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc) </span>
+
+        <span class="c1"># Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)</span>
         <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
         <span class="n">ref_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">clk_ref</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
         <span class="n">ref_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">*</span> <span class="n">ref_time</span> <span class="o">+</span> <span class="n">offset</span><span class="p">))</span>
-        
+
         <span class="c1"># Digital reference signal, sin &gt; 0 is high</span>
         <span class="c1"># 16th bit set to 1 (high)</span>
         <span class="n">clk_ref</span><span class="p">[</span><span class="n">ref_signal</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="c1"># Gate signal</span>
         <span class="n">gate</span><span class="p">[</span><span class="n">delay</span> <span class="p">:</span> <span class="n">delay</span> <span class="o">+</span> <span class="n">adc_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
-
 
 
     <span class="c1"># @profile</span>
@@ -772,15 +773,15 @@ document.write(`
         <span class="k">if</span> <span class="n">larmor_freq</span> <span class="o">&gt;</span> <span class="mf">5e6</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Larmor frequency is above 5 MHz: </span><span class="si">{</span><span class="n">larmor_freq</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">=</span> <span class="n">larmor_freq</span>
-        
+
         <span class="c1"># Check if there exist any block events</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;No block events found.&quot;</span><span class="p">)</span>
-        
+
         <span class="c1"># Check sequence timing</span>
-        <span class="n">check</span><span class="p">,</span> <span class="n">e</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_timing</span><span class="p">()</span>
+        <span class="n">check</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_timing</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sequence timing check failed:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sequence timing check failed:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_amp_per_ch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max. amplitudes per channel is not defined.&quot;</span><span class="p">)</span>
@@ -795,12 +796,12 @@ document.write(`
 
         <span class="c1"># Internal list of arrays to store sequence and digital signals</span>
         <span class="c1"># Empty list of list, 4 channels =&gt; 4 times n_samples</span>
-        <span class="c1"># Sequence, ADC events, unblanking and reference signal (for phase synchronization) </span>
+        <span class="c1"># Sequence, ADC events, unblanking and reference signal (for phase synchronization)</span>
         <span class="n">_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
         <span class="n">_adc</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
         <span class="n">_unblanking</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
         <span class="n">_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
-        
+
         <span class="c1"># Last value of last block is added per channel to the gradient waveform as an offset value.</span>
         <span class="c1"># This is needed, since gradients must not be zero at the end of a block.</span>
         <span class="n">grad_offset</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
@@ -835,7 +836,7 @@ document.write(`
             <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
             <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
             <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_ref</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
-            
+
             <span class="c1"># Count the total amount of samples (for one channel) to keep track of the phase</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">+=</span> <span class="n">n_samples</span>
 

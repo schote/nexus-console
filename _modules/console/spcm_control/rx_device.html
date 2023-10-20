@@ -406,8 +406,6 @@ document.write(`
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">sp</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.device_interface</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.spcm.tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
@@ -445,7 +443,7 @@ document.write(`
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
-        
+
 <div class="viewcode-block" id="RxCard.setup_card">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.setup_card">[docs]</a>
     <span class="k">def</span> <span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -549,7 +547,7 @@ document.write(`
             <span class="n">error</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_STOPDMA</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_EXTRA_STOPDMA</span>
             <span class="p">)</span>
-            
+
             <span class="c1"># Handle error</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="kc">None</span>
@@ -663,7 +661,6 @@ document.write(`
                     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Available user length: &quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">total_bytes</span><span class="p">:</span>
                         <span class="n">total_gates</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="c1"># gate_data: list[np.ndarray] = []</span>
 
                         <span class="c1"># print(&quot;RX:&gt; Getting RX buffer read position and RX data...&quot;)</span>
                         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">data_user_position</span><span class="p">))</span>
@@ -678,25 +675,14 @@ document.write(`
                             <span class="n">index_1</span> <span class="o">=</span> <span class="n">rx_size</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">index_0</span><span class="p">)</span>
                             <span class="n">index_2</span> <span class="o">=</span> <span class="n">total_bytes_to_read</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">index_1</span>
                             <span class="c1"># print(f&quot;RX:&gt; indexes: {index_1, index_2,(index_0-bytes_leftover)}&quot;)</span>
-                            <span class="c1"># gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]</span>
-                            <span class="c1"># gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]</span>
                             <span class="n">gate_data</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="n">index_0</span> <span class="p">:</span> <span class="n">index_0</span> <span class="o">+</span> <span class="n">index_1</span><span class="p">]</span>
                             <span class="n">gate_data</span> <span class="o">+=</span> <span class="n">rx_data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">index_2</span><span class="p">]</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">gate_data</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="n">index_0</span> <span class="p">:</span> <span class="n">index_0</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">total_bytes</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)]</span>
 
-                        <span class="bp">self</span><span class="o">.</span><span class="n">test</span> <span class="o">=</span> <span class="n">gate_data</span>
-
-                        <span class="c1"># Extract channels, convert data from int16 to floats [V] and truncate pre-trigger</span>
-                        <span class="c1"># channel_0 = (np.array(gate_data[0::2]) / 2**15 * self.max_amplitude[0])[self.pre_trigger :]</span>
-                        <span class="c1"># channel_1 = (np.array(gate_data[1::2]) / 2**15 * self.max_amplitude[1])[self.pre_trigger :]</span>
-                        
                         <span class="c1"># Truncate gate signal, throw pre-trigger</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span>
-                            <span class="n">gate_data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:],</span> 
-                            <span class="n">gate_data</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:]</span>
-                        <span class="p">])</span>
-                        
+                        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">gate_data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:],</span> <span class="n">gate_data</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:]])</span>
+
                         <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_bytes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span><span class="p">)</span> <span class="o">%</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
                         <span class="n">total_leftover</span> <span class="o">+=</span> <span class="n">bytes_leftover</span>
 
