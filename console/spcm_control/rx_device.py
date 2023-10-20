@@ -63,11 +63,11 @@ class RxCard(SpectrumDevice):
 
         # Setup the clockmode
         # Internal:
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
         # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
 
 
         # Setup channels
@@ -135,7 +135,7 @@ class RxCard(SpectrumDevice):
         """Stop card thread."""
         # Check if thread is running
         if self.worker is not None:
-            print("RX:> Stopping card...")
+            # print("RX:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
 
@@ -211,7 +211,7 @@ class RxCard(SpectrumDevice):
         bytes_leftover = 0
         total_leftover = 0
 
-        print("RX:> Starting receiver...")
+        # print("RX:> Starting receiver...")
 
         while not self.emergency_stop.is_set():
             sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
@@ -225,12 +225,13 @@ class RxCard(SpectrumDevice):
                 timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2] / (self.sample_rate * 1e6)
                 gate_length = timestamp_1 - timestamp_0
 
-                print(f"RX:> Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms")
+                # print(f"RX:> Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms")
+                print(f"RX:> Gate timestamps: ({timestamp_0}s, {timestamp_1}s); ADC duration: {round(gate_length*1e3, 2)}ms")
 
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
 
                 sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
-                print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
+                # print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
 
                 gate_sample = int(gate_length * self.sample_rate * 1e6)  # number of adc gate sample points per channel
 
@@ -255,7 +256,7 @@ class RxCard(SpectrumDevice):
                 while not self.emergency_stop.is_set():
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
-                    print("RX:> Available user length: ", available_user_databytes.value)
+                    # print("RX:> Available user length: ", available_user_databytes.value)
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
 
@@ -298,12 +299,12 @@ class RxCard(SpectrumDevice):
 
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
 
-                        print("RX:> Available user length: ", available_user_databytes.value)
+                        # print("RX:> Available user length: ", available_user_databytes.value)
                         break
 
                     sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
 
-        print("RX:> Stopping acquisition...")
+        # print("RX:> Stopping acquisition...")
 
     def get_status(self) -> int:
         """Get the current card status.

@@ -64,7 +64,7 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        print(f"TX:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
+        # print(f"TX:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -101,7 +101,7 @@ class TxCard(SpectrumDevice):
 
         # Set clock mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
         
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
@@ -146,14 +146,14 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Channel 1 (gradient): digital ADC gate => X0
-        # Channel 2 (gradient): digital RF unblanking signal => X1, X2
-        # Channel 3 (gradient): digital phase reference => X3
-        # spcm.spcm_dwSetParam_i32(
-        #     self.card,
-        #     spcm.SPCM_X0_MODE,
-        #     (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        # )
+        # Channel 1 (gradient): digital phase reference => X0 
+        # Channel 2 (gradient): digital ADC gate => X1
+        # Channel 3 (gradient): digital RF unblanking signal => X2, X3
+        spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPCM_X0_MODE,
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        )
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
@@ -167,7 +167,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X3_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
     def start_operation(self, data: UnrolledSequence | None = None) -> None:
@@ -217,7 +217,7 @@ class TxCard(SpectrumDevice):
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:
-            print("TX:> Stopping card...")
+            # print("TX:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
 
@@ -248,7 +248,7 @@ class TxCard(SpectrumDevice):
 
             fill_size = int((rest) / 2)
             data = np.append(data, np.zeros(fill_size, dtype=np.int16))
-            print(f"TX:> Appended {fill_size} zeros to data array...")
+            # print(f"TX:> Appended {fill_size} zeros to data array...")
 
         # Get total size of data buffer to be played out
         self.data_buffer_size = int(data.nbytes)
@@ -258,8 +258,8 @@ class TxCard(SpectrumDevice):
             )
         data_buffer_samples_per_ch = spcm.uint64(int(self.data_buffer_size / (self.num_ch * 2)))
         # Report replay buffer size and samples
-        print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
-        print(f"TX:> Samples per channel: {data_buffer_samples_per_ch.value}")
+        # print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
+        # print(f"TX:> Samples per channel: {data_buffer_samples_per_ch.value}")
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -294,7 +294,7 @@ class TxCard(SpectrumDevice):
         self.handle_error(error)
 
         # Start card
-        print("TX:> Starting card...")
+        # print("TX:> Starting card...")
         error = spcm.spcm_dwSetParam_i32(
             self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER
         )
