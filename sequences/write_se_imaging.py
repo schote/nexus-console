@@ -121,7 +121,8 @@ for pe_area in pe_area_values:
         seq.add_block(rf_excitation)
     seq.add_block(grad_ro_pre, grad_pe)
     seq.add_block(rf_refocussing)
-    seq.add_block(adc, grad_ro, make_delay(delay_tr))
+    seq.add_block(adc, grad_ro)
+    seq.add_block(make_delay(delay_tr))
 
 seq.set_definition('Name', 'cartesian spin-echo')
 
