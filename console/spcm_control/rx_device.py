@@ -60,7 +60,6 @@ class RxCard(SpectrumDevice):
         if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
             raise ConnectionError(f"RX:> Device with path {self.path} is of type {device_type}, no receive card...")
 
-
         # Setup the clockmode
         # Internal:
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
@@ -68,7 +67,6 @@ class RxCard(SpectrumDevice):
         # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
         # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
         # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
-
 
         # Setup channels
         # Enable channel 0 and 1, set impedance and max. amplitude
@@ -226,7 +224,7 @@ class RxCard(SpectrumDevice):
                 gate_length = timestamp_1 - timestamp_0
 
                 # print(f"RX:> Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms")
-                print(f"RX:> Gate timestamps: ({timestamp_0}s, {timestamp_1}s); ADC duration: {round(gate_length*1e3, 2)}ms")
+                print(f"RX:> Gate: ({timestamp_0}s, {timestamp_1}s); ADC duration: {round(gate_length*1e3, 2)}ms")
 
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
 

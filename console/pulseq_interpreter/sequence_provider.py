@@ -3,13 +3,14 @@ import warnings
 from types import SimpleNamespace
 
 import numpy as np
-# from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
+
+# from line_profiler import profile
 
 
 class SequenceProvider(Sequence):
@@ -269,7 +270,9 @@ class SequenceProvider(Sequence):
         # TODO: Is this a valid assumption? Gradients are zero-filled at the end?
         if (num_gradient_samples := len(gradient)) < num_total_samples:
             # gradient += [gradient[-1]] * (num_total_samples-num_gradient_samples)
-            gradient = np.concatenate((gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1])))
+            gradient = np.concatenate(
+                (gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1]))
+            )
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
 

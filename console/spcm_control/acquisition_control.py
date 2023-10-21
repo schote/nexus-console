@@ -55,14 +55,14 @@ class AcquistionControl:
         self.unrolled_sequence: UnrolledSequence | None = None
 
         # Read only attributes for data and dwell time of downsampled signal
-        self._raw: np.array | None = None
-        self._sig: np.array | None = None
-        self._ref: np.array | None = None
+        self._raw: np.ndarray | None = None
+        self._sig: np.ndarray | None = None
+        self._ref: np.ndarray | None = None
 
         self._dwell: float | None = None
 
     def __del__(self):
-        """Class destructor."""
+        """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()
         if self.rx_card:
@@ -73,16 +73,20 @@ class AcquistionControl:
     def raw_data(self) -> np.ndarray | None:
         """Get pre-processed raw data acquired by acquisition control, read-only property.
 
+        Dimensions: [averages, phase encoding, readout]
+
         Returns
         -------
             Numpy array of down-sampled, phase corrected raw data.
 
         """
         return self._raw
-    
+
     @property
     def reference_data(self) -> np.ndarray | None:
         """Get reference signal data acquired by acquisition control, read-only property.
+
+        Dimensions: [averages, phase encoding, readout]
 
         Returns
         -------
@@ -90,10 +94,12 @@ class AcquistionControl:
 
         """
         return self._ref
-    
+
     @property
     def signal_data(self) -> np.ndarray | None:
         """Get signal data acquired by acquisition control, read-only property.
+
+        Dimensions: [averages, phase encoding, readout]
 
         Returns
         -------
@@ -145,13 +151,12 @@ class AcquistionControl:
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
-        
+
         self._raw = None
         self._ref = None
         self._sig = None
-        
+
         for k in range(num_averages):
-            
             print(f">> Acquisition {k+1}/{num_averages}")
 
             # Start masurement card operations
@@ -173,7 +178,9 @@ class AcquistionControl:
 
                 if time.time() - time_start > timeout:
                     # Could not receive all the data before timeout
-                    print(f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...")
+                    print(
+                        f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events..."
+                    )
                     if len(self.rx_card.rx_data) > 0:
                         self.post_processing(self.rx_card.rx_data, parameter)
                     break
@@ -203,8 +210,9 @@ class AcquistionControl:
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
         ro_start = int(parameter.adc_samples / 2)
-        
-        sig, ref = [], []
+
+        sig_list: list = []
+        ref_list: list = []
 
         for gate in data:
             # Read raw and reference signal per gate
@@ -214,19 +222,20 @@ class AcquistionControl:
             _sig = apply_ddc(_sig, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             # Calculate start point of readout for adc truncation
-            ro_start = int(_sig.size/2 - parameter.adc_samples / 2)
+            ro_start = int(_sig.size / 2 - parameter.adc_samples / 2)
             # Truncate raw and reference signal
-            sig.append(_sig[ro_start:ro_start+parameter.adc_samples])
-            ref.append(_ref[ro_start:ro_start+parameter.adc_samples])
-        
-        sig = np.stack(sig)
-        ref = np.stack(ref)
-        
-        # Phase correction
-        raw = sig * np.exp(-1j * np.angle(ref))
-        
+            sig_list.append(_sig[ro_start : ro_start + parameter.adc_samples])
+            ref_list.append(_ref[ro_start : ro_start + parameter.adc_samples])
+
+        # Stack signal and reference data in first dimension (phase encoding dimension)
+        sig: np.ndarray = np.stack(sig_list, axis=0)
+        ref: np.ndarray = np.stack(ref_list, axis=0)
+
+        # Do the phase correction
+        raw: np.ndarray = sig * np.exp(-1j * np.angle(ref))
+
         # Assign processed data to private class attributes
-        # Add dimension for averages 
+        # Add average dimension
         self._sig = sig[None, ...] if self._sig is None else np.concatenate((self._sig, sig[None, ...]), axis=0)
         self._ref = ref[None, ...] if self._ref is None else np.concatenate((self._ref, ref[None, ...]), axis=0)
         self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)

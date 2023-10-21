@@ -102,7 +102,7 @@ class TxCard(SpectrumDevice):
         # Set clock mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
         # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
-        
+
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
 
@@ -146,7 +146,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Channel 1 (gradient): digital phase reference => X0 
+        # Channel 1 (gradient): digital phase reference => X0
         # Channel 2 (gradient): digital ADC gate => X1
         # Channel 3 (gradient): digital RF unblanking signal => X2, X3
         spcm.spcm_dwSetParam_i32(
@@ -256,10 +256,9 @@ class TxCard(SpectrumDevice):
             raise MemoryError(
                 "TX:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
             )
-        data_buffer_samples_per_ch = spcm.uint64(int(self.data_buffer_size / (self.num_ch * 2)))
+
         # Report replay buffer size and samples
         # print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
-        # print(f"TX:> Samples per channel: {data_buffer_samples_per_ch.value}")
 
         # >> Define software buffer
         # Setup replay data buffer
