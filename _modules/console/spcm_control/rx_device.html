@@ -466,7 +466,6 @@ document.write(`
         <span class="k">if</span> <span class="s2">&quot;M2p.59&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Device with path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> is of type </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2">, no receive card...&quot;</span><span class="p">)</span>
 
-
         <span class="c1"># Setup the clockmode</span>
         <span class="c1"># Internal:</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
@@ -474,7 +473,6 @@ document.write(`
         <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)</span>
         <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)</span>
         <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)</span>
-
 
         <span class="c1"># Setup channels</span>
         <span class="c1"># Enable channel 0 and 1, set impedance and max. amplitude</span>
@@ -639,7 +637,7 @@ document.write(`
                 <span class="n">gate_length</span> <span class="o">=</span> <span class="n">timestamp_1</span> <span class="o">-</span> <span class="n">timestamp_0</span>
 
                 <span class="c1"># print(f&quot;RX:&gt; Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms&quot;)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Gate timestamps: (</span><span class="si">{</span><span class="n">timestamp_0</span><span class="si">}</span><span class="s2">s, </span><span class="si">{</span><span class="n">timestamp_1</span><span class="si">}</span><span class="s2">s); ADC duration: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Gate: (</span><span class="si">{</span><span class="n">timestamp_0</span><span class="si">}</span><span class="s2">s, </span><span class="si">{</span><span class="n">timestamp_1</span><span class="si">}</span><span class="s2">s); ADC duration: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
 
                 <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
 

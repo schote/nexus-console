@@ -734,6 +734,7 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.raw_data">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.raw_data" title="Link to this definition">#</a></dt>
 <dd><p>Get pre-processed raw data acquired by acquisition control, read-only property.</p>
+<p>Dimensions: [averages, phase encoding, readout]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Numpy array of down-sampled, phase corrected raw data.</p>
@@ -745,6 +746,7 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.reference_data">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">reference_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.reference_data" title="Link to this definition">#</a></dt>
 <dd><p>Get reference signal data acquired by acquisition control, read-only property.</p>
+<p>Dimensions: [averages, phase encoding, readout]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Numpy array of down-sampled reference signal used for phase correction.</p>
@@ -776,6 +778,7 @@ Use two logs: a high level one as lab-book and a detailed one for debugging.</p>
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.signal_data">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">signal_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.signal_data" title="Link to this definition">#</a></dt>
 <dd><p>Get signal data acquired by acquisition control, read-only property.</p>
+<p>Dimensions: [averages, phase encoding, readout]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>Numpy array of down-sampled signal data, which has not been phase corrected.</p>

@@ -508,7 +508,7 @@ document.write(`
         <span class="c1"># Set clock mode</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
         <span class="c1"># spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)</span>
-        
+
         <span class="c1"># set card sampling rate in MHz</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span>
 
@@ -552,7 +552,7 @@ document.write(`
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_REP_FIFO_SINGLE</span><span class="p">)</span>
 
         <span class="c1"># &gt;&gt; Setup digital output channels</span>
-        <span class="c1"># Channel 1 (gradient): digital phase reference =&gt; X0 </span>
+        <span class="c1"># Channel 1 (gradient): digital phase reference =&gt; X0</span>
         <span class="c1"># Channel 2 (gradient): digital ADC gate =&gt; X1</span>
         <span class="c1"># Channel 3 (gradient): digital RF unblanking signal =&gt; X2, X3</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
@@ -669,10 +669,9 @@ document.write(`
             <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span>
                 <span class="s2">&quot;TX:&gt; Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...&quot;</span>
             <span class="p">)</span>
-        <span class="n">data_buffer_samples_per_ch</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)))</span>
+
         <span class="c1"># Report replay buffer size and samples</span>
         <span class="c1"># print(f&quot;TX:&gt; Replay data buffer: {self.data_buffer_size} bytes&quot;)</span>
-        <span class="c1"># print(f&quot;TX:&gt; Samples per channel: {data_buffer_samples_per_ch.value}&quot;)</span>
 
         <span class="c1"># &gt;&gt; Define software buffer</span>
         <span class="c1"># Setup replay data buffer</span>
