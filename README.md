@@ -7,33 +7,42 @@ This project aims to implement a console for magnetic resonance imaging (MRI) ac
 
 ## Installation
 
-It is recommended to install the package in a virtual environment. There are many options to create and manage virtual environments. Examples are [virtualenv](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html), [venv](https://docs.python.org/3/library/venv.html), [conda](https://docs.conda.io/projects/conda/en/stable/) or [miniconda](https://docs.conda.io/en/latest/miniconda.html). Further documentation on miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html).
+It is recommended to install the package in a virtual environment (e.g. [conda](https://docs.conda.io/projects/conda/en/stable/)). Further documentation on setting up miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html). The package was developed under [Python 3.10](https://www.python.org/downloads/release/python-3100/) so it is recommended to use `python==3.10` when setting up the environment.
 
-You can check your python version by running `python --version`, `python > 3.10` is required.
+To install the console application, ensure that you are in the repository directory `*/spectrum-console/`. 
+The following dependency groups gather different package depending on the specific requirements:
 
-To install the console application, ensure that you are in the repository directory (`*/spectrum-console/`). Use one of the following commands to install the package with the dependencies needed:
-
-### `pip install -e .`
+    `pip install -e .`
 
 Installs all the necessary base dependencies to use the package (minimum required).
 
-### `pip install -e ".[lint]"`
+    `pip install -e ".[lint]"`
 
 Installs additional (optional) dependencies that are required to run the linter.
 
-### `pip install -e ".[test]"`
+    `pip install -e ".[test]"`
 
 Installs additional (optional) dependencies that are required to run the linter.
 
-### `pip install -e ".[docs]"`
+    `pip install -e ".[docs]"`
 
 Installs additional (optional) dependencies that are required to build the sphinx documentation locally.
 
-### `pip install -e ".[dev]"`
+    `pip install -e ".[dev]"`
 
 Installs additional (optional) developer dependencies for profiling and developing in vs code.
 
 
-    Hint: Multiple dependency groups can be installed using `[lint, test]` for instance.
+_Hint: Multiple dependency groups can be installed using `[lint, test]` for instance._
+
+## Usage
+
+The following code gives a minimal example which creates an AcquisitionControl instance and executes a pulseq sequence.
+Please note that measurement cards (AWG and digitizer) from spectrum-instrumentation must be installed to run the example.
+
+```
+TODO
+```
+
 
 ---
