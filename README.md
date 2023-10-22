@@ -41,7 +41,25 @@ The following code gives a minimal example which creates an AcquisitionControl i
 Please note that measurement cards (AWG and digitizer) from spectrum-instrumentation must be installed to run the example.
 
 ```
-TODO
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.spcm_control.acquisition_control import AcquistionControl
+
+acq = AcquistionControl("../device_config.yaml")
+
+# Define acquisition parameters
+params = AcquisitionParameter(
+    larmor_frequency=2.031e6,
+    b1_scaling=5.0,
+    fov_scaling=Dimensions(x=1., y=1., z=1.),
+    fov_offset=Dimensions(x=0., y=0., z=0.),
+    downsampling_rate=200,
+    adc_samples=500
+)
+
+acq.run(parameter=params, sequence=f"sequence_file.seq")
+
+# Get down-sampled raw data
+data = acq.raw_data
 ```
 
 
