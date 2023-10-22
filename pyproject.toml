@@ -4,27 +4,37 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["console"]
+package-dir = {"" = "src"}
 
 [project]
 name = "console"
 version = "0.1.0"
-description = "Spectrum Instrumentation Console for ultralow-field MRI with an interface to ScanHub."
+description = "MRI console application for pulseq sequences build on Spectrum-Instrumentation measurement cards."
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},
+    {name="Berk Silemek", email="berk.silemek@ptb.de"}
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
+license = { file = "LICENSE" }
+keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
+
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3 :: Only",
+]
+
 dependencies = [
-    "numpy==1.23.0",    # pypulseq release 1.4 incompatible with numpy 1.25
-    # "pypulseq==1.4.0",
-    "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=master",
+    "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
+    "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
     "plotly",
     "PyYAML",
     "matplotlib",
     "pandas"
 ]
 
-# Dependencies and options
+# Dependency groupds (optional)
 [project.optional-dependencies]
 test = ["coverage", "codecov", "pre-commit"]
 lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML"]
@@ -32,7 +42,7 @@ docs = ["sphinx", "pydata-sphinx-theme"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython"]
 
 
-# >> Tool configuration
+# Tool configuration
 [tool.pydocstyle]
 convention = "numpy"
 
@@ -44,8 +54,7 @@ max-attributes = 20
 max-line-length = 120
 max-statements = 100
 ignore-paths = [
-    # "console/spcm_control/py_header/.*$", 
-    "console/spcm_control/spcm/.*$"
+    "src/console/spcm_control/spcm/.*$"
 ]
 extension-pkg-allow-list = ["pydantic"]
 disable = [
@@ -56,7 +65,7 @@ disable = [
 
 [tool.flake8]
 max-line-length = 120
-exclude = "console/spcm_control/py_header/,console/spcm_control/spcm/"
+exclude = "src/console/spcm_control/py_header/,src/console/spcm_control/spcm/"
 ignore = ["E203", "W503"]   # E203 not PEP8 conform (whitespace before colon), W503 line break before binary operator
 
 [tool.mypy]
@@ -65,30 +74,18 @@ warn_unreachable = "True"
 python_version = "3.10"
 ignore_missing_imports = true
 mypy_path = "console"
-# exclude = "^console/spcm_control/spcm/pyspcm\\.py$"
-# exclude = ['^pyspcm\.py$']
-# exclude = ["console/spcm_control/spcm"]
-# exclude = ["console/spcm_control/spcm/**/*.py" ]
-
-
+exclude = ["docs"]
 
 [tool.black]
 line-length = 120
 target-version = ['py310']
 
-
 [tool.isort]
 line_length = 120
 py_version=310
 
-# [tool.mypy-plotly]
-# ignore_missing_imports = true   # missing 3rd party stubs
 
-# [tool.mypy-pypulseq]
-# ignore_missing_imports = true   # missing 3rd party stubs
-
-
-# Definition of Poe task for linting and formatting
+# Poe task setup for linting and formatting
 [tool.poe.tasks]
 format.sequence = ["black", "isort"]
 lint.sequence = ["pylint", "flake8", "mypy", "pydocstyle"]
@@ -96,28 +93,28 @@ lint.ignore_fail = "return_non_zero"
 
     [tool.poe.tasks.pylint]
     help = "Run pylint"
-    cmd = "pylint console/"
+    cmd = "pylint src/console/"
 
     [tool.poe.tasks.mypy]
     help = "Run mypy, python type checker..."
-    cmd = "mypy --install-types console/"
+    cmd = "mypy --install-types src/console/"
 
     [tool.poe.tasks.flake8]
     help = "Run flake8"
-    cmd = "flake8 console/"
+    cmd = "flake8 src/console/"
 
     [tool.poe.tasks.autopep8]
     help = "Run autopep8 which automatically formats Python code to conform to the PEP 8 style guide."
-    cmd = "autopep8 --in-place --recursive console/"
+    cmd = "autopep8 --in-place --recursive src/console/"
 
     [tool.poe.tasks.pydocstyle]
     help = "Run pydocstyle"
-    cmd = "pydocstyle console/"
+    cmd = "pydocstyle src/console/"
 
     [tool.poe.tasks.isort]
     help = "Run isort"
-    cmd = "isort console/"
+    cmd = "isort src/console/"
 
     [tool.poe.tasks.black]
     help = "Run black"
-    cmd = "black console/"
+    cmd = "black src/console/"
