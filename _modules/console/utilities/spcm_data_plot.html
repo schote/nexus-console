@@ -462,11 +462,10 @@ document.write(`
 
     <span class="n">adc</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">gx_signal</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span><span class="p">)</span>
     <span class="n">unblanking</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">gy_signal</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span><span class="p">)</span>
-    <span class="c1"># ref_clk = -(gz_signal &gt;&gt; 15)</span>
 
-    <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">(</span><span class="n">gx_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">(</span><span class="n">gy_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="n">gz_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">(</span><span class="n">gz_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">gx_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">gy_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
+    <span class="n">gz_signal</span> <span class="o">=</span> <span class="n">gz_signal</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
 
     <span class="c1"># else:</span>
     <span class="c1">#     adc = np.concatenate(sequence.adc_gate)[seq_range[0]:seq_range[1]]</span>
