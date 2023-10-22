@@ -134,5 +134,8 @@ dmypy.json
 *.npy
 *.lprof
 
+# Sequence files
+.seq
+
 # Folders with matlab code (for reference)
 **/.matlab
