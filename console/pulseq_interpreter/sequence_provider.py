@@ -3,12 +3,14 @@ import warnings
 from types import SimpleNamespace
 
 import numpy as np
-# from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.spcm_control.interface_acquisition_parameter import Dimensions
+
+# from line_profiler import profile
 
 
 class SequenceProvider(Sequence):
@@ -31,7 +33,6 @@ class SequenceProvider(Sequence):
     def __init__(
         self,
         spcm_dwell_time: float = 1 / 20e6,
-        rf_double_precision: bool = True,
         grad_to_volt: float = 1,
         rf_to_volt: float = 1,
         max_amp_per_channel: list[int] | None = None,
@@ -47,10 +48,8 @@ class SequenceProvider(Sequence):
         self.spcm_dwell_time = spcm_dwell_time
         self.larmor_freq = self.system.B0 * self.system.gamma
 
-        self.dtype = np.double if rf_double_precision else np.single
-
         self.carrier_time: np.ndarray | None = None
-        self.carrier: np.ndarray | None = None
+        self.sample_count: int = 0
 
         if not max_amp_per_channel:
             self._amp_per_ch = [1000, 1000, 1000, 1000]
@@ -109,17 +108,22 @@ class SequenceProvider(Sequence):
 
         if len(rf_durations) > 0:
             rf_dur_max = max(rf_durations)
-            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=self.dtype)
-            self.carrier = np.exp(2j * np.pi * self.larmor_freq * self.carrier_time)
+            self.carrier_time = np.arange(start=0, stop=rf_dur_max, step=self.spcm_dwell_time, dtype=float)
 
     # @profile
-    def calculate_rf(self, rf_block: SimpleNamespace, unblanking: np.ndarray, num_total_samples: int) -> np.ndarray:
+    def calculate_rf(
+        self, rf_block: SimpleNamespace, b1_scaling: float, unblanking: np.ndarray, num_total_samples: int
+    ) -> np.ndarray:
         """Calculate RF sample points to be played by TX card.
 
         Parameters
         ----------
         rf_block
             Pulseq RF block
+        b1_scaling
+            Experiment dependent scaling factor of the RF amplitude
+        unblanking
+            Unblanking signal which is updated in-place for the calculated RF event
 
         Returns
         -------
@@ -140,47 +144,51 @@ class SequenceProvider(Sequence):
         # This is done by the sequence programmer, by adding a frequency/phase offset to an RF pulse
 
         # Calculate zero filling for RF delay
-        num_samples_delay = int(rf_block.delay / self.spcm_dwell_time)
+        num_samples_delay = int(rf_block.delay * self.spcm_freq)
         delay = np.zeros(num_samples_delay, dtype=np.int16)
 
         # Zero filling for RF dead-time (maximum of dead time defined in RF event and system)
         # Time between start of unblanking and start of RF
         dead_dur = max(self.system.rf_dead_time, rf_block.dead_time)
-        num_samples_dead = int(dead_dur / self.spcm_dwell_time)
+        num_samples_dead = int(dead_dur * self.spcm_freq)
         dead_time = np.zeros(num_samples_dead, dtype=np.int16)
 
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
         ringdown_dur = max(self.system.rf_ringdown_time, rf_block.ringdown_time)
-        num_samgles_ringdown = int(ringdown_dur / self.spcm_dwell_time)
+        num_samgles_ringdown = int(ringdown_dur * self.spcm_freq)
         ringdown_time = np.zeros(num_samgles_ringdown, dtype=np.int16)
 
         # Calculate the number of shape sample points
-        num_samples = int(rf_block.shape_dur / self.spcm_dwell_time)
+        num_samples = int(rf_block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal
-        # The set value corresponds to 15th bit set to 1 >> 1000 0000 0000 0000
-        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = -(2**15)
+        # 16th bit set to 1 (high)
+        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = 1
 
-        # Calculate the static phase offset, defined in RF pulse
+        # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * rf_block.phase_offset)
+
+        # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
+        rf_scaling = b1_scaling * self.rf_to_volt / self._amp_per_ch[0]
 
         # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
-        if np.amax(envelope_scaled := rf_block.signal * phase_offset * self.rf_to_volt / self._amp_per_ch[0]) > 1:
+        if np.amax(envelope_scaled := rf_block.signal * phase_offset * rf_scaling) > 1:
             raise ValueError("RF amplitude exceeded max. amplitude of channel 0.")
         envelope_scaled = envelope_scaled * self.int16_max
 
         # Resampling of scaled complex envelope
         envelope = resample(envelope_scaled, num=num_samples)
 
-        # Calcuate modulated RF signal with precalculated carrier and phase offset
-        # >> Precalculating the exponential function saves about 200ms for TSE sequence
-        # Problem: When precalculating the carrier signal we cannot consider frequency offsets
-        # signal = (envelope * self.carrier[:num_samples] * phase_offset).real
+        # Calculate phase offset of RF according to total sample count
+        # TODO: Very first RF pulse phase offset might not be zero, maybe substract samples until first RF if important?
+        phase_offset = (self.sample_count + num_samples_delay + num_samples_dead) * self.spcm_dwell_time
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
-        # frequency offset of an RF block event
-        carrier = np.exp(2j * np.pi * (self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples])
+        # frequency and phase offsets of an RF block event
+        carrier = np.exp(
+            2j * np.pi * ((self.larmor_freq + rf_block.freq_offset) * self.carrier_time[:num_samples] + phase_offset)
+        )
         signal = (envelope * carrier).real.astype(np.int16)
 
         # Combine signal from delays and rf
@@ -196,7 +204,7 @@ class SequenceProvider(Sequence):
 
     # @profile
     def calculate_gradient(
-        self, block: SimpleNamespace, num_total_samples: int, amp_offset: int = 0
+        self, block: SimpleNamespace, fov_scaling: float, num_total_samples: int, amp_offset: int | float = 0
     ) -> np.ndarray:
         """Calculate spectrum-card sample points of a gradient waveform.
 
@@ -227,8 +235,10 @@ class SequenceProvider(Sequence):
         idx = ["x", "y", "z"].index(block.channel)
         offset = np.int16(amp_offset / self.int16_max)
 
+        grad_scaling = fov_scaling * self.grad_to_volt / self._amp_per_ch[idx]
+
         if block.type == "grad":
-            if np.amax(waveform := block.waveform * self.grad_to_volt / self._amp_per_ch[idx] + offset) > 1:
+            if np.amax(waveform := block.waveform * grad_scaling + offset) > 1:
                 raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
             waveform *= self.int16_max
 
@@ -244,7 +254,7 @@ class SequenceProvider(Sequence):
         elif block.type == "trap":
             # Check and scale trapezoid flat amplitude (including offset)
             # At this point, only a single value needs to be scaled
-            if np.amax(flat_amp := block.amplitude * self.grad_to_volt / self._amp_per_ch[idx] + offset) > 1:
+            if np.amax(flat_amp := block.amplitude * grad_scaling + offset) > 1:
                 raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
             flat_amp = np.int16(flat_amp * self.int16_max)
 
@@ -260,13 +270,15 @@ class SequenceProvider(Sequence):
         # TODO: Is this a valid assumption? Gradients are zero-filled at the end?
         if (num_gradient_samples := len(gradient)) < num_total_samples:
             # gradient += [gradient[-1]] * (num_total_samples-num_gradient_samples)
-            np.concatenate((gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1])))
+            gradient = np.concatenate(
+                (gradient, np.full(num_total_samples - num_gradient_samples, fill_value=gradient[-1]))
+            )
         elif num_gradient_samples > num_total_samples:
             raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
 
         return gradient
 
-    def add_adc_gate(self, block: SimpleNamespace, gate: np.ndarray) -> None:
+    def add_adc_gate(self, block: SimpleNamespace, gate: np.ndarray, clk_ref: np.ndarray) -> None:
         """Add ADC gate signal inplace to gate array.
 
         Parameters
@@ -275,15 +287,28 @@ class SequenceProvider(Sequence):
             ADC event of sequence block.
         gate
             Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.
+        clk_ref
+            Phase reference array, predefined by zeros. Digital signal during ADC which encodes the signal phase.
         """
-        delay = max(int(block.delay / self.spcm_dwell_time), int(block.dead_time / self.spcm_dwell_time))
-        # dead_dur = max(self.system.adc_dead_time, block.dead_time)
-        # dead_time = int(dead_dur / self.spcm_sample_rate)
-        adc_len = int(block.num_samples * block.dwell / self.spcm_dwell_time)
-        gate[delay : delay + adc_len] = -(2**15)  # this value equals 15th bit set to 1 >> 1000 0000 0000 0000
+        delay = max(int(block.delay * self.spcm_freq), int(block.dead_time * self.spcm_freq))
+        adc_dur = block.num_samples * block.dwell
+        adc_len = int(adc_dur * self.spcm_freq)
+
+        # Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)
+        offset = self.sample_count * self.spcm_dwell_time
+        ref_time = np.arange(clk_ref.size) * self.spcm_dwell_time
+        ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
+
+        # Digital reference signal, sin > 0 is high
+        # 16th bit set to 1 (high)
+        clk_ref[ref_signal > 0] = 1
+        # Gate signal
+        gate[delay : delay + adc_len] = 1
 
     # @profile
-    def unroll_sequence(self, larmor_freq: float | None = None) -> UnrolledSequence:
+    def unroll_sequence(
+        self, larmor_freq: float, b1_scaling: float = 1.0, fov_scaling: Dimensions = Dimensions(1.0, 1.0, 1.0)
+    ) -> UnrolledSequence:
         """Unroll a pypulseq sequence object.
 
         Returns
@@ -329,13 +354,19 @@ class SequenceProvider(Sequence):
 
         The last two lines convert the digital signal from 15th bit value to 1 or 0 respectively.
         """
-        print("Unrolling sequnce...")
+        # Check and set larmor frequency
+        if larmor_freq > 5e6:
+            warnings.warn(f"Larmor frequency is above 5 MHz: {larmor_freq*1e-6} MHz")
+        self.larmor_freq = larmor_freq
 
-        if larmor_freq is not None:
-            self.larmor_freq = larmor_freq
+        # Check if there exist any block events
+        if not len(self.block_events) > 0:
+            raise AttributeError("No block events found.")
 
-        if len(self.block_events) == 0:
-            raise AttributeError("No sequence loaded.")
+        # Check sequence timing
+        check, error = self.check_timing()
+        if not check:
+            raise ValueError("Sequence timing check failed:\n", error)
 
         if self._amp_per_ch is None:
             raise ValueError("Max. amplitudes per channel is not defined.")
@@ -349,56 +380,60 @@ class SequenceProvider(Sequence):
         samples_per_block = [int(block.block_duration / self.spcm_dwell_time) for block in blocks]
 
         # Internal list of arrays to store sequence and digital signals
-        _seq = [
-            np.zeros(4 * n, dtype=np.int16) for n in samples_per_block
-        ]  # empty list of list, 4 channels => 4 times n_samples
+        # Empty list of list, 4 channels => 4 times n_samples
+        # Sequence, ADC events, unblanking and reference signal (for phase synchronization)
+        _seq = [np.zeros(4 * n, dtype=np.int16) for n in samples_per_block]
         _adc = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
         _unblanking = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
+        _ref = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
 
         # Last value of last block is added per channel to the gradient waveform as an offset value.
         # This is needed, since gradients must not be zero at the end of a block.
-        grad_x_const = 0
-        grad_y_const = 0
-        grad_z_const = 0
+        grad_offset = Dimensions(x=0, y=0, z=0)
 
-        # Count the total number of sample points
-        sample_count = 0
+        # Count the total number of sample points and gate signals
+        self.sample_count = 0
+        adc_count: int = 0
 
-        # for k, (n_samples, block) in tqdm(enumerate(zip(samples_per_block, blocks))):
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
-            sample_count += n_samples
-
             # Calculate rf events of current block, zero-fill channels if not defined
-            if block.rf:
+            if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
                 _seq[k][0::4] = self.calculate_rf(
-                    rf_block=block.rf, unblanking=_unblanking[k], num_total_samples=n_samples
+                    rf_block=block.rf, unblanking=_unblanking[k], num_total_samples=n_samples, b1_scaling=b1_scaling
                 )
 
-            if block.adc:
-                self.add_adc_gate(block.adc, _adc[k])
+            if block.adc is not None:
+                self.add_adc_gate(block.adc, _adc[k], _ref[k])
+                adc_count += 1
 
-            if grad_x := block.gx:
+            if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
-                _seq[k][1::4] = self.calculate_gradient(grad_x, n_samples, grad_x_const)
-            if grad_y := block.gy:
+                _seq[k][1::4] = self.calculate_gradient(block.gx, fov_scaling.x, n_samples, grad_offset.x)
+            if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
-                _seq[k][2::4] = self.calculate_gradient(grad_y, n_samples, grad_y_const)
-            if grad_z := block.gz:
+                _seq[k][2::4] = self.calculate_gradient(block.gy, fov_scaling.y, n_samples, grad_offset.y)
+            if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
-                _seq[k][3::4] = self.calculate_gradient(grad_z, n_samples, grad_z_const)
+                _seq[k][3::4] = self.calculate_gradient(block.gz, fov_scaling.z, n_samples, grad_offset.z)
 
             # Bitwise operations to merge gx with adc and gy with unblanking
-            _seq[k][1::4] = _seq[k][1::4] >> 1 | _adc[k]
-            _seq[k][2::4] = _seq[k][2::4] >> 1 | _unblanking[k]
+            _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)
+            _seq[k][2::4] = _seq[k][2::4].view(np.uint16) >> 1 | (_unblanking[k] << 15)
+            _seq[k][3::4] = _seq[k][3::4].view(np.uint16) >> 1 | (_ref[k] << 15)
+
+            # Count the total amount of samples (for one channel) to keep track of the phase
+            self.sample_count += n_samples
 
         return UnrolledSequence(
             seq=_seq,
             adc_gate=_adc,
             rf_unblanking=_unblanking,
-            sample_count=sample_count,
+            sample_count=self.sample_count,
             grad_to_volt=self.grad_to_volt,
             rf_to_volt=self.rf_to_volt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
+            duration=self.duration()[0],
+            adc_count=adc_count,
         )

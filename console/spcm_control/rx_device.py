@@ -4,8 +4,6 @@ from ctypes import byref, cast
 from dataclasses import dataclass
 from pprint import pprint
 
-import numpy as np
-
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
@@ -40,6 +38,7 @@ class RxCard(SpectrumDevice):
         self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
         self.rx_data = []
+        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     def setup_card(self):
         """Set up spectrum card in transmit (TX) mode.
@@ -61,6 +60,14 @@ class RxCard(SpectrumDevice):
         if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
             raise ConnectionError(f"RX:> Device with path {self.path} is of type {device_type}, no receive card...")
 
+        # Setup the clockmode
+        # Internal:
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+
         # Setup channels
         # Enable channel 0 and 1, set impedance and max. amplitude
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CHENABLE, sp.CHANNEL0 | sp.CHANNEL1)
@@ -71,7 +78,7 @@ class RxCard(SpectrumDevice):
 
         # Get the number of active channels. This will be needed for handling the buffer size
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
-        print(f"RX:> Number of active channels: {self.num_channels.value}")
+        # print(f"RX:> Number of active channels: {self.num_channels.value}")
 
         # Some general cards settings
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)  # Digital filter setting for receiver
@@ -97,11 +104,11 @@ class RxCard(SpectrumDevice):
         # spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, self.memory_size)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)  # Loop parameter is zero for infinite loop
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)  # Set clock mode
+        # Loop parameter is zero for infinite loop
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
 
-        # Set timeout to 5s
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 5000)
+        # Set timeout to 10ms
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         # Setup timestamp mode to read number of samples per gate if available
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMESTAMP_CMD, sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL)
@@ -116,6 +123,7 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.emergency_stop.clear()
+        self.rx_data = []
 
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
@@ -125,7 +133,7 @@ class RxCard(SpectrumDevice):
         """Stop card thread."""
         # Check if thread is running
         if self.worker is not None:
-            print("RX:> Stopping card...")
+            # print("RX:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
 
@@ -150,7 +158,6 @@ class RxCard(SpectrumDevice):
         rx_notify = sp.int32(sp.KILO_B(4))
         rx_size = rx_notify.value * 400
         rx_buffer_size = sp.uint64(rx_size)
-        # rx_buffer_size = uint64(1024**2) # 1 MB == 512 KSamples, max. buffer size
 
         rx_buffer = create_dma_buffer(rx_buffer_size.value)
         sp.spcm_dwDefTransfer_i64(
@@ -200,10 +207,9 @@ class RxCard(SpectrumDevice):
         data_user_position = sp.int32(0)
         total_gates = 0
         bytes_leftover = 0
-        self.rx_data = []
         total_leftover = 0
 
-        print("RX:> Starting receiver...")
+        # print("RX:> Starting receiver...")
 
         while not self.emergency_stop.is_set():
             sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
@@ -217,12 +223,13 @@ class RxCard(SpectrumDevice):
                 timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2] / (self.sample_rate * 1e6)
                 gate_length = timestamp_1 - timestamp_0
 
-                print(f"RX:> Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms")
+                # print(f"RX:> Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms")
+                print(f"RX:> Gate: ({timestamp_0}s, {timestamp_1}s); ADC duration: {round(gate_length*1e3, 2)}ms")
 
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
 
                 sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
-                print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
+                # print(f"RX:> Available TS buffer size: {available_timestamp_bytes.value}")
 
                 gate_sample = int(gate_length * self.sample_rate * 1e6)  # number of adc gate sample points per channel
 
@@ -247,12 +254,11 @@ class RxCard(SpectrumDevice):
                 while not self.emergency_stop.is_set():
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
-                    print("RX:> Available user length: ", available_user_databytes.value)
+                    # print("RX:> Available user length: ", available_user_databytes.value)
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
-                        gate_data: list[np.ndarray] = []
 
-                        print("RX:> Getting RX buffer read position and RX data...")
+                        # print("RX:> Getting RX buffer read position and RX data...")
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
 
                         byte_position = data_user_position.value // 2
@@ -260,20 +266,19 @@ class RxCard(SpectrumDevice):
                         index_0 = byte_position + total_leftover // 2
 
                         if total_bytes_to_read + data_user_position.value >= rx_size:
-                            print(f"RX:> Rx_size: {rx_size}")
+                            # print(f"RX:> Rx_size: {rx_size}")
+                            # >> We need two indices in case of memory overflow
                             index_1 = rx_size // 2 - (index_0)
                             index_2 = total_bytes_to_read // 2 - index_1
-                            print(f"RX:> indexes: {index_1, index_2,(index_0-bytes_leftover)}")
-                            gate_data[0:index_1] = rx_data[index_0 : index_0 + index_1]
-                            gate_data[index_1 : index_2 + index_1] = rx_data[0:index_2]
+                            # print(f"RX:> indexes: {index_1, index_2,(index_0-bytes_leftover)}")
+                            gate_data = rx_data[index_0 : index_0 + index_1]
+                            gate_data += rx_data[0:index_2]
                         else:
                             gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
 
-                        # Extract channel 0 and convert data from int16 to floats [V]
-                        channel_0 = (np.array(gate_data[0::2]) / np.iinfo(np.int16).max) * self.max_amplitude[0]
+                        # Truncate gate signal, throw pre-trigger
+                        self.rx_data.append([gate_data[0::2][self.pre_trigger :], gate_data[1::2][self.pre_trigger :]])
 
-                        # Truncate gate signal, throw pre- and post-trigger
-                        self.rx_data.append(channel_0[self.pre_trigger :])
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
                         total_leftover += bytes_leftover
 
@@ -283,7 +288,7 @@ class RxCard(SpectrumDevice):
                         else:
                             available_card_len = bytes_sequence - (bytes_leftover)
 
-                        print(f"RX:> Bytes leftover: {bytes_leftover}")
+                        # print(f"RX:> Bytes leftover: {bytes_leftover}")
 
                         # Tell the card that we have read the data.
                         # The card length should be in the order of notify size.
@@ -292,12 +297,12 @@ class RxCard(SpectrumDevice):
 
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
 
-                        print("RX:> Available user length: ", available_user_databytes.value)
+                        # print("RX:> Available user length: ", available_user_databytes.value)
                         break
 
                     sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
 
-        print("RX:> Stopping acquisition...")
+        # print("RX:> Stopping acquisition...")
 
     def get_status(self) -> int:
         """Get the current card status.

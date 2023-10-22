@@ -43,7 +43,6 @@ class TxCard(SpectrumDevice):
         super().__init__(self.path)
 
         self.num_ch = 4
-        self.channel_enable = [1, 1, 1, 1]
 
         # Size of the current sequence
         self.data_buffer_size = int(0)
@@ -52,7 +51,7 @@ class TxCard(SpectrumDevice):
         self.ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)  # => 512 MSamples * 2 Bytes = 1024 MB
         # self.ring_buffer_size: uint64 = uint64(1024**2)
 
-        # Check if ring buffer size is multiple of num_ch * 2 (channels = sum(channel_enable), 2 bytes per sample)
+        # Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)
         if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
             raise MemoryError(
                 "TX:> Ring buffer size is not a multiple of channel sample product \
@@ -65,7 +64,7 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        print(f"TX:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
+        # print(f"TX:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -102,6 +101,8 @@ class TxCard(SpectrumDevice):
 
         # Set clock mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
 
@@ -122,22 +123,22 @@ class TxCard(SpectrumDevice):
 
         # Use loop to enable and setup active channels
         # Channel 0: RF
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT0, self.channel_enable[0])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT0, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP0, self.max_amplitude[0])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER0, self.filter_type[0])
 
         # Channel 1: Gradient x, synchronus digital output: gate trigger
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, self.channel_enable[1])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP1, self.max_amplitude[1])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER1, self.filter_type[1])
 
         # Channel 2: Gradient y, synchronus digital output: un-blanking
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, self.channel_enable[2])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP2, self.max_amplitude[2])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER2, self.filter_type[2])
 
         # Channel 3: Gradient z
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT3, self.channel_enable[3])
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT3, 1)
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP3, self.max_amplitude[3])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER3, self.filter_type[3])
 
@@ -145,12 +146,13 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Analog channel 1, 2 for digital ADC gate and RF unblanking signal
-        # RF unblanking is provided on X0 and X1, ADC gate is provided on X2 and X3
+        # Channel 1 (gradient): digital phase reference => X0
+        # Channel 2 (gradient): digital ADC gate => X1
+        # Channel 3 (gradient): digital RF unblanking signal => X2, X3
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X0_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
         spcm.spcm_dwSetParam_i32(
             self.card,
@@ -215,7 +217,7 @@ class TxCard(SpectrumDevice):
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:
-            print("TX:> Stopping card...")
+            # print("TX:> Stopping card...")
             self.emergency_stop.set()
             self.worker.join()
 
@@ -246,7 +248,7 @@ class TxCard(SpectrumDevice):
 
             fill_size = int((rest) / 2)
             data = np.append(data, np.zeros(fill_size, dtype=np.int16))
-            print(f"TX:> Appended {fill_size} zeros to data array...")
+            # print(f"TX:> Appended {fill_size} zeros to data array...")
 
         # Get total size of data buffer to be played out
         self.data_buffer_size = int(data.nbytes)
@@ -254,10 +256,9 @@ class TxCard(SpectrumDevice):
             raise MemoryError(
                 "TX:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
             )
-        data_buffer_samples_per_ch = spcm.uint64(int(self.data_buffer_size / (self.num_ch * 2)))
+
         # Report replay buffer size and samples
-        print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
-        print(f"TX:> Samples per channel: {data_buffer_samples_per_ch.value}")
+        # print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -292,7 +293,7 @@ class TxCard(SpectrumDevice):
         self.handle_error(error)
 
         # Start card
-        print("TX:> Starting card...")
+        # print("TX:> Starting card...")
         error = spcm.spcm_dwSetParam_i32(
             self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER
         )

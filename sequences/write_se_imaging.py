@@ -1,14 +1,11 @@
 # %%
 from math import pi
-from pypulseq.Sequence.sequence import Sequence
-from pypulseq.make_adc import make_adc
-from pypulseq.make_delay import make_delay
-from pypulseq.make_block_pulse import make_block_pulse
-from pypulseq.make_sinc_pulse import make_sinc_pulse
-from pypulseq.make_trapezoid import make_trapezoid
 from pypulseq.opts import Opts
+from pypulseq.Sequence.sequence import Sequence
+from pypulseq import make_adc, make_delay, make_sinc_pulse, calc_duration, calc_rf_center, make_sinc_pulse, make_trapezoid
 
 from console.utilities.plotly_sequence import get_sequence_plot
+import numpy as np
 
 # %%
 
@@ -21,95 +18,121 @@ system = Opts(
     rf_dead_time=100e-6,        # time delay at the end of RF event
     adc_dead_time=200e-6,       # time delay at the beginning of ADC event
 )
-
 seq = Sequence(system)
 
-# ----- Parameters
-# RF parameters
-rf_duration = 100e-6 # 200 us
-rf_bandwidth = 20e3 # 20 kHz
-rf_flip = pi/2
-rf_phase = pi/2
 
-# Sequence specific timing
+# >> Parameters
+
+# RF
+rf_duration = 800e-6
+rf_bandwidth = 20e3
+
+# Timing
+# Echo time
 te = 10e-3
+# Repetition time 
+tr = 300e-3
 
-# Readout/ADC
+# k-Space
+# 25 cm field of view
+fov = 250e-3
+# 256 readout sample points
+n_ro = 256
+# 64 phase encoding steps
+n_pe = 64
+# Set slice thickness to 5 mm (?)
+slice_thickness = 5e-3
+slice_select = True
+# Readout bandwidth, used to calculate adc duration
 ro_bw = 50e3   # 50 kHz bandwidth
-num_samples = 128
-adc_dwell_time = 1 / ro_bw
-adc_duration = adc_dwell_time * num_samples
-fov = 0.255     # 25.5 cm
-k_width = num_samples / fov
-rise_time = 200e-6
-
+adc_duration = n_ro / ro_bw
+delta_k = 1 / fov
 
 
 # >> Definition of block events
-# 90 degree RF block pulse
-rf_block_90 = make_block_pulse(
-    flip_angle=rf_flip,
-    duration=rf_duration,
-    phase_offset=rf_phase,
+# 90 degree excitation rf pulse
+rf_excitation, grad_slice, grad_slice_re = make_sinc_pulse(
+    flip_angle=pi/2, # 90 °
+    duration=rf_duration,               
+    slice_thickness=slice_thickness,    
     system=system,
+    apodization=0.4,
+    time_bw_product=4,
+    return_gz=True
 )
 
-rf_block_180 = make_block_pulse(
-    flip_angle=rf_flip*2,   # twice the flip angle => 180°
+# 180 degree refocussing pulse
+rf_refocussing = make_sinc_pulse(
+    flip_angle=pi,       # 180°
     duration=rf_duration,   # keep duration -> doubles amplitude
-    phase_offset=rf_phase,
     system=system,
-)
-
-# Calculate readout gradient:
-# delta_kx = gamma * Gx * delta_t_RO
-# => Gx = delta_kx / (gamma * delta_t_RO), 
-# with delta_kx = 1 / FOV, we obtain
-# Gx = 1 / (gamma * FOV * delta_t_RO)
-# delta_t_RO = 1 / BW
-# Gx = BW / (gamma * FOV)
-gr_ro = make_trapezoid(
-    channel="x",
-    system=system,
-    flat_area=k_width,
-    flat_time=adc_duration,
-    rise_time=rise_time
-)
-
-
-
-# Calculate 
-
-# ADC event
-adc = make_adc(
-    num_samples=num_samples,
-    duration=adc_duration, 
-    system=system, 
-    delay=rise_time
+    use='refocusing'
 )
 
 # Define delays
-delay_1 = make_delay(te / 2 - rf_block_90.shape_dur / 2 - rf_block_180.shape_dur / 2)
-delay_2 = make_delay(te / 2 - rf_block_180.shape_dur / 2 - adc_duration / 2)
+delay_te_1 = te / 2 - rf_excitation.shape_dur / 2 - rf_refocussing.shape_dur / 2
+delay_te_2 = te / 2 - rf_refocussing.shape_dur / 2 - adc_duration / 2
 
+# Define readout gradient and prewinder
+grad_ro = make_trapezoid(
+    channel='x', 
+    system=system, 
+    flat_area=n_ro * delta_k, 
+    flat_time=adc_duration
+)
+grad_ro_pre = make_trapezoid(
+    channel='x', 
+    system=system, 
+    area=grad_ro.area / 2 + delta_k / 2, 
+    duration=delay_te_1
+)
 
-# >> Define sequence
-seq.add_block(rf_block_90)
-seq.add_block(delay_1)
-seq.add_block(rf_block_180)
-seq.add_block(delay_2)
-seq.add_block(gr_ro, adc)
+# Define adc event
+adc = make_adc(
+    num_samples=n_ro, 
+    system=system, 
+    duration=adc_duration, 
+    delay=delay_te_2
+)
 
-seq.set_definition('Name', 'se_projection_block-pulse')
+# TE/2 delay included in readout gradient
+grad_ro.delay = delay_te_2 - grad_ro.rise_time
+# Define TR as the time delay until the next ADC window/readout
+delay_tr = tr - te - calc_rf_center(rf_excitation)[0]
 
+pe_flat_area = n_pe * (delta_k / 2)
+pe_area_values = np.linspace(-1, 1, n_pe) * pe_flat_area
+
+# Iterate over phase encoding steps
+for pe_area in pe_area_values:
+    # Define phase encoding gradient
+    # Precomputed area, duration equals slice select rephaser
+    grad_pe = make_trapezoid(
+        channel='y', 
+        system=system, 
+        area=pe_area, 
+        duration=delay_te_1
+    )
+    
+    # Add sequence blocks
+    if slice_select:
+        seq.add_block(rf_excitation, grad_slice)
+    else:
+        seq.add_block(rf_excitation)
+    seq.add_block(grad_ro_pre, grad_pe)
+    seq.add_block(rf_refocussing)
+    seq.add_block(adc, grad_ro)
+    seq.add_block(make_delay(delay_tr))
+
+seq.set_definition('Name', 'cartesian spin-echo')
 
 # %%
 # Check sequence timing and plot
 ok, e = seq.check_timing()
-seq.plot(time_range=(0, 100e-3), time_disp='us') if ok else print(e)
+seq.plot(time_disp='ms', time_range=(0, 0.03)) if ok else print(e)
 
 
 # %% 
 # Write sequence
-seq.write('./export/se_projection_block-pulse.seq')
+seq.write(f'./export/se_cartesian_{n_pe}-pe.seq')
 # %%

@@ -133,3 +133,6 @@ dmypy.json
 *.csv
 *.npy
 *.lprof
+
+# Folders with matlab code (for reference)
+**/.matlab

@@ -55,3 +55,5 @@ class UnrolledSequence:
     rf_to_volt: float
     dwell_time: float
     larmor_frequency: float
+    duration: float
+    adc_count: int
