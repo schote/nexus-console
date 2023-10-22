@@ -402,12 +402,17 @@ document.write(`
   <h1>Source code for console.spcm_control.acquisition_control</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Acquisition Control Class.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">threading</span>
+<span class="kn">import</span> <span class="nn">time</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
+<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
+<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">SequenceProvider</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.ddc</span> <span class="kn">import</span> <span class="n">apply_ddc</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.rx_device</span> <span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
+<span class="kn">from</span> <span class="nn">console.utilities.load_config</span> <span class="kn">import</span> <span class="n">get_instances</span>
 
 
 <div class="viewcode-block" id="AcquistionControl">
@@ -417,62 +422,240 @@ document.write(`
 
 <span class="sd">    The main functionality of the acquisition control is to orchestrate transmit and receive cards using</span>
 <span class="sd">    ``TxCard`` and ``RxCard`` instances.</span>
+
+<span class="sd">    TODO: Implementation of logging mechanism.</span>
+<span class="sd">    Use two logs: a high level one as lab-book and a detailed one for debugging.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tx_engine</span><span class="p">:</span> <span class="n">TxCard</span><span class="p">,</span> <span class="n">rx_engine</span><span class="p">:</span> <span class="n">RxCard</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tx_engine</span> <span class="o">=</span> <span class="n">tx_engine</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_engine</span> <span class="o">=</span> <span class="n">rx_engine</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct acquisition control class.</span>
 
-        <span class="c1"># Event is thread-safe boolean variable, which can be used to interrupt a thread</span>
-        <span class="c1"># We need this to interrupt an acquisition</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interrupt_acq</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
+<span class="sd">        Create instances of sequence provider, tx and rx card.</span>
+<span class="sd">        Setup the measurement cards and get parameters required for a measurement.</span>
 
-<div class="viewcode-block" id="AcquistionControl.acquire">
-<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl.acquire">[docs]</a>
-    <span class="k">def</span> <span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle the acquisition of an unrolled pulseq sequence.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        configuration_file</span>
+<span class="sd">            Path to configuration yaml file which is used to create measurement card and sequence</span>
+<span class="sd">            provider instances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get instances from configuration file</span>
+        <span class="n">ctx</span> <span class="o">=</span> <span class="n">get_instances</span><span class="p">(</span><span class="n">configuration_file</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">:</span> <span class="n">SequenceProvider</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="p">:</span> <span class="n">TxCard</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="p">:</span> <span class="n">RxCard</span> <span class="o">=</span> <span class="n">ctx</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
-<span class="sd">        This function is yet a prototypic skeleton.</span>
+        <span class="c1"># Setup the cards</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_setup</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">connect</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Setup of measurement cards successful.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_setup</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="c1"># Get the rx sampling rate for DDC</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span>
+        <span class="c1"># Set sequence provider max. amplitude per channel according to values from tx_card</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">max_amp_per_channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">max_amplitude</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_sequence</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># Read only attributes for data and dwell time of downsampled signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dwell</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Class destructor disconnecting measurement cards.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Measurement cards disconnected.&quot;</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">raw_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get pre-processed raw data acquired by acquisition control, read-only property.</span>
+
+<span class="sd">        Dimensions: [averages, phase encoding, readout]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Numpy array of down-sampled, phase corrected raw data.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">reference_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get reference signal data acquired by acquisition control, read-only property.</span>
+
+<span class="sd">        Dimensions: [averages, phase encoding, readout]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Numpy array of down-sampled reference signal used for phase correction.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">signal_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get signal data acquired by acquisition control, read-only property.</span>
+
+<span class="sd">        Dimensions: [averages, phase encoding, readout]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Numpy array of down-sampled signal data, which has not been phase corrected.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">dwell_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get dwell time of down-sampled data, read-only property.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Dwell time of down-sampled signal.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dwell</span>
+
+<div class="viewcode-block" id="AcquistionControl.run">
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">num_averages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run an acquisition job.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        sequence</span>
-<span class="sd">            Numpy array with unrolled replay data (pulseq sequence)</span>
+<span class="sd">            Path to pulseq sequence file.</span>
+<span class="sd">        parameter</span>
+<span class="sd">            Set of acquisition parameters which are required for the acquisition.</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            The measurement cards are not setup properly.</span>
+<span class="sd">        FileNotFoundError</span>
+<span class="sd">            Invalid file ending of sequence file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_setup</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Measurement cards are not setup.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">sequence</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.seq&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="s2">&quot;Invalid sequence file.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+        <span class="c1"># self.seq_provider.set</span>
+        <span class="n">sqnc</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">(</span>
+            <span class="n">larmor_freq</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span> <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_sequence</span> <span class="o">=</span> <span class="n">sqnc</span> <span class="k">if</span> <span class="n">sqnc</span> <span class="k">else</span> <span class="kc">None</span>
+
+        <span class="c1"># Define timeout for acquisition process: 5 sec + sequence duration</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">+</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">duration</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_averages</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&gt;&gt; Acquisition </span><span class="si">{</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">num_averages</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+            <span class="c1"># Start masurement card operations</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">()</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span><span class="n">sqnc</span><span class="p">)</span>
+
+            <span class="c1"># Get start time of acquisition</span>
+            <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">adc_count</span><span class="p">:</span>
+                <span class="c1"># Delay poll by 10 ms</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">adc_count</span><span class="p">:</span>
+                    <span class="c1"># All the data was received, start post processing</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                    <span class="c1"># Could not receive all the data before timeout</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Acquisition Timeout: Only received </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sqnc</span><span class="o">.</span><span class="n">adc_count</span><span class="si">}</span><span class="s2"> adc events...&quot;</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
+
+        <span class="c1"># Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dwell</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">downsampling_rate</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span></div>
+
+
+<div class="viewcode-block" id="AcquistionControl.post_processing">
+<a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.acquisition_control.AcquistionControl.post_processing">[docs]</a>
+    <span class="k">def</span> <span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform data post processing.</span>
+
+<span class="sd">        Apply the digital downconversion, filtering an downsampling per numpy array in the list of the received data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        data</span>
+<span class="sd">            Received list of adc data samples</span>
+<span class="sd">        parameter</span>
+<span class="sd">            Acquistion parameter to setup the filter</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Path of the receive data file as string</span>
+<span class="sd">            List of processed data arrays</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Define filename for the acquired data and return it after acquisition was successful</span>
-        <span class="n">data_file</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">kernel_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">downsampling_rate</span><span class="p">)</span>
+        <span class="n">f_0</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span>
+        <span class="n">ro_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">adc_samples</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="c1"># Connect to cards</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tx_engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_engine</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+        <span class="n">sig_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">ref_list</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="c1"># Create and start threads...</span>
-        <span class="n">tx_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tx_engine</span><span class="o">.</span><span class="n">start_operation</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">sequence</span><span class="p">,))</span>
-        <span class="n">rx_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_engine</span><span class="o">.</span><span class="n">start_operation</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+            <span class="c1"># Read raw and reference signal per gate</span>
+            <span class="n">_sig</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gate</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">_ref</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gate</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_scaling</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Down-sampling of raw and reference signal</span>
+            <span class="n">_sig</span> <span class="o">=</span> <span class="n">apply_ddc</span><span class="p">(</span><span class="n">_sig</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">f_0</span><span class="o">=</span><span class="n">f_0</span><span class="p">,</span> <span class="n">f_spcm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
+            <span class="n">_ref</span> <span class="o">=</span> <span class="n">apply_ddc</span><span class="p">(</span><span class="n">_ref</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span> <span class="n">f_0</span><span class="o">=</span><span class="n">f_0</span><span class="p">,</span> <span class="n">f_spcm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
+            <span class="c1"># Calculate start point of readout for adc truncation</span>
+            <span class="n">ro_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">_sig</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">parameter</span><span class="o">.</span><span class="n">adc_samples</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="c1"># Truncate raw and reference signal</span>
+            <span class="n">sig_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_sig</span><span class="p">[</span><span class="n">ro_start</span> <span class="p">:</span> <span class="n">ro_start</span> <span class="o">+</span> <span class="n">parameter</span><span class="o">.</span><span class="n">adc_samples</span><span class="p">])</span>
+            <span class="n">ref_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_ref</span><span class="p">[</span><span class="n">ro_start</span> <span class="p">:</span> <span class="n">ro_start</span> <span class="o">+</span> <span class="n">parameter</span><span class="o">.</span><span class="n">adc_samples</span><span class="p">])</span>
 
-        <span class="n">rx_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-        <span class="n">tx_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="c1"># Stack signal and reference data in first dimension (phase encoding dimension)</span>
+        <span class="n">sig</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">sig_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">ref_list</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># TODO: Report progress, wait until operation is finished</span>
-        <span class="c1"># =&gt; Idea: Calculate estimated acquisition time and join threads after this timeout</span>
-        <span class="c1"># Maybe this is even part of the TX card operate() routine</span>
-        <span class="c1"># Stop RX card dependent on the TX card</span>
+        <span class="c1"># Do the phase correction</span>
+        <span class="n">raw</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="n">sig</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
 
-        <span class="c1"># Wait for threads</span>
-        <span class="n">tx_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-        <span class="n">rx_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
-        <span class="c1"># Disconnect cards and return acquired data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tx_engine</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_engine</span><span class="o">.</span><span class="n">disconnect</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">data_file</span></div>
+        <span class="c1"># Assign processed data to private class attributes</span>
+        <span class="c1"># Add average dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span> <span class="o">=</span> <span class="n">sig</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sig</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_sig</span><span class="p">,</span> <span class="n">sig</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span> <span class="o">=</span> <span class="n">ref</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ref</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_ref</span><span class="p">,</span> <span class="n">ref</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">raw</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">,</span> <span class="n">raw</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 </div>
 
+
+        <span class="c1"># Save the following code for later, linear fit was not the best practice so far</span>
+        <span class="c1"># # Do a linear fit of the reference phase</span>
+        <span class="c1"># _time = np.arange(_tmp[1].size) * kernel_size / self.f_spcm</span>
+        <span class="c1"># m_phase, b_phase = np.polyfit(_time, ref_phase, 1)</span>
+        <span class="c1"># phase_fit = m_phase * _time + b_phase</span>
 </pre></div>
 
                 </article>

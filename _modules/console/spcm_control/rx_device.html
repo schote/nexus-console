@@ -406,8 +406,6 @@ document.write(`
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
 <span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">sp</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.device_interface</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.spcm.tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
@@ -444,6 +442,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># TODO: only use one variable for post trigger</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
 
 <div class="viewcode-block" id="RxCard.setup_card">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.setup_card">[docs]</a>
@@ -467,6 +466,14 @@ document.write(`
         <span class="k">if</span> <span class="s2">&quot;M2p.59&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Device with path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> is of type </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2">, no receive card...&quot;</span><span class="p">)</span>
 
+        <span class="c1"># Setup the clockmode</span>
+        <span class="c1"># Internal:</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
+        <span class="c1"># Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)</span>
+
         <span class="c1"># Setup channels</span>
         <span class="c1"># Enable channel 0 and 1, set impedance and max. amplitude</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CHENABLE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">CHANNEL0</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">CHANNEL1</span><span class="p">)</span>
@@ -477,7 +484,7 @@ document.write(`
 
         <span class="c1"># Get the number of active channels. This will be needed for handling the buffer size</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CHCOUNT</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="p">))</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Number of active channels: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># print(f&quot;RX:&gt; Number of active channels: {self.num_channels.value}&quot;)</span>
 
         <span class="c1"># Some general cards settings</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DIGITALBWFILTER</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Digital filter setting for receiver</span>
@@ -503,11 +510,11 @@ document.write(`
         <span class="c1"># spcm_dwSetParam_i32(self.card, SPC_MEMSIZE, self.memory_size)</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_POSTTRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span><span class="p">)</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_PRETRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_LOOPS</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># Loop parameter is zero for infinite loop</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>  <span class="c1"># Set clock mode</span>
+        <span class="c1"># Loop parameter is zero for infinite loop</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_LOOPS</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># Set timeout to 5s</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">5000</span><span class="p">)</span>
+        <span class="c1"># Set timeout to 10ms</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
         <span class="c1"># Setup timestamp mode to read number of samples per gate if available</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMESTAMP_CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TSMODE_STARTRESET</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TSCNT_INTERNAL</span><span class="p">)</span>
@@ -525,6 +532,7 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start card operation.&quot;&quot;&quot;</span>
         <span class="c1"># Clear the emergency stop flag</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="c1"># Start card thread. if time stamp mode is not available use the example function.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gated_timestamps_stream</span><span class="p">)</span>
@@ -537,7 +545,7 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card thread.&quot;&quot;&quot;</span>
         <span class="c1"># Check if thread is running</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Stopping card...&quot;</span><span class="p">)</span>
+            <span class="c1"># print(&quot;RX:&gt; Stopping card...&quot;)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
 
@@ -563,7 +571,6 @@ document.write(`
         <span class="n">rx_notify</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">KILO_B</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
         <span class="n">rx_size</span> <span class="o">=</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mi">400</span>
         <span class="n">rx_buffer_size</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">rx_size</span><span class="p">)</span>
-        <span class="c1"># rx_buffer_size = uint64(1024**2) # 1 MB == 512 KSamples, max. buffer size</span>
 
         <span class="n">rx_buffer</span> <span class="o">=</span> <span class="n">create_dma_buffer</span><span class="p">(</span><span class="n">rx_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwDefTransfer_i64</span><span class="p">(</span>
@@ -613,10 +620,9 @@ document.write(`
         <span class="n">data_user_position</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">total_gates</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">total_leftover</span> <span class="o">=</span> <span class="mi">0</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Starting receiver...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;RX:&gt; Starting receiver...&quot;)</span>
 
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
@@ -630,12 +636,13 @@ document.write(`
                 <span class="n">timestamp_1</span> <span class="o">=</span> <span class="n">pll_data</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
                 <span class="n">gate_length</span> <span class="o">=</span> <span class="n">timestamp_1</span> <span class="o">-</span> <span class="n">timestamp_0</span>
 
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Timestamps: </span><span class="si">{</span><span class="p">(</span><span class="n">timestamp_0</span><span class="p">,</span><span class="w"> </span><span class="n">timestamp_1</span><span class="p">)</span><span class="si">}</span><span class="s2">s, difference: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
+                <span class="c1"># print(f&quot;RX:&gt; Timestamps: {(timestamp_0, timestamp_1)}s, difference: {round(gate_length*1e3, 2)}ms&quot;)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Gate: (</span><span class="si">{</span><span class="n">timestamp_0</span><span class="si">}</span><span class="s2">s, </span><span class="si">{</span><span class="n">timestamp_1</span><span class="si">}</span><span class="s2">s); ADC duration: </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span><span class="o">*</span><span class="mf">1e3</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">ms&quot;</span><span class="p">)</span>
 
                 <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
 
                 <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">))</span>
-                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Available TS buffer size: </span><span class="si">{</span><span class="n">available_timestamp_bytes</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="c1"># print(f&quot;RX:&gt; Available TS buffer size: {available_timestamp_bytes.value}&quot;)</span>
 
                 <span class="n">gate_sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">gate_length</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>  <span class="c1"># number of adc gate sample points per channel</span>
 
@@ -660,12 +667,11 @@ document.write(`
                 <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">emergency_stop</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
                     <span class="c1"># Read/update available user bytes</span>
                     <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">))</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Available user length: &quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                    <span class="c1"># print(&quot;RX:&gt; Available user length: &quot;, available_user_databytes.value)</span>
                     <span class="k">if</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">total_bytes</span><span class="p">:</span>
                         <span class="n">total_gates</span> <span class="o">+=</span> <span class="mi">1</span>
-                        <span class="n">gate_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Getting RX buffer read position and RX data...&quot;</span><span class="p">)</span>
+                        <span class="c1"># print(&quot;RX:&gt; Getting RX buffer read position and RX data...&quot;)</span>
                         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">data_user_position</span><span class="p">))</span>
 
                         <span class="n">byte_position</span> <span class="o">=</span> <span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span> <span class="o">//</span> <span class="mi">2</span>
@@ -673,20 +679,19 @@ document.write(`
                         <span class="n">index_0</span> <span class="o">=</span> <span class="n">byte_position</span> <span class="o">+</span> <span class="n">total_leftover</span> <span class="o">//</span> <span class="mi">2</span>
 
                         <span class="k">if</span> <span class="n">total_bytes_to_read</span> <span class="o">+</span> <span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">rx_size</span><span class="p">:</span>
-                            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Rx_size: </span><span class="si">{</span><span class="n">rx_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                            <span class="c1"># print(f&quot;RX:&gt; Rx_size: {rx_size}&quot;)</span>
+                            <span class="c1"># &gt;&gt; We need two indices in case of memory overflow</span>
                             <span class="n">index_1</span> <span class="o">=</span> <span class="n">rx_size</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">index_0</span><span class="p">)</span>
                             <span class="n">index_2</span> <span class="o">=</span> <span class="n">total_bytes_to_read</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">index_1</span>
-                            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; indexes: </span><span class="si">{</span><span class="n">index_1</span><span class="p">,</span><span class="w"> </span><span class="n">index_2</span><span class="p">,(</span><span class="n">index_0</span><span class="o">-</span><span class="n">bytes_leftover</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                            <span class="n">gate_data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">index_1</span><span class="p">]</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="n">index_0</span> <span class="p">:</span> <span class="n">index_0</span> <span class="o">+</span> <span class="n">index_1</span><span class="p">]</span>
-                            <span class="n">gate_data</span><span class="p">[</span><span class="n">index_1</span> <span class="p">:</span> <span class="n">index_2</span> <span class="o">+</span> <span class="n">index_1</span><span class="p">]</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">index_2</span><span class="p">]</span>
+                            <span class="c1"># print(f&quot;RX:&gt; indexes: {index_1, index_2,(index_0-bytes_leftover)}&quot;)</span>
+                            <span class="n">gate_data</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="n">index_0</span> <span class="p">:</span> <span class="n">index_0</span> <span class="o">+</span> <span class="n">index_1</span><span class="p">]</span>
+                            <span class="n">gate_data</span> <span class="o">+=</span> <span class="n">rx_data</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">index_2</span><span class="p">]</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">gate_data</span> <span class="o">=</span> <span class="n">rx_data</span><span class="p">[</span><span class="n">index_0</span> <span class="p">:</span> <span class="n">index_0</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">total_bytes</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)]</span>
 
-                        <span class="c1"># Extract channel 0 and convert data from int16 to floats [V]</span>
-                        <span class="n">channel_0</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">gate_data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="c1"># Truncate gate signal, throw pre-trigger</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">gate_data</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:],</span> <span class="n">gate_data</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:]])</span>
 
-                        <span class="c1"># Truncate gate signal, throw pre- and post-trigger</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel_0</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="p">:])</span>
                         <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_bytes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span><span class="p">)</span> <span class="o">%</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
                         <span class="n">total_leftover</span> <span class="o">+=</span> <span class="n">bytes_leftover</span>
 
@@ -696,7 +701,7 @@ document.write(`
                         <span class="k">else</span><span class="p">:</span>
                             <span class="n">available_card_len</span> <span class="o">=</span> <span class="n">bytes_sequence</span> <span class="o">-</span> <span class="p">(</span><span class="n">bytes_leftover</span><span class="p">)</span>
 
-                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RX:&gt; Bytes leftover: </span><span class="si">{</span><span class="n">bytes_leftover</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="c1"># print(f&quot;RX:&gt; Bytes leftover: {bytes_leftover}&quot;)</span>
 
                         <span class="c1"># Tell the card that we have read the data.</span>
                         <span class="c1"># The card length should be in the order of notify size.</span>
@@ -705,12 +710,12 @@ document.write(`
 
                         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">))</span>
 
-                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Available user length: &quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                        <span class="c1"># print(&quot;RX:&gt; Available user length: &quot;, available_user_databytes.value)</span>
                         <span class="k">break</span>
 
                     <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;RX:&gt; Stopping acquisition...&quot;</span><span class="p">)</span>
+        <span class="c1"># print(&quot;RX:&gt; Stopping acquisition...&quot;)</span>
 
 <div class="viewcode-block" id="RxCard.get_status">
 <a class="viewcode-back" href="../../../spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">[docs]</a>
