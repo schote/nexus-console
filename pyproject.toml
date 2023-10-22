@@ -2,8 +2,12 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["console"]
+package-dir = {"" = "src"}
+
 [project]
-name = "spcm-console"
+name = "console"
 version = "0.1.0"
 description = "MRI console application for pulseq sequences build on Spectrum-Instrumentation measurement cards."
 authors = [
@@ -22,8 +26,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "numpy==1.23.0",    # pypulseq release 1.4 incompatible with numpy 1.25
-    "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=master",
+    "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
+    "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
     "plotly",
     "PyYAML",
     "matplotlib",
@@ -70,6 +74,7 @@ warn_unreachable = "True"
 python_version = "3.10"
 ignore_missing_imports = true
 mypy_path = "console"
+exclude = ["docs"]
 
 [tool.black]
 line-length = 120
