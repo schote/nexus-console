@@ -7,8 +7,8 @@ import numpy as np
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.ddc import apply_ddc
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.interface_acquisition_data import AcquisitionData
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
@@ -25,10 +25,10 @@ class AcquistionControl:
     """
 
     def __init__(
-        self, 
-        data_path: str = os.path.expanduser('~') + "/spcm-console", 
-        configuration_file: str = "../device_config.yaml"
-        ):
+        self,
+        data_path: str = os.path.expanduser("~") + "/spcm-console",
+        configuration_file: str = "../device_config.yaml",
+    ):
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -141,7 +141,7 @@ class AcquistionControl:
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
-        
+
         return AcquisitionData(
             raw=self._raw,
             signal=self._sig,
@@ -149,7 +149,7 @@ class AcquistionControl:
             sequence=self.seq_provider,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
             dwell_time=parameter.downsampling_rate / self.f_spcm,
-            acquisition_parameters=parameter
+            acquisition_parameters=parameter,
         )
 
     def post_processing(self, data: list[list[np.ndarray]], parameter: AcquisitionParameter) -> None:

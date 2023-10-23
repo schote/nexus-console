@@ -1,6 +1,6 @@
 """Interface class for acquisition parameters."""
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,7 +23,7 @@ class AcquisitionParameter:
     adc_samples: int
     downsampling_rate: int = 200
     num_averages: int = 1
-    
+
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
 
