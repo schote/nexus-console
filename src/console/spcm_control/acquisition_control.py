@@ -8,6 +8,7 @@ from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSeque
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
@@ -23,7 +24,11 @@ class AcquistionControl:
     Use two logs: a high level one as lab-book and a detailed one for debugging.
     """
 
-    def __init__(self, configuration_file: str):
+    def __init__(
+        self, 
+        data_path: str = os.path.expanduser('~') + "/spcm-console", 
+        configuration_file: str = "../device_config.yaml"
+        ):
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -54,12 +59,10 @@ class AcquistionControl:
 
         self.unrolled_sequence: UnrolledSequence | None = None
 
-        # Read only attributes for data and dwell time of downsampled signal
+        # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray | None = None
         self._sig: np.ndarray | None = None
         self._ref: np.ndarray | None = None
-
-        self._dwell: float | None = None
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -69,56 +72,7 @@ class AcquistionControl:
             self.rx_card.disconnect()
         print("Measurement cards disconnected.")
 
-    @property
-    def raw_data(self) -> np.ndarray | None:
-        """Get pre-processed raw data acquired by acquisition control, read-only property.
-
-        Dimensions: [averages, phase encoding, readout]
-
-        Returns
-        -------
-            Numpy array of down-sampled, phase corrected raw data.
-
-        """
-        return self._raw
-
-    @property
-    def reference_data(self) -> np.ndarray | None:
-        """Get reference signal data acquired by acquisition control, read-only property.
-
-        Dimensions: [averages, phase encoding, readout]
-
-        Returns
-        -------
-            Numpy array of down-sampled reference signal used for phase correction.
-
-        """
-        return self._ref
-
-    @property
-    def signal_data(self) -> np.ndarray | None:
-        """Get signal data acquired by acquisition control, read-only property.
-
-        Dimensions: [averages, phase encoding, readout]
-
-        Returns
-        -------
-            Numpy array of down-sampled signal data, which has not been phase corrected.
-
-        """
-        return self._sig
-
-    @property
-    def dwell_time(self) -> float | None:
-        """Get dwell time of down-sampled data, read-only property.
-
-        Returns
-        -------
-            Dwell time of down-sampled signal.
-        """
-        return self._dwell
-
-    def run(self, sequence: str, parameter: AcquisitionParameter, num_averages: int = 1) -> None:
+    def run(self, sequence: str, parameter: AcquisitionParameter) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -156,8 +110,8 @@ class AcquistionControl:
         self._ref = None
         self._sig = None
 
-        for k in range(num_averages):
-            print(f">> Acquisition {k+1}/{num_averages}")
+        for k in range(parameter.num_averages):
+            print(f">> Acquisition {k+1}/{parameter.num_averages}")
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -187,9 +141,16 @@ class AcquistionControl:
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
-
-        # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
-        self._dwell = parameter.downsampling_rate / self.f_spcm
+        
+        return AcquisitionData(
+            raw=self._raw,
+            signal=self._sig,
+            reference=self._ref,
+            sequence=self.seq_provider,
+            # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
+            dwell_time=parameter.downsampling_rate / self.f_spcm,
+            acquisition_parameters=parameter
+        )
 
     def post_processing(self, data: list[list[np.ndarray]], parameter: AcquisitionParameter) -> None:
         """Perform data post processing.
