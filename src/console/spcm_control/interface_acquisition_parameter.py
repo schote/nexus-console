@@ -38,5 +38,4 @@ class AcquisitionParameter:
         """
         if use_strings:
             return {k: str(v) for k, v in asdict(self).items()}
-        else:
-            return asdict(self)
+        return asdict(self)

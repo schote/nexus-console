@@ -1,6 +1,7 @@
 """Acquisition Control Class."""
 
 import time
+import warnings
 
 import numpy as np
 
@@ -24,11 +25,7 @@ class AcquistionControl:
     Use two logs: a high level one as lab-book and a detailed one for debugging.
     """
 
-    def __init__(
-        self,
-        data_path: str = os.path.expanduser("~") + "/spcm-console",
-        configuration_file: str = "../device_config.yaml",
-    ):
+    def __init__(self, configuration_file: str = "../device_config.yaml"):
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -141,6 +138,10 @@ class AcquistionControl:
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
+
+        if not self._raw:
+            self._raw = np.empty([])
+            warnings.warn("Empty raw data array")
 
         return AcquisitionData(
             raw=self._raw,
