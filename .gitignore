@@ -139,3 +139,4 @@ dmypy.json
 
 # Folders with matlab code (for reference)
 **/.matlab
+.vscode/settings.json
