@@ -139,4 +139,9 @@ dmypy.json
 
 # Folders with matlab code (for reference)
 **/.matlab
-.vscode/settings.json
+
+# vs code settings
+.vscode
+
+# Code documentation, autosummary
+/docs/source/_autosummary

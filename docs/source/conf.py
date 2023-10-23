@@ -11,16 +11,18 @@
 
 import os
 import sys
+from sphinx_pyproject import SphinxConfig
 
+config = SphinxConfig('../../pyproject.toml', globalns=globals())
 sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'Spectrum-Pypulseq MRI Console'
-copyright = '2023, David Schote'
-author = 'David Schote <david.schote@ptb.de>'
-release = '01.09.2023'
+author = author
+version = version
+copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -32,6 +34,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
+autosummary_generate = True
+autosummary_imported_members = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
