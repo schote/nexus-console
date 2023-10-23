@@ -142,6 +142,8 @@ dmypy.json
 
 # vs code settings
 .vscode
+/.vscode
 
 # Code documentation, autosummary
 /docs/source/_autosummary
+

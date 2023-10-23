@@ -7,7 +7,7 @@ Spectrum-Console Documentation
 ==============================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: API Reference:
    
    api_documentation
@@ -15,10 +15,9 @@ Spectrum-Console Documentation
    user_guide
 
 
+Overview
+========
 
-Indices and tables
-==================
+System overview:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. image:: _img/components.drawio.png

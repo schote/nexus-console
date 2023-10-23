@@ -13,8 +13,8 @@ import os
 import sys
 from sphinx_pyproject import SphinxConfig
 
+sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 config = SphinxConfig('../../pyproject.toml', globalns=globals())
-sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -34,11 +34,12 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
-autosummary_generate = True
 autosummary_imported_members = True
+autosummary_generate = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -46,16 +47,10 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = "pydata_sphinx_theme"
 html_show_sphinx = False
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
+html_css_files = ['custom.css']
 html_logo = "_static/scanner_config.png"
-
 html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}
-
 html_theme_options = {
     "pygment_light_style": "default",
     "pygment_dark_style": "github-dark",
