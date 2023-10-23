@@ -34,12 +34,13 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
-autosummary_imported_members = True
-autosummary_generate = True
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
+
+autosummary_imported_members = True
+autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -52,6 +53,7 @@ html_css_files = ['custom.css']
 html_logo = "_static/scanner_config.png"
 html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}
 html_theme_options = {
+    "logo": {"text": "Spectrum-Console"},
     "pygment_light_style": "default",
     "pygment_dark_style": "github-dark",
     "show_toc_level": 3,
