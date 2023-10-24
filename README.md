@@ -53,13 +53,14 @@ params = AcquisitionParameter(
     fov_scaling=Dimensions(x=1., y=1., z=1.),
     fov_offset=Dimensions(x=0., y=0., z=0.),
     downsampling_rate=200,
-    adc_samples=500
+    adc_samples=500,
+    num_averages=1
 )
 
-acq.run(parameter=params, sequence=f"sequence_file.seq")
+data: AcquisitionData = acq.run(parameter=params, sequence=f"sequence_file.seq")
 
-# Get down-sampled raw data
-data = acq.raw_data
+# Get down-sampled raw data, shape: [num_averages, num_phase_encodings, readout_samples]
+raw_data = data.raw
 ```
 
 
