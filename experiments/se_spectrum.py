@@ -1,6 +1,7 @@
 """Execution of a spin echo experiment using the acquisition control."""
 # %%
 # imports
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
@@ -9,12 +10,11 @@ from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.utilities.spcm_data_plot import plot_spcm_data
 from console.spcm_control.ddc import apply_ddc
 import time
-from scipy.signal import butter, filtfilt
 
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration)
+acq = AcquistionControl(configuration, file_log_level=logging.DEBUG)
 
 # %%
 # Sequence filename
@@ -28,22 +28,23 @@ filename = "se_proj_400us_sinc_12ms-te"
 # filename = "se_spectrum_2500us_sinc_12ms-te"
 # filename = "dual-se_spec"
 
-f_0 = 2037529.6875
+f_0 = 2037729.6875
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=5.0,
+    b1_scaling=2.5,
     # b1_scaling=7.0,
     fov_scaling=Dimensions(
         # x=5.,
-        x=0.,
+        x=0.6,
         y=0., 
         z=0.
     ),
     fov_offset=Dimensions(x=0., y=0., z=0.),
-    downsampling_rate=200,
+    downsampling_rate=400,  # 200
     adc_samples=500,
+    num_averages=5,
 )
 
 # Perform acquisition
@@ -51,7 +52,9 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=f"../sequences/ex
 
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
-data = acq_data.raw.squeeze()
+data = np.mean(acq_data.raw, axis=0).squeeze()
+
+print("RF max. [mv]: ", 200*np.max(np.concatenate(acq.unrolled_sequence.seq)[0::4])/np.iinfo(np.int16).max)
 
 data_fft = np.fft.fftshift(np.fft.fft(data))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
@@ -63,12 +66,10 @@ f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 print(f"\n>> Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f">> Frequency spectrum max.: {max_spec}")
 
-# %%
 
-acq_data.write()
+# acq_data.write()
 
 
-# %%
 # Plot frequency spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(fft_freq, np.abs(data_fft))    
@@ -80,6 +81,12 @@ _ = ax.set_xlabel("Frequency [Hz]")
 # %%
 # Plot sequence
 plot_spcm_data(acq.unrolled_sequence)
+
+# %%
+fig, ax = plt.subplots(1, 1, figsize=(10, 5))
+for d in acq_data.raw.squeeze()[:, ...]:
+    ax.plot(np.degrees(np.angle(d)))    
+
 
 # %%
 # Delete acquisition control instance to disconnect from cards
