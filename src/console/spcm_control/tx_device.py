@@ -3,7 +3,7 @@ import ctypes
 import threading
 from dataclasses import dataclass
 from pprint import pprint
-
+import logging
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
@@ -40,7 +40,8 @@ class TxCard(SpectrumDevice):
 
     def __post_init__(self):
         """Post init function which is required to use dataclass arguments."""
-        super().__init__(self.path)
+        self.log = logging.getLogger('TxDev')
+        super().__init__(self.path, log=self.log)
 
         self.num_ch = 4
 
@@ -101,7 +102,7 @@ class TxCard(SpectrumDevice):
 
         # Set clock mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
-        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
 
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
@@ -146,14 +147,15 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Channel 1 (gradient): digital phase reference => X0
-        # Channel 2 (gradient): digital ADC gate => X1
-        # Channel 3 (gradient): digital RF unblanking signal => X2, X3
-        spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X0_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        )
+        # Channel X1: digital ADC gate (analog channel 1)
+        # Channel X2: digital phase reference (analog channel 3)
+        # Channel X3: digital RF unblanking signal (analog channel 2)
+        
+        # spcm.spcm_dwSetParam_i32(
+        #     self.card,
+        #     spcm.SPCM_X0_MODE,
+        #     (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        # )
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
@@ -162,7 +164,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X2_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
         spcm.spcm_dwSetParam_i32(
             self.card,

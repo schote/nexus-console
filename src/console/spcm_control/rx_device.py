@@ -3,7 +3,7 @@ import threading
 from ctypes import byref, cast
 from dataclasses import dataclass
 from pprint import pprint
-
+import logging
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.device_interface import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
@@ -20,11 +20,13 @@ class RxCard(SpectrumDevice):
     memory_size: int
     loops: int
     timestamp_mode: bool
+    
     __name__: str = "RxCard"
 
     def __post_init__(self):
         """Execute after init function to do further class setup."""
-        super().__init__(self.path)
+        self.log = logging.getLogger('RxDev')
+        super().__init__(self.path, log=self.log)
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
 
@@ -62,19 +64,23 @@ class RxCard(SpectrumDevice):
 
         # Setup the clockmode
         # Internal:
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
         # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
 
-        # Setup channels
+        # Setup analog input channels
         # Enable channel 0 and 1, set impedance and max. amplitude
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CHENABLE, sp.CHANNEL0 | sp.CHANNEL1)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_50OHM0, 0)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_50OHM1, 0)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_50OHM0, 0)     # 0 = 1 Mohms, 1 = 50 ohms, check preamp output?
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_50OHM1, 0)     # 0 = 1 Mohms, 1 = 50 ohms, check preamp output?
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_AMP0, self.max_amplitude[0])
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_AMP1, self.max_amplitude[1])
+        
+        # Setup digital input channels
+        sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
         # Get the number of active channels. This will be needed for handling the buffer size
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
@@ -278,6 +284,8 @@ class RxCard(SpectrumDevice):
 
                         # Truncate gate signal, throw pre-trigger
                         self.rx_data.append([gate_data[0::2][self.pre_trigger :], gate_data[1::2][self.pre_trigger :]])
+                        # self.rx_data.append([gate_data[0::2][self.pre_trigger :] << 1, gate_data[1::2][self.pre_trigger :]])
+                        # self.ref_data.append(gate_data[0::2][self.pre_trigger :] >> 15)
 
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
                         total_leftover += bytes_leftover
