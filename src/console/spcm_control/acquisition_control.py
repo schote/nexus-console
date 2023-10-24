@@ -139,7 +139,7 @@ class AcquistionControl:
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-        if not self._raw:
+        if self._raw is None:
             self._raw = np.empty([])
             warnings.warn("Empty raw data array")
 

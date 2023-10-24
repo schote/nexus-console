@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquistionControl
+from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.utilities.spcm_data_plot import plot_spcm_data
 from console.spcm_control.ddc import apply_ddc
 import time
@@ -46,14 +47,14 @@ params = AcquisitionParameter(
 )
 
 # Perform acquisition
-acq.run(parameter=params, sequence=f"../sequences/export/{filename}.seq")
+acq_data: AcquisitionData = acq.run(parameter=params, sequence=f"../sequences/export/{filename}.seq")
 
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
-data = acq.raw_data.squeeze()
+data = acq_data.raw.squeeze()
 
 data_fft = np.fft.fftshift(np.fft.fft(data))
-fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq.dwell_time))
+fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
 
 # Print peak height and center frequency
 max_spec = np.max(np.abs(data_fft))
@@ -61,6 +62,10 @@ f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 print(f"\n>> Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f">> Frequency spectrum max.: {max_spec}")
+
+# %%
+
+acq_data.write()
 
 
 # %%

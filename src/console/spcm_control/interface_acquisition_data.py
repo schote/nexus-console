@@ -1,7 +1,7 @@
 """Interface class for acquisition parameters."""
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 import numpy as np
@@ -26,7 +26,7 @@ class AcquisitionData:
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
 
-    meta: dict = {}
+    meta: dict = field(default_factory=dict)
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
 
@@ -44,10 +44,15 @@ class AcquisitionData:
                 "raw_data_shape": self.raw.shape,
                 "sig_data_shape": self.signal.shape if self.signal is not None else False,
                 "ref_data_shape": self.reference.shape if self.reference is not None else False,
+                "acquisition_parameter": self.acquisition_parameters.dict(),
+                "sequence": {
+                    "name": self.sequence.definitions["Name"][0].replace(" ", "_"),
+                    "duration": self.sequence.definitions["TotalDuration"],
+                },
             }
         )
 
-    def save_data(self, data_path: str = os.path.expanduser("~") + "/spcm-console") -> None:
+    def write(self, data_path: str = os.path.expanduser("~") + "/spcm-console") -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
@@ -57,14 +62,17 @@ class AcquisitionData:
             This path is unique for each acquisition.
         """
         # Add trailing slash and make dir
-        data_path = os.path.join(data_path, "")
-        os.makedirs(data_path, exist_ok=True)
+        base_path = os.path.join(data_path, "")
+        os.makedirs(base_path, exist_ok=True)
 
-        params = self.acquisition_parameters.dict()
+        acq_folder = datetime.now().strftime("%d%m%Y-%H%M%S-") + self.meta["sequence"]["name"]
+        data_path = base_path + acq_folder + "/"
+        os.makedirs(data_path, exist_ok=False)
 
+        # params = self.acquisition_parameters.dict()
         # Save acquisition parameters
-        with open(f"{data_path}acquisition_parameter.json", "w", encoding="utf-8") as outfile:
-            json.dump(params, outfile, indent=4)
+        # with open(f"{data_path}acquisition_parameter.json", "w", encoding="utf-8") as outfile:
+        #     json.dump(params, outfile, indent=4)
 
         # Save meta data
         with open(f"{data_path}meta.json", "w", encoding="utf-8") as outfile:
