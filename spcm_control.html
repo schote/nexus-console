@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>User Guide &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>Spectrum-Instrumentation Card Controller &#8212; Spectrum-Pypulseq MRI Console 01.09.2023 documentation</title>
   
   
   
@@ -35,13 +35,14 @@
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=ac02cc09edc035673794" />
   <script src="_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=ac02cc09edc035673794"></script>
 
-    <script src="_static/documentation_options.js?v=8a448e45"></script>
+    <script src="_static/documentation_options.js?v=dfcfd79d"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'spcm_control';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Technical Documentation" href="technical_documentation.html" />
+    <link rel="next" title="Pulseq Sequence Provider" href="sqnc_provider.html" />
+    <link rel="prev" title="Spectrum-Console API" href="api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -138,23 +139,9 @@
   </p>
   <ul class="bd-navbar-elements navbar-nav">
     
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="api_documentation.html">
-                        API Documentation
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="technical_documentation.html">
-                        Technical Documentation
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
-                        User Guide
+                      <a class="nav-link nav-internal" href="api.html">
+                        Spectrum-Console API
                       </a>
                     </li>
                 
@@ -278,23 +265,9 @@ document.write(`
   </p>
   <ul class="bd-navbar-elements navbar-nav">
     
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="api_documentation.html">
-                        API Documentation
-                      </a>
-                    </li>
-                
-
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="technical_documentation.html">
-                        Technical Documentation
-                      </a>
-                    </li>
-                
-
                     <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
-                        User Guide
+                      <a class="nav-link nav-internal" href="api.html">
+                        Spectrum-Console API
                       </a>
                     </li>
                 
@@ -379,6 +352,16 @@ document.write(`
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
+        <div class="sidebar-primary-item"><nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Spectrum-Instrumentation Card Controller</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sqnc_provider.html">Pulseq Sequence Provider</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
+</ul>
+</div>
+</nav></div>
     </div>
   
   
@@ -413,7 +396,10 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">User Guide</li>
+    
+    <li class="breadcrumb-item"><a href="api.html" class="nav-link">Spectrum-Console API</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Spectrum-Ins...</li>
   </ul>
 </nav>
 </div>
@@ -430,8 +416,8 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="user-guide">
-<h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">#</a></h1>
+  <section id="spectrum-instrumentation-card-controller">
+<h1>Spectrum-Instrumentation Card Controller<a class="headerlink" href="#spectrum-instrumentation-card-controller" title="Link to this heading">#</a></h1>
 </section>
 
 
@@ -445,13 +431,22 @@ document.write(`
                   <!-- Previous / next buttons -->
 <div class="prev-next-area">
     <a class="left-prev"
-       href="technical_documentation.html"
+       href="api.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Technical Documentation</p>
+        <p class="prev-next-title">Spectrum-Console API</p>
       </div>
+    </a>
+    <a class="right-next"
+       href="sqnc_provider.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Pulseq Sequence Provider</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
     </a>
 </div>
                 </footer>
@@ -464,7 +459,7 @@ document.write(`
 
   <div class="sidebar-secondary-item">
   <div class="tocsection sourcelink">
-    <a href="_sources/user_guide.rst.txt">
+    <a href="_sources/spcm_control.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>
@@ -494,7 +489,7 @@ document.write(`
         <div class="footer-item">
   <p class="copyright">
     
-      © Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.
+      © Copyright 2023, David Schote.
       <br/>
     
   </p>
