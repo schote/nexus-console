@@ -1,8 +1,8 @@
 """Device interface class."""
-from logging import Logger
-from abc import ABC, abstractmethod
 import warnings
+from abc import ABC, abstractmethod
 from ctypes import byref, c_char_p, create_string_buffer
+from logging import Logger
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.spcm.tools import translate_error, type_to_name
@@ -72,7 +72,7 @@ class SpectrumDevice(ABC):
             # Read error message from card
             err_msg = create_string_buffer(sp.ERRORTEXTLEN)
             sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg)
-            
+
             # Disconnect and raise error
             self.log.critical(f"Catched error: {err_msg}, {translate_error(error)}; stopping card {self.name}")
             sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)

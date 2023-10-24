@@ -1,9 +1,10 @@
 """Acquisition Control Class."""
 
-import time
-import warnings
 import logging
 import os
+import time
+import warnings
+
 import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
@@ -27,11 +28,11 @@ class AcquistionControl:
     """
 
     def __init__(
-        self, 
-        configuration_file: str = "../device_config.yaml", 
+        self,
+        configuration_file: str = "../device_config.yaml",
         file_log_level: int = logging.INFO,
-        consol_log_level: int = logging.INFO
-        ):
+        consol_log_level: int = logging.INFO,
+    ):
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -44,8 +45,8 @@ class AcquistionControl:
             provider instances.
         """
         self._setup_logging(console_level=consol_log_level, file_level=file_log_level)
-        self.log = logging.getLogger('AcqCtrl')
-        
+        self.log = logging.getLogger("AcqCtrl")
+
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
         self.seq_provider: SequenceProvider = ctx[0]
@@ -77,39 +78,36 @@ class AcquistionControl:
         if self.rx_card:
             self.rx_card.disconnect()
         print("Measurement cards disconnected.")
-        
+
     def _setup_logging(
-        self, 
-        console_level: int, 
-        file_level: int, 
-        logfile_path: str = "/home/schote01/spcm-console/"
-        ) -> None:
+        self, console_level: int, file_level: int, logfile_path: str = "/home/schote01/spcm-console/"
+    ) -> None:
         # Check if log levels are valid
-        if not console_level in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if console_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
             raise ValueError("Invalid console log level")
-        if not file_level in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if file_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
             raise ValueError("Invalid file log level")
-        
+
         # Setup log file path
         logfile_path = os.path.join(logfile_path, "")
         os.makedirs(logfile_path, exist_ok=True)
-        
+
         # Set up logging to file
         logging.basicConfig(
-            level=file_level, 
-            format='%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s',
-            datefmt='%d-%m-%Y, %H:%M',
+            level=file_level,
+            format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
+            datefmt="%d-%m-%Y, %H:%M",
             filename=f"{logfile_path}console.log",
-            filemode='w'
+            filemode="w",
         )
 
         # Define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
         console.setLevel(console_level)
-        formatter = logging.Formatter('%(name)-7s: %(levelname)-8s >> %(message)s')
+        formatter = logging.Formatter("%(name)-7s: %(levelname)-8s >> %(message)s")
         console.setFormatter(formatter)
-        logging.getLogger('').addHandler(console)
-        
+        logging.getLogger("").addHandler(console)
+
         logging.info("========================== LOG FILE CREATED ==========================")
 
     def run(self, sequence: str, parameter: AcquisitionParameter) -> AcquisitionData:
@@ -212,8 +210,6 @@ class AcquistionControl:
         -------
             List of processed data arrays
         """
-        data = self.rx_card.rx_data
-        
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
         ro_start = int(parameter.adc_samples / 2)
@@ -222,31 +218,30 @@ class AcquistionControl:
         ref_list: list = []
 
         for gate in self.rx_card.rx_data:
-            
             # Process reference signal
             _ref = np.array(gate[0]).astype(np.uint16) >> 15
             _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-            
+
             # Calculate start point of readout for adc truncation
             ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
             ref_list.append(_ref[ro_start : ro_start + parameter.adc_samples])
-            
+
             # TODO: Loop over channel
-            
+
             # Read raw and reference signal per gate
             _sig = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
             # Down-sampling of raw and reference signal
             _sig = apply_ddc(_sig, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             # Truncate raw and reference signal
             sig_list.append(_sig[ro_start : ro_start + parameter.adc_samples])
-            
+
         # Stack signal and reference data in first dimension (phase encoding dimension)
         sig: np.ndarray = np.stack(sig_list, axis=0)
         ref: np.ndarray = np.stack(ref_list, axis=0)
 
         # Do the phase correction
         # raw: np.ndarray = sig * np.exp(-1j * np.angle(np.mean(ref, axis=-1, keepdims=True)))
-        raw: np.ndarray = sig * np.exp(-1j *np.angle(ref))
+        raw: np.ndarray = sig * np.exp(-1j * np.angle(ref))
 
         # Assign processed data to private class attributes
         # Add average dimension

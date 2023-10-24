@@ -1,9 +1,10 @@
 """Implementation of transmit card."""
 import ctypes
+import logging
 import threading
 from dataclasses import dataclass
 from pprint import pprint
-import logging
+
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
@@ -40,7 +41,7 @@ class TxCard(SpectrumDevice):
 
     def __post_init__(self):
         """Post init function which is required to use dataclass arguments."""
-        self.log = logging.getLogger('TxDev')
+        self.log = logging.getLogger("TxDev")
         super().__init__(self.path, log=self.log)
 
         self.num_ch = 4
@@ -150,7 +151,7 @@ class TxCard(SpectrumDevice):
         # Channel X1: digital ADC gate (analog channel 1)
         # Channel X2: digital phase reference (analog channel 3)
         # Channel X3: digital RF unblanking signal (analog channel 2)
-        
+
         # spcm.spcm_dwSetParam_i32(
         #     self.card,
         #     spcm.SPCM_X0_MODE,
