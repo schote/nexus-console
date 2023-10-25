@@ -41,24 +41,27 @@ class TxCard(SpectrumDevice):
 
     def __post_init__(self):
         """Post init function which is required to use dataclass arguments."""
-        self.log = logging.getLogger("TxDev")
+        self.log = logging.getLogger(self.__name__)
         super().__init__(self.path, log=self.log)
 
+        # Number of output channels is fixed
         self.num_ch = 4
-
         # Size of the current sequence
         self.data_buffer_size = int(0)
+        # Define ring buffer and notify size, 512 MSamples * 2 Bytes = 1024 MB
+        self.ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)
+        self.card_type = spcm.int32(0)
 
-        # Define ring buffer and notify size
-        self.ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)  # => 512 MSamples * 2 Bytes = 1024 MB
-        # self.ring_buffer_size: uint64 = uint64(1024**2)
-
-        # Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)
-        if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
-            raise MemoryError(
-                "TX:> Ring buffer size is not a multiple of channel sample product \
-                (number of enables channels times 2 byte per sample)"
-            )
+        try:
+            # Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)
+            if self.ring_buffer_size.value % (self.num_ch * 2) != 0:
+                raise MemoryError(
+                    "Ring buffer size is not a multiple of channel sample product \
+                    (number of enables channels times 2 byte per sample)"
+                )
+        except MemoryError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         if self.ring_buffer_size.value % self.notify_rate == 0:
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / self.notify_rate))
@@ -66,13 +69,11 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        # print(f"TX:> Ring buffer size: {self.ring_buffer_size.value}, notify size: ", self.notify_size.value)
+        self.log.debug(f"Ring buffer size: {self.ring_buffer_size.value}; Notify size: {self.notify_size.value}")
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
-        self.emergency_stop = threading.Event()
-
-        self.card_type = spcm.int32(0)
+        self.is_running = threading.Event()
 
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
@@ -92,10 +93,13 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
 
-        if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
-            raise ConnectionError(f"TX:> Device with path {self.path} is of type {device_type}, no transmit card...")
+        try:
+            if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
+                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no transmit card...")
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
-        # self.print_status() # debug
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
 
         # Set trigger
@@ -111,12 +115,12 @@ class TxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = spcm.int64(0)
         spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_SAMPLERATE, ctypes.byref(sample_rate))
-        print(f"TX:> Device sampling rate: {sample_rate.value*1e-6} MHz")
+        self.log.info(f"Device sampling rate: {sample_rate.value*1e-6} MHz")
         if sample_rate.value != spcm.MEGA(self.sample_rate):
-            raise Warning(
-                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate \
-                of {self.sample_rate} MHz..."
+            self.log.warning(
+                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz"
             )
+            self.sample_rate = sample_rate.value * 1e-6
 
         # Enable and setup channels
         spcm.spcm_dwSetParam_i32(
@@ -168,6 +172,8 @@ class TxCard(SpectrumDevice):
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
+        self.log.debug("Device setup completed")
+
     def start_operation(self, data: UnrolledSequence | None = None) -> None:
         """Start transmit (TX) card operation.
 
@@ -188,43 +194,50 @@ class TxCard(SpectrumDevice):
         ValueError
             Raised if replay data is not provided as numpy int16 values
         """
-        if not data:
-            raise AttributeError("No unrolled sequence data provided.")
-        sqnc = np.concatenate(data.seq)
+        try:
+            # Data must have a default value as start_operation is an abstract method and data is optional
+            if not data:
+                raise ValueError("No unrolled sequence data provided.")
+            sqnc = np.concatenate(data.seq)
 
-        # Check if sequence datatype is valid
-        if sqnc.dtype != np.int16:
-            raise ValueError("TX:> Sequence replay data is not int16, please unroll sequence to int16.")
+            # Check if sequence datatype is valid
+            if sqnc.dtype != np.int16:
+                raise ValueError("Sequence replay data is not int16, please unroll sequence to int16.")
+
+            # Check if card connection is established
+            if not self.card:
+                raise ConnectionError("No connection to card established...")
+
+        except Exception as exc:
+            self.log.exception(exc, exc_info=True)
+            raise exc
 
         # Check if sequence dwell time is valid
         if sqnc_sample_rate := 1 / (data.dwell_time * 1e6) != self.sample_rate:
-            raise Warning(
-                f"TX:> Sequence sample rate ({sqnc_sample_rate} MHz) differs from \
-                device sample rate ({self.sample_rate} MHz)."
+            self.log.warning(
+                f"Sequence sample rate ({sqnc_sample_rate} MHz) differs from device sample rate ({self.sample_rate} MHz)."
             )
 
-        # Check if card connection is established
-        if not self.card:
-            raise ConnectionError("TX:> No connection to card established...")
+        self.log_card_status()
 
         # Setup card, clear emergency stop thread event and start thread
-        self.emergency_stop.clear()
+        self.is_running.clear()
         self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
         self.worker.start()
 
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:
-            # print("TX:> Stopping card...")
-            self.emergency_stop.set()
+            self.is_running.set()
             self.worker.join()
 
             error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA)
-            self.handle_error(error)
 
+            self.handle_error(error)
             self.worker = None
+            self.log_card_status()
         else:
-            print("TX:> No active replay thread found...")
+            print("No active replay thread found...")
 
     def _fifo_stream_worker(self, data: np.ndarray) -> None:
         """Continuous FIFO mode examples.
@@ -237,26 +250,28 @@ class TxCard(SpectrumDevice):
             >>> [c0_0, c1_0, c2_0, c3_0, c0_1, c1_1, c2_1, c3_1, ..., cX_N]
             Here, X denotes the channel and the subsequent index N the sample index.
         """
-        # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
-        # TODO: If replay data << ring buffer size we write a lot of zeros => dynamically adjust ring buffer size?
-        if (rest := data.nbytes % self.ring_buffer_size.value) != 0:
-            rest = self.ring_buffer_size.value - rest
-            if rest % 2 != 0:
-                raise MemoryError("TX:> Providet data array size is not a multiple of 2 bytes (size of one sample)")
+        try:
+            # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
+            if (rest := data.nbytes % self.ring_buffer_size.value) != 0:
+                rest = self.ring_buffer_size.value - rest
+                if rest % 2 != 0:
+                    raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
 
-            fill_size = int((rest) / 2)
-            data = np.append(data, np.zeros(fill_size, dtype=np.int16))
-            # print(f"TX:> Appended {fill_size} zeros to data array...")
+                fill_size = int((rest) / 2)
+                data = np.append(data, np.zeros(fill_size, dtype=np.int16))
+                self.log.debug(f"Appended {fill_size} zeros to data array...")
 
-        # Get total size of data buffer to be played out
-        self.data_buffer_size = int(data.nbytes)
-        if self.data_buffer_size % (self.num_ch * 2) != 0:
-            raise MemoryError(
-                "TX:> Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
-            )
+            # Get total size of data buffer to be played out
+            self.data_buffer_size = int(data.nbytes)
+            if self.data_buffer_size % (self.num_ch * 2) != 0:
+                raise MemoryError(
+                    "Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
+                )
+        except MemoryError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
-        # Report replay buffer size and samples
-        # print(f"TX:> Replay data buffer: {self.data_buffer_size} bytes")
+        self.log.debug(f"Replay data buffer: {self.data_buffer_size} bytes")
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -264,15 +279,19 @@ class TxCard(SpectrumDevice):
         # Allocate continuous ring buffer as defined by class attribute
         ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
 
-        # Perform initial memory transfer: Fill the whole ring buffer
-        if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
-            if _data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value:
-                ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.ring_buffer_size.value)
-                transferred_bytes = self.ring_buffer_size.value
+        try:
+            # Perform initial memory transfer: Fill the whole ring buffer
+            if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
+                if _data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value:
+                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.ring_buffer_size.value)
+                    transferred_bytes = self.ring_buffer_size.value
+                else:
+                    raise RuntimeError("Could not get data buffer position")
             else:
-                raise RuntimeError("Could not get data buffer position")
-        else:
-            raise RuntimeError("Could not get ring buffer position")
+                raise RuntimeError("Could not get ring buffer position")
+        except RuntimeError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         # Perform initial data transfer to completely fill continuous buffer
         spcm.spcm_dwDefTransfer_i64(
@@ -286,12 +305,12 @@ class TxCard(SpectrumDevice):
         )
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
 
-        # print("TX:> Starting DMA...")
+        self.log.debug("Starting card memory transfer")
         error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA)
         self.handle_error(error)
 
         # Start card
-        # print("TX:> Starting card...")
+        self.log.debug("Starting card operation")
         error = spcm.spcm_dwSetParam_i32(
             self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER
         )
@@ -301,7 +320,7 @@ class TxCard(SpectrumDevice):
         usr_position = spcm.int32(0)
         transfer_count = 0
 
-        while (transferred_bytes < self.data_buffer_size) and not self.emergency_stop.is_set():
+        while (transferred_bytes < self.data_buffer_size) and not self.is_running.is_set():
             # Read available bytes and user position
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
@@ -330,6 +349,8 @@ class TxCard(SpectrumDevice):
                 error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
                 self.handle_error(error)
 
+        self.log.debug("Card operation stopped")
+
     def get_status(self) -> int:
         """Get the current card status.
 
@@ -337,14 +358,18 @@ class TxCard(SpectrumDevice):
         -------
             String with status description.
         """
-        if not self.card:
-            raise ConnectionError("TX:> No spectrum card found.")
+        try:
+            if not self.card:
+                raise ConnectionError("No device found")
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
         status = spcm.int32(0)
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_M2STATUS, ctypes.byref(status))
         return status.value
 
-    def print_status(self, include_desc: bool = False) -> None:
-        """Print current card status.
+    def log_card_status(self, include_desc: bool = False) -> None:
+        """Log current card status.
 
         The status is represented by a list. Each entry represents a possible card status in form
         of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
@@ -355,7 +380,6 @@ class TxCard(SpectrumDevice):
         include_desc, optional
             Flag which indicates if description string should be contained in status entry, by default False
         """
-        code = self.get_status()
-        msg, _ = translate_status(code, include_desc=include_desc)
-        pprint(msg)
-        print(f"TX:> Status code: {code}")
+        msg, _ = translate_status(self.get_status(), include_desc=include_desc)
+        status = {key: val for val, key in msg.values()}
+        self.log.debug(f"Card status: {status}")
