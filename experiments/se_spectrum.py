@@ -14,7 +14,7 @@ import time
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, file_log_level=logging.DEBUG)
 
 # %%
 # Sequence filename
@@ -42,19 +42,20 @@ params = AcquisitionParameter(
         z=0.
     ),
     fov_offset=Dimensions(x=0., y=0., z=0.),
-    downsampling_rate=400,  # 200
+    downsampling_rate=400,
     adc_samples=500,
-    num_averages=5,
+    num_averages=1,
 )
 
 # Perform acquisition
 acq_data: AcquisitionData = acq.run(parameter=params, sequence=f"../sequences/export/{filename}.seq")
 
+
+
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
 data = np.mean(acq_data.raw, axis=0).squeeze()
 
-print("RF max. [mv]: ", 200*np.max(np.concatenate(acq.unrolled_sequence.seq)[0::4])/np.iinfo(np.int16).max)
 
 data_fft = np.fft.fftshift(np.fft.fft(data))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
@@ -63,13 +64,14 @@ fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
 max_spec = np.max(np.abs(data_fft))
 f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
-print(f"\n>> Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
-print(f">> Frequency spectrum max.: {max_spec}")
-
+print("\nRF max. [mv]: ", 200*np.max(np.concatenate(acq.unrolled_sequence.seq)[0::4])/np.iinfo(np.int16).max)
+print(f"Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
+print(f"Frequency spectrum max.: {max_spec}")
+print("Acquisition data shape: ", acq_data.raw.shape)
 
 # acq_data.write()
 
-
+# %%
 # Plot frequency spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(fft_freq, np.abs(data_fft))    

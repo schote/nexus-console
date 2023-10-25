@@ -1,7 +1,6 @@
 """Sequence provider class."""
-import warnings
-from types import SimpleNamespace
 import logging
+from types import SimpleNamespace
 
 import numpy as np
 from pypulseq.opts import Opts
@@ -41,57 +40,17 @@ class SequenceProvider(Sequence):
     ):
         """Init function for sequence provider class."""
         super().__init__(system=system)
-        
+
         self.log = logging.getLogger("SeqProv")
 
         self.grad_to_volt = grad_to_volt
         self.rf_to_volt = rf_to_volt
-
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
         self.larmor_freq = self.system.B0 * self.system.gamma
         self.sample_count: int = 0
-
-        if not output_limits:
-            self._out_limits = [1000, 1000, 1000, 1000]
-            self.log.warning("Channel output limits not provided, default limit set to 1000 mV per channel.", stack_info=True)
-        else:
-            self._out_limits = output_limits
-
         self.int16_max = np.iinfo(np.int16).max
-
-    @property
-    def output_limits(self) -> list[int]:
-        """Property getter.
-
-        Maximum amplitude per channel in mV
-
-        Returns
-        -------
-            List of amplitude values in mV
-        """
-        return self._out_limits
-
-    @output_limits.setter
-    def output_limits(self, amplitudes: list[int]) -> None:
-        """Property setter.
-
-        Maximum amplitude per channel in mV
-
-        Parameters
-        ----------
-        amplitudes
-            List of integer amplitude values in mV
-
-        Raises
-        ------
-        AttributeError
-            Raises error if less or more then 4 amplitude values are provided
-        """
-        if not len(amplitudes) == 4:
-            self.log.error(f"Only {len(amplitudes)} values provided, but 4 values are required")
-            return
-        self._out_limits = amplitudes
+        self.output_limits = output_limits
 
     # @profie
     def calculate_rf(
@@ -114,16 +73,17 @@ class SequenceProvider(Sequence):
 
         Raises
         ------
-        AttributeError
+        ValueError
             Invalid RF block
         """
         # TODO: Write RF waveform in place
-        try: 
-            if not test == "rf":
-                raise AttributeError("Sequence block event is not a valid RF event.")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
-            
+        try:
+            if not rf_block.type == "rf":
+                raise ValueError("Sequence block event is not a valid RF event.")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
         # Calculate zero filling for RF delay
         num_samples_delay = int(rf_block.delay * self.spcm_freq)
         delay = np.zeros(num_samples_delay, dtype=np.int16)
@@ -150,15 +110,17 @@ class SequenceProvider(Sequence):
         phase_offset = np.exp(1j * rf_block.phase_offset)
 
         # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-        rf_scaling = b1_scaling * self.rf_to_volt / self._out_limits[0]
+        rf_scaling = b1_scaling * self.rf_to_volt / self.output_limits[0]
 
         # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
-        try: 
+        try:
             if np.amax(envelope_scaled := rf_block.signal * phase_offset * rf_scaling) > 1:
                 raise ValueError("RF amplitude exceeded max. amplitude of channel 0.")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
         envelope_scaled = envelope_scaled * self.int16_max
 
         # Resampling of scaled complex envelope
@@ -177,15 +139,16 @@ class SequenceProvider(Sequence):
         # Combine signal from delays and rf
         rf_pulse = np.concatenate((delay, dead_time, signal, ringdown_time)).astype(np.int16)
 
-        try: 
+        try:
             if (num_signal_samples := len(rf_pulse)) < num_total_samples:
                 # Zero-fill rf signal
                 rf_pulse = np.concatenate((rf_pulse, np.zeros(num_total_samples - num_signal_samples, dtype=np.int16)))
             elif num_signal_samples > num_total_samples:
                 raise ArithmeticError("Number of signal samples exceeded the total number of block samples.")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
-            
+        except ArithmeticError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
         return rf_pulse
 
     # @profile
@@ -209,7 +172,7 @@ class SequenceProvider(Sequence):
 
         Raises
         ------
-        AttributeError
+        ValueError
             Block type is not grad or trap
         ArithmeticError
             Number of calculated sample points is greater then number of block sample points
@@ -220,15 +183,19 @@ class SequenceProvider(Sequence):
         idx = ["x", "y", "z"].index(block.channel)
         offset = np.int16(amp_offset / self.int16_max)
         # Calculate scaling factor of gradient amplitude
-        grad_scaling = fov_scaling * self.grad_to_volt / self._out_limits[idx]
+        grad_scaling = fov_scaling * self.grad_to_volt / self.output_limits[idx]
 
         try:
             if block.type == "grad":
                 try:
                     if np.amax(waveform := block.waveform * grad_scaling + offset) > 1:
-                        raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
-                except Exception as exc:
-                    self.log.exception(exc, stack_info=True)
+                        raise ValueError(
+                            f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}."
+                        )
+                except ValueError as err:
+                    self.log.exception(err, exc_info=True)
+                    raise err
+
                 waveform *= self.int16_max
 
                 # Arbitrary gradient waveform, interpolate linearly
@@ -245,9 +212,13 @@ class SequenceProvider(Sequence):
                 # At this point, only a single value needs to be scaled
                 try:
                     if np.amax(flat_amp := block.amplitude * grad_scaling + offset) > 1:
-                        raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
-                except Exception as exc:
-                    self.log.exception(exc, stack_info=True)
+                        raise ValueError(
+                            f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}."
+                        )
+                except ValueError as err:
+                    self.log.exception(err, exc_info=True)
+                    raise err
+
                 flat_amp = np.int16(flat_amp * self.int16_max)
 
                 # Trapezoidal gradient, combine resampled rise, flat and fall sections
@@ -257,9 +228,10 @@ class SequenceProvider(Sequence):
                 gradient = np.concatenate((delay, rise, flat, fall))
 
             else:
-                raise AttributeError("Block is not a valid gradient block")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+                raise ValueError("Block is not a valid gradient block")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         try:
             if (num_gradient_samples := len(gradient)) < num_total_samples:
@@ -268,8 +240,9 @@ class SequenceProvider(Sequence):
                 )
             elif num_gradient_samples > num_total_samples:
                 raise ArithmeticError("Number of gradient samples exceeded the total number of block samples.")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+        except ArithmeticError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         return gradient
 
@@ -298,7 +271,7 @@ class SequenceProvider(Sequence):
         # Digital reference signal, sin > 0 is high
         # 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
-        
+
     # @profile
     def unroll_sequence(
         self, larmor_freq: float, b1_scaling: float = 1.0, fov_scaling: Dimensions = Dimensions(1.0, 1.0, 1.0)
@@ -322,20 +295,20 @@ class SequenceProvider(Sequence):
 
                 The list of unrolled sequence arrays is returned as uint16 values which contain a digital
                 signal encoded by 15th bit. Only the RF channel does not contain a digital signal.
-                In addition, the adc and unblanking signals are returned as list of numpy arrays in the 
+                In addition, the adc and unblanking signals are returned as list of numpy arrays in the
                 unrolled sequence instance.
 
         Raises
         ------
         ValueError
-            _description_
-        AttributeError
-            _description_
+            Larmor frequency too large
         ValueError
-            _description_
+            No block events defined
         ValueError
-            _description_
-            
+            Sequence timing check failed
+        ValueError
+            Amplitude limits not provided
+
         Examples
         --------
         For channels ch0, ch1, ch2, ch3, data values n = 0, 1, ..., N are ordered the following way.
@@ -366,22 +339,23 @@ class SequenceProvider(Sequence):
             if larmor_freq > 10e6:
                 raise ValueError(f"Larmor frequency is above 10 MHz: {larmor_freq*1e-6} MHz")
             self.larmor_freq = larmor_freq
-            
+
             # Check if sequence has block events
             if not len(self.block_events) > 0:
-                raise AttributeError("No block events found.")
-            
+                raise ValueError("No block events found")
+
             # Sequence timing check
-            check, error = self.check_timing()
+            check, seq_err = self.check_timing()
             if not check:
-                raise ValueError("Sequence timing check failed:\n", error)
-            
+                raise ValueError(f"Sequence timing check failed: {seq_err}")
+
             # Check if output limits are defined
-            if self._out_limits is None:
-                raise ValueError("Max. amplitudes per channel is not defined.")
-            
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+            if not self.output_limits or self.output_limits is None:
+                raise ValueError("Amplitude output limits are not provided")
+
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         # Get all blocks in a list and pre-calculate number of sample points per block
         # to allocate empty sequence array.
@@ -433,8 +407,10 @@ class SequenceProvider(Sequence):
 
             # Count the total amount of samples (for one channel) to keep track of the phase
             self.sample_count += n_samples
-        
-        self.log.debug(f"Unrolled sequence; Total sample points: {self.sample_count}; Total block events: {len(blocks)}")
+
+        self.log.debug(
+            f"Unrolled sequence; Total sample points: {self.sample_count}; Total block events: {len(blocks)}"
+        )
 
         return UnrolledSequence(
             seq=_seq,
