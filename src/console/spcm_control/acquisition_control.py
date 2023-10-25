@@ -29,7 +29,7 @@ class AcquistionControl:
 
     def __init__(
         self,
-        configuration_file: str = "../device_config.yaml",
+        configuration_file: str = "../../../device_config.yaml",
         file_log_level: int = logging.INFO,
         consol_log_level: int = logging.INFO,
     ):
@@ -68,8 +68,6 @@ class AcquistionControl:
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray | None = None
-        self._sig: np.ndarray | None = None
-        self._ref: np.ndarray | None = None
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -89,7 +87,7 @@ class AcquistionControl:
             raise ValueError("Invalid file log level")
 
         # Disable existing loggers
-        logging.config.dictConfig({'version': 1, 'disable_existing_loggers': True})
+        logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})
 
         # Setup log file path
         logfile_path = os.path.join(logfile_path, "")
@@ -103,7 +101,7 @@ class AcquistionControl:
             filename=f"{logfile_path}console.log",
             filemode="w",
         )
-        
+
         # Define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
         console.setLevel(console_level)
@@ -135,14 +133,13 @@ class AcquistionControl:
             if not sequence.endswith(".seq"):
                 raise FileNotFoundError("Invalid sequence file.")
         except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+            self.log.exception(exc, exc_info=True)
+            raise exc
 
         self.seq_provider.read(sequence)
         self.seq_provider.output_limits = self.tx_card.max_amplitude
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency, 
-            b1_scaling=parameter.b1_scaling, 
-            fov_scaling=parameter.fov_scaling
+            larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
         )
         # Save unrolled sequence
         self.unrolled_sequence = sqnc if sqnc else None
@@ -151,11 +148,9 @@ class AcquistionControl:
         timeout = 5 + sqnc.duration
 
         self._raw = None
-        self._ref = None
-        self._sig = None
 
         for k in range(parameter.num_averages):
-            self.log.info(f">> Acquisition {k+1}/{parameter.num_averages}")
+            self.log.info(f"Acquisition {k+1}/{parameter.num_averages}")
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -176,10 +171,10 @@ class AcquistionControl:
                     # Could not receive all the data before timeout
                     self.log.warning(
                         f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...",
-                        stack_info=True
+                        stack_info=True,
                     )
                     break
-                
+
             if len(self.rx_card.rx_data) > 0:
                 self.post_processing(parameter)
 
@@ -192,8 +187,6 @@ class AcquistionControl:
 
         return AcquisitionData(
             raw=self._raw,
-            signal=self._sig,
-            reference=self._ref,
             sequence=self.seq_provider,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
             dwell_time=parameter.downsampling_rate / self.f_spcm,
@@ -214,43 +207,54 @@ class AcquistionControl:
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
         ro_start = int(parameter.adc_samples / 2)
+        raw_list: list = []
 
-        sig_list: list = []
-        ref_list: list = []
-        
         try:
-            self.log.debug(f"Post processing > Gates: {len(self.rx_card.rx_data)}; Coils: {len(self.rx_card.rx_data[0])}")
-        except Exception as exc:
-            self.log.exception(exc, stack_info=True)
+            if not self.rx_card.rx_data:
+                raise IndexError("No gate data available")
+            if not (num_channels := len(self.rx_card.rx_data[0])) >= 1:
+                raise IndexError("No channel data available")
+            self.log.debug(
+                f"Post processing > Gates: {len(self.rx_card.rx_data)}; Coils: {len(self.rx_card.rx_data[0])}"
+            )
+        except IndexError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
-        for gate in self.rx_card.rx_data:
+        for k, gate in enumerate(self.rx_card.rx_data):
+            raw_channel_list = []
+
             # Process reference signal
             _ref = np.array(gate[0]).astype(np.uint16) >> 15
-            _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-
+            self.log.debug(f"Gate {k}: ADC samples per channel before down-sampling: {_ref.size}")
             # Calculate start point of readout for adc truncation
+            _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
-            ref_list.append(_ref[ro_start : ro_start + parameter.adc_samples])
+            _ref = _ref[ro_start : ro_start + parameter.adc_samples]
 
-            # TODO: Loop over channels, process first channel manually because of digital signal
+            # Process channel 0: Read signal data, apply DDC, truncate and append to list
+            # Channel 0 should always exist
+            _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
+            _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+            _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+            raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
-            # Read raw and reference signal per gate
-            _sig = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
-            # Down-sampling of raw and reference signal
-            _sig = apply_ddc(_sig, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-            # Truncate raw and reference signal
-            sig_list.append(_sig[ro_start : ro_start + parameter.adc_samples])
+            if num_channels > 1:
+                # Read all other channels if more than one channel is enabled
+                # Separation of channel 0 and all other required, since channel 0 contains digital reference
+                for channel_idx in range(len(gate) - 1):
+                    # Read signal data, apply DDC and append to signal data list
+                    _tmp = (np.array(gate[channel_idx + 1])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx + 1]
+                    _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+                    _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+                    raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
-        # Stack signal and reference data in first dimension (phase encoding dimension)
-        sig: np.ndarray = np.stack(sig_list, axis=0)
-        ref: np.ndarray = np.stack(ref_list, axis=0)
+            # Stack coils in axis 0: [coils, ro]
+            raw_list.append(np.stack(raw_channel_list, axis=0))
 
-        # Do the phase correction
-        # raw: np.ndarray = sig * np.exp(-1j * np.angle(np.mean(ref, axis=-1, keepdims=True)))
-        raw: np.ndarray = sig * np.exp(-1j * np.angle(ref))
+        # Stack phase encoding in axis 1: [coil, pe, ro]
+        raw: np.ndarray = np.stack(raw_list, axis=1)
 
         # Assign processed data to private class attributes
-        # Add average dimension
-        self._sig = sig[None, ...] if self._sig is None else np.concatenate((self._sig, sig[None, ...]), axis=0)
-        self._ref = ref[None, ...] if self._ref is None else np.concatenate((self._ref, ref[None, ...]), axis=0)
+        # Stack average dimension
         self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)

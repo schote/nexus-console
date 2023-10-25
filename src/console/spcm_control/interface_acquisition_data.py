@@ -15,7 +15,9 @@ class AcquisitionData:
     """Parameters which define an acquisition."""
 
     raw: np.ndarray
-    """Demodulated, down-sampled and filtered complex-valued raw MRI data."""
+    """Demodulated, down-sampled and filtered complex-valued raw MRI data.
+    The raw data array always has following dimensions: 
+    [averages, coils, phase encoding, readout]"""
 
     acquisition_parameters: AcquisitionParameter
     """Acquisition parameters."""
@@ -30,20 +32,12 @@ class AcquisitionData:
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
 
-    signal: np.ndarray | None = None
-    """Unprocessed real-valued signal data without demodulation, sampled at RX card sample-rate."""
-
-    reference: np.ndarray | None = None
-    """Reference signal generated during ADC gate window to compensate phase."""
-
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         self.meta.update(
             {
                 "date_time": datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                 "raw_data_shape": self.raw.shape,
-                "sig_data_shape": self.signal.shape if self.signal is not None else False,
-                "ref_data_shape": self.reference.shape if self.reference is not None else False,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": self.sequence.definitions["Name"][0].replace(" ", "_"),
@@ -83,11 +77,3 @@ class AcquisitionData:
 
         # Save raw data as numpy array
         np.save(f"{data_path}raw_data.npy", self.raw)
-
-        if self.signal is not None:
-            # Save raw data as numpy array
-            np.save(f"{data_path}signal_data.npy", self.signal)
-
-        if self.reference is not None:
-            # Save raw data as numpy array
-            np.save(f"{data_path}reference_signal.npy", self.reference)
