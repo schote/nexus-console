@@ -50,7 +50,7 @@ class SequenceProvider(Sequence):
         self.larmor_freq = self.system.B0 * self.system.gamma
         self.sample_count: int = 0
         self.int16_max = np.iinfo(np.int16).max
-        self.output_limits = output_limits
+        self.output_limits: list[int] = [] if output_limits is None else output_limits
 
     # @profie
     def calculate_rf(
@@ -285,7 +285,8 @@ class SequenceProvider(Sequence):
         b1_scaling, optional
             Factor for the RF waveform, which is to be calibrated per coil and phantom (load), by default 1.0
         fov_scaling, optional
-            Per channel factor for the gradient waveforms to scale the field of fiew (FOV), by default Dimensions(1.0, 1.0, 1.0)
+            Per channel factor for the gradient waveforms to scale the field of fiew (FOV),
+            by default Dimensions(1.0, 1.0, 1.0)
 
         Returns
         -------
@@ -350,7 +351,7 @@ class SequenceProvider(Sequence):
                 raise ValueError(f"Sequence timing check failed: {seq_err}")
 
             # Check if output limits are defined
-            if not self.output_limits or self.output_limits is None:
+            if not self.output_limits:
                 raise ValueError("Amplitude output limits are not provided")
 
         except ValueError as err:
@@ -409,7 +410,7 @@ class SequenceProvider(Sequence):
             self.sample_count += n_samples
 
         self.log.debug(
-            f"Unrolled sequence; Total sample points: {self.sample_count}; Total block events: {len(blocks)}"
+            "Unrolled sequence; Total sample points: %s; Total block events: %s", self.sample_count, len(blocks)
         )
 
         return UnrolledSequence(

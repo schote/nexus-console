@@ -3,7 +3,6 @@
 import logging
 import os
 import time
-import warnings
 
 import numpy as np
 
@@ -87,7 +86,7 @@ class AcquistionControl:
             raise ValueError("Invalid file log level")
 
         # Disable existing loggers
-        logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})
+        logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})  # type: ignore[attr-defined]
 
         # Setup log file path
         logfile_path = os.path.join(logfile_path, "")
@@ -150,7 +149,7 @@ class AcquistionControl:
         self._raw = None
 
         for k in range(parameter.num_averages):
-            self.log.info(f"Acquisition {k+1}/{parameter.num_averages}")
+            self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -170,7 +169,9 @@ class AcquistionControl:
                 if time.time() - time_start > timeout:
                     # Could not receive all the data before timeout
                     self.log.warning(
-                        f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...",
+                        "Acquisition Timeout: Only received %s/%s adc events",
+                        len(self.rx_card.rx_data),
+                        sqnc.adc_count,
                         stack_info=True,
                     )
                     break
@@ -215,7 +216,7 @@ class AcquistionControl:
             if not (num_channels := len(self.rx_card.rx_data[0])) >= 1:
                 raise IndexError("No channel data available")
             self.log.debug(
-                f"Post processing > Gates: {len(self.rx_card.rx_data)}; Coils: {len(self.rx_card.rx_data[0])}"
+                "Post processing > Gates: %s; Coils: %s", len(self.rx_card.rx_data), len(self.rx_card.rx_data[0])
             )
         except IndexError as err:
             self.log.exception(err, exc_info=True)
@@ -226,7 +227,7 @@ class AcquistionControl:
 
             # Process reference signal
             _ref = np.array(gate[0]).astype(np.uint16) >> 15
-            self.log.debug(f"Gate {k}: ADC samples per channel before down-sampling: {_ref.size}")
+            self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
             # Calculate start point of readout for adc truncation
             _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)

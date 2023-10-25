@@ -16,7 +16,7 @@ class AcquisitionData:
 
     raw: np.ndarray
     """Demodulated, down-sampled and filtered complex-valued raw MRI data.
-    The raw data array always has following dimensions: 
+    The raw data array always has following dimensions:
     [averages, coils, phase encoding, readout]"""
 
     acquisition_parameters: AcquisitionParameter

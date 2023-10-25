@@ -3,7 +3,6 @@ import ctypes
 import logging
 import threading
 from dataclasses import dataclass
-from pprint import pprint
 
 import numpy as np
 
@@ -69,7 +68,7 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        self.log.debug(f"Ring buffer size: {self.ring_buffer_size.value}; Notify size: {self.notify_size.value}")
+        self.log.debug("Ring buffer size: %s; Notify size: %s", self.ring_buffer_size.value, self.notify_size.value)
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -95,7 +94,9 @@ class TxCard(SpectrumDevice):
 
         try:
             if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
-                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no transmit card...")
+                raise ConnectionError(
+                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
+                )
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -115,12 +116,14 @@ class TxCard(SpectrumDevice):
         # Check actual sampling rate
         sample_rate = spcm.int64(0)
         spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_SAMPLERATE, ctypes.byref(sample_rate))
-        self.log.info(f"Device sampling rate: {sample_rate.value*1e-6} MHz")
+        self.log.info("Device sampling rate: %s MHz", sample_rate.value * 1e-6)
         if sample_rate.value != spcm.MEGA(self.sample_rate):
             self.log.warning(
-                f"Tx device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz"
+                "Tx device sample rate %s MHz does not match set sample rate of %s MHz",
+                sample_rate.value * 1e-6,
+                self.sample_rate,
             )
-            self.sample_rate = sample_rate.value * 1e-6
+            self.sample_rate = int(sample_rate.value * 1e-6)
 
         # Enable and setup channels
         spcm.spcm_dwSetParam_i32(
@@ -208,6 +211,16 @@ class TxCard(SpectrumDevice):
             if not self.card:
                 raise ConnectionError("No connection to card established...")
 
+            # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
+            if (rest := sqnc.nbytes % self.ring_buffer_size.value) != 0:
+                rest = self.ring_buffer_size.value - rest
+                if rest % 2 != 0:
+                    raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
+
+                fill_size = int((rest) / 2)
+                sqnc = np.append(sqnc, np.zeros(fill_size, dtype=np.int16))
+                self.log.debug("Appended %s zeros to data array", fill_size)
+
         except Exception as exc:
             self.log.exception(exc, exc_info=True)
             raise exc
@@ -215,13 +228,14 @@ class TxCard(SpectrumDevice):
         # Check if sequence dwell time is valid
         if sqnc_sample_rate := 1 / (data.dwell_time * 1e6) != self.sample_rate:
             self.log.warning(
-                f"Sequence sample rate ({sqnc_sample_rate} MHz) differs from device sample rate ({self.sample_rate} MHz)."
+                "Sequence sample rate (%s MHz) differs from device sample rate (%s MHz).",
+                sqnc_sample_rate,
+                self.sample_rate,
             )
-
-        self.log_card_status()
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
+        self.log_card_status()
         self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
         self.worker.start()
 
@@ -251,16 +265,6 @@ class TxCard(SpectrumDevice):
             Here, X denotes the channel and the subsequent index N the sample index.
         """
         try:
-            # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
-            if (rest := data.nbytes % self.ring_buffer_size.value) != 0:
-                rest = self.ring_buffer_size.value - rest
-                if rest % 2 != 0:
-                    raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
-
-                fill_size = int((rest) / 2)
-                data = np.append(data, np.zeros(fill_size, dtype=np.int16))
-                self.log.debug(f"Appended {fill_size} zeros to data array...")
-
             # Get total size of data buffer to be played out
             self.data_buffer_size = int(data.nbytes)
             if self.data_buffer_size % (self.num_ch * 2) != 0:
@@ -271,7 +275,7 @@ class TxCard(SpectrumDevice):
             self.log.exception(err, exc_info=True)
             raise err
 
-        self.log.debug(f"Replay data buffer: {self.data_buffer_size} bytes")
+        self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -382,4 +386,4 @@ class TxCard(SpectrumDevice):
         """
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
-        self.log.debug(f"Card status: {status}")
+        self.log.debug("Card status: %s", status)

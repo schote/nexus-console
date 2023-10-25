@@ -4,7 +4,6 @@ import threading
 from ctypes import byref, cast
 from dataclasses import dataclass
 from itertools import compress
-from pprint import pprint
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.device_interface import SpectrumDevice
@@ -75,7 +74,7 @@ class RxCard(SpectrumDevice):
 
         try:
             if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
-                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no receive card...")
+                raise ConnectionError("Device with path %s is of type %s, no receive card" % (self.path, device_type))
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -92,31 +91,26 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i64(self.card, sp.SPC_SAMPLERATE, sp.MEGA(self.sample_rate))
         sample_rate = sp.int64(0)
         sp.spcm_dwGetParam_i64(self.card, sp.SPC_SAMPLERATE, byref(sample_rate))
-        self.log.info(f"Device sampling rate: {sample_rate.value*1e-6} MHz")
+        self.log.info("Device sampling rate: %s MHz", sample_rate.value * 1e-6)
 
         if sample_rate.value != sp.MEGA(self.sample_rate):
             self.log.warning(
-                f"Actual device sample rate {sample_rate.value*1e-6} MHz does not match set sample rate of {self.sample_rate} MHz;\
-                    Updating class attribute"
+                "Actual device sample rate %s MHz does not match set sample rate of %s MHz; Updating class attribute",
+                sample_rate.value * 1e-6,
+                self.sample_rate,
             )
-            self.sample_rate = sample_rate.value * 1e-6
+            self.sample_rate = int(sample_rate.value * 1e-6)
 
         # Check channel enable, max. amplitude per channel and impedance values
         try:
             # if (num_enable := len(self.channel_enable)) < 1 or num_enable > 8:
             if (num_enable := len(self.channel_enable)) != 8:
-                raise ValueError(
-                    f"Invalid number of enabled channels ({len(self.channel_enable)}), must not be < 1 or > 8"
-                )
+                raise ValueError("Not enough channel enable entries: %s/8" % num_enable)
             # Impedance and amplitude configuration lists must match the channel enable list len
             if (num_imp := len(self.impedance_50_ohms)) != num_enable:
-                raise ValueError(
-                    f"Impedance list entries ({num_imp}) does not match number of enabled channels ({num_enable})"
-                )
+                raise ValueError("Not enough impedance list entries: %s/8" % num_imp)
             if (num_amp := len(self.max_amplitude)) != num_enable:
-                raise ValueError(
-                    f"Max. amplitude list entries ({num_amp}) does not match number of enabled channels ({num_enable})"
-                )
+                raise ValueError("Not enough entries in max. amplitude list: %s/8" % num_amp)
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -131,7 +125,10 @@ class RxCard(SpectrumDevice):
         for k, enable in enumerate(map(bool, self.channel_enable)):
             if enable:
                 self.log.info(
-                    f"Channel {k} enabled; Impedance: {self.impedance_50_ohms[k]}; Max. amplitude: {self.max_amplitude[k]}"
+                    "Channel %s enabled; 50 ohms impedance: %s; Max. amplitude: %s mV",
+                    k,
+                    self.impedance_50_ohms[k],
+                    self.max_amplitude[k],
                 )
                 sp.spcm_dwSetParam_i32(self.card, IMP_SELECT[k], self.impedance_50_ohms[k])
                 sp.spcm_dwSetParam_i32(self.card, AMP_SELECT[k], self.max_amplitude[k])
@@ -139,7 +136,7 @@ class RxCard(SpectrumDevice):
         # Get the number of actual active channels and compare against provided channel enable list
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
         try:
-            self.log.info(f"Number of enabled receive channels (read from card): {self.num_channels.value}")
+            self.log.info("Number of enabled receive channels (read from card): %s", self.num_channels.value)
             if not self.num_channels.value == sum(self.channel_enable):
                 raise ValueError("Actual number of enabled channels does not match the provided channel enable list")
         except ValueError as err:
@@ -278,7 +275,9 @@ class RxCard(SpectrumDevice):
                 # Calculate the number of adc gate sample points (per channel)
                 gate_sample = int(gate_length * self.sample_rate * 1e6)
 
-                self.log.info(f"Gate: ({timestamp_0}s, {timestamp_1}s); ADC duration: {round(gate_length*1e3, 2)}ms")
+                self.log.info(
+                    "Gate: (%s s, %s s); ADC duration: %s ms", timestamp_0, timestamp_1, round(gate_length * 1e3, 2)
+                )
 
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
                 sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
@@ -292,16 +291,16 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
 
                 # Debug log statements
-                self.log.debug(f"Available timestamp buffer size: {available_timestamp_bytes.value}")
-                self.log.debug(f"Expected adc data in bytes: {total_bytes}")
-                self.log.debug(f"User position (adc buffer): {data_user_position.value}")
-                self.log.debug(f"Number of segments in notify size: {(total_bytes//rx_notify.value)}")
-                self.log.debug(f"Left over in bytes: {bytes_leftover}")
+                self.log.debug("Available timestamp buffer size: %s", available_timestamp_bytes.value)
+                self.log.debug("Expected adc data in bytes: %s", total_bytes)
+                self.log.debug("User position (adc buffer): %s", data_user_position.value)
+                self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
+                self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
-                    self.log.debug(f"Available user length in bytes (adc buffer): {available_user_databytes.value}")
+                    self.log.debug("Available user length in bytes (adc buffer): %s", available_user_databytes.value)
 
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
@@ -323,7 +322,7 @@ class RxCard(SpectrumDevice):
 
                         pre_trigger_cut = (self.pre_trigger - 1) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-                        self.log.debug(f"Total number of received samples: {len(gate_data)}")
+                        self.log.debug("Total number of received samples: %s", len(gate_data))
 
                         _tmp = []
                         for channel_idx in range(self.num_channels.value):
@@ -382,4 +381,4 @@ class RxCard(SpectrumDevice):
         """
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
-        self.log.debug(f"Card status: {status}")
+        self.log.debug("Card status: %s", status)
