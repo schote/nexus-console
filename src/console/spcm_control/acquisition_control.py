@@ -56,7 +56,7 @@ class AcquistionControl:
         # Setup the cards
         self.is_setup: bool = False
         if self.tx_card.connect() and self.rx_card.connect():
-            print("Setup of measurement cards successful.")
+            self.log.info("Setup of measurement cards successful.")
             self.is_setup = True
 
         # Get the rx sampling rate for DDC
@@ -77,7 +77,7 @@ class AcquistionControl:
             self.tx_card.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
-        print("Measurement cards disconnected.")
+        self.log.info("Measurement cards disconnected.")
 
     def _setup_logging(
         self, console_level: int, file_level: int, logfile_path: str = "/home/schote01/spcm-console/"
@@ -87,6 +87,9 @@ class AcquistionControl:
             raise ValueError("Invalid console log level")
         if file_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
             raise ValueError("Invalid file log level")
+
+        # Disable existing loggers
+        logging.config.dictConfig({'version': 1, 'disable_existing_loggers': True})
 
         # Setup log file path
         logfile_path = os.path.join(logfile_path, "")
@@ -100,15 +103,13 @@ class AcquistionControl:
             filename=f"{logfile_path}console.log",
             filemode="w",
         )
-
+        
         # Define a Handler which writes INFO messages or higher to the sys.stderr
         console = logging.StreamHandler()
         console.setLevel(console_level)
         formatter = logging.Formatter("%(name)-7s: %(levelname)-8s >> %(message)s")
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
-
-        logging.info("========================== LOG FILE CREATED ==========================")
 
     def run(self, sequence: str, parameter: AcquisitionParameter) -> AcquisitionData:
         """Run an acquisition job.
@@ -127,18 +128,23 @@ class AcquistionControl:
         FileNotFoundError
             Invalid file ending of sequence file.
         """
-        if not self.is_setup:
-            raise RuntimeError("Measurement cards are not setup.")
+        try:
+            if not self.is_setup:
+                raise RuntimeError("Measurement cards are not setup.")
 
-        if not sequence.endswith(".seq"):
-            raise FileNotFoundError("Invalid sequence file.")
+            if not sequence.endswith(".seq"):
+                raise FileNotFoundError("Invalid sequence file.")
+        except Exception as exc:
+            self.log.exception(exc, stack_info=True)
 
         self.seq_provider.read(sequence)
-        # self.seq_provider.set
+        self.seq_provider.output_limits = self.tx_card.max_amplitude
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
+            larmor_freq=parameter.larmor_frequency, 
+            b1_scaling=parameter.b1_scaling, 
+            fov_scaling=parameter.fov_scaling
         )
-
+        # Save unrolled sequence
         self.unrolled_sequence = sqnc if sqnc else None
 
         # Define timeout for acquisition process: 5 sec + sequence duration
@@ -149,7 +155,7 @@ class AcquistionControl:
         self._sig = None
 
         for k in range(parameter.num_averages):
-            print(f">> Acquisition {k+1}/{parameter.num_averages}")
+            self.log.info(f">> Acquisition {k+1}/{parameter.num_averages}")
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -164,25 +170,25 @@ class AcquistionControl:
                 time.sleep(0.01)
 
                 if len(self.rx_card.rx_data) >= sqnc.adc_count:
-                    # All the data was received, start post processing
-                    self.post_processing(parameter)
                     break
 
                 if time.time() - time_start > timeout:
                     # Could not receive all the data before timeout
-                    print(
-                        f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events..."
+                    self.log.warning(
+                        f"Acquisition Timeout: Only received {len(self.rx_card.rx_data)}/{sqnc.adc_count} adc events...",
+                        stack_info=True
                     )
-                    if len(self.rx_card.rx_data) > 0:
-                        self.post_processing(parameter)
                     break
+                
+            if len(self.rx_card.rx_data) > 0:
+                self.post_processing(parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
         if self._raw is None:
             self._raw = np.empty([])
-            warnings.warn("Empty raw data array")
+            self.log.warning("Empty raw data array", stack_info=True)
 
         return AcquisitionData(
             raw=self._raw,
@@ -197,18 +203,13 @@ class AcquistionControl:
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Perform data post processing.
 
-        Apply the digital downconversion, filtering an downsampling per numpy array in the list of the received data.
+        Apply DDC what contains demodulation, down-sampling and filtering for each gate and coil array.
+        This step further includes the post-processing of the reference signal and phase correction.
 
         Parameters
         ----------
-        data
-            Received list of adc data samples
         parameter
-            Acquistion parameter to setup the filter
-
-        Returns
-        -------
-            List of processed data arrays
+            Acquisition parameters
         """
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
@@ -216,6 +217,11 @@ class AcquistionControl:
 
         sig_list: list = []
         ref_list: list = []
+        
+        try:
+            self.log.debug(f"Post processing > Gates: {len(self.rx_card.rx_data)}; Coils: {len(self.rx_card.rx_data[0])}")
+        except Exception as exc:
+            self.log.exception(exc, stack_info=True)
 
         for gate in self.rx_card.rx_data:
             # Process reference signal
@@ -226,7 +232,7 @@ class AcquistionControl:
             ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
             ref_list.append(_ref[ro_start : ro_start + parameter.adc_samples])
 
-            # TODO: Loop over channel
+            # TODO: Loop over channels, process first channel manually because of digital signal
 
             # Read raw and reference signal per gate
             _sig = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
@@ -248,9 +254,3 @@ class AcquistionControl:
         self._sig = sig[None, ...] if self._sig is None else np.concatenate((self._sig, sig[None, ...]), axis=0)
         self._ref = ref[None, ...] if self._ref is None else np.concatenate((self._ref, ref[None, ...]), axis=0)
         self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)
-
-        # Save the following code for later, linear fit was not the best practice so far
-        # # Do a linear fit of the reference phase
-        # _time = np.arange(_tmp[1].size) * kernel_size / self.f_spcm
-        # m_phase, b_phase = np.polyfit(_time, ref_phase, 1)
-        # phase_fit = m_phase * _time + b_phase
