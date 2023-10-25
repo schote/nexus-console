@@ -59,7 +59,7 @@ params = AcquisitionParameter(
 
 data: AcquisitionData = acq.run(parameter=params, sequence=f"sequence_file.seq")
 
-# Get down-sampled raw data, shape: [num_averages, num_phase_encodings, readout_samples]
+# Get down-sampled raw data with the dimensions: [averages, coils, phase_encoding, readout]
 raw_data = data.raw
 ```
 
