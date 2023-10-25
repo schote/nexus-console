@@ -10,7 +10,7 @@ revision 0
 AdcRasterTime 1e-07 
 BlockDurationRaster 1e-05 
 GradientRasterTime 1e-05 
-Name se_proj_ 
+Name se_proj 
 RadiofrequencyRasterTime 1e-06 
 TotalDuration 0.01556 
 
@@ -469,4 +469,4 @@ num_samples 400
 # It can be reproduced/verified with md5sum if the file trimmed to the position right above [SIGNATURE]
 # The new line character preceding [SIGNATURE] BELONGS to the signature (and needs to be stripped away for recalculating/verification)
 Type md5
-Hash ac8a02e71d51cfe7ef206b20b2c8628b
+Hash 21f828975b451f3fc2a567359d86f07a

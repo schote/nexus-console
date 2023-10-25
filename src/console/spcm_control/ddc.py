@@ -37,7 +37,7 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
     kernel = demod * mixer
 
     # Calculate the stride size/overlap, 2 -> half overlap, 4 -> quarter overlap, ...
-    stride = 2
+    stride = 4
 
     # Calculate size of down-sampled signal
     num_ddc_samples = raw_signal.size // int(kernel_size / stride)

@@ -10,8 +10,9 @@ Spectrum-Console Documentation
    :maxdepth: 2
    :caption: API Reference:
    
-   api
-
+   api_documentation
+   technical_documentation
+   user_guide
 
 
 

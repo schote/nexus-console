@@ -56,29 +56,27 @@ def plot_spcm_data(
     if not sqncs.dtype == np.int16:
         raise ValueError("Require int16 values to decode digital signal...")
 
-    adc = -(gx_signal >> 15)
-    unblanking = -(gy_signal >> 15)
-    # ref_clk = -(gz_signal >> 15)
+    # Get digital signals
+    adc_gate = gx_signal.astype(np.uint16) >> 15
+    # ref_clk = gy_signal.astype(np.uint16) >> 15
+    unblanking = gz_signal.astype(np.uint16) >> 15
 
-    gx_signal = np.int16(gx_signal << 1)
-    gy_signal = np.int16(gy_signal << 1)
-    gz_signal = np.int16(gz_signal << 1)
-
-    # else:
-    #     adc = np.concatenate(sequence.adc_gate)[seq_range[0]:seq_range[1]]
-    #     unblanking = np.concatenate(sequence.rf_unblanking)[seq_range[0]:seq_range[1]]
+    # Get gradient waveforms
+    gx_signal = 100 * (gx_signal << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+    gy_signal = 100 * (gy_signal << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+    gz_signal = 100 * (gz_signal << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
 
     axis[0].plot(samples, rf_signal)
     axis[1].plot(samples, gx_signal)
     axis[2].plot(samples, gy_signal)
     axis[3].plot(samples, gz_signal)
-    axis[4].plot(samples, adc, label="ADC gate")
+    axis[4].plot(samples, adc_gate, label="ADC gate")
     axis[4].plot(samples, unblanking, label="RF unblanking")
 
-    axis[0].set_ylabel("RF")
-    axis[1].set_ylabel("Gx")
-    axis[2].set_ylabel("Gy")
-    axis[3].set_ylabel("Gz")
+    axis[0].set_ylabel("RF (% of max. output)")
+    axis[1].set_ylabel("Gx (% of max. output)")
+    axis[2].set_ylabel("Gy (% of max. output)")
+    axis[3].set_ylabel("Gz (% of max. output)")
     axis[4].set_ylabel("Digital")
     axis[4].legend(loc="upper right")
 
