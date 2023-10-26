@@ -52,6 +52,37 @@ class SequenceProvider(Sequence):
         self.int16_max = np.iinfo(np.int16).max
         self.output_limits: list[int] = [] if output_limits is None else output_limits
 
+    def from_pypulseq(self, seq: Sequence) -> None:
+        """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
+
+        If argument is a valid ``Sequence`` instance, all the attributes of 
+        ``Sequence`` are set in this ``SequenceProvider`` (inherits from ``Sequence``).
+
+        Parameters
+        ----------
+        seq
+            Pypulseq ``Sequence`` instance
+
+        Raises
+        ------
+        ValueError
+            seq is not a valid pypulseq ``Sequence`` instance
+        AttributeError
+            Key of Sequence instance not
+        """
+        try:
+            if not isinstance(seq, Sequence):
+                raise ValueError("Provided object is not an instance of pypulseq Sequence")
+            for key, value in seq.__dict__.items():
+                    # Check if attribute exists
+                    if not hasattr(self, key):
+                        raise AttributeError("Attribute %s not found in SequenceProvider", key)
+            # Set attribute
+            setattr(self, key, value)
+        except (ValueError, AttributeError) as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
     # @profie
     def calculate_rf(
         self, rf_block: SimpleNamespace, b1_scaling: float, unblanking: np.ndarray, num_total_samples: int
