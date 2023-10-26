@@ -14,7 +14,9 @@ system = pp.Opts(
 )
 
 
-def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_duration: float = 400e-6) -> pp.Sequence:
+def constructor(
+    n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_duration: float = 400e-6
+) -> (pp.Sequence, np.ndarray):
     """Construct transmit adjust sequence.
 
     Parameters
@@ -28,7 +30,7 @@ def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_durat
 
     Returns
     -------
-        Pypulseq ``Sequence`` instance
+        Pypulseq ``Sequence`` instance and flip angles in rad
 
     Raises
     ------
@@ -45,19 +47,19 @@ def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_durat
     )
     
     # Define flip angles
-    angles = np.linspace(start=0, stop=2*pi, num=n_steps)
+    flip_angles = np.linspace(start=(2*pi)/n_steps, stop=2*pi, num=n_steps, endpoint=True)
     
-    for flip in angles:
+    for angle in flip_angles:
         
         rf_90 = pp.make_sinc_pulse(
-            flip_angle=flip,
+            flip_angle=angle,
             system=system,
             duration=rf_duration,
             apodization=0.5,
         )
 
         rf_180 = pp.make_sinc_pulse(
-            flip_angle=flip*2,   # twice the flip angle => 180°
+            flip_angle=angle*2,   # twice the flip angle => 180°
             system=system,
             duration=rf_duration,
             apodization=0.5,
@@ -78,4 +80,4 @@ def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_durat
         if not check_passed:
             raise ValueError("Sequence timing check failed: ", err)
 
-    return seq
+    return seq, flip_angles

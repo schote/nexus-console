@@ -1,16 +1,18 @@
 import numpy as np
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from scipy.optimize import curve_fit
 
-def tx_fit(self, x, a, b, c):
-    return abs(a * np.sin(b * x) + c)
 
-def tx_adjust(x: np.ndarray, flip_angles: np.ndarray, acq_params: AcquisitionParameter) -> np.ndarray:
+def tx_fit(x, amplitude, step_size, phase_offset):
+    return abs(amplitude * np.sin(step_size * x) + phase_offset)
+
+
+def tx_adjust(x: np.ndarray, flip_angles: np.ndarray) -> np.ndarray:
     
     if not len(x.shape) == 4:
         raise ValueError("Invalid input data shape") 
     
-    # Reduce average and coil dimension
-    x = x[0, 0, ...]
+    # Calculate averages and take first coil (channel 0)
+    x = np.mean(x, axis=0)[0, ...]
     
     x = np.abs(np.fft.fftshift(np.fft.fft(x, norm="ortho")))
     
@@ -26,6 +28,6 @@ def tx_adjust(x: np.ndarray, flip_angles: np.ndarray, acq_params: AcquisitionPar
     params, params_cov = curve_fit(tx_fit, flip_angles, amplitudes, init, method='lm')
     
     flip_angle_fit = np.arange(flip_angles[0], flip_angles[-1] + 0.1, 0.1)
-    amplitudes_fit = tx_fit(x, params[0], params[1], params[2])
+    amplitudes_fit = tx_fit(flip_angle_fit, params[0], params[1], params[2])
     
-    return np.stack([flip_angle_fit, amplitudes_fit], axis=0)
+    return np.stack([flip_angle_fit, amplitudes_fit], axis=0), amplitudes
