@@ -9,7 +9,7 @@ from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
 import console.utilities.sequences as sequences
-from console.utilities.reconstruction.calibrate import tx_adjust
+from console.utilities.reconstruction.calibrate import flip_angle_fit
 
 # %%
 # Create acquisition control instance
@@ -43,7 +43,7 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 
 # %%
 # Average and take data of first coil (channeo 0)
-fa_fit, rx_peaks = tx_adjust(acq_data.raw, flip_angles=flip_angles)
+fa_fit, rx_peaks = flip_angle_fit(acq_data.raw, flip_angles=flip_angles)
 
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(np.degrees(fa_fit[0, ...]), fa_fit[1, ...])
