@@ -13,7 +13,6 @@ system = pp.Opts(
     rf_dead_time=100e-6,        # time delay at the end of RF event
     adc_dead_time=200e-6,       # time delay at the beginning of ADC event
 )
-seq = pp.Sequence(system)
 
 
 def constructor(fov: float = 0.025, te: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True) -> pp.Sequence:
@@ -39,7 +38,7 @@ def constructor(fov: float = 0.025, te: float = 12e-3, rf_duration: float = 400e
     ValueError
         Sequence time check failed
     """
-    seq = Sequence(system=system)
+    seq = pp.Sequence(system=system)
     seq.set_definition('Name', 'se_projection')
     
     if use_sinc:

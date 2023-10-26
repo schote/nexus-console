@@ -47,7 +47,7 @@ def constructor(
         _description_
     """
     
-    seq = Sequence(system=system)
+    seq = pp.Sequence(system=system)
     seq.set_definition('Name', 'freq_adjust')
     
     # Determine number of RF excitations and frequency offset values

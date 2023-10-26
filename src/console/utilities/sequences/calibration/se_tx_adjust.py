@@ -35,7 +35,7 @@ def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_durat
     ValueError
         Sequence timing check failed
     """
-    seq = Sequence(system=system)
+    seq = pp.Sequence(system=system)
     seq.set_definition('Name', 'tx_adjust')
     
     adc = pp.make_adc(
