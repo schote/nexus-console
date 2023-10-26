@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from itertools import compress
 
 import console.spcm_control.spcm.pyspcm as sp
-from console.spcm_control.device_interface import SpectrumDevice
+from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
 # Define registers lists
