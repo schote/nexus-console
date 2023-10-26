@@ -12,6 +12,9 @@ from console.spcm_control.interface_acquisition_parameter import Dimensions
 
 # from line_profiler import profile
 
+INT16_MAX = np.iinfo(np.int16).max
+INT16_MIN = np.iinfo(np.int16).min
+
 
 class SequenceProvider(Sequence):
     """Sequence provider class.
@@ -49,7 +52,6 @@ class SequenceProvider(Sequence):
         self.spcm_dwell_time = spcm_dwell_time
         self.larmor_freq = self.system.B0 * self.system.gamma
         self.sample_count: int = 0
-        self.int16_max = np.iinfo(np.int16).max
         self.output_limits: list[int] = [] if output_limits is None else output_limits
 
     def from_pypulseq(self, seq: Sequence) -> None:
@@ -150,13 +152,13 @@ class SequenceProvider(Sequence):
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
             rf_scaling = b1_scaling * self.rf_to_volt / self.output_limits[0]
-            if np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling) > 1:
-                raise ValueError("RF amplitude exceeded max. amplitude of channel 0.")
+            if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
+                raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
 
-        envelope_scaled = envelope_scaled * self.int16_max
+        envelope_scaled = envelope_scaled * INT16_MAX
 
         # Resampling of scaled complex envelope
         envelope = resample(envelope_scaled, num=num_samples)
@@ -185,7 +187,7 @@ class SequenceProvider(Sequence):
 
     # @profile
     def calculate_gradient(
-        self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float, amp_offset: int | float = 0
+        self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float
     ) -> None:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
@@ -198,8 +200,6 @@ class SequenceProvider(Sequence):
         fov_scaling
             Scaling factor to adjust the FoV.
             Factor is applied to the whole gradient waveform, excepton the amplitude offset.
-        amp_offset, optional
-            Amplitude offset, last value of last gradient, by default 0.
 
         Returns
         -------
@@ -215,39 +215,26 @@ class SequenceProvider(Sequence):
         """
         # Both gradient types have a delay, calculate delay in number of samples
         num_samples_delay = int(block.delay * self.spcm_freq)
-        # Index of this gradient, dependent on channel designation
-        idx = ["x", "y", "z"].index(block.channel)
-        # Relative offset: Fraction of maximum output limit
-        offset = np.int16(amp_offset / self.output_limits[idx])
-        # Calculate scaling factor of gradient amplitude
-        grad_scaling = fov_scaling * self.grad_to_volt / self.output_limits[idx]
+        # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
+        idx = ["x", "y", "z"].index(block.channel) + 1
 
         try:
+            # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
-                # Use interpolation for arbitrary gradient waveform
-                if np.amax(waveform := block.waveform * grad_scaling + offset) > 1:
-                    raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
-
-                waveform *= self.int16_max
-
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
                 gradient = np.interp(
                     x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                     xp=block.tt,
-                    fp=waveform,
-                ).astype(np.int16)
+                    fp=(block.waveform * fov_scaling * self.grad_to_volt) / self.output_limits[idx]
+                )
 
             elif block.type == "trap":
-                # Check and scale trapezoid flat amplitude (including offset)
-                # At this point, only a single value needs to be scaled
-                if np.amax(flat_amp := block.amplitude * grad_scaling + offset) > 1:
-                    raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                flat_amp = np.int16(flat_amp * self.int16_max)
-                rise = np.linspace(amp_offset, flat_amp, int(block.rise_time / self.spcm_dwell_time), dtype=np.int16)
-                flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp, dtype=np.int16)
-                fall = np.linspace(flat_amp, amp_offset, int(block.fall_time / self.spcm_dwell_time), dtype=np.int16)
+                flat_amp = (block.amplitude * fov_scaling * self.grad_to_volt) / self.output_limits[idx]
+                rise = np.linspace(0, flat_amp, int(block.rise_time / self.spcm_dwell_time))
+                flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp)
+                fall = np.linspace(flat_amp, 0, int(block.fall_time / self.spcm_dwell_time))
                 gradient = np.concatenate((rise, flat, fall))
 
             else:
@@ -256,9 +243,12 @@ class SequenceProvider(Sequence):
             # Check if gradient waveform fits into unroll array space
             if (idx_waveform_end := num_samples_delay + gradient.size) > unroll_arr.size:
                 raise IndexError("Unrolled gradient event exceeds number of block samples")
+            
+            if np.abs(np.amax(unroll_arr[num_samples_delay:idx_waveform_end]/INT16_MAX + gradient)) > 1:
+                raise ValueError("Amplitude of %s gradient (channel %s) exceeded max. amplitude", block.channel, idx)
 
-            # Write gradient waveform (trapezoid or arbitrary) in place
-            unroll_arr[num_samples_delay:idx_waveform_end] = gradient
+            # Add gradient waveform (trapezoid or arbitrary) in place
+            unroll_arr[num_samples_delay:idx_waveform_end] += (gradient * INT16_MAX).astype(np.int16)
 
         except (ValueError, IndexError) as err:
             self.log.exception(err, exc_info=True)
@@ -291,7 +281,11 @@ class SequenceProvider(Sequence):
 
     # @profile
     def unroll_sequence(
-        self, larmor_freq: float, b1_scaling: float = 1.0, fov_scaling: Dimensions = Dimensions(1.0, 1.0, 1.0)
+        self, 
+        larmor_freq: float, 
+        b1_scaling: float = 1.0, 
+        fov_scaling: Dimensions = Dimensions(x=1.0, y=1.0, z=1.0),
+        grad_offset: Dimensions = Dimensions(x=0, y=0, z=0)
     ) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
@@ -357,19 +351,23 @@ class SequenceProvider(Sequence):
             if larmor_freq > 10e6:
                 raise ValueError(f"Larmor frequency is above 10 MHz: {larmor_freq*1e-6} MHz")
             self.larmor_freq = larmor_freq
-
             # Check if sequence has block events
             if not len(self.block_events) > 0:
                 raise ValueError("No block events found")
-
             # Sequence timing check
             check, seq_err = self.check_timing()
             if not check:
                 raise ValueError(f"Sequence timing check failed: {seq_err}")
-
             # Check if output limits are defined
             if not self.output_limits:
                 raise ValueError("Amplitude output limits are not provided")
+            # Check gradient offsets
+            if np.abs(grad_offset.x) > self.output_limits[1]:
+                raise ValueError("X gradient (channel 1) offset exceeds output limit")
+            if np.abs(grad_offset.y) > self.output_limits[2]:
+                raise ValueError("Y gradient (channel 2) offset exceeds output limit")
+            if np.abs(grad_offset.z) > self.output_limits[3]:
+                raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -378,7 +376,7 @@ class SequenceProvider(Sequence):
         # Get all blocks in a list and pre-calculate number of sample points per block
         # to allocate empty sequence array.
         blocks = [self.get_block(k) for k in list(self.block_events.keys())]
-        samples_per_block = [int(block.block_duration / self.spcm_dwell_time) for block in blocks]
+        samples_per_block = [round(block.block_duration / self.spcm_dwell_time) for block in blocks]
 
         # Internal list of arrays to store sequence and digital signals
         # Empty list of list, 4 channels => 4 times n_samples
@@ -388,16 +386,18 @@ class SequenceProvider(Sequence):
         _unblanking = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
         _ref = [np.zeros(n, dtype=np.int16) for n in samples_per_block]
 
-        # Last value of last block is added per channel to the gradient waveform as an offset value.
-        # This is needed, since gradients must not be zero at the end of a block.
-        grad_offset = Dimensions(x=0, y=0, z=0)
-
         # Count the total number of sample points and gate signals
         self.sample_count = 0
         adc_count: int = 0
         rf_start_sample_pos: int | None = None
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
+            
+            # Set gradient offsets
+            _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
+            _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
+            _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
+            
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
                 if rf_start_sample_pos is None:
@@ -417,17 +417,17 @@ class SequenceProvider(Sequence):
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
                 self.calculate_gradient(
-                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=fov_scaling.x, amp_offset=grad_offset.x
+                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=fov_scaling.x
                 )
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
                 self.calculate_gradient(
-                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=fov_scaling.y, amp_offset=grad_offset.y
+                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=fov_scaling.y
                 )
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
                 self.calculate_gradient(
-                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=fov_scaling.z, amp_offset=grad_offset.z
+                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=fov_scaling.z
                 )
 
             # Bitwise operations to merge gx with adc and gy with unblanking
