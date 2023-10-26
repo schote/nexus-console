@@ -203,9 +203,12 @@ class AcquistionControl:
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-        if self._raw is None:
-            self._raw = np.empty([])
-            self.log.warning("Empty raw data array", stack_info=True)
+        try:
+            if self._raw is None:
+                raise ValueError("Error during post processing or readout, no raw data")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         return AcquisitionData(
             raw=self._raw,
