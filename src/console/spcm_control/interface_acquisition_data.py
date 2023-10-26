@@ -52,6 +52,7 @@ class AcquisitionData:
                     "name": self.sequence.definitions["Name"][0].replace(" ", "_"),
                     "duration": self.sequence.definitions["TotalDuration"],
                 },
+                "info": {}
             }
         )
 
@@ -84,3 +85,13 @@ class AcquisitionData:
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array
             np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            
+    def add_info(self, info: dict) -> None:
+        """Add entries to meta data dictionary.
+
+        Parameters
+        ----------
+        info
+            Information as dictionary to be added.
+        """
+        self.meta["info"].update(info)
