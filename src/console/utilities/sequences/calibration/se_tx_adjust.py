@@ -7,7 +7,7 @@ from math import pi
 ADC_DURATION = 4e-3
 
 # Define system
-system = Opts(
+system = pp.Opts(
     rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
     rf_dead_time=100e-6,        # time delay at the end of RF event
     adc_dead_time=200e-6,       # time delay at the beginning of ADC event
@@ -50,14 +50,14 @@ def constructor(n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_durat
     for flip in angles:
         
         rf_90 = pp.make_sinc_pulse(
-            flip_angle=pi/2,
+            flip_angle=flip,
             system=system,
             duration=rf_duration,
             apodization=0.5,
         )
 
         rf_180 = pp.make_sinc_pulse(
-            flip_angle=pi,   # twice the flip angle => 180°
+            flip_angle=flip*2,   # twice the flip angle => 180°
             system=system,
             duration=rf_duration,
             apodization=0.5,

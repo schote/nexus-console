@@ -38,7 +38,7 @@ params = AcquisitionParameter(
         y=0.,
         z=0.,
     ),
-    grad_offset=Dimensions(0, 0, 0),
+    gradient_offset=Dimensions(0, 0, 0),
     num_averages=1,
 )
 

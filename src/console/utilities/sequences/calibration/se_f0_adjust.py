@@ -9,19 +9,18 @@ RF_DURATION = 400e-6
 ADC_DURATION = 4e-3
 
 # Define system
-system = Opts(
+system = pp.Opts(
     rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
     rf_dead_time=100e-6,        # time delay at the end of RF event
     adc_dead_time=200e-6,       # time delay at the beginning of ADC event
 )
 
 def constructor(
-    f0_estimate: float = 2.035e6, 
     freq_span: float = 100e3, 
     coil_bandwidth: float = 20e3,
-    tr: float = 250,
+    tr: float = 250e-3,
     te: float = 12e-3
-    ) -> pp.Sequence:
+    ) -> (pp.Sequence, np.ndarray):
     """Construct frequency adjust sequence.
 
     Parameters
@@ -33,26 +32,26 @@ def constructor(
     coil_bandwidth, optional
         Bandwidth of receive coil in Hz, by default 20e3
     tr, optional
-        Repetition time in ms, by default 1000
+        Repetition time in s, by default 1000
     te, optional
-        Echo time in ms, by default 12e-3
+        Echo time in s, by default 12e-3
 
     Returns
     -------
-        _description_
+        ``Sequence`` instance and frequency offsets (f0 offsets)
 
     Raises
     ------
     RuntimeError
-        _description_
+        Sequence timing failed
     """
     
     seq = pp.Sequence(system=system)
     seq.set_definition('Name', 'freq_adjust')
     
     # Determine number of RF excitations and frequency offset values
-    n_excitations = 2 * int(span / (coil_bandwidth/2)) - 1
-    max_frequency = span - coil_bandwidth / 2
+    n_excitations = 2 * int(freq_span / (coil_bandwidth / 2)) - 1
+    max_frequency = freq_span - coil_bandwidth / 2
     freq_offsets = np.linspace(-max_frequency, max_frequency, num=n_excitations)
     
     adc = pp.make_adc(
@@ -94,4 +93,4 @@ def constructor(
         if not check_passed:
             raise RuntimeError("Sequence timing check failed: ", err)
 
-    return seq
+    return seq, freq_offsets

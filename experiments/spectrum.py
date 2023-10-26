@@ -33,7 +33,7 @@ params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=2.5,
     adc_samples=500,
-    grad_offset=Dimensions(0, 0, 0),
+    gradient_offset=Dimensions(0, 0, 0),
     num_averages=1,
 )
 
