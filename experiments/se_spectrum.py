@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.utilities.spcm_data_plot import plot_spcm_data
-from console.spcm_control.ddc import apply_ddc
-import time
+from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
 
 # %%
 # Create acquisition control instance
@@ -82,12 +80,12 @@ _ = ax.set_xlabel("Frequency [Hz]")
 
 # %%
 # Plot sequence
-plot_spcm_data(acq.unrolled_sequence)
+fig, ax = plot_unrolled_sequence(acq.unrolled_sequence)
 
 # %%
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 for d in acq_data.raw.squeeze()[:, ...]:
-    ax.plot(np.degrees(np.angle(d)))    
+    ax.plot(np.degrees(np.angle(d)))
 
 
 # %%
