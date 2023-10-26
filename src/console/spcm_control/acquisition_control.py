@@ -3,7 +3,7 @@
 import logging
 import os
 import time
-
+from datetime import datetime
 import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
@@ -29,6 +29,7 @@ class AcquistionControl:
     def __init__(
         self,
         configuration_file: str = "../../../device_config.yaml",
+        data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
         consol_log_level: int = logging.INFO,
     ):
@@ -42,7 +43,20 @@ class AcquistionControl:
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
+        data_storage_path
+            Directory of storage location.
+            Within the storage location the acquisition control will create a session folder 
+            (currently the convention is used: one day equals one session).
+            All data written during one session will be stored in the session folder.
+        file_log_level
+            Set the logging level for log file. Logfile is written to the session folder.
+        consol_log_level
+            Set the logging level for the terminal/console output.
         """
+        # Create session path (contains all acquisitions of one day)
+        self.session_path = os.path.join(data_storage_path, "") + datetime.now().strftime("%Y-%m-%d") + "-session/"
+        os.makedirs(self.session_path, exist_ok=True)
+        
         self._setup_logging(console_level=consol_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
 
@@ -67,6 +81,7 @@ class AcquistionControl:
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray | None = None
+        self._unproc: np.ndarray | None = None
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -76,9 +91,7 @@ class AcquistionControl:
             self.rx_card.disconnect()
         self.log.info("Measurement cards disconnected.")
 
-    def _setup_logging(
-        self, console_level: int, file_level: int, logfile_path: str = "/home/schote01/spcm-console/"
-    ) -> None:
+    def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
         if console_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
             raise ValueError("Invalid console log level")
@@ -88,16 +101,12 @@ class AcquistionControl:
         # Disable existing loggers
         logging.config.dictConfig({"version": 1, "disable_existing_loggers": True})  # type: ignore[attr-defined]
 
-        # Setup log file path
-        logfile_path = os.path.join(logfile_path, "")
-        os.makedirs(logfile_path, exist_ok=True)
-
         # Set up logging to file
         logging.basicConfig(
             level=file_level,
             format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
             datefmt="%d-%m-%Y, %H:%M",
-            filename=f"{logfile_path}console.log",
+            filename=f"{self.session_path}console.log",
             filemode="w",
         )
 
@@ -147,6 +156,7 @@ class AcquistionControl:
         timeout = 5 + sqnc.duration
 
         self._raw = None
+        self._unproc = None
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -188,7 +198,9 @@ class AcquistionControl:
 
         return AcquisitionData(
             raw=self._raw,
+            unprocessed_data=self._unproc,
             sequence=self.seq_provider,
+            storage_path=self.session_path,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
             dwell_time=parameter.downsampling_rate / self.f_spcm,
             acquisition_parameters=parameter,
@@ -209,6 +221,7 @@ class AcquistionControl:
         f_0 = parameter.larmor_frequency
         ro_start = int(parameter.adc_samples / 2)
         raw_list: list = []
+        unproc_list: list = []
 
         try:
             if not self.rx_card.rx_data:
@@ -224,38 +237,61 @@ class AcquistionControl:
 
         for k, gate in enumerate(self.rx_card.rx_data):
             raw_channel_list = []
-
+            unproc_channel_list = []
+            
             # Process reference signal
             _ref = np.array(gate[0]).astype(np.uint16) >> 15
+            
+            # Append unprocessed data
+            unproc_channel_list.append(_ref)
+            
             self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
             # Calculate start point of readout for adc truncation
             _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+            
+            # Calculate readout start for truncation
             ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
             _ref = _ref[ro_start : ro_start + parameter.adc_samples]
 
             # Process channel 0: Read signal data, apply DDC, truncate and append to list
             # Channel 0 should always exist
             _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
+            
+            # Append unprocessed data
+            unproc_channel_list.append(_tmp)
+            
             _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
             _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+            
+            # Append processed data
             raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-
+            
             if num_channels > 1:
                 # Read all other channels if more than one channel is enabled
                 # Separation of channel 0 and all other required, since channel 0 contains digital reference
                 for channel_idx in range(len(gate) - 1):
                     # Read signal data, apply DDC and append to signal data list
                     _tmp = (np.array(gate[channel_idx + 1])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx + 1]
+                    
+                    # Append unprocessed data if flag is set
+                    unproc_channel_list.append(_tmp)
+                    
                     _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
                     _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+                    
+                    # Append processed data
                     raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
             # Stack coils in axis 0: [coils, ro]
+            # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension 
             raw_list.append(np.stack(raw_channel_list, axis=0))
-
+            unproc_list.append(np.stack(unproc_channel_list, axis=0))
+            
         # Stack phase encoding in axis 1: [coil, pe, ro]
         raw: np.ndarray = np.stack(raw_list, axis=1)
+        unproc: np.ndarray = np.stack(unproc_channel_list, axis=1)
 
-        # Assign processed data to private class attributes
-        # Stack average dimension
+        # Assign processed data to private class attributes, stack average dimension
         self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)
+        self._unproc = unproc[None, ...] if self._unproc is None \
+            else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
