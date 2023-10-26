@@ -1,4 +1,4 @@
-"""Execution of a spin echo experiment using the acquisition control."""
+"""Spin-echo based frequency calibration."""
 # %%
 # imports
 import logging
