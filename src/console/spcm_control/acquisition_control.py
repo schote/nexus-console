@@ -242,61 +242,66 @@ class AcquistionControl:
             self.log.debug(
                 "Post processing > Gates: %s; Coils: %s", len(self.rx_card.rx_data), len(self.rx_card.rx_data[0])
             )
-        except IndexError as err:
+
+            for k, gate in enumerate(self.rx_card.rx_data):
+                raw_channel_list = []
+                unproc_channel_list = []
+                
+                # Process reference signal
+                _ref = np.array(gate[0]).astype(np.uint16) >> 15
+                
+                # Append unprocessed data
+                unproc_channel_list.append(_ref)
+                
+                self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
+                # Calculate start point of readout for adc truncation
+                _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+                
+                if _ref.size < parameter.adc_samples:
+                    raise ValueError("Down-sampled signal size (%s) falls below number of desired adc_samples" % _ref.size)
+                
+                # Calculate readout start for truncation
+                ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
+                _ref = _ref[ro_start : ro_start + parameter.adc_samples]
+
+                # Process channel 0: Read signal data, apply DDC, truncate and append to list
+                # Channel 0 should always exist
+                _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
+                
+                # Append unprocessed data
+                unproc_channel_list.append(_tmp)
+                
+                _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+                _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+                
+                # Append processed data
+                raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
+                
+                if num_channels > 1:
+                    # Read all other channels if more than one channel is enabled
+                    # Separation of channel 0 and all other required, since channel 0 contains digital reference
+                    for channel_idx in range(1, len(gate)):
+                        # Read signal data, apply DDC and append to signal data list
+                        _tmp = (np.array(gate[channel_idx])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx]
+                        
+                        # Append unprocessed data if flag is set
+                        unproc_channel_list.append(_tmp)
+                        
+                        _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+                        ro_start = int(_tmp.size / 2 - parameter.adc_samples / 2)
+                        _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
+                        
+                        # Append processed data
+                        raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
+
+                # Stack coils in axis 0: [coils, ro]
+                # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension 
+                raw_list.append(np.stack(raw_channel_list, axis=0))
+                unproc_list.append(np.stack(unproc_channel_list, axis=0))
+            
+        except (IndexError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
-
-        for k, gate in enumerate(self.rx_card.rx_data):
-            raw_channel_list = []
-            unproc_channel_list = []
-            
-            # Process reference signal
-            _ref = np.array(gate[0]).astype(np.uint16) >> 15
-            
-            # Append unprocessed data
-            unproc_channel_list.append(_ref)
-            
-            self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
-            # Calculate start point of readout for adc truncation
-            _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-            
-            # Calculate readout start for truncation
-            ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
-            _ref = _ref[ro_start : ro_start + parameter.adc_samples]
-
-            # Process channel 0: Read signal data, apply DDC, truncate and append to list
-            # Channel 0 should always exist
-            _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
-            
-            # Append unprocessed data
-            unproc_channel_list.append(_tmp)
-            
-            _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-            _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
-            
-            # Append processed data
-            raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-            
-            if num_channels > 1:
-                # Read all other channels if more than one channel is enabled
-                # Separation of channel 0 and all other required, since channel 0 contains digital reference
-                for channel_idx in range(len(gate) - 1):
-                    # Read signal data, apply DDC and append to signal data list
-                    _tmp = (np.array(gate[channel_idx + 1])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx + 1]
-                    
-                    # Append unprocessed data if flag is set
-                    unproc_channel_list.append(_tmp)
-                    
-                    _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-                    _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
-                    
-                    # Append processed data
-                    raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-
-            # Stack coils in axis 0: [coils, ro]
-            # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension 
-            raw_list.append(np.stack(raw_channel_list, axis=0))
-            unproc_list.append(np.stack(unproc_channel_list, axis=0))
             
         # Stack phase encoding in axis 1: [coil, pe, ro]
         raw: np.ndarray = np.stack(raw_list, axis=1)
