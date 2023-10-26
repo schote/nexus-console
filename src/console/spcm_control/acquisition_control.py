@@ -84,7 +84,7 @@ class AcquistionControl:
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray = np.array([])
-        self._unproc: np.ndarray =np.array([])
+        self._unproc: np.ndarray = np.array([])
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
