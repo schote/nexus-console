@@ -83,8 +83,8 @@ class AcquistionControl:
         self.unrolled_sequence: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
-        self._raw: np.ndarray = np.ndarray([])
-        self._unproc: np.ndarray = np.ndarray([])
+        self._raw: np.ndarray = np.array([])
+        self._unproc: np.ndarray = np.array([])
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -167,8 +167,8 @@ class AcquistionControl:
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
 
-        self._raw = np.ndarray([])
-        self._unproc = np.ndarray([])
+        self._raw = np.array([])
+        self._unproc = np.array([])
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -315,9 +315,7 @@ class AcquistionControl:
         unproc: np.ndarray = np.stack(unproc_channel_list, axis=1)
 
         # Assign processed data to private class attributes, stack average dimension
-        self._raw = raw[None, ...] if not self._raw.size > 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
+        self._raw = raw[None, ...] if self._raw.size == 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
         self._unproc = (
-            unproc[None, ...]
-            if not self._unproc.size > 0
-            else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
+            unproc[None, ...] if self._unproc.size == 0 else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
         )

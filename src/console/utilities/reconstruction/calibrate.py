@@ -69,6 +69,6 @@ def flip_angle_fit(data: np.ndarray, flip_angles: np.ndarray) -> tuple[np.ndarra
     params = result[0]
 
     fa_fit = np.arange(flip_angles[0], flip_angles[-1] + 0.1, 0.1)
-    amp_fit = fa_model(fa_fit, **params)
+    amp_fit = fa_model(fa_fit, *params)
 
     return np.stack([fa_fit, amp_fit], axis=0), amplitudes
