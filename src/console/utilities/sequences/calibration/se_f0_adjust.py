@@ -1,8 +1,8 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
-import pypulseq as pp
-import numpy as np
 from math import pi
 
+import numpy as np
+import pypulseq as pp
 
 # Definition of constants
 RF_DURATION = 400e-6
@@ -10,17 +10,15 @@ ADC_DURATION = 4e-3
 
 # Define system
 system = pp.Opts(
-    rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
-    rf_dead_time=100e-6,        # time delay at the end of RF event
-    adc_dead_time=200e-6,       # time delay at the beginning of ADC event
+    rf_ringdown_time=100e-6,  # Time delay at the beginning of an RF event
+    rf_dead_time=100e-6,  # time delay at the end of RF event
+    adc_dead_time=200e-6,  # time delay at the beginning of ADC event
 )
 
+
 def constructor(
-    freq_span: float = 100e3, 
-    coil_bandwidth: float = 20e3,
-    tr: float = 250e-3,
-    te: float = 12e-3
-    ) -> (pp.Sequence, np.ndarray):
+    freq_span: float = 100e3, coil_bandwidth: float = 20e3, tr: float = 250e-3, te: float = 12e-3
+) -> (pp.Sequence, np.ndarray):
     """Construct frequency adjust sequence.
 
     Parameters
@@ -45,25 +43,24 @@ def constructor(
     RuntimeError
         Sequence timing failed
     """
-    
+
     seq = pp.Sequence(system=system)
-    seq.set_definition('Name', 'freq_adjust')
-    
+    seq.set_definition("Name", "freq_adjust")
+
     # Determine number of RF excitations and frequency offset values
     n_excitations = 2 * int(freq_span / (coil_bandwidth / 2)) - 1
     max_frequency = freq_span - coil_bandwidth / 2
     freq_offsets = np.linspace(-max_frequency, max_frequency, num=n_excitations)
-    
+
     adc = pp.make_adc(
-        num_samples=1000,       # Is not taken into account atm
+        num_samples=1000,  # Is not taken into account atm
         duration=ADC_DURATION,
         system=system,
     )
-    
+
     for offset in freq_offsets:
-        
         rf_90 = pp.make_sinc_pulse(
-            flip_angle=pi/2,
+            flip_angle=pi / 2,
             system=system,
             duration=RF_DURATION,
             apodization=0.5,
@@ -71,16 +68,16 @@ def constructor(
         )
 
         rf_180 = pp.make_sinc_pulse(
-            flip_angle=pi,   # twice the flip angle => 180°
+            flip_angle=pi,  # twice the flip angle => 180°
             system=system,
             duration=RF_DURATION,
             apodization=0.5,
             freq_offset=offset,
         )
-        
+
         te_delay_1 = pp.make_delay(te / 2 - RF_DURATION)
         te_delay_2 = pp.make_delay(te / 2 - RF_DURATION / 2 - ADC_DURATION / 2)
-        
+
         seq.add_block(rf_90)
         seq.add_block(te_delay_1)
         seq.add_block(rf_180)

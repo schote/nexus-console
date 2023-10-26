@@ -1,16 +1,17 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
-import pypulseq as pp
-import numpy as np
 from math import pi
+
+import numpy as np
+import pypulseq as pp
 
 # Definition of constants
 ADC_DURATION = 4e-3
 
 # Define system
 system = pp.Opts(
-    rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
-    rf_dead_time=100e-6,        # time delay at the end of RF event
-    adc_dead_time=200e-6,       # time delay at the beginning of ADC event
+    rf_ringdown_time=100e-6,  # Time delay at the beginning of an RF event
+    rf_dead_time=100e-6,  # time delay at the end of RF event
+    adc_dead_time=200e-6,  # time delay at the beginning of ADC event
 )
 
 
@@ -38,19 +39,18 @@ def constructor(
         Sequence timing check failed
     """
     seq = pp.Sequence(system=system)
-    seq.set_definition('Name', 'tx_adjust')
-    
+    seq.set_definition("Name", "tx_adjust")
+
     adc = pp.make_adc(
-        num_samples=1000,       # Is not taken into account atm
+        num_samples=1000,  # Is not taken into account atm
         duration=ADC_DURATION,
         system=system,
     )
-    
+
     # Define flip angles
-    flip_angles = np.linspace(start=(2*pi)/n_steps, stop=2*pi, num=n_steps, endpoint=True)
-    
+    flip_angles = np.linspace(start=(2 * pi) / n_steps, stop=2 * pi, num=n_steps, endpoint=True)
+
     for angle in flip_angles:
-        
         rf_90 = pp.make_sinc_pulse(
             flip_angle=angle,
             system=system,
@@ -59,15 +59,15 @@ def constructor(
         )
 
         rf_180 = pp.make_sinc_pulse(
-            flip_angle=angle*2,   # twice the flip angle => 180°
+            flip_angle=angle * 2,  # twice the flip angle => 180°
             system=system,
             duration=rf_duration,
             apodization=0.5,
         )
-        
+
         te_delay_1 = pp.make_delay(te / 2 - rf_duration)
         te_delay_2 = pp.make_delay(te / 2 - rf_duration / 2 - ADC_DURATION / 2)
-        
+
         seq.add_block(rf_90)
         seq.add_block(te_delay_1)
         seq.add_block(rf_180)

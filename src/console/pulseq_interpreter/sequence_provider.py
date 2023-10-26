@@ -186,9 +186,7 @@ class SequenceProvider(Sequence):
             raise err
 
     # @profile
-    def calculate_gradient(
-        self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float
-    ) -> None:
+    def calculate_gradient(self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float) -> None:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
         Parameters
@@ -226,7 +224,7 @@ class SequenceProvider(Sequence):
                 gradient = np.interp(
                     x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                     xp=block.tt,
-                    fp=(block.waveform * fov_scaling * self.grad_to_volt) / self.output_limits[idx]
+                    fp=(block.waveform * fov_scaling * self.grad_to_volt) / self.output_limits[idx],
                 )
 
             elif block.type == "trap":
@@ -243,8 +241,8 @@ class SequenceProvider(Sequence):
             # Check if gradient waveform fits into unroll array space
             if (idx_waveform_end := num_samples_delay + gradient.size) > unroll_arr.size:
                 raise IndexError("Unrolled gradient event exceeds number of block samples")
-            
-            if np.abs(np.amax(unroll_arr[num_samples_delay:idx_waveform_end]/INT16_MAX + gradient)) > 1:
+
+            if np.abs(np.amax(unroll_arr[num_samples_delay:idx_waveform_end] / INT16_MAX + gradient)) > 1:
                 raise ValueError("Amplitude of %s gradient (channel %s) exceeded max. amplitude", block.channel, idx)
 
             # Add gradient waveform (trapezoid or arbitrary) in place
@@ -281,11 +279,11 @@ class SequenceProvider(Sequence):
 
     # @profile
     def unroll_sequence(
-        self, 
-        larmor_freq: float, 
-        b1_scaling: float = 1.0, 
+        self,
+        larmor_freq: float,
+        b1_scaling: float = 1.0,
         fov_scaling: Dimensions = Dimensions(x=1.0, y=1.0, z=1.0),
-        grad_offset: Dimensions = Dimensions(x=0, y=0, z=0)
+        grad_offset: Dimensions = Dimensions(x=0, y=0, z=0),
     ) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
@@ -392,12 +390,11 @@ class SequenceProvider(Sequence):
         rf_start_sample_pos: int | None = None
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
-            
             # Set gradient offsets
             _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
             _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
             _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
-            
+
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
                 if rf_start_sample_pos is None:
@@ -416,19 +413,13 @@ class SequenceProvider(Sequence):
 
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
-                self.calculate_gradient(
-                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=fov_scaling.x
-                )
+                self.calculate_gradient(block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=fov_scaling.x)
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
-                self.calculate_gradient(
-                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=fov_scaling.y
-                )
+                self.calculate_gradient(block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=fov_scaling.y)
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
-                self.calculate_gradient(
-                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=fov_scaling.z
-                )
+                self.calculate_gradient(block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=fov_scaling.z)
 
             # Bitwise operations to merge gx with adc and gy with unblanking
             _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)

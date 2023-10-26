@@ -1,3 +1,1 @@
-from console.utilities.sequences import se_projection
-from console.utilities.sequences import se_spectrum
-from console.utilities.sequences import calibration
+from console.utilities.sequences import calibration, se_projection, se_spectrum

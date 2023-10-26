@@ -4,10 +4,11 @@ import logging
 import os
 import time
 from datetime import datetime
+
 import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import SequenceProvider, Sequence
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
@@ -45,7 +46,7 @@ class AcquistionControl:
             provider instances.
         data_storage_path
             Directory of storage location.
-            Within the storage location the acquisition control will create a session folder 
+            Within the storage location the acquisition control will create a session folder
             (currently the convention is used: one day equals one session).
             All data written during one session will be stored in the session folder.
         file_log_level
@@ -56,7 +57,7 @@ class AcquistionControl:
         # Create session path (contains all acquisitions of one day)
         self.session_path = os.path.join(data_storage_path, "") + datetime.now().strftime("%Y-%m-%d") + "-session/"
         os.makedirs(self.session_path, exist_ok=True)
-        
+
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
 
@@ -67,7 +68,7 @@ class AcquistionControl:
         self.rx_card: RxCard = ctx[2]
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
-        
+
         # Setup the cards
         self.is_setup: bool = False
         if self.tx_card.connect() and self.rx_card.connect():
@@ -149,16 +150,16 @@ class AcquistionControl:
                 self.seq_provider.read(sequence)
             else:
                 raise AttributeError("Invalid sequence, must be either string to .seq file or Sequence instance")
-            
+
         except (RuntimeError, FileNotFoundError, AttributeError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency, 
-            b1_scaling=parameter.b1_scaling, 
+            larmor_freq=parameter.larmor_frequency,
+            b1_scaling=parameter.b1_scaling,
             fov_scaling=parameter.fov_scaling,
-            grad_offset=parameter.gradient_offset
+            grad_offset=parameter.gradient_offset,
         )
         # Save unrolled sequence
         self.unrolled_sequence = sqnc if sqnc else None
@@ -249,20 +250,22 @@ class AcquistionControl:
             for k, gate in enumerate(self.rx_card.rx_data):
                 raw_channel_list = []
                 unproc_channel_list = []
-                
+
                 # Process reference signal
                 _ref = np.array(gate[0]).astype(np.uint16) >> 15
-                
+
                 # Append unprocessed data
                 unproc_channel_list.append(_ref)
-                
+
                 self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
                 # Calculate start point of readout for adc truncation
                 _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-                
+
                 if _ref.size < parameter.adc_samples:
-                    raise ValueError("Down-sampled signal size (%s) falls below number of desired adc_samples" % _ref.size)
-                
+                    raise ValueError(
+                        "Down-sampled signal size (%s) falls below number of desired adc_samples" % _ref.size
+                    )
+
                 # Calculate readout start for truncation
                 ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
                 _ref = _ref[ro_start : ro_start + parameter.adc_samples]
@@ -270,47 +273,48 @@ class AcquistionControl:
                 # Process channel 0: Read signal data, apply DDC, truncate and append to list
                 # Channel 0 should always exist
                 _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
-                
+
                 # Append unprocessed data
                 unproc_channel_list.append(_tmp)
-                
+
                 _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
                 _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
-                
+
                 # Append processed data
                 raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-                
+
                 if num_channels > 1:
                     # Read all other channels if more than one channel is enabled
                     # Separation of channel 0 and all other required, since channel 0 contains digital reference
                     for channel_idx in range(1, len(gate)):
                         # Read signal data, apply DDC and append to signal data list
                         _tmp = (np.array(gate[channel_idx])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx]
-                        
+
                         # Append unprocessed data if flag is set
                         unproc_channel_list.append(_tmp)
-                        
+
                         _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
                         ro_start = int(_tmp.size / 2 - parameter.adc_samples / 2)
                         _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
-                        
+
                         # Append processed data
                         raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
                 # Stack coils in axis 0: [coils, ro]
-                # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension 
+                # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension
                 raw_list.append(np.stack(raw_channel_list, axis=0))
                 unproc_list.append(np.stack(unproc_channel_list, axis=0))
-            
+
         except (IndexError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
-            
+
         # Stack phase encoding in axis 1: [coil, pe, ro]
         raw: np.ndarray = np.stack(raw_list, axis=1)
         unproc: np.ndarray = np.stack(unproc_channel_list, axis=1)
 
         # Assign processed data to private class attributes, stack average dimension
         self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)
-        self._unproc = unproc[None, ...] if self._unproc is None \
-            else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
+        self._unproc = (
+            unproc[None, ...] if self._unproc is None else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
+        )

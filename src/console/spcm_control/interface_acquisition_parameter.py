@@ -18,7 +18,7 @@ class AcquisitionParameter:
 
     larmor_frequency: float
     adc_samples: int = 500
-    b1_scaling: float = 1.
+    b1_scaling: float = 1.0
     gradient_offset: Dimensions = Dimensions(0, 0, 0)
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
     downsampling_rate: int = 200
