@@ -18,7 +18,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=20, tr=500e-3, te=0.012)
+seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=20, repetition_time=500e-3, echo_time=0.012)
 
 # Optional:
 # acq.seq_provider.from_pypulseq(seq)

@@ -243,7 +243,7 @@ class SequenceProvider(Sequence):
                 raise IndexError("Unrolled gradient event exceeds number of block samples")
 
             if np.abs(np.amax(unroll_arr[num_samples_delay:idx_waveform_end] / INT16_MAX + gradient)) > 1:
-                raise ValueError("Amplitude of %s gradient (channel %s) exceeded max. amplitude", block.channel, idx)
+                raise ValueError("Amplitude of %s gradient (channel %s) exceeded max. amplitude" % (block.channel, idx))
 
             # Add gradient waveform (trapezoid or arbitrary) in place
             unroll_arr[num_samples_delay:idx_waveform_end] += (gradient * INT16_MAX).astype(np.int16)
@@ -276,6 +276,30 @@ class SequenceProvider(Sequence):
         ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
+
+    def _check_offsets(self, grad_offset: Dimensions) -> None:
+        """Check if any of the provided gradient offsets exceeds output limit.
+
+        Parameters
+        ----------
+        grad_offset
+            Offset values to be checked
+
+        Raises
+        ------
+        ValueError
+            Output limit not provided or offset exceeds limit
+        """
+        # Check if output limits are defined
+        if not self.output_limits:
+            raise ValueError("Output limits not provided")
+        # Check gradient offsets
+        if np.abs(grad_offset.x) > self.output_limits[1]:
+            raise ValueError("X gradient (channel 1) offset exceeds output limit")
+        if np.abs(grad_offset.y) > self.output_limits[2]:
+            raise ValueError("Y gradient (channel 2) offset exceeds output limit")
+        if np.abs(grad_offset.z) > self.output_limits[3]:
+            raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
     # @profile
     def unroll_sequence(
@@ -356,16 +380,8 @@ class SequenceProvider(Sequence):
             check, seq_err = self.check_timing()
             if not check:
                 raise ValueError(f"Sequence timing check failed: {seq_err}")
-            # Check if output limits are defined
-            if not self.output_limits:
-                raise ValueError("Amplitude output limits are not provided")
-            # Check gradient offsets
-            if np.abs(grad_offset.x) > self.output_limits[1]:
-                raise ValueError("X gradient (channel 1) offset exceeds output limit")
-            if np.abs(grad_offset.y) > self.output_limits[2]:
-                raise ValueError("Y gradient (channel 2) offset exceeds output limit")
-            if np.abs(grad_offset.z) > self.output_limits[3]:
-                raise ValueError("Z gradient (channel 3) offset exceeds output limit")
+
+            self._check_offsets(grad_offset)
 
         except ValueError as err:
             self.log.exception(err, exc_info=True)

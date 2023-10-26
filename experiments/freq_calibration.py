@@ -19,7 +19,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 # Construct and plot sequence
 span = 100e3
 seq, f0_offsets = sequences.calibration.se_f0_adjust.constructor(
-    freq_span=span, coil_bandwidth=20e3, tr=300e-3, te=12e-3
+    freq_span=span, coil_bandwidth=20e3, repetition_time=300e-3, echo_time=12e-3
 )
 
 # Optional:

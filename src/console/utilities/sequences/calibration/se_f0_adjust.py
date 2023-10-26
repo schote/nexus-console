@@ -17,8 +17,8 @@ system = pp.Opts(
 
 
 def constructor(
-    freq_span: float = 100e3, coil_bandwidth: float = 20e3, tr: float = 250e-3, te: float = 12e-3
-) -> (pp.Sequence, np.ndarray):
+    freq_span: float = 100e3, coil_bandwidth: float = 20e3, repetition_time: float = 250e-3, echo_time: float = 12e-3
+) -> tuple[pp.Sequence, np.ndarray]:
     """Construct frequency adjust sequence.
 
     Parameters
@@ -43,7 +43,6 @@ def constructor(
     RuntimeError
         Sequence timing failed
     """
-
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "freq_adjust")
 
@@ -75,15 +74,15 @@ def constructor(
             freq_offset=offset,
         )
 
-        te_delay_1 = pp.make_delay(te / 2 - RF_DURATION)
-        te_delay_2 = pp.make_delay(te / 2 - RF_DURATION / 2 - ADC_DURATION / 2)
+        te_delay_1 = pp.make_delay(echo_time / 2 - RF_DURATION)
+        te_delay_2 = pp.make_delay(echo_time / 2 - RF_DURATION / 2 - ADC_DURATION / 2)
 
         seq.add_block(rf_90)
         seq.add_block(te_delay_1)
         seq.add_block(rf_180)
         seq.add_block(te_delay_2)
         seq.add_block(adc)
-        seq.add_block(pp.make_delay(tr))
+        seq.add_block(pp.make_delay(repetition_time))
 
         # Check sequence timing in each iteration
         check_passed, err = seq.check_timing()

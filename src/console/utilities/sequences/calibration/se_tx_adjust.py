@@ -16,8 +16,8 @@ system = pp.Opts(
 
 
 def constructor(
-    n_steps: int = 10, tr: float = 1000, te: float = 12e-3, rf_duration: float = 400e-6
-) -> (pp.Sequence, np.ndarray):
+    n_steps: int = 10, repetition_time: float = 1000, echo_time: float = 12e-3, rf_duration: float = 400e-6
+) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
     Parameters
@@ -65,15 +65,15 @@ def constructor(
             apodization=0.5,
         )
 
-        te_delay_1 = pp.make_delay(te / 2 - rf_duration)
-        te_delay_2 = pp.make_delay(te / 2 - rf_duration / 2 - ADC_DURATION / 2)
+        te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
+        te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)
 
         seq.add_block(rf_90)
         seq.add_block(te_delay_1)
         seq.add_block(rf_180)
         seq.add_block(te_delay_2)
         seq.add_block(adc)
-        seq.add_block(pp.make_delay(tr))
+        seq.add_block(pp.make_delay(repetition_time))
 
         # Check sequence timing in each iteration
         check_passed, err = seq.check_timing()

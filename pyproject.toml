@@ -53,6 +53,7 @@ max-locals = 50
 max-attributes = 20
 max-line-length = 120
 max-statements = 100
+max-branches = 15
 ignore-paths = [
     "src/console/spcm_control/spcm/.*$"
 ]

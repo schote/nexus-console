@@ -83,8 +83,8 @@ class AcquistionControl:
         self.unrolled_sequence: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
-        self._raw: np.ndarray | None = None
-        self._unproc: np.ndarray | None = None
+        self._raw: np.ndarray = np.ndarray([])
+        self._unproc: np.ndarray = np.ndarray([])
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -167,8 +167,8 @@ class AcquistionControl:
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
 
-        self._raw = None
-        self._unproc = None
+        self._raw = np.ndarray([])
+        self._unproc = np.ndarray([])
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -205,7 +205,7 @@ class AcquistionControl:
             self.rx_card.stop_operation()
 
         try:
-            if self._raw is None:
+            if not self._raw.size > 0:
                 raise ValueError("Error during post processing or readout, no raw data")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -252,7 +252,7 @@ class AcquistionControl:
                 unproc_channel_list = []
 
                 # Process reference signal
-                _ref = np.array(gate[0]).astype(np.uint16) >> 15
+                _ref = (np.array(gate[0]).astype(np.uint16) >> 15).astype(float)
 
                 # Append unprocessed data
                 unproc_channel_list.append(_ref)
@@ -301,7 +301,8 @@ class AcquistionControl:
                         raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
                 # Stack coils in axis 0: [coils, ro]
-                # The unprocessed data has coil dimension + 1 since the reference signal is the first entry of coil dimension
+                # The unprocessed data has coil dimension + 1
+                # since the reference signal is the first entry of coil dimension
                 raw_list.append(np.stack(raw_channel_list, axis=0))
                 unproc_list.append(np.stack(unproc_channel_list, axis=0))
 
@@ -314,7 +315,9 @@ class AcquistionControl:
         unproc: np.ndarray = np.stack(unproc_channel_list, axis=1)
 
         # Assign processed data to private class attributes, stack average dimension
-        self._raw = raw[None, ...] if self._raw is None else np.concatenate((self._raw, raw[None, ...]), axis=0)
+        self._raw = raw[None, ...] if not self._raw.size > 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
         self._unproc = (
-            unproc[None, ...] if self._unproc is None else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
+            unproc[None, ...]
+            if not self._unproc.size > 0
+            else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
         )

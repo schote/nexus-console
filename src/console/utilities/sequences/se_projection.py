@@ -1,7 +1,6 @@
 """Constructor for spin-echo spectrum sequence with projection gradient."""
 from math import pi
 
-import numpy as np
 import pypulseq as pp
 
 # Definition of constants
@@ -17,7 +16,7 @@ system = pp.Opts(
 
 
 def constructor(
-    fov: float = 0.25, te: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True
+    fov: float = 0.25, echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence with projection gradient (1D).
 
@@ -64,8 +63,8 @@ def constructor(
         system=system,
     )
 
-    te_delay_1 = pp.make_delay(te / 2 - rf_duration)
-    te_delay_2 = pp.make_delay(te / 2 - rf_duration / 2 - ADC_DURATION / 2)
+    te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
+    te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)
 
     seq.add_block(rf_90)
     seq.add_block(te_delay_1)

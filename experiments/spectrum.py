@@ -17,7 +17,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-seq = sequences.se_spectrum.constructor(te=12e-3, rf_duration=400e-6, use_sinc=True)
+seq = sequences.se_spectrum.constructor(echo_time=12e-3, rf_duration=400e-6, use_sinc=True)
 
 # Optional:
 acq.seq_provider.from_pypulseq(seq)
