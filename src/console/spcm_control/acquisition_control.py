@@ -7,7 +7,7 @@ from datetime import datetime
 import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import SequenceProvider
+from console.pulseq_interpreter.sequence_provider import SequenceProvider, Sequence
 from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
@@ -31,7 +31,7 @@ class AcquistionControl:
         configuration_file: str = "../../../device_config.yaml",
         data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
-        consol_log_level: int = logging.INFO,
+        console_log_level: int = logging.INFO,
     ):
         """Construct acquisition control class.
 
@@ -50,14 +50,14 @@ class AcquistionControl:
             All data written during one session will be stored in the session folder.
         file_log_level
             Set the logging level for log file. Logfile is written to the session folder.
-        consol_log_level
+        console_log_level
             Set the logging level for the terminal/console output.
         """
         # Create session path (contains all acquisitions of one day)
         self.session_path = os.path.join(data_storage_path, "") + datetime.now().strftime("%Y-%m-%d") + "-session/"
         os.makedirs(self.session_path, exist_ok=True)
         
-        self._setup_logging(console_level=consol_log_level, file_level=file_log_level)
+        self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
 
         # Get instances from configuration file
@@ -66,6 +66,8 @@ class AcquistionControl:
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
 
+        self.seq_provider.output_limits = self.tx_card.max_amplitude
+        
         # Setup the cards
         self.is_setup: bool = False
         if self.tx_card.connect() and self.rx_card.connect():
@@ -117,7 +119,7 @@ class AcquistionControl:
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
 
-    def run(self, sequence: str, parameter: AcquisitionParameter) -> AcquisitionData:
+    def run(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -135,19 +137,28 @@ class AcquistionControl:
             Invalid file ending of sequence file.
         """
         try:
+            # Check setup
             if not self.is_setup:
                 raise RuntimeError("Measurement cards are not setup.")
+            # Check sequence
+            if isinstance(sequence, Sequence):
+                self.seq_provider.from_pypulseq(sequence)
+            elif isinstance(sequence, str):
+                if not sequence.endswith(".seq"):
+                    raise FileNotFoundError("Invalid sequence file.")
+                self.seq_provider.read(sequence)
+            else:
+                raise AttributeError("Invalid sequence, must be either string to .seq file or Sequence instance")
+            
+        except (RuntimeError, FileNotFoundError, AttributeError) as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
-            if not sequence.endswith(".seq"):
-                raise FileNotFoundError("Invalid sequence file.")
-        except Exception as exc:
-            self.log.exception(exc, exc_info=True)
-            raise exc
-
-        self.seq_provider.read(sequence)
-        self.seq_provider.output_limits = self.tx_card.max_amplitude
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency, b1_scaling=parameter.b1_scaling, fov_scaling=parameter.fov_scaling
+            larmor_freq=parameter.larmor_frequency, 
+            b1_scaling=parameter.b1_scaling, 
+            fov_scaling=parameter.fov_scaling,
+            grad_offset=parameter.gradient_offset
         )
         # Save unrolled sequence
         self.unrolled_sequence = sqnc if sqnc else None

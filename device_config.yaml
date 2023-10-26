@@ -7,7 +7,7 @@
 TxCard: !TxCard
   path: "/dev/spcm1"
   # Max. output amplitude per channel
-  max_amplitude: [200, 6000, 6000, 4000]
+  max_amplitude: [200, 6000, 6000, 6000]
   # Filter configuration of each transmit channel
   filter_type: [0, 2, 2, 2]
   # Device sampling rate in MHz
@@ -32,7 +32,7 @@ RxCard: !RxCard
 SequenceProvider: !SequenceProvider
   # Set the transmit card sampling rate, 5e-8 => 20 MHz
   spcm_dwell_time: 0.00000005
-  grad_to_volt: 0.00005
+  grad_to_volt: 0.005
   rf_to_volt: 0.005
   system: !Opts
     max_grad: 250000.0

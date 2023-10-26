@@ -15,7 +15,7 @@ system = pp.Opts(
 )
 
 
-def constructor(fov: float = 0.025, te: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True) -> pp.Sequence:
+def constructor(fov: float = 0.25, te: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True) -> pp.Sequence:
     """Construct spin echo spectrum sequence with projection gradient (1D).
 
     Parameters
@@ -69,7 +69,7 @@ def constructor(fov: float = 0.025, te: float = 12e-3, rf_duration: float = 400e
     num_samples = 256
     k_width = num_samples / fov
     
-    gradient = make_trapezoid(
+    gradient = pp.make_trapezoid(
         system=system,
         channel="x",
         flat_area=k_width,
