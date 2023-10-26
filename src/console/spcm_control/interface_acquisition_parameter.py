@@ -21,7 +21,7 @@ class AcquisitionParameter:
     b1_scaling: float = 1.
     gradient_offset: Dimensions = Dimensions(0, 0, 0)
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
-    downsampling_rate: int = 400
+    downsampling_rate: int = 200
     num_averages: int = 1
 
     def dict(self, use_strings: bool = False) -> dict:
