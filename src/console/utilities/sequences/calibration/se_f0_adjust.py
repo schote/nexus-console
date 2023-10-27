@@ -64,6 +64,7 @@ def constructor(
             duration=RF_DURATION,
             apodization=0.5,
             freq_offset=offset,
+            use="excitation"
         )
 
         rf_180 = pp.make_sinc_pulse(
@@ -72,6 +73,7 @@ def constructor(
             duration=RF_DURATION,
             apodization=0.5,
             freq_offset=offset,
+            use="refocusing"
         )
 
         te_delay_1 = pp.make_delay(echo_time / 2 - RF_DURATION)
