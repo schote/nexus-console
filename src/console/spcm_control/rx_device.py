@@ -8,7 +8,7 @@ from itertools import compress
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
-
+from numpy import ctypeslib as ctonp
 # Define registers lists
 CH_SELECT = [sp.CHANNEL1, sp.CHANNEL0, sp.CHANNEL2, sp.CHANNEL3, sp.CHANNEL4, sp.CHANNEL5, sp.CHANNEL6, sp.CHANNEL7]
 AMP_SELECT = [sp.SPC_AMP0, sp.SPC_AMP1, sp.SPC_AMP2, sp.SPC_AMP3, sp.SPC_AMP4, sp.SPC_AMP5, sp.SPC_AMP6, sp.SPC_AMP7]
@@ -235,10 +235,10 @@ class RxCard(SpectrumDevice):
             sp.uint64(0),
             ts_buffer_size,
         )
-
+        self.log.debug("Rx_buffer_type: %s", type(rx_buffer))
         pll_data = cast(ts_buffer, sp.ptr64)  # cast to pointer to 64bit integer
-        rx_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
-
+        rx_data  = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
+        self.log.debug("Rx_data_type: %s", type(rx_data))
         # Setup polling mode
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL)
 
@@ -315,11 +315,12 @@ class RxCard(SpectrumDevice):
                             # >> We need two indices in case of memory overflow
                             index_1 = rx_size // 2 - index_0
                             index_2 = total_bytes_to_read // 2 - index_1
-                            gate_data = rx_data[index_0 : index_0 + index_1]
-                            gate_data += rx_data[0:index_2]
+                            gate_data = ctonp.as_array(rx_data[index_0 : index_0 + index_1])
+                            self.log.debug("Typecheck: %s", type(gate_data))
+                            gate_data += ctonp.as_array(rx_data[0:index_2])
                         else:
-                            gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
-
+                            gate_data = ctonp.as_array(rx_data[index_0 : index_0 + int(total_bytes / 2)])
+                            self.log.debug("Typecheck: %s", type(gate_data))
                         pre_trigger_cut = (self.pre_trigger - 1) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
                         self.log.debug("Total number of received samples: %s", len(gate_data))
