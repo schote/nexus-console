@@ -53,8 +53,13 @@ def constructor(
     num_samples = 256
     k_width = num_samples / fov
 
+    # Readout gradient
     gradient = pp.make_trapezoid(
         system=system, channel="x", flat_area=k_width, flat_time=ADC_DURATION, rise_time=GRAD_RISE_TIME
+    )
+    # Prephaser gradient: Same amplitude (180° pulse inverts), halve of the duration
+    prephaser = pp.make_trapezoid(
+        system=system, channel='x', area=gradient.area/2, duration=pp.calc_duration(gradient)/2
     )
 
     adc = pp.make_adc(
@@ -63,10 +68,12 @@ def constructor(
         system=system,
     )
 
-    te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
+    # Calculate delays
+    te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration - pp.calc_duration(prephaser))
     te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)
 
     seq.add_block(rf_90)
+    seq.add_block(prephaser)
     seq.add_block(te_delay_1)
     seq.add_block(rf_180)
     seq.add_block(te_delay_2)
