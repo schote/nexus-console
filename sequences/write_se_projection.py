@@ -32,7 +32,7 @@ rf_flip = pi/2
 rf_phase = pi/2
 
 # Sequence specific timing
-te = 12e-3
+te = 20e-3  #12e-3
 
 # Readout/ADC
 ro_bw = 50e3   # 50 kHz bandwidth
@@ -85,6 +85,7 @@ rf_block_180 = make_sinc_pulse(
 # Gx = 1 / (gamma * FOV * delta_t_RO)
 # delta_t_RO = 1 / BW
 # Gx = BW / (gamma * FOV)
+
 gr_ro = make_trapezoid(
     channel="x",
     system=system,
@@ -113,7 +114,7 @@ seq.add_block(rf_block_180)
 seq.add_block(delay_2)
 seq.add_block(gr_ro, adc)
 
-seq.set_definition('Name', 'se_proj_')
+seq.set_definition('Name', 'se_proj')
 
 
 # %%

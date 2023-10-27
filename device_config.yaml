@@ -1,33 +1,39 @@
+# ===============================================
 # Configuration file for OSI²One pypulseq-console
+# ===============================================
 
-# Spectrum instrumentation device configuration
-# M2p.6546-x4 -> /dev/spcm1 (AWG)
+# >> TX DEVICE: M2p.6546-x4 -> /dev/spcm1 (AWG)
+# Total number of (analog) transmit channels: 4
 TxCard: !TxCard
   path: "/dev/spcm1"
-  max_amplitude: [200, 6000, 6000, 4000] # Max. amplitude per channel
-  filter_type: [0, 2, 2, 2] # Filter per channel
-  sample_rate: 20  # in MHz
+  # Max. output amplitude per channel
+  max_amplitude: [200, 6000, 6000, 6000]
+  # Filter configuration of each transmit channel
+  filter_type: [0, 2, 2, 2]
+  # Device sampling rate in MHz
+  sample_rate: 20
+  # Notify size is defined by as fraction of total buffer size (optional)
   notify_rate: 16
 
-# M2p.5933-x4 -> /dev/spcm0 (Digitizer)
+# >> RX DEVICE: M2p.5933-x4 -> /dev/spcm0 (Digitizer)
+# Total number of receive channels: 8
 RxCard: !RxCard
   path: "/dev/spcm0"
-  max_amplitude: [10000, 10000, 1000, 1000] # Max. amplitude per channel
-  channel_enable: [1, 1, 1, 1] # Enable per channel
-  sample_rate: 20         # in MHz
-  memory_size: 4096000    # memory size in cycles, Please note that step size is 8. 
-  loops: 0          # number of loops, 0 for infinite loop for FIFO gated mode. 
-  timestamp_mode: True
-  # post_trigger: !!python/object/apply:eval [memory_size - 8000] ##Todo #Note that step size is 8
+  # Enable the receive channels
+  channel_enable: [1, 1, 0, 0, 0, 0, 0, 0]
+  # Set the max. amplitude per channel, list length must at least match the number of enabled channels
+  max_amplitude: [10000, 10000, 1000, 1000, 1000, 1000, 1000, 1000]
+  # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
+  impedance_50_ohms: [1, 0, 0, 0, 0, 0, 0, 0]
+  # Device sampling rate in MHz
+  sample_rate: 20
 
-# Sequence provider configuration
+# >> Sequence provider configuration
 SequenceProvider: !SequenceProvider
-  spcm_dwell_time: 0.00000005 # 5e-8 => 20 MHz
-  # grad_to_volt: 0.0001
-  grad_to_volt: 0.00005
+  # Set the transmit card sampling rate, 5e-8 => 20 MHz
+  spcm_dwell_time: 0.00000005
+  grad_to_volt: 0.005
   rf_to_volt: 0.005
-
-  # TODO: Review the following values
   system: !Opts
     max_grad: 250000.0
     max_slew: 250000.0

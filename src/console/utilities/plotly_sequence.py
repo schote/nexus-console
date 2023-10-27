@@ -38,6 +38,7 @@ def get_sequence_plot(
         list of plot data models
     """
     # Empty lists for RX and TX channel: [Time, Magnitude, Phase]
+    # TODO: Improve this by using numpy arrays
     rx_data: list[list] = [[0.0], [0.0], [0.0]]
     tx_data: list[list[float]] = [[0.0], [0.0], [0.0]]
 

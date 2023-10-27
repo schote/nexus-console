@@ -39,7 +39,7 @@ dependencies = [
 test = ["coverage", "codecov", "pre-commit"]
 lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
-dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython"]
+dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 
 # Tool configuration
@@ -53,6 +53,7 @@ max-locals = 50
 max-attributes = 20
 max-line-length = 120
 max-statements = 100
+max-branches = 15
 ignore-paths = [
     "src/console/spcm_control/spcm/.*$"
 ]
@@ -60,7 +61,8 @@ extension-pkg-allow-list = ["pydantic"]
 disable = [
     "too-few-public-methods", 
     "duplicate-code", 
-    "fixme" # fixme warning is thrown on each TODO: ..., comment to see todo's
+    "fixme", # fixme warning is thrown on each TODO: ..., comment to see todo's
+    "consider-using-f-string"
 ] 
 
 [tool.flake8]

@@ -1,11 +1,9 @@
 """Performance test (speed) of sequence unrolling with a turbo spin echo sequence (TSE)."""
 # %%
 # imports
-import time
 from timeit import timeit
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.utilities.spcm_data_plot import plot_spcm_data
 
 # %load_ext line_profiler
 
@@ -14,7 +12,7 @@ from console.utilities.spcm_data_plot import plot_spcm_data
 seq = SequenceProvider(rf_to_volt=0.005, grad_to_volt=0.0001)
 
 # Set maximum amplitude per channel
-seq.max_amp_per_channel = (200, 6000, 6000, 6000)
+seq.output_limits = (200, 6000, 6000, 6000)
 
 # Load pulseq sequence
 seq_path = "../sequences/export/tse.seq"
@@ -23,7 +21,7 @@ seq.read(seq_path)
 # %%
 # Measure execution time of unrolling
 
-n_calls = 100
+n_calls = 10
 call = "seq.unroll_sequence(2.031e6)"
 duration = timeit(call, number=n_calls, globals=globals())
 
