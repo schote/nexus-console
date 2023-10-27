@@ -5,7 +5,8 @@ from pypulseq.make_adc import make_adc
 from pypulseq.make_sinc_pulse import make_sinc_pulse
 from pypulseq.opts import Opts
 
-from console.utilities.sequence_plot import get_sequence_plot
+# Todo fix plotting 
+# from console.utilities.sequence_plot import get_sequence_plot
 
 # %%
 
@@ -55,8 +56,8 @@ seq.set_definition('Name', 'txrx_test')
 # %%
 # Check sequence timing and plot
 
-fig = get_sequence_plot(seq)
-fig.show()
+#fig = get_sequence_plot(seq)
+#fig.show()
 
 # seq.plot(time_range=(0, 1e-3), time_disp='ms')
 # ok, e = seq.check_timing()
