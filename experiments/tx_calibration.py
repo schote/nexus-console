@@ -14,20 +14,20 @@ from console.utilities.reconstruction.calibrate import flip_angle_fit
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.WARNING, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct and plot sequence
-seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=20, repetition_time=250e-3, echo_time=0.012)
+seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=50, repetition_time=250e-3, echo_time=0.012)
 
 # Optional:
-acq.seq_provider.from_pypulseq(seq)
-seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 5000000))
+# acq.seq_provider.from_pypulseq(seq)
+# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+# fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 5000000))
 
 # %%
 # Larmor frequency:
-f_0 = 2037729.6875
+f_0 = 2035529.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
@@ -51,4 +51,6 @@ ax.scatter(np.degrees(flip_angles), rx_peaks, marker="x", color="tab:orange")
 ax.set_ylabel("Abs. FFT spectrum peak [a.u.]")
 _ = ax.set_xlabel("Flip angle [°]")
 
+# %%
+del acq
 # %%

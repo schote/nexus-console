@@ -13,7 +13,7 @@ import console.utilities.sequences as sequences
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.WARNING, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct and plot sequence
@@ -26,15 +26,15 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
-f_0 = 2037729.6875
+f_0 = 2035529.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.5,
+    b1_scaling=6,
     adc_samples=500,
     fov_scaling=Dimensions(
-        x=1.0,
+        x=0.,
         y=0.,
         z=0.,
     ),

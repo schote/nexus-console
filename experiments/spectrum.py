@@ -26,12 +26,12 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
-f_0 = 2037729.6875
+f_0 = 2035329.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.5,
+    b1_scaling=6.,
     adc_samples=500,
     gradient_offset=Dimensions(0, 0, 0),
     num_averages=1,
@@ -40,7 +40,6 @@ params = AcquisitionParameter(
 # Perform acquisition
 acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 
-# %%
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
 data = np.mean(acq_data.raw, axis=0)[0].squeeze()
@@ -70,3 +69,11 @@ ax.set_xlim([-20e3, 20e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
+
+# %%
+acq_data.write(save_unprocessed=True)
+
+
+# %%
+del acq
+# %%
