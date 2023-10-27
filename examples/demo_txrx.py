@@ -1,26 +1,25 @@
 """Demonstraction of transmit and receive devices."""
 # %%
 # imports
-import time
+import logging
 import numpy as np
 import matplotlib.pyplot as plt
-from console.utilities.load_config import get_instances
-# from console.utilities.spcm_data_plot import plot_spcm_data
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.spcm_control.acquisition_control import AcquistionControl
+from console.spcm_control.interface_acquisition_data import AcquisitionData
+from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
+import console.utilities.sequences as sequences
+import time
 # %%
-# Get instances from configuration file
-seq, tx_card, rx_card = get_instances("../device_config.yaml")
 
-# Set max amplitude per channel from TX card to unroll sequence directly to int16
-seq.max_amp_per_channel = tx_card.max_amplitude
+configuration = "../device_config.yaml"
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.WARNING, file_log_level=logging.DEBUG)
 
-# Read sequence
-seq.read("../sequences/export/gradient_test.seq")
-#seq.read("../sequences/export/tse.seq")
 
-# Unrolling the sequence...
-sqnc: UnrolledSequence = seq.unroll_sequence()
+# Optional:
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 #fig, ax = plot_spcm_data(sqnc, use_time=True)
 #fig.show()

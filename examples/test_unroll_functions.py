@@ -13,7 +13,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
-%load_ext line_profiler
+# %% load_ext line_profiler
 
 # %%
 # Read sequence
