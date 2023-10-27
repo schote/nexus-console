@@ -10,7 +10,7 @@ from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
 # Define registers lists
-CH_SELECT = [sp.CHANNEL1, sp.CHANNEL0, sp.CHANNEL2, sp.CHANNEL3, sp.CHANNEL4, sp.CHANNEL5, sp.CHANNEL6, sp.CHANNEL7]
+CH_SELECT = [sp.CHANNEL0, sp.CHANNEL1, sp.CHANNEL2, sp.CHANNEL3, sp.CHANNEL4, sp.CHANNEL5, sp.CHANNEL6, sp.CHANNEL7]
 AMP_SELECT = [sp.SPC_AMP0, sp.SPC_AMP1, sp.SPC_AMP2, sp.SPC_AMP3, sp.SPC_AMP4, sp.SPC_AMP5, sp.SPC_AMP6, sp.SPC_AMP7]
 IMP_SELECT = [
     sp.SPC_50OHM0,
@@ -290,16 +290,16 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
 
                 # Debug log statements
-                self.log.debug("Available timestamp buffer size: %s", available_timestamp_bytes.value)
-                self.log.debug("Expected adc data in bytes: %s", total_bytes)
-                self.log.debug("User position (adc buffer): %s", data_user_position.value)
-                self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
-                self.log.debug("Left over in bytes: %s", bytes_leftover)
+                # self.log.debug("Available timestamp buffer size: %s", available_timestamp_bytes.value)
+                # self.log.debug("Expected adc data in bytes: %s", total_bytes)
+                # self.log.debug("User position (adc buffer): %s", data_user_position.value)
+                # self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
+                # self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
-                    self.log.debug("Available user length in bytes (adc buffer): %s", available_user_databytes.value)
+                    # self.log.debug("Available user length in bytes (adc buffer): %s", available_user_databytes.value)
 
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
@@ -319,14 +319,14 @@ class RxCard(SpectrumDevice):
                         else:
                             gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
 
-                        pre_trigger_cut = (self.pre_trigger - 1) * self.num_channels.value
+                        pre_trigger_cut = self.pre_trigger * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-                        self.log.debug("Total number of received samples: %s", len(gate_data))
 
                         _tmp = []
                         for channel_idx in range(self.num_channels.value):
                             # Extract channel data, throw pre-trigger
                             _tmp.append(gate_data[channel_idx :: self.num_channels.value])
+                            # _tmp.append(gate_data)
                         self.rx_data.append(_tmp)
 
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
