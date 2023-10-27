@@ -19,7 +19,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 # Construct and plot sequence
 span = 100e3
 seq, f0_offsets = sequences.calibration.se_f0_adjust.constructor(
-    freq_span=span, coil_bandwidth=20e3, repetition_time=300e-3, echo_time=12e-3
+    freq_span=span, coil_bandwidth=20e3, repetition_time=100e-3, echo_time=12e-3
 )
 
 # Optional:
@@ -79,4 +79,30 @@ ax.set_ylim([0, max_value*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
 
+
+# %%
+# Plot the frequency range
+
+offsets = []
+spectra = []
+
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+
+for k in list(seq.block_events.keys()):
+    if (rf_block := seq.get_block(k).rf) is not None and rf_block.use == "excitation":
+        offsets.append(rf_block.freq_offset)
+        spectra.append(np.fft.ifftshift(np.fft.fft(np.fft.fftshift(rf_block.signal), norm="ortho")))
+        
+        # Determine frequency axis
+        kmax = 0.5 * (1/(rf_block.t[1]-rf_block.t[0]))
+        freq = np.linspace(-kmax, kmax, len(spectra[-1])) + offsets[-1]
+        
+        # Plot pulse magnitude over frequency
+        ax.plot(freq*1e-3, np.abs(spectra[-1])*1e-3, label=f"{offsets[-1]/1e3} kHz")
+        
+
+ax.set_xlim((-120, 120))
+ax.set_ylabel("Excitation B1 [kHz]")
+ax.set_xlabel("Frequency [kHz]")
+ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
 # %%
