@@ -176,6 +176,7 @@ class TxCard(SpectrumDevice):
         )
 
         self.log.debug("Device setup completed")
+        self.log_card_status()
 
     def start_operation(self, data: UnrolledSequence | None = None) -> None:
         """Start transmit (TX) card operation.
@@ -235,7 +236,6 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.log_card_status()
         self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
         self.worker.start()
 
@@ -249,7 +249,6 @@ class TxCard(SpectrumDevice):
 
             self.handle_error(error)
             self.worker = None
-            self.log_card_status()
         else:
             print("No active replay thread found...")
 
@@ -386,4 +385,4 @@ class TxCard(SpectrumDevice):
         """
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
-        self.log.debug("Card status: %s", status)
+        self.log.debug("Card status:\n%s", status)

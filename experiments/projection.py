@@ -21,7 +21,7 @@ seq = sequences.se_projection.constructor(fov=0.2, echo_time=12e-3, rf_duration=
 
 # Optional:
 acq.seq_provider.from_pypulseq(seq)
-seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, fov_scaling=Dimensions(1., 0, 0), grad_offset=Dimensions(0, 0, 0))
 fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
@@ -64,3 +64,8 @@ ax.set_xlim([-20e3, 20e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
+
+# %%
+del acq
+
+# %%

@@ -18,12 +18,12 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=20, repetition_time=500e-3, echo_time=0.012)
+seq, flip_angles = sequences.calibration.se_tx_adjust.constructor(n_steps=20, repetition_time=250e-3, echo_time=0.012)
 
 # Optional:
-# acq.seq_provider.from_pypulseq(seq)
-# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-# fig, ax = plot_unrolled_sequence(seq_unrolled)
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 5000000))
 
 # %%
 # Larmor frequency:

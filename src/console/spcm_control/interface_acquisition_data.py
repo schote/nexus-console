@@ -40,6 +40,11 @@ class AcquisitionData:
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
 
+    is_stored: bool = False
+    """Status flag which indicates if data has already been stored or not. 
+    Must not be initialized, flag is cleared again in ``__post_init__`` method.
+    """
+
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         self.meta.update(
@@ -55,6 +60,7 @@ class AcquisitionData:
                 "info": {},
             }
         )
+        object.__setattr__(self, 'is_stored', False)
 
     def write(self, save_unprocessed: bool = False) -> None:
         """Save all the acquisition data to a given data path.
@@ -64,27 +70,32 @@ class AcquisitionData:
         save_unprocessed
             Flag which indicates if unprocessed data is to be written or not.
         """
-        # Add trailing slash and make dir
-        base_path = os.path.join(self.storage_path, "")
-        os.makedirs(base_path, exist_ok=True)
+        if not self.is_stored:
+            # Add trailing slash and make dir
+            base_path = os.path.join(self.storage_path, "")
+            os.makedirs(base_path, exist_ok=True)
 
-        acq_folder = datetime.now().strftime("%Y-%m-%d-%H%M%S-") + self.meta["sequence"]["name"]
-        acq_folder_path = base_path + acq_folder + "/"
-        os.makedirs(acq_folder_path, exist_ok=False)
+            acq_folder = datetime.now().strftime("%Y-%m-%d-%H%M%S-") + self.meta["sequence"]["name"]
+            acq_folder_path = base_path + acq_folder + "/"
+            os.makedirs(acq_folder_path, exist_ok=False)
 
-        # Save meta data
-        with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
-            json.dump(self.meta, outfile, indent=4)
+            # Save meta data
+            with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
+                json.dump(self.meta, outfile, indent=4)
 
-        # Write sequence .seq file
-        self.sequence.write(f"{acq_folder_path}sequence.seq")
+            # Write sequence .seq file
+            self.sequence.write(f"{acq_folder_path}sequence.seq")
 
-        # Save raw data as numpy array
-        np.save(f"{acq_folder_path}raw_data.npy", self.raw)
-
-        if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array
-            np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            np.save(f"{acq_folder_path}raw_data.npy", self.raw)
+
+            if save_unprocessed and self.unprocessed_data is not None:
+                # Save raw data as numpy array
+                np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+                
+            object.__setattr__(self, 'is_stored', True)
+        else:
+            print("Acquisition data has already been stored")
 
     def add_info(self, info: dict) -> None:
         """Add entries to meta data dictionary.
@@ -95,3 +106,5 @@ class AcquisitionData:
             Information as dictionary to be added.
         """
         self.meta["info"].update(info)
+        # Unset the stored flag if meta data changes
+        object.__setattr__(self, 'is_stored', False)

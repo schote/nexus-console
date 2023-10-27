@@ -170,10 +170,10 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         self.log.debug("Device setup completed")
+        self.log_card_status()
 
     def start_operation(self):
         """Start card operation."""
-        self.log_card_status()
         # Clear the emergency stop flag
         self.is_running.clear()
         self.rx_data = []
@@ -196,7 +196,6 @@ class RxCard(SpectrumDevice):
             )
             self.handle_error(error)
             self.worker = None
-            self.log_card_status()
         else:
             # No thread is running
             self.log.error("No active process found")
@@ -381,4 +380,4 @@ class RxCard(SpectrumDevice):
         """
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
-        self.log.debug("Card status: %s", status)
+        self.log.debug("Card status:\n%s", status)

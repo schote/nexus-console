@@ -16,15 +16,13 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
 
+LOG_LEVELS = [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]
 
 class AcquistionControl:
     """Acquisition control class.
 
     The main functionality of the acquisition control is to orchestrate transmit and receive cards using
     ``TxCard`` and ``RxCard`` instances.
-
-    TODO: Implementation of logging mechanism.
-    Use two logs: a high level one as lab-book and a detailed one for debugging.
     """
 
     def __init__(
@@ -60,6 +58,7 @@ class AcquistionControl:
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
+        self.log.info("--- Acquisition control started\n")
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
@@ -93,12 +92,13 @@ class AcquistionControl:
         if self.rx_card:
             self.rx_card.disconnect()
         self.log.info("Measurement cards disconnected.")
+        self.log.info("--- Acquisition control terminated\n\n")
 
     def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
-        if console_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if console_level not in LOG_LEVELS:
             raise ValueError("Invalid console log level")
-        if file_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if file_level not in LOG_LEVELS:
             raise ValueError("Invalid file log level")
 
         # Disable existing loggers
@@ -110,7 +110,7 @@ class AcquistionControl:
             format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
             datefmt="%d-%m-%Y, %H:%M",
             filename=f"{self.session_path}console.log",
-            filemode="w",
+            filemode="a",
         )
 
         # Define a Handler which writes INFO messages or higher to the sys.stderr
@@ -155,6 +155,7 @@ class AcquistionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
+        self.log.info("Unrolling sequence: %s", self.seq_provider.definitions["Name"][0].replace(" ", "_"))
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency,
             b1_scaling=parameter.b1_scaling,
@@ -166,6 +167,7 @@ class AcquistionControl:
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
+        self.log.info("Sequence duration: %s s", sqnc.duration)
 
         self._raw = np.array([])
         self._unproc = np.array([])
