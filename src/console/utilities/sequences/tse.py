@@ -171,19 +171,19 @@ def constructor(
         
 # %%
 # construct sequence with default values
-seq: pp.Sequence = constructor()
+# seq: pp.Sequence = constructor()
 
-seq.plot(time_disp="ms")
+# seq.plot(time_disp="ms")
 
 # %%
 # Plot each train in sequence
-n_total_trains = seq.definitions["n_total_trains"]
-train_duration = seq.definitions["train_duration"]
-tr_delay = seq.definitions["tr_delay"]
+# n_total_trains = seq.definitions["n_total_trains"]
+# train_duration = seq.definitions["train_duration"]
+# tr_delay = seq.definitions["tr_delay"]
 
-k = 0
-t_offset = (train_duration + tr_delay) * k
-seq.plot(time_disp="ms", time_range=(t_offset, t_offset+0.065))
+# k = 0
+# t_offset = (train_duration + tr_delay) * k
+# seq.plot(time_disp="ms", time_range=(t_offset, t_offset+0.065))
 # plt.savefig(f"/home/schote01/data/tse_seq/tse_train_{str(k+1).zfill(3)}")
 
 # for k in range(n_total_trains):
