@@ -126,13 +126,9 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Calculate zero filling for RF delay
-        num_samples_delay = int(block.delay * self.spcm_freq)
-
-        # Zero filling for RF dead-time (maximum of dead time defined in RF event and system)
-        # Time between start of unblanking and start of RF
-        dead_dur = max(self.system.rf_dead_time, block.dead_time)
-        num_samples_dead = int(dead_dur * self.spcm_freq)
+        # Calculate delay/dead-time, system dead-time automatically sets delay of an RF block!
+        # Calculate time offset in number of samples
+        num_samples_delay = int(max(self.system.rf_dead_time, block.dead_time, block.delay) * self.spcm_freq)
 
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
         ringdown_dur = max(self.system.rf_ringdown_time, block.ringdown_time)
@@ -164,7 +160,7 @@ class SequenceProvider(Sequence):
         envelope = resample(envelope_scaled, num=num_samples)
 
         # Calculate phase offset of RF according to total sample count
-        carrier_phase_samples = self.sample_count + num_samples_delay + num_samples_dead - num_samples_rf_start
+        carrier_phase_samples = self.sample_count + num_samples_delay - num_samples_rf_start
         carrier_phase_offset = carrier_phase_samples * self.spcm_dwell_time
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
@@ -174,13 +170,12 @@ class SequenceProvider(Sequence):
 
         try:
             # Calculate position indices for unrolled RF event
-            idx_signal_start = num_samples_delay + num_samples_dead
-            idx_signal_end = idx_signal_start + num_samples
+            idx_signal_end = num_samples_delay + num_samples
             # Check if end index of unrolled signal exceeds available array dimension
             if idx_signal_end > unroll_arr.size:
                 raise IndexError("Unrolled RF event exceeds number of block samples")
             # Write unrolled RF event in place
-            unroll_arr[idx_signal_start:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
+            unroll_arr[num_samples_delay:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
             raise err
