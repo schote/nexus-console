@@ -5,7 +5,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from console.utilities.load_config import get_instances
-from console.utilities.spcm_data_plot import plot_spcm_data
+# from console.utilities.spcm_data_plot import plot_spcm_data
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 # %%
