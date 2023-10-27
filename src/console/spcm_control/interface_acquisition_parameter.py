@@ -23,6 +23,7 @@ class AcquisitionParameter:
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
     downsampling_rate: int = 200
     num_averages: int = 1
+    averaging_delay: float = 0.
 
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
