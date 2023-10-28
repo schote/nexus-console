@@ -35,6 +35,7 @@ SequenceProvider: !SequenceProvider
   # Set the transmit card sampling rate, 5e-8 => 20 MHz
   spcm_dwell_time: 0.00000005
   grad_to_volt: 0.005
+  # Scales to mV (naming is unintuitive)
   rf_to_volt: 0.005
   system: !Opts
     max_grad: 250000.0
