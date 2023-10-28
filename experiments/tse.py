@@ -17,7 +17,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct sequence
-seq = sequences.tse.constructor(
+seq = sequences.tse.tse_v1.constructor(
     echo_time=15e-3,
     repetition_time=600e-3,
     etl=7,

@@ -1,3 +1,4 @@
+"""Constructor for 3D TSE Imaging sequence."""
 # %%
 from math import pi
 import pypulseq as pp
@@ -5,7 +6,7 @@ from console.spcm_control.interface_acquisition_parameter import Dimensions
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+# %%
 GRAD_RISE_TIME = 200e-6
 
 # Define system
@@ -24,7 +25,9 @@ def constructor(
     fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3),
     n_enc: Dimensions = Dimensions(x=64, y=64, z=25),
 ) -> pp.Sequence:
-    """Constructor for 3D TSE imaging sequence.
+    """Constructor for TSE imaging sequence.
+
+    >> This is not a true 3D TSE sequence, check v1 for corrected trajectory!
 
     Parameters
     ----------
@@ -47,12 +50,20 @@ def constructor(
     -------
         Pypulseq ``Sequence`` instance
     """
-    
+
+    # echo_time: float = 15e-3
+    # repetition_time: float = 600e-3
+    # etl: int = 7
+    # rf_duration: float = 400e-6
+    # ro_bandwidth: float = 20e3
+    # fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3)
+    # n_enc: Dimensions = Dimensions(x=16, y=16, z=10)
+
     seq = pp.Sequence(system)
     seq.set_definition("Name", "3d_tse")
 
     # Definition of RF pulses
-    rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5, use="excitation")
+    rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi/2, duration=rf_duration, apodization=0.5, use="excitation")
     rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, apodization=0.5, use="refocusing")
 
     # ADC duration
@@ -101,7 +112,7 @@ def constructor(
     pe_1_amplitude = n_enc.y / fov.y
 
     pe_1_steps = (np.arange(n_enc.y) - int(n_enc.y / 2)) * pe_1_amplitude / n_enc.y
-    num_pe_1_trains = int(n_enc.y / etl)
+    num_pe_1_trains = int(np.ceil(n_enc.y / etl))
     pe_1_trains = [pe_1_steps[k::num_pe_1_trains] for k in range(num_pe_1_trains)]
 
     # >> Phase encoding 2
@@ -116,7 +127,7 @@ def constructor(
     order_index = np.argsort(np.abs(pe_2_steps - shift))
     pe_2_steps_ordered = [pe_2_steps[k] for k in order_index]
     # Construct list of lists for echo trains
-    num_pe_2_trains = int(n_enc.z / etl)
+    num_pe_2_trains = int(np.ceil(n_enc.z / etl))
     pe_2_trains = [pe_2_steps_ordered[k::num_pe_2_trains] for k in range(num_pe_2_trains)]
 
     # Construct the final sequence
@@ -153,13 +164,13 @@ def constructor(
                 )
 
             seq.add_block(pp.make_delay(tr_delay))
-    
-    
+
+
     # Calculate some sequence measures
     n_total_trains = len(pe_2_trains) * len(pe_1_trains)
     train_duration = seq.duration()[0] / n_total_trains - tr_delay
     train_duration_tr = seq.duration()[0] / n_total_trains
-    
+
     # Add measures to sequence definition
     seq.set_definition("n_total_trains", n_total_trains)
     seq.set_definition("train_duration", train_duration)
