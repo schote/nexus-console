@@ -10,7 +10,7 @@ from scipy.signal import resample
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
 
-# from line_profiler import profile
+from line_profiler import profile
 
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
@@ -85,7 +85,7 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-    # @profie
+    @profile
     def calculate_rf(
         self,
         block: SimpleNamespace,
@@ -128,7 +128,7 @@ class SequenceProvider(Sequence):
 
         # Calculate delay/dead-time, system dead-time automatically sets delay of an RF block!
         # Calculate time offset in number of samples
-        num_samples_delay = int(max(self.system.rf_dead_time, block.dead_time, block.delay) * self.spcm_freq)
+        samples_delay = int(max(self.system.rf_dead_time, block.dead_time, block.delay) * self.spcm_freq)
 
         # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
         ringdown_dur = max(self.system.rf_ringdown_time, block.ringdown_time)
@@ -138,7 +138,7 @@ class SequenceProvider(Sequence):
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = 1
+        unblanking[samples_delay : -(num_samgles_ringdown + 1)] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
@@ -160,7 +160,7 @@ class SequenceProvider(Sequence):
         envelope = resample(envelope_scaled, num=num_samples)
 
         # Calculate phase offset of RF according to total sample count
-        carrier_phase_samples = self.sample_count + num_samples_delay - num_samples_rf_start
+        carrier_phase_samples = self.sample_count + samples_delay - num_samples_rf_start
         carrier_phase_offset = carrier_phase_samples * self.spcm_dwell_time
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
@@ -170,12 +170,12 @@ class SequenceProvider(Sequence):
 
         try:
             # Calculate position indices for unrolled RF event
-            idx_signal_end = num_samples_delay + num_samples
+            idx_signal_end = samples_delay + num_samples
             # Check if end index of unrolled signal exceeds available array dimension
             if idx_signal_end > unroll_arr.size:
                 raise IndexError("Unrolled RF event exceeds number of block samples")
             # Write unrolled RF event in place
-            unroll_arr[num_samples_delay:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
+            unroll_arr[samples_delay:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -207,46 +207,64 @@ class SequenceProvider(Sequence):
             Unrolled gradient waveform does not fit in unrolled array shape
         """
         # Both gradient types have a delay, calculate delay in number of samples
-        num_samples_delay = int(block.delay * self.spcm_freq)
+        samples_delay = int(block.delay * self.spcm_freq)
         # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
         idx = ["x", "y", "z"].index(block.channel) + 1
+
+        # Calculate gradient offset in mV
+        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx]
+        # Calculat waveform scaling
+        scaling = self.grad_to_volt * fov_scaling
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
+                
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
+                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx]:
+                    raise ValueError(
+                        "Amplitude of %s (%s) gradient exceeded output limit (%s)" %
+                        (block.channel, np.amax(waveform) + offset, self.output_limits[idx])
+                    )
+                # Trasnfer mV floating point waveform values to int16 if amplitude check passed
+                waveform *= (INT16_MAX / self.output_limits[idx])
+
                 gradient = np.interp(
                     x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
                     xp=block.tt,
-                    fp=(block.waveform * fov_scaling * self.grad_to_volt) / self.output_limits[idx],
-                )
+                    fp=waveform
+                ).astype(np.int16)
 
             elif block.type == "trap":
+                
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                flat_amp = (block.amplitude * fov_scaling * self.grad_to_volt) / self.output_limits[idx]
-                rise = np.linspace(0, flat_amp, int(block.rise_time / self.spcm_dwell_time))
-                flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp)
-                fall = np.linspace(flat_amp, 0, int(block.fall_time / self.spcm_dwell_time))
+                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx]:
+                    raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
+                # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
+                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx])
+
+                rise = np.linspace(0, flat_amp, int(block.rise_time / self.spcm_dwell_time), dtype=np.int16)
+                flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp, dtype=np.int16)
+                fall = np.linspace(flat_amp, 0, int(block.fall_time / self.spcm_dwell_time), dtype=np.int16)
+                
                 gradient = np.concatenate((rise, flat, fall))
 
             else:
                 raise ValueError("Block is not a valid gradient block")
 
             # Check if gradient waveform fits into unroll array space
-            if (idx_waveform_end := num_samples_delay + gradient.size) > unroll_arr.size:
+            if (index_end := samples_delay + gradient.size) > unroll_arr.size:
                 raise IndexError("Unrolled gradient event exceeds number of block samples")
 
-            if np.abs(np.amax(unroll_arr[num_samples_delay:idx_waveform_end] / INT16_MAX + gradient)) > 1:
-                raise ValueError("Amplitude of %s gradient (channel %s) exceeded max. amplitude" % (block.channel, idx))
-
             # Add gradient waveform (trapezoid or arbitrary) in place
-            unroll_arr[num_samples_delay:idx_waveform_end] += (gradient * INT16_MAX).astype(np.int16)
+            unroll_arr[samples_delay:index_end] += gradient
 
         except (ValueError, IndexError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
+    @profile
     def add_adc_gate(self, block: SimpleNamespace, gate: np.ndarray, clk_ref: np.ndarray) -> None:
         """Add ADC gate signal and reference signal during gate inplace to gate and reference arrays.
 
@@ -268,6 +286,10 @@ class SequenceProvider(Sequence):
         # Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)
         offset = self.sample_count * self.spcm_dwell_time
         ref_time = np.arange(clk_ref.size) * self.spcm_dwell_time
+
+        # Time consuming operation, if computed over the whole gate
+        # Instead limit to max(clk_ref.size, 2000) to use at most the first 2000 samples for phase synchronization
+        # 2000 samples == 0.1 ms, at 2 MHz this still covers 200 cycles
         ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
@@ -296,7 +318,7 @@ class SequenceProvider(Sequence):
         if np.abs(grad_offset.z) > self.output_limits[3]:
             raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
-    # @profile
+    @profile
     def unroll_sequence(
         self,
         larmor_freq: float,
@@ -401,10 +423,14 @@ class SequenceProvider(Sequence):
         rf_start_sample_pos: int | None = None
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
+
             # Set gradient offsets
-            _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
-            _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
-            _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
+            if grad_offset.x > 0:
+                _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
+            if grad_offset.y > 0:
+                _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
+            if grad_offset.z > 0:
+                _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
 
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
