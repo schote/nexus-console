@@ -35,4 +35,5 @@ Three digital signals are required to control the acquisition - RF unblanking, a
 All the digital signals are encoded by the 16th bit of one of the analog signals. 
 To obtain the full resolution of the RF signal, we use the 16th bit of the gradient channels to encode the three digital signals.
 When combining analog and digital signal, the MSB of the gradient waveform is the 15th bit.
-The RF unblanking signal is set to high during
+The RF unblanking signal is set within the RF unrolling method.
+The ADC event is a standalone event and is set together with the reference signal by a separate method.
