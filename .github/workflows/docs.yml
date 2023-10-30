@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - documentation
+      - docu
   pull_request:
     branches:
       - main
-      - documentation
+      - docu
 
 permissions:
     contents: write
