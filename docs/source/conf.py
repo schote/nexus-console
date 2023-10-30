@@ -30,17 +30,19 @@ copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
+    # 'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
 
-templates_path = ['_templates']
+# templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
-autosummary_imported_members = True
-autosummary_generate = True
+autodoc_mock_imports = ["console.spcm_control.spcm"]
+
+# autosummary_imported_members = True
+# autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -57,6 +59,7 @@ html_theme_options = {
     "pygment_light_style": "default",
     "pygment_dark_style": "github-dark",
     "show_toc_level": 3,
+    "show_nav_level": 2,
     "icon_links": [
         {
             # Label for this link

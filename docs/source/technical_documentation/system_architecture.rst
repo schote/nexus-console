@@ -1,4 +1,4 @@
 System Architecture
 ===================
 
-Todo
+.. image:: ../_img/architecture_description.drawio.png

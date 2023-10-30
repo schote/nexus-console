@@ -9,6 +9,6 @@ First, we provide an overview of the system for which this console application w
    :maxdepth: 2
    :caption: Content
    
-   system_overview
+   system_setup
    system_architecture
    sequence_unrolling

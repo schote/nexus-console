@@ -4,7 +4,7 @@
 import time
 
 from console.utilities.load_config import get_instances
-from console.utilities.spcm_data_plot import plot_spcm_data
+from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 # %%
@@ -17,7 +17,7 @@ provider.read("../sequences/export/fid_proj.seq")
 # Unroll and plot sequence
 sqnc: UnrolledSequence = provider.unroll_sequence()
 
-fig, ax = plot_spcm_data(sqnc, use_time=True)
+fig, ax = plot_unrolled_sequence(sqnc, use_time=True)
 fig.show()
 
 # %%

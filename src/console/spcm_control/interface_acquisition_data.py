@@ -1,4 +1,4 @@
-"""Interface class for acquisition parameters."""
+"""Interface class for acquisition data."""
 import json
 import os
 from dataclasses import dataclass, field

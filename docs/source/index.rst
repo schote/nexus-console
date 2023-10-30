@@ -17,6 +17,6 @@ The example section contains some hands-on examples and the code documentation i
    :caption: Content
    
    technical_documentation/index
-   user_guide
+   user_guide/index
    code_examples/index
-   api
+   api_documentation/index
