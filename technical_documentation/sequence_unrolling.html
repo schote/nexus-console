@@ -470,6 +470,11 @@ After a new instance of the <cite>SequenceProvider</cite> has been created, a se
 For sequence unrolling the larmor frequency must be provided, as the algorithm calculates the modulated RF waveform including the carrier signal.
 Both, gradient and RF waveforms are unrolled at identical sample rate because they are replayed synchronously.
 We use a sampling rate of 20 Msps what corresponds to an oversampling factor of approximately 10 for the RF signal.</p>
+<section id="parameter">
+<h2>Parameter<a class="headerlink" href="#parameter" title="Link to this heading">#</a></h2>
+<p>Pulseq provides the gradient waveforms in Hz/m and the RF waveforms in Hz.
+To translate these values to the correct output values, the following parameters are used.</p>
+</section>
 <section id="gradient-unrolling">
 <h2>Gradient Unrolling<a class="headerlink" href="#gradient-unrolling" title="Link to this heading">#</a></h2>
 <p>A pulseq sequence can have two different types of gradient events, a trapezoidal or an arbitrary gradient.
@@ -543,6 +548,7 @@ The ADC event is a standalone event and is set together with the reference signa
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parameter">Parameter</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#gradient-unrolling">Gradient Unrolling</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#rf-unrolling">RF Unrolling</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#digital-signals">Digital Signals</a></li>
