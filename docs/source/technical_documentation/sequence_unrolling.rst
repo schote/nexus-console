@@ -7,6 +7,18 @@ For sequence unrolling the larmor frequency must be provided, as the algorithm c
 Both, gradient and RF waveforms are unrolled at identical sample rate because they are replayed synchronously.
 We use a sampling rate of 20 Msps what corresponds to an oversampling factor of approximately 10 for the RF signal.
 
+Parameter
+---------
+
+Pulseq provides the gradient waveforms in Hz/m and the RF waveforms in Hz. 
+To translate these values to the correct output values, the following parameters are used.
+
+.. csv-table:: Transmit card port description
+   :file: tx_card_ports.csv
+   :widths: 10, 15, 20, 55
+   :header-rows: 1
+
+
 Gradient Unrolling
 ------------------
 
