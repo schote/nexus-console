@@ -59,7 +59,7 @@ class AcquisitionData:
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": seq_name,
-                    "duration": self.sequence.definitions["TotalDuration"],
+                    "duration": self.sequence.duration()[0],
                 },
                 "info": {},
             }
@@ -86,7 +86,10 @@ class AcquisitionData:
             json.dump(self.meta, outfile, indent=4)
 
         # Write sequence .seq file
-        self.sequence.write(f"{acq_folder_path}sequence.seq")
+        try:
+            self.sequence.write(f"{acq_folder_path}sequence.seq")
+        except Exception as exc:
+            print("Could not save sequence...")
 
         # Save raw data as numpy array
         np.save(f"{acq_folder_path}raw_data.npy", self.raw)

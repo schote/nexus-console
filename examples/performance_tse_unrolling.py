@@ -11,7 +11,7 @@ import console.utilities.sequences as sequences
 
 # %%
 # Read sequence
-seq = SequenceProvider(rf_to_volt=0.005, grad_to_volt=0.005)
+seq = SequenceProvider(rf_to_mvolt=0.005, grad_to_volt=0.005)
 
 # Set maximum amplitude per channel
 seq.output_limits = (200, 6000, 6000, 6000)

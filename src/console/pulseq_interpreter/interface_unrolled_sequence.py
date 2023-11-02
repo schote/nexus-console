@@ -29,11 +29,15 @@ class UnrolledSequence:
         Total number of samples per channel.
 
     grad_to_volt
-        If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
-        This conversion factor represents the scaling from original pulseq gradient values [kHz/m] to
-        card output voltage.
+        The gradient waveforms in pulseq are defined in Hz/m. This factor accounts for the translation to
+        mV taking into account the gpa gain and the gradient efficiency. 
+        The gpa gain is given in V/A and accounts for the voltage required to generate an output of 1A.
+        The gradient efficiency is given in mT/m/A and accounts for the gradient field which is generated per 1A.
+        The relation is defined by 
+        grad_to_volt = 1e3 / (gyro * gpa_gain * grad_efficiency), where gyro is the gyromagnetic ratio 
+        defined by 42.58e6 MHz/T.
 
-    rf_to_volt
+    rf_to_mvolt
         If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
         This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage.
 
@@ -45,6 +49,10 @@ class UnrolledSequence:
 
     larmor_frequency
         Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.
+    
+    grad_correction
+        Time correction factor for trapezoidal gradients. Adds to the flat time duration.
+    
     """
 
     seq: list
@@ -52,8 +60,9 @@ class UnrolledSequence:
     rf_unblanking: list
     sample_count: int
     grad_to_volt: float
-    rf_to_volt: float
+    rf_to_mvolt: float
     dwell_time: float
     larmor_frequency: float
     duration: float
     adc_count: int
+    grad_correction: float

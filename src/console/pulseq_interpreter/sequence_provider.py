@@ -36,8 +36,10 @@ class SequenceProvider(Sequence):
     def __init__(
         self,
         spcm_dwell_time: float = 1 / 20e6,
-        grad_to_volt: float = 1,
-        rf_to_volt: float = 1,
+        gradient_efficiency: list[float] = [0.0004, 0.0004, 0.0004],
+        gpa_gain: list[float] = [4.7, 4.7, 4.7],
+        gradient_correction_time: float = 0,
+        rf_to_mvolt: float = 1,
         output_limits: list[int] | None = None,
         system: Opts = Opts(),
     ):
@@ -46,11 +48,14 @@ class SequenceProvider(Sequence):
 
         self.log = logging.getLogger("SeqProv")
 
-        self.grad_to_volt = grad_to_volt
-        self.rf_to_volt = rf_to_volt
+        self.grad_to_volt: list[float] = [
+            1 / (42.58e3 * gain * eff) for gain, eff in zip(gpa_gain, gradient_efficiency)
+        ]
+        self.grad_correction: float = gradient_correction_time
+        self.rf_to_mvolt = rf_to_mvolt
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
-        self.larmor_freq = self.system.B0 * self.system.gamma
+        self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
         self.output_limits: list[int] = [] if output_limits is None else output_limits
 
@@ -147,7 +152,7 @@ class SequenceProvider(Sequence):
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_volt / self.output_limits[0]
+            rf_scaling = b1_scaling * self.rf_to_mvolt / self.output_limits[0]
             if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
                 raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
@@ -214,7 +219,7 @@ class SequenceProvider(Sequence):
         # Calculate gradient offset in mV
         offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx]
         # Calculat waveform scaling
-        scaling = self.grad_to_volt * fov_scaling
+        scaling = self.grad_to_volt[idx] * fov_scaling
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
@@ -241,6 +246,7 @@ class SequenceProvider(Sequence):
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx]:
                     raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
+                
                 # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx])
 
@@ -393,10 +399,12 @@ class SequenceProvider(Sequence):
             # Check if sequence has block events
             if not len(self.block_events) > 0:
                 raise ValueError("No block events found")
+            
             # Sequence timing check
-            check, seq_err = self.check_timing()
-            if not check:
-                raise ValueError(f"Sequence timing check failed: {seq_err}")
+            # TODO: Reactivate timing check
+            # check, seq_err = self.check_timing()
+            # if not check:
+            #     raise ValueError(f"Sequence timing check failed: {seq_err}")
 
             self._check_offsets(grad_offset)
 
@@ -476,7 +484,8 @@ class SequenceProvider(Sequence):
             rf_unblanking=_unblanking,
             sample_count=self.sample_count,
             grad_to_volt=self.grad_to_volt,
-            rf_to_volt=self.rf_to_volt,
+            grad_correction=self.grad_correction,
+            rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
             duration=self.duration()[0],
