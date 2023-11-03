@@ -218,9 +218,18 @@ def constructor(
 # Construct example sequence using the default parameter
 # encoding_dim = Dimensions(x=64, y=64, z=0)
 # etl = 1
-# seq, traj = constructor(echo_time=18e-3, n_enc=encoding_dim, etl=etl, repetition_time=50e-3)
+# seq, traj = constructor(
+#     echo_time=20e-3,
+#     repetition_time=300e-3,
+#     etl=etl,
+#     gradient_correction=510e-6,
+#     rf_duration=200e-6,
+#     ro_bandwidth=20e3,
+#     fov=Dimensions(x=220e-3, y=220e-3, z=225e-3),
+#     n_enc=encoding_dim
+# )
 
-# seq.plot(time_range=(0, 20e-3))
+# seq.plot(time_range=(0, 0.032))
 
 # %%
 # Plot sequence and k-space
