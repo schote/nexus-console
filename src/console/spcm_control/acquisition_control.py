@@ -224,7 +224,7 @@ class AcquistionControl:
             sequence=self.seq_provider,
             storage_path=self.session_path,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
-            dwell_time=parameter.downsampling_rate / self.f_spcm,
+            dwell_time=int(2 * parameter.downsampling_rate) / self.f_spcm,
             acquisition_parameters=parameter,
         )
 
