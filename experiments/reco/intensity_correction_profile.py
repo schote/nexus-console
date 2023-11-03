@@ -6,7 +6,8 @@ from scipy.signal import decimate
 # %%
 # Load noise data
 noise_data = np.load(
-    "/Users/davidschote/Projects/data/2023-11-01-session/2023-11-01-104815-2d_tse_v1/raw_data.npy"
+    # "/Users/davidschote/Projects/data/2023-11-01-session/2023-11-01-104815-2d_tse_v1/raw_data.npy"
+    "/home/schote01/spcm-console/2023-11-01-session/2023-11-01-104815-2d_tse_v1/raw_data.npy"
 )
 data = np.mean(noise_data, axis=0).squeeze()
 

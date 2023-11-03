@@ -6,8 +6,10 @@ from scipy.signal import decimate
 # %%
 # Load image data
 session_name = "2023-11-01-session"
-acquisition = "2023-11-01-103607-2d_tse_v1"
-raw_data = np.load(f"/Users/davidschote/Projects/data/{session_name}/{acquisition}/raw_data.npy")
+acquisition = "2023-11-01-103607-2d_tse_v1" # without lesion
+# acquisition = "2023-11-01-110449-2d_tse_v1" # with lesion
+# raw_data = np.load(f"/Users/davidschote/Projects/data/{session_name}/{acquisition}/raw_data.npy")
+raw_data = np.load(f"/home/schote01/spcm-console/{session_name}/{acquisition}/raw_data.npy")
 
 # %%
 # Compare decimation filters
@@ -33,7 +35,7 @@ _ = ax[1].set_title("IIR")
 # Intensity correction
 corr = np.load("./intensity_correction.npy")
 x = np.arange(corr.size)
-corr_poly = np.poly1d(np.polyfit(x=x, y=corr, deg=30))
+corr_poly = np.poly1d(np.polyfit(x=x, y=corr, deg=20))
 corr_fit = corr_poly(x)
 
 # Plot intensity correction profile
@@ -61,4 +63,20 @@ _ = ax[0].set_title("Uncorrected Intensity")
 _ = ax[1].set_title("Corrected Intensity")
 _ = ax[2].set_title("Corrected Intensity Before Averaging")
 
+# %%
+# Plot final result
+
+
+fig, ax = plt.subplots(1, 1, figsize=(6, 6), dpi=300)
+ax.imshow(np.angle(img_corr_pre), vmin=-np.pi, vmax=np.pi)
+# ax.imshow(np.abs(img_corr_pre), cmap="gray")
+
+# %%
+# Plot phase of center readout line
+fig, ax = plt.subplots(1, 1, figsize=(6, 4), dpi=300)
+# for k_avg in range(2, img_fir_pre.shape[0]):
+for k_avg in range(img_fir_pre.shape[0]):
+    ax.plot(np.degrees(np.angle(img_fir_pre[k_avg, 64, :])))
+ax.set_ylabel("Phase [°]")
+ax.set_xlabel("Readout dimension")
 # %%
