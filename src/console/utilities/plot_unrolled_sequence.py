@@ -8,7 +8,10 @@ from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSeque
 
 
 def plot_unrolled_sequence(
-    sequence: UnrolledSequence, seq_range: tuple[int, int] = (0, -1), use_time: bool = True
+    sequence: UnrolledSequence, 
+    seq_range: tuple[int] = (0, -1), 
+    use_time: bool = True,
+    output_limits: tuple[int] | None = None
 ) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Plot replay data for spectrum-instrumentation data in final card format.
 
@@ -67,19 +70,34 @@ def plot_unrolled_sequence(
     gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
     gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
 
-    axis[0].plot(samples, 100 * rf_signal)
-    axis[1].plot(samples, 100 * gx_signal)
-    axis[2].plot(samples, 100 * gy_signal)
-    axis[3].plot(samples, 100 * gz_signal)
-    axis[4].plot(samples, adc_gate, label="ADC gate")
-    axis[4].plot(samples, unblanking, label="RF unblanking")
+    if output_limits is None or len(output_limits) != 4:
+        axis[0].plot(samples, 100 * rf_signal)
+        axis[1].plot(samples, 100 * gx_signal)
+        axis[2].plot(samples, 100 * gy_signal)
+        axis[3].plot(samples, 100 * gz_signal)
+        axis[4].plot(samples, adc_gate, label="ADC gate")
+        axis[4].plot(samples, unblanking, label="RF unblanking")
 
-    axis[0].set_ylabel("RF (% of max.)")
-    axis[1].set_ylabel("Gx (% of max.)")
-    axis[2].set_ylabel("Gy (% of max.)")
-    axis[3].set_ylabel("Gz (% of max.)")
-    axis[4].set_ylabel("Digital")
-    axis[4].legend(loc="upper right")
+        axis[0].set_ylabel("RF (% of max.)")
+        axis[1].set_ylabel("Gx (% of max.)")
+        axis[2].set_ylabel("Gy (% of max.)")
+        axis[3].set_ylabel("Gz (% of max.)")
+        axis[4].set_ylabel("Digital")
+        axis[4].legend(loc="upper right")
+    else:
+        axis[0].plot(samples, output_limits[0] * rf_signal)
+        axis[1].plot(samples, output_limits[1] * gx_signal)
+        axis[2].plot(samples, output_limits[2] * gy_signal)
+        axis[3].plot(samples, output_limits[3] * gz_signal)
+        axis[4].plot(samples, adc_gate, label="ADC gate")
+        axis[4].plot(samples, unblanking, label="RF unblanking")
+
+        axis[0].set_ylabel("RF [mV]")
+        axis[1].set_ylabel("Gx [mV]")
+        axis[2].set_ylabel("Gy [mV]")
+        axis[3].set_ylabel("Gz [mV]")
+        axis[4].set_ylabel("Digital")
+        axis[4].legend(loc="upper right")
 
     _ = [ax.grid(axis="x") for ax in axis]
 
