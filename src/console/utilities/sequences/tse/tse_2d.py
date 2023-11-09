@@ -3,19 +3,13 @@
 from math import pi
 import pypulseq as pp
 from console.spcm_control.interface_acquisition_parameter import Dimensions
+from console.utilities.sequences.system_settings import system
 import numpy as np
 import matplotlib.pyplot as plt
 
-# %%
 GRAD_RISE_TIME = 200e-6
 
-# Define system
-system = pp.Opts(
-    # rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
-    rf_dead_time=20e-6,        # time delay at the end of RF event, SETS RF DELAY!
-    # adc_dead_time=200e-6,       # time delay at the beginning of ADC event
-)
-
+# %%
 def constructor(
     echo_time: float = 15e-3,
     repetition_time: float = 600e-3,
@@ -68,22 +62,11 @@ def constructor(
         Pypulseq ``Sequence`` instance and trajectory tuple.
         The first element in the tuple describes the index ordering, the second tuple contains the gradient moments.
     """
-
-# # Fixed parameters for debugging
-# echo_time: float = 15e-3
-# repetition_time: float = 600e-3
-# etl: int = 5
-# rf_duration: float = 400e-6
-# ro_bandwidth: float = 20e3
-# fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3)
-# n_enc: Dimensions = Dimensions(x=60, y=60, z=25)
-
     # Check dimensions: Enforce that y and z encoding dimensions are multiples of the etl
     if not n_enc.y % etl == 0:
         raise ValueError("Invalid combination: PE encoding dimension y must be a multiple of the etl")
     if not n_enc.z % etl == 0:
         raise ValueError("Invalid combination: PE encoding dimension z must be a multiple of the etl")
-
 
     seq = pp.Sequence(system)
     seq.set_definition("Name", "2d_tse_v1")
@@ -210,9 +193,13 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
     
+    # Check sequence timing in each iteration
+    check_passed, err = seq.check_timing()
+    if not check_passed:
+        raise RuntimeError("Sequence timing check failed: ", err)
+    
     return seq, (pe_traj_idx, pe_traj_mom)
 
-        
 # %%
 # > Debugging:
 # Construct example sequence using the default parameter
@@ -262,5 +249,3 @@ def constructor(
 # for k in indices:
 #     t_offset = (train_duration + tr_delay) * k
 #     seq.plot(time_disp="ms", time_range=(t_offset, t_offset+train_duration*1.05))
-
-# %%

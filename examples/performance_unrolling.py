@@ -21,7 +21,7 @@ provider.output_limits = (200, 6000, 6000, 6000)
 # seq.read(seq_path)
 
 # Construct sequence:
-seq, _ = sequences.tse.tse_v1_2d.constructor(
+seq, _ = sequences.tse.tse_2d.constructor(
     echo_time=20e-3,
     repetition_time=300e-3,
     etl=1,

@@ -1,17 +1,10 @@
 """Constructor for spin-echo spectrum sequence."""
 from math import pi
-
+from console.utilities.sequences.system_settings import system
 import pypulseq as pp
 
 # Definition of constants
 ADC_DURATION = 4e-3
-
-# Define system
-system = pp.Opts(
-    # rf_ringdown_time=100e-6,  # Time delay at the beginning of an RF event
-    rf_dead_time=20e-6,  # time delay at the end of RF event
-    # adc_dead_time=200e-6,  # time delay at the beginning of ADC event
-)
 
 
 def constructor(echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True) -> pp.Sequence:

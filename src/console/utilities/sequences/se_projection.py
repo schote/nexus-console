@@ -1,18 +1,11 @@
 """Constructor for spin-echo spectrum sequence with projection gradient."""
 # %%
 from math import pi
-
+from console.utilities.sequences.system_settings import system
 import pypulseq as pp
 
 # Definition of constants
 GRAD_RISE_TIME = 200e-6
-
-# Define system
-system = pp.Opts(
-    # rf_ringdown_time=100e-6,  # Time delay at the beginning of an RF event
-    rf_dead_time=20e-6,  # time delay at the end of RF event
-    # adc_dead_time=200e-6,  # time delay at the beginning of ADC event
-)
 
 
 def constructor(
