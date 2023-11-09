@@ -32,13 +32,13 @@ class SequenceProvider(Sequence):
     >>> seq.read("./seq_file.seq")
     >>> sqnc, gate, total_samples = seq.unroll_sequence()
     """
+    __name__: str = "SequenceProvider"
 
     def __init__(
         self,
         spcm_dwell_time: float = 1 / 20e6,
         gradient_efficiency: list[float] = [0.0004, 0.0004, 0.0004],
         gpa_gain: list[float] = [4.7, 4.7, 4.7],
-        gradient_correction_time: float = 0,
         rf_to_mvolt: float = 1,
         output_limits: list[int] | None = None,
         system: Opts = Opts(),
@@ -47,11 +47,8 @@ class SequenceProvider(Sequence):
         super().__init__(system=system)
 
         self.log = logging.getLogger("SeqProv")
-
-        self.grad_to_volt: list[float] = [
-            1 / (42.58e3 * gain * eff) for gain, eff in zip(gpa_gain, gradient_efficiency)
-        ]
-        self.grad_correction: float = gradient_correction_time
+        self.gpa_gain = gpa_gain
+        self.gradient_efficiency = gradient_efficiency
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
@@ -219,7 +216,8 @@ class SequenceProvider(Sequence):
         # Calculate gradient offset in mV
         offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx]
         # Calculat waveform scaling
-        scaling = self.grad_to_volt[idx] * fov_scaling
+        # scaling = self.grad_to_volt[idx] * fov_scaling
+        scaling = fov_scaling / (42.58e3 * self.gpa_gain[idx] * self.gradient_efficiency[idx])
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
@@ -483,8 +481,8 @@ class SequenceProvider(Sequence):
             adc_gate=_adc,
             rf_unblanking=_unblanking,
             sample_count=self.sample_count,
-            grad_to_volt=self.grad_to_volt,
-            grad_correction=self.grad_correction,
+            gpa_gain=self.gpa_gain,
+            gradient_efficiency=self.gradient_efficiency,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
