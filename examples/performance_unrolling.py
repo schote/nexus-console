@@ -29,7 +29,8 @@ seq, _ = sequences.tse.tse_v1_2d.constructor(
     rf_duration=200e-6,
     ro_bandwidth=20e3,
     fov=Dimensions(x=220e-3, y=220e-3, z=225e-3),
-    n_enc=Dimensions(x=64, y=64, z=0)
+    # n_enc=Dimensions(x=64, y=64, z=0)
+    n_enc=Dimensions(x=128, y=128, z=0)
 )
 provider.from_pypulseq(seq)
 
