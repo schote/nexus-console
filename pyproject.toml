@@ -36,8 +36,9 @@ dependencies = [
 
 # Dependency groupds (optional)
 [project.optional-dependencies]
+reco = ["torch"]
 test = ["coverage", "codecov", "pre-commit"]
-lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML"]
+lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML", "ruff"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
@@ -85,6 +86,12 @@ target-version = ['py310']
 [tool.isort]
 line_length = 120
 py_version=310
+
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py310"
 
 
 # Poe task setup for linting and formatting
