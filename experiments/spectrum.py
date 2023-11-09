@@ -30,15 +30,14 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
-# f_0 = 2035329.0   # Berlin system
-f_0 = 1964690.0
+f_0 = 2036805.59375   # Berlin system
+# f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.693,
-    adc_samples=500,
-    gradient_offset=Dimensions(0, 0, 0),
+    b1_scaling=6.5,
+    adc_samples=512,
     num_averages=1,
 )
 
@@ -50,7 +49,7 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 data = np.mean(acq_data.raw, axis=0)[0].squeeze()
 
 # FFT
-data_fft = np.fft.fftshift(np.fft.fft(data))
+data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
 
 # Print peak height and center frequency
@@ -76,8 +75,7 @@ ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
 
 # %%
-acq_data.write(save_unprocessed=True)
-
+acq_data.write(save_unprocessed=False)
 
 # %%
 del acq

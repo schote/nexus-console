@@ -33,13 +33,13 @@ seq, flip_angles = sequences.calibration.fid_tx_adjust.constructor(
 
 # %%
 # Larmor frequency:
-# f_0 = 2035529.0 # berlin
-f_0 = 1964690.0 # leiden
+f_0 = 2036415 # berlin
+# f_0 = 1964690.0 # leiden
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.9623,
+    b1_scaling=6,
     adc_samples=256,
     gradient_offset=Dimensions(0, 0, 0),
     num_averages=1,

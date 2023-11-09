@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 # Load data
 
 # Spectrum
-session_name = "2023-11-01-session"
-acquisition = "2023-11-01-092925-se_spectrum"
+# session_name = "2023-11-01-session"
+# acquisition = "2023-11-01-092925-se_spectrum"
 
 # Projection
-# session_name = "2023-10-31-session"
-# acquisition = "2023-10-31-111228-se_projection"
+session_name = "2023-10-31-session"
+acquisition = "2023-10-31-111228-se_projection"
 
 raw_data = np.load(f"/home/schote01/spcm-console/{session_name}/{acquisition}/raw_data.npy")
 

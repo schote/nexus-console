@@ -17,7 +17,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-span = 20e3
+span = 50e3
 seq, f0_offsets = sequences.calibration.se_f0_adjust.constructor(
     freq_span=span, coil_bandwidth=10e3, repetition_time=1000e-3, echo_time=12e-3
 )
@@ -29,13 +29,13 @@ seq, f0_offsets = sequences.calibration.se_f0_adjust.constructor(
 
 # %%
 # Larmor frequency:
-f_0 = 2035029.0
+f_0 = 2036805.59375
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.5,
-    adc_samples=200,
+    b1_scaling=6.5,
+    adc_samples=512,
     gradient_offset=Dimensions(0, 0, 0),
     num_averages=1,
 )
@@ -49,7 +49,7 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 data = np.mean(acq_data.raw, axis=0)[0].squeeze()
 
 # FFT
-data_fft = np.fft.fftshift(np.fft.fft(data))
+data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.shape[-1], acq_data.dwell_time))
 
 # Calculate center frequency 
@@ -74,8 +74,9 @@ print("Acquisition data shape: ", acq_data.raw.shape)
 # Plot spectra
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 for k, spectrum in enumerate(data_fft[:, ...]):
-    ax.plot(fft_freq, np.abs(spectrum))    
-ax.set_xlim([-50e3, 50e3])
+    ax.plot(fft_freq, np.abs(spectrum), label=f"{k}: f_0 = {f0_offsets[k]} Hz")    
+ax.set_xlim([-10e3, 10e3])
+ax.legend()
 ax.set_ylim([0, max_value*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
@@ -101,7 +102,7 @@ for k in list(seq.block_events.keys()):
         # Plot pulse magnitude over frequency
         ax.plot(freq*1e-3, np.abs(spectra[-1])*1e-3, label=f"{offsets[-1]/1e3} kHz")
         
-ax.set_xlim((-120, 120))
+ax.set_xlim((-50, 50))
 ax.set_ylabel("Excitation B1 [kHz]")
 ax.set_xlabel("Frequency [kHz]")
 ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))

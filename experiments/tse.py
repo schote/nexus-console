@@ -26,19 +26,28 @@ seq, traj = sequences.tse.tse_v1_2d.constructor(
     rf_duration=200e-6,
     ro_bandwidth=20e3,
     fov=Dimensions(x=220e-3, y=220e-3, z=225e-3),
-    n_enc=Dimensions(x=64, y=64, z=0)
-    # n_enc=Dimensions(x=128, y=128, z=0)
+    # n_enc=Dimensions(x=64, y=64, z=0)
+    n_enc=Dimensions(x=128, y=128, z=0)
 )
 
 # %%
+# Plot sequence section
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 640000), output_limits=[200, 6000, 6000, 6000])
+
+
+# %%
 # Larmor frequency:
-f_0 = 1964390.0
+# f_0 = 1964390.0 # leiden
+f_0 = 2036708
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    # b1_scaling=2.693,
-    b1_scaling=2.9623,
+    # b1_scaling=2.9623,    # leiden
+    # b1_scaling=6.5,   # berlin
+    b1_scaling=10.0,     # scope
     adc_samples=512,
     downsampling_rate=200,
     fov_scaling=Dimensions(
@@ -46,14 +55,17 @@ params = AcquisitionParameter(
         # x=1.,
         # y=0.7,
         # Brain slice 64 x 64
-        x=0.5,
-        y=0.3,
+        # x=0.5,
+        # y=0.3,
 
         # Brain slice 128 x 128
         # x=0.5,
         # x=0.825,
         # y=0.275,
 
+        # Scope
+        x=1.,
+        y=1.,
         z=1.,
     ),
     gradient_offset=Dimensions(0, 0, 0),
