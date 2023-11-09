@@ -4,11 +4,12 @@ import logging
 import os
 import time
 from datetime import datetime
-
+from pathlib import Path
+import yaml
 import numpy as np
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider, Opts
 from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
@@ -65,6 +66,8 @@ class AcquistionControl:
         self.seq_provider: SequenceProvider = ctx[0]
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
+        
+        self.config = yaml.load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
@@ -217,12 +220,25 @@ class AcquistionControl:
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
+        
+        # Update entries of the configuration file
+        for component in [self.tx_card, self.rx_card, self.seq_provider]:
+            comp_name = type(component).__name__
+            if comp_name in self.config.keys():
+                for key in self.config[comp_name].keys():
+                    if isinstance(value := getattr(component, key), Opts):
+                        value = value.__dict__
+                    self.config[comp_name][key] = value
+            else:
+                self.log.warning("Key %s missing in configuration, could not fully update configuration", comp_name)
+
 
         return AcquisitionData(
             raw=self._raw,
             unprocessed_data=self._unproc,
             sequence=self.seq_provider,
             storage_path=self.session_path,
+            device_config=self.config,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
             dwell_time=int(2 * parameter.downsampling_rate) / self.f_spcm,
             acquisition_parameters=parameter,

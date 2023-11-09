@@ -3,12 +3,14 @@ import json
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-
+import logging
 import numpy as np
 
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
+
+log = logging.getLogger("AcqData")
 
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
@@ -23,6 +25,9 @@ class AcquisitionData:
 
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
+    
+    device_config: dict
+    """Device configurations (transmit card, receive card and sequence provide) of the experiment."""
 
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
@@ -49,6 +54,8 @@ class AcquisitionData:
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         datetime_now = datetime.now()
+        if not all([key in list(self.device_config.keys()) for key in ["TxCard", "RxCard", "SequenceProvider"]]):
+            raise log.warning("Device configuration contains unknown keys")
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
@@ -60,7 +67,10 @@ class AcquisitionData:
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
+                    "configuration": self.device_config["SequenceProvider"],
                 },
+                "rx_device_configuration": self.device_config["RxCard"],
+                "tx_device_configuration": self.device_config["TxCard"],
                 "info": {},
             }
         )
@@ -85,20 +95,22 @@ class AcquisitionData:
         with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
             json.dump(self.meta, outfile, indent=4)
 
-        # Write sequence .seq file
         try:
+            # Write sequence .seq file
             self.sequence.write(f"{acq_folder_path}sequence.seq")
         except Exception as exc:
-            print("Could not save sequence...")
+            log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
         np.save(f"{acq_folder_path}raw_data.npy", self.raw)
 
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array
-            # np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            # TODO: Double check, something goes wrong when saving the unprocessed data
             _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
             np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
+            
+        log.info("Saved acquisition data to: %s", acq_folder_path)
 
     def add_info(self, info: dict) -> None:
         """Add entries to meta data dictionary.
