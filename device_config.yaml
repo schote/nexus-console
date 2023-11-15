@@ -47,7 +47,7 @@ SequenceProvider: !SequenceProvider
   # gradient_correction_time: 0 # 570 
 
   # Scales RF in Hz (pulseq) to mV
-  rf_to_mvolt: 5.e+3
+  rf_to_mvolt: 5.e-3
 
   system: !Opts
     max_grad: 250.e+3

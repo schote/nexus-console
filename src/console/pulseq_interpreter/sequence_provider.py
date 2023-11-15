@@ -40,9 +40,9 @@ class SequenceProvider(Sequence):
 
     def __init__(
         self,
-        output_limits: list[int],
         gradient_efficiency: list[float],
         gpa_gain: list[float],
+        output_limits: list[int] | None = None,
         spcm_dwell_time: float = 1 / 20e6,
         rf_to_mvolt: float = 1,
         system: Opts = default_opts,
@@ -70,10 +70,9 @@ class SequenceProvider(Sequence):
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
+        self.output_limits: list[int] = [] if output_limits is None else output_limits
 
         try:
-            if len(output_limits) != 4:
-                raise ValueError("Invalid number of output limits, 4 values must be provided")
             if len(gradient_efficiency) != 3:
                 raise ValueError("Invalid number of output limits, 4 values must be provided")
             if len(gpa_gain) != 3:

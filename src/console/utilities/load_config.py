@@ -101,7 +101,7 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
     if not file_path.endswith(".yaml"):
         raise FileNotFoundError("Invalid configuration file, yaml file required.")
     with open(file_path, "rb") as file:
-        config = yaml.safe_load(file, Loader=Loader)
+        config = yaml.load(file, Loader=Loader)
 
     return (config["SequenceProvider"], config["TxCard"], config["RxCard"])
 

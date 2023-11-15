@@ -1,6 +1,7 @@
 """Acquisition Control Class."""
 
 import logging
+import logging.config
 import os
 import time
 from datetime import datetime
@@ -75,7 +76,7 @@ class AcquistionControl:
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
 
-        self.config = yaml.safe_load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)
+        self.config = yaml.load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
