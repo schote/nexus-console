@@ -1,11 +1,12 @@
 """Definition of abstract reconstruction operator with forward and adjoint operation."""
 from abc import ABC, abstractmethod
+
 import torch
 
 
 class Operator(ABC):
     """Abstract operator class."""
-    
+
     @abstractmethod
     def fwd(self, data: torch.Tensor) -> torch.Tensor:
         """Abstract forward operations.
@@ -20,10 +21,10 @@ class Operator(ABC):
             Result of forward operator applied to input data.
         """
         return data
-    
+
     @abstractmethod
     def adj(self, data: torch.Tensor) -> torch.Tensor:
-        """_summary_
+        """Abstract adjoint operation.
 
         Parameters
         ----------

@@ -3,6 +3,7 @@ import logging
 from types import SimpleNamespace
 
 import numpy as np
+from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
@@ -10,10 +11,12 @@ from scipy.signal import resample
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
 
-from line_profiler import profile
-
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
+
+default_opts: Opts = Opts()
+default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
+default_fov_offset: Dimensions = Dimensions(0, 0, 0)
 
 
 class SequenceProvider(Sequence):
@@ -32,29 +35,58 @@ class SequenceProvider(Sequence):
     >>> seq.read("./seq_file.seq")
     >>> sqnc, gate, total_samples = seq.unroll_sequence()
     """
+
     __name__: str = "SequenceProvider"
 
     def __init__(
         self,
+        output_limits: list[int],
+        gradient_efficiency: list[float],
+        gpa_gain: list[float],
         spcm_dwell_time: float = 1 / 20e6,
-        gradient_efficiency: list[float] = [0.0004, 0.0004, 0.0004],
-        gpa_gain: list[float] = [4.7, 4.7, 4.7],
         rf_to_mvolt: float = 1,
-        output_limits: list[int] | None = None,
-        system: Opts = Opts(),
+        system: Opts = default_opts,
     ):
-        """Init function for sequence provider class."""
+        """Initialize sequence provider class which is used to unroll a pulseq sequence.
+
+        Parameters
+        ----------
+        output_limits
+            Output limit per channel in mV, includes both, RF and gradients, e.g. [200, 6000, 6000, 6000]
+        gradient_efficiency
+            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3]
+        gpa_gain
+            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7]
+        spcm_dwell_time, optional
+            Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6
+        rf_to_mvolt, optional
+            Translation of RF waveform from pulseq (Hz) to mV, by default 1
+        system, optional
+            System options from pypulseq, by default Opts()
+        """
         super().__init__(system=system)
 
         self.log = logging.getLogger("SeqProv")
-        self.gpa_gain = gpa_gain
-        self.gradient_efficiency = gradient_efficiency
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
+
+        try:
+            if len(output_limits) != 4:
+                raise ValueError("Invalid number of output limits, 4 values must be provided")
+            if len(gradient_efficiency) != 3:
+                raise ValueError("Invalid number of output limits, 4 values must be provided")
+            if len(gpa_gain) != 3:
+                raise ValueError("Invalid number of output limits, 4 values must be provided")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+
+        self.gpa_gain: list[int] = gpa_gain
+        self.gradient_efficiency: list[int] = gradient_efficiency
+        self.output_limits: list[int] = output_limits
+
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
-        self.output_limits: list[int] = [] if output_limits is None else output_limits
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
@@ -222,36 +254,56 @@ class SequenceProvider(Sequence):
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
-                
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
                 if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx]:
                     raise ValueError(
-                        "Amplitude of %s (%s) gradient exceeded output limit (%s)" %
-                        (block.channel, np.amax(waveform) + offset, self.output_limits[idx])
+                        "Amplitude of %s (%s) gradient exceeded output limit (%s)"
+                        % (
+                            block.channel,
+                            np.amax(waveform) + offset,
+                            self.output_limits[idx],
+                        )
                     )
                 # Trasnfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= (INT16_MAX / self.output_limits[idx])
+                waveform *= INT16_MAX / self.output_limits[idx]
 
                 gradient = np.interp(
-                    x=np.linspace(block.tt[0], block.tt[-1], int(block.shape_dur / self.spcm_dwell_time)),
+                    x=np.linspace(
+                        block.tt[0],
+                        block.tt[-1],
+                        int(block.shape_dur / self.spcm_dwell_time),
+                    ),
                     xp=block.tt,
-                    fp=waveform
+                    fp=waveform,
                 ).astype(np.int16)
 
             elif block.type == "trap":
-                
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx]:
                     raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
-                
+
                 # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx])
 
-                rise = np.linspace(0, flat_amp, int(block.rise_time / self.spcm_dwell_time), dtype=np.int16)
-                flat = np.full(int(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp, dtype=np.int16)
-                fall = np.linspace(flat_amp, 0, int(block.fall_time / self.spcm_dwell_time), dtype=np.int16)
-                
+                rise = np.linspace(
+                    0,
+                    flat_amp,
+                    int(block.rise_time / self.spcm_dwell_time),
+                    dtype=np.int16,
+                )
+                flat = np.full(
+                    int(block.flat_time / self.spcm_dwell_time),
+                    fill_value=flat_amp,
+                    dtype=np.int16,
+                )
+                fall = np.linspace(
+                    flat_amp,
+                    0,
+                    int(block.fall_time / self.spcm_dwell_time),
+                    dtype=np.int16,
+                )
+
                 gradient = np.concatenate((rise, flat, fall))
 
             else:
@@ -327,8 +379,8 @@ class SequenceProvider(Sequence):
         self,
         larmor_freq: float,
         b1_scaling: float = 1.0,
-        fov_scaling: Dimensions = Dimensions(x=1.0, y=1.0, z=1.0),
-        grad_offset: Dimensions = Dimensions(x=0, y=0, z=0),
+        fov_scaling: Dimensions = default_fov_scaling,
+        grad_offset: Dimensions = default_fov_offset,
     ) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
@@ -397,7 +449,7 @@ class SequenceProvider(Sequence):
             # Check if sequence has block events
             if not len(self.block_events) > 0:
                 raise ValueError("No block events found")
-            
+
             # Sequence timing check
             # TODO: Reactivate timing check
             # check, seq_err = self.check_timing()
@@ -428,8 +480,7 @@ class SequenceProvider(Sequence):
         adc_count: int = 0
         rf_start_sample_pos: int | None = None
 
-        for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks)):
-
+        for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks, strict=True)):
             # Set gradient offsets
             if grad_offset.x > 0:
                 _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
@@ -473,7 +524,9 @@ class SequenceProvider(Sequence):
             self.sample_count += n_samples
 
         self.log.debug(
-            "Unrolled sequence; Total sample points: %s; Total block events: %s", self.sample_count, len(blocks)
+            "Unrolled sequence; Total sample points: %s; Total block events: %s",
+            self.sample_count,
+            len(blocks),
         )
 
         return UnrolledSequence(

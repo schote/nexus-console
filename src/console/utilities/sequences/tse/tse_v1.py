@@ -1,20 +1,26 @@
 """Constructor for 3D TSE Imaging sequence."""
 # %%
 from math import pi
-import pypulseq as pp
-from console.spcm_control.interface_acquisition_parameter import Dimensions
+from types import SimpleNamespace
+
 import numpy as np
-import matplotlib.pyplot as plt
+import pypulseq as pp
+
+from console.spcm_control.interface_acquisition_parameter import Dimensions
 
 # %%
 GRAD_RISE_TIME = 200e-6
 
+default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
+default_encoding = Dimensions(x=70, y=70, z=49)
+
 # Define system
 system = pp.Opts(
     # rf_ringdown_time=100e-6,    # Time delay at the beginning of an RF event
-    rf_dead_time=20e-6,        # time delay at the end of RF event, SETS RF DELAY!
+    rf_dead_time=20e-6,  # time delay at the end of RF event, SETS RF DELAY!
     # adc_dead_time=200e-6,       # time delay at the beginning of ADC event
 )
+
 
 def constructor(
     echo_time: float = 15e-3,
@@ -23,10 +29,10 @@ def constructor(
     rf_duration: float = 400e-6,
     gradient_correction: float = 510e-6,
     ro_bandwidth: float = 20e3,
-    fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3),
-    n_enc: Dimensions = Dimensions(x=70, y=70, z=49),
+    fov: Dimensions = default_fov,
+    n_enc: Dimensions = default_encoding,
 ) -> tuple[pp.Sequence, tuple[np.ndarray]]:
-    """Constructor for 3D TSE imaging sequence.
+    """Construct 3D TSE imaging sequence.
 
     The k-space trajectory is constructed the following way:
     Phase encoding dimension 1 (PE1)
@@ -34,12 +40,11 @@ def constructor(
         This trajectory remains unchanged within the combination of echo trains.
     Phase encoding dimension 2 (PE2)
         Starting at the k-space center this trajectory goes to the positive and negative end in an
-        alternating pattern. The PE2 steps are rotated to cover all combinations within one 
+        alternating pattern. The PE2 steps are rotated to cover all combinations within one
         echo train. For list rotation a lambda function is used, see example below.
 
     Examples
     --------
-
     List rotation
     >>> rotated_list = rotate_list([1, 2, 3, 4], k=2)
     The rotation of ``[1, 2, 3, 4]`` with ``k=2`` gives ``[3, 4, 1, 2]``
@@ -68,15 +73,14 @@ def constructor(
         Pypulseq ``Sequence`` instance and trajectory tuple.
         The first element in the tuple describes the index ordering, the second tuple contains the gradient moments.
     """
-
-# # Fixed parameters for debugging
-# echo_time: float = 15e-3
-# repetition_time: float = 600e-3
-# etl: int = 5
-# rf_duration: float = 400e-6
-# ro_bandwidth: float = 20e3
-# fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3)
-# n_enc: Dimensions = Dimensions(x=60, y=60, z=25)
+    # # Fixed parameters for debugging
+    # echo_time: float = 15e-3
+    # repetition_time: float = 600e-3
+    # etl: int = 5
+    # rf_duration: float = 400e-6
+    # ro_bandwidth: float = 20e3
+    # fov: Dimensions = Dimensions(x=220e-3, y=220e-3, z=225e-3)
+    # n_enc: Dimensions = Dimensions(x=60, y=60, z=25)
 
     # Check dimensions: Enforce that y and z encoding dimensions are multiples of the etl
     if not n_enc.y % etl == 0:
@@ -84,13 +88,24 @@ def constructor(
     if not n_enc.z % etl == 0:
         raise ValueError("Invalid combination: PE encoding dimension z must be a multiple of the etl")
 
-
     seq = pp.Sequence(system)
     seq.set_definition("Name", "3d_tse_v1")
 
     # Definition of RF pulses
-    rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi/2, duration=rf_duration, apodization=0.5, use="excitation")
-    rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, apodization=0.5, use="refocusing")
+    rf_90 = pp.make_sinc_pulse(
+        system=system,
+        flip_angle=pi / 2,
+        duration=rf_duration,
+        apodization=0.5,
+        use="excitation",
+    )
+    rf_180 = pp.make_sinc_pulse(
+        system=system,
+        flip_angle=pi,
+        duration=rf_duration,
+        apodization=0.5,
+        use="refocusing",
+    )
 
     # ADC duration
     adc_duration = n_enc.x / ro_bandwidth
@@ -103,19 +118,19 @@ def constructor(
 
     # Define readout gradient and prewinder
     grad_ro = pp.make_trapezoid(
-        channel='x', 
-        system=system, 
+        channel="x",
+        system=system,
         flat_area=n_enc.x / fov.x,
         flat_time=adc_duration + gradient_correction,
-        rise_time=GRAD_RISE_TIME
+        rise_time=GRAD_RISE_TIME,
     )
-    
+
     grad_ro_pre = pp.make_trapezoid(
-        channel='x', 
-        system=system, 
-        area=grad_ro.area / 2, 
+        channel="x",
+        system=system,
+        area=grad_ro.area / 2,
         duration=delay_refocus_1,
-        rise_time=GRAD_RISE_TIME
+        rise_time=GRAD_RISE_TIME,
     )
 
     # Define adc event
@@ -123,7 +138,7 @@ def constructor(
         system=system,
         num_samples=1000,  # Is not taken into account atm
         duration=adc_duration,
-        delay=gradient_correction+GRAD_RISE_TIME
+        delay=gradient_correction + GRAD_RISE_TIME,
     )
 
     # Calculate available space for phase encoding gradients
@@ -169,14 +184,21 @@ def constructor(
 
     # Construct the final sequence
     # Helper lambda functions to construct PE gradient and rotate a list object
-    pe_grad = lambda channel, area, duration: pp.make_trapezoid(
-        channel=channel, area=area, duration=duration, system=system, rise_time=GRAD_RISE_TIME
-    )
-    rotate_list = lambda data, k: data[k:] + data[:k]
+    def get_pe_grad(channel: str, area: float, duration: float) -> SimpleNamespace:
+        return pp.make_trapezoid(
+            channel=channel,
+            area=area,
+            duration=duration,
+            system=system,
+            rise_time=GRAD_RISE_TIME,
+        )
+
+    def rotate_list(data: list, k: int) -> list:
+        return data[k:] + data[:k]
 
     ro_counter = 0
-    pe_traj_idx = np.zeros((2, n_enc.y*n_enc.z))
-    pe_traj_mom = np.zeros((2, n_enc.y*n_enc.z))
+    pe_traj_idx = np.zeros((2, n_enc.y * n_enc.z))
+    pe_traj_mom = np.zeros((2, n_enc.y * n_enc.z))
 
     for pe_2_train in pe_2_trains:
         for pe_1_train in pe_1_trains:
@@ -191,14 +213,13 @@ def constructor(
                 seq.add_block(tau_1_delay)
 
                 for tau_j in range(etl):
-
                     seq.add_block(rf_180)
 
                     # Inner echo-train loop which adds all the events of the train to the sequence
                     # Add phase encoding
                     seq.add_block(
-                        pe_grad(channel="y", area=pe_1_train[tau_j], duration=pe_duration),
-                        pe_grad(channel="z", area=pe_2_blocks[tau_j], duration=pe_duration)
+                        get_pe_grad(channel="y", area=pe_1_train[tau_j], duration=pe_duration),
+                        get_pe_grad(channel="z", area=pe_2_blocks[tau_j], duration=pe_duration),
                     )
                     seq.add_block(pp.make_delay(pe_space_1))
 
@@ -208,8 +229,8 @@ def constructor(
                     seq.add_block(pp.make_delay(pe_space_2))
                     # Phase encoding inverse area
                     seq.add_block(
-                        pe_grad(channel="y", area=-pe_1_train[tau_j], duration=pe_duration),
-                        pe_grad(channel="z", area=-pe_2_blocks[tau_j], duration=pe_duration)
+                        get_pe_grad(channel="y", area=-pe_1_train[tau_j], duration=pe_duration),
+                        get_pe_grad(channel="z", area=-pe_2_blocks[tau_j], duration=pe_duration),
                     )
 
                     # Save trajectory indices for k-space construction and gradient moments
@@ -225,10 +246,9 @@ def constructor(
                 if ro_counter < n_enc.y * n_enc.z:
                     seq.add_block(pp.make_delay(tr_delay))
 
-
     # Calculate some sequence measures
     n_total_trains = len(pe_2_trains) * len(pe_1_trains) * etl
-    train_duration_tr = (seq.duration()[0] + tr_delay)  / n_total_trains
+    train_duration_tr = (seq.duration()[0] + tr_delay) / n_total_trains
     train_duration = train_duration_tr - tr_delay
 
     # Add measures to sequence definition
@@ -236,10 +256,10 @@ def constructor(
     seq.set_definition("train_duration", train_duration)
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
-    
+
     return seq, (pe_traj_idx, pe_traj_mom)
 
-        
+
 # %%
 # > Debugging:
 # Construct example sequence using the default parameter

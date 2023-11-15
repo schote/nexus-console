@@ -1,22 +1,24 @@
 """Constructor for spin-echo spectrum sequence with projection gradient."""
 # %%
 from math import pi
-from console.utilities.sequences.system_settings import system
+
 import pypulseq as pp
+
+from console.utilities.sequences.system_settings import system
 
 # Definition of constants
 GRAD_RISE_TIME = 200e-6
 
 
 def constructor(
-    fov: float = 0.25, 
+    fov: float = 0.25,
     readout_bandwidth: float = 20e3,
     echo_time: float = 12e-3,
     gradient_correction: float = 600e-6,
     num_samples: int = 110,
-    rf_duration: float = 400e-6, 
-    channel: str = "x", 
-    use_sinc: bool = False
+    rf_duration: float = 400e-6,
+    channel: str = "x",
+    use_sinc: bool = False,
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence with projection gradient (1D).
 
@@ -56,7 +58,11 @@ def constructor(
 
     # Readout gradient
     gradient = pp.make_trapezoid(
-        system=system, channel=channel, flat_area=k_width, flat_time=gradient_duration, rise_time=GRAD_RISE_TIME
+        system=system,
+        channel=channel,
+        flat_area=k_width,
+        flat_time=gradient_duration,
+        rise_time=GRAD_RISE_TIME,
     )
     # Prephaser gradient: Same amplitude (180° pulse inverts), halve of the duration
     # prephaser = pp.make_trapezoid(
@@ -64,14 +70,18 @@ def constructor(
     # )
     # prephaser.flat_time += gradient_correction / 2
     prephaser = pp.make_trapezoid(
-        system=system, channel=channel, area=gradient.area/2, duration=pp.calc_duration(gradient)/2, rise_time=GRAD_RISE_TIME
+        system=system,
+        channel=channel,
+        area=gradient.area / 2,
+        duration=pp.calc_duration(gradient) / 2,
+        rise_time=GRAD_RISE_TIME,
     )
 
     adc = pp.make_adc(
         num_samples=1000,  # Is not taken into account atm
         duration=adc_duration,
         system=system,
-        delay=gradient_correction+GRAD_RISE_TIME,
+        delay=gradient_correction + GRAD_RISE_TIME,
     )
 
     # Calculate delays

@@ -37,93 +37,50 @@ dependencies = [
 # Dependency groupds (optional)
 [project.optional-dependencies]
 reco = ["torch"]
-test = ["coverage", "codecov", "pre-commit"]
-lint = ["mypy", "flake8", "Flake8-pyproject", "pylint", "isort", "autopep8", "pydocstyle", "black", "poethepoet", "types-PyYAML", "ruff"]
+# test = ["coverage", "codecov"]
+lint = ["ruff", "black", "poethepoet", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
-
-
-# Tool configuration
-[tool.pydocstyle]
-convention = "numpy"
-
-[tool.pylint]
-py-version = "3.10"
-max-args=10
-max-locals = 50
-max-attributes = 20
-max-line-length = 120
-max-statements = 100
-max-branches = 15
-ignore-paths = [
-    "src/console/spcm_control/spcm/.*$"
-]
-extension-pkg-allow-list = ["pydantic"]
-disable = [
-    "too-few-public-methods", 
-    "duplicate-code", 
-    "fixme", # fixme warning is thrown on each TODO: ..., comment to see todo's
-    "consider-using-f-string"
-] 
-
-[tool.flake8]
-max-line-length = 120
-exclude = "src/console/spcm_control/py_header/,src/console/spcm_control/spcm/"
-ignore = ["E203", "W503"]   # E203 not PEP8 conform (whitespace before colon), W503 line break before binary operator
-
-[tool.mypy]
-check_untyped_defs = "True"
-warn_unreachable = "True"
-python_version = "3.10"
-ignore_missing_imports = true
-mypy_path = "console"
-exclude = ["docs"]
 
 [tool.black]
 line-length = 120
 target-version = ['py310']
 
-[tool.isort]
-line_length = 120
-py_version=310
-
-
 [tool.ruff]
+src = ["src"]
 line-length = 120
 indent-width = 4
 target-version = "py310"
+extend-exclude = ["src/console/spcm_control/spcm"]
 
+[tool.ruff.lint]
+# Enable linters
+# W = pycodestyle, F = Pyflakes, S = flake8-bandit, I = isort, N = pep8-naming, D = pydocstyle
+select = ["W", "F", "S", "I", "N", "D"]
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+
+[tool.ruff.lint.pylint]
+max-args = 10
+max-branches = 15
+max-statements = 50
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 # Poe task setup for linting and formatting
 [tool.poe.tasks]
-format.sequence = ["black", "isort"]
-lint.sequence = ["pylint", "flake8", "mypy", "pydocstyle"]
-lint.ignore_fail = "return_non_zero"
+format.sequence = ["black", "ruff-fix"]
 
-    [tool.poe.tasks.pylint]
-    help = "Run pylint"
-    cmd = "pylint src/console/"
+    [tool.poe.tasks.linter]
+    help = "Run ruff linter"
+    cmd = "ruff src/"
 
-    [tool.poe.tasks.mypy]
-    help = "Run mypy, python type checker..."
-    cmd = "mypy --install-types src/console/"
-
-    [tool.poe.tasks.flake8]
-    help = "Run flake8"
-    cmd = "flake8 src/console/"
-
-    [tool.poe.tasks.autopep8]
-    help = "Run autopep8 which automatically formats Python code to conform to the PEP 8 style guide."
-    cmd = "autopep8 --in-place --recursive src/console/"
-
-    [tool.poe.tasks.pydocstyle]
-    help = "Run pydocstyle"
-    cmd = "pydocstyle src/console/"
-
-    [tool.poe.tasks.isort]
-    help = "Run isort"
-    cmd = "isort src/console/"
+    [tool.poe.tasks.ruff-fix]
+    help = "Run ruff formatter"
+    cmd = "ruff src/ --fix"
 
     [tool.poe.tasks.black]
     help = "Run black"
-    cmd = "black src/console/"
+    cmd = "black src/"

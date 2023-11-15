@@ -1,13 +1,18 @@
 """Implementation of gradient operator."""
 # %%
-from console.utilities.reconstruction.abstract_operator import Operator
 from functools import partial
+
 import torch
+
+from console.utilities.reconstruction.abstract_operator import Operator
 
 
 class GradOperators(torch.nn.Module, Operator):
+    """Gradient operator module for TV regularization."""
+
     @staticmethod
     def diff_kernel(ndim, mode):
+        """Define kernel of gradient operator."""
         if mode == "doublecentral":
             kern = torch.tensor((-1, 0, 1))
         elif mode == "central":
@@ -24,11 +29,13 @@ class GradOperators(torch.nn.Module, Operator):
             kernel[idx] = kern
         return kernel
 
-    def __init__(self, dim:int=2, mode:str="doublecentral", padmode:str = "circular"):
+    def __init__(self, dim: int = 2, mode: str = "doublecentral", padmode: str = "circular"):
         """
+        Iniialize gradient operator.
+
         An Operator for finite Differences / Gradients
         Implements the forward as apply_G and the adjoint as apply_GH.
-        
+
         Args:
             dim (int, optional): Dimension. Defaults to 2.
             mode (str, optional): one of doublecentral, central, forward or backward. Defaults to "doublecentral".
@@ -37,21 +44,38 @@ class GradOperators(torch.nn.Module, Operator):
         super().__init__()
         self.register_buffer("kernel", self.diff_kernel(dim, mode), persistent=False)
         self._dim = dim
-        self._conv = (torch.nn.functional.conv1d, torch.nn.functional.conv2d, torch.nn.functional.conv3d)[dim - 1]
-        self._convT = (torch.nn.functional.conv_transpose1d, torch.nn.functional.conv_transpose2d, torch.nn.functional.conv_transpose3d)[dim - 1]
+        self._conv = (
+            torch.nn.functional.conv1d,
+            torch.nn.functional.conv2d,
+            torch.nn.functional.conv3d,
+        )[dim - 1]
+        self._convT = (
+            torch.nn.functional.conv_transpose1d,
+            torch.nn.functional.conv_transpose2d,
+            torch.nn.functional.conv_transpose3d,
+        )[dim - 1]
         self._pad = partial(torch.nn.functional.pad, pad=2 * dim * (1,), mode=padmode)
-        if mode == 'central':
+        if mode == "central":
             self._norm = (self.dim) ** (1 / 2)
         else:
             self._norm = (self.dim * 4) ** (1 / 2)
 
     @property
     def dim(self):
+        """Return dimensions of the operator."""
         return self._dim
-    
+
     def fwd(self, x):
-        """
-        Forward
+        """Forward operation.
+
+        Parameters
+        ----------
+        x
+            Input tensor in image space
+
+        Returns
+        -------
+            Transformed tensor in k-space
         """
         if x.is_complex():
             xr = torch.view_as_real(x).moveaxis(-1, 0)
@@ -68,8 +92,16 @@ class GradOperators(torch.nn.Module, Operator):
         return y
 
     def adj(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Adjoint
+        """Adjoint operation.
+
+        Parameters
+        ----------
+        x
+            Input tensor in k-space.
+
+        Returns
+        -------
+            Transformed tensor in image space.
         """
         if x.is_complex():
             xr = torch.view_as_real(x).moveaxis(-1, 0)
@@ -84,9 +116,19 @@ class GradOperators(torch.nn.Module, Operator):
         else:
             y = y.reshape(*x.shape[: -self.dim - 1], *x.shape[-self.dim :])
         return y
-    
-  
+
     def apply_adj_fwd(self, x: torch.Tensor) -> torch.Tensor:
+        """Apply adjoint and forward operation.
+
+        Parameters
+        ----------
+        x
+            Tensor in image space.
+
+        Returns
+        -------
+            Transformed tensor in image space after applying forward and ajoint.
+        """
         if x.is_complex():
             xr = torch.view_as_real(x).moveaxis(-1, 0)
         else:
@@ -103,17 +145,16 @@ class GradOperators(torch.nn.Module, Operator):
             y = y.reshape(*x.shape)
         return y
 
-# %%
 
 # Revision using complex convolutions: Work in progress...
 
 # class GradientOperator2D(Operator):
 #     """
 #     Gradient operator which implements forward and adjoint operation.
-    
+
 #     Operates on two-dimensional tensors of dimension (nx, ny)
 #     """
-    
+
 #     def __init__(self, padding: int = 1):
 #         """Initialization of 2D gradient operator.
 
@@ -133,7 +174,7 @@ class GradOperators(torch.nn.Module, Operator):
 #         self.npad = padding
 
 #     def fwd(self, data: torch.Tensor) -> torch.Tensor:
-        
+
 #         # Take only real part of kernel if data is real, complex otherwise
 #         kernel = self.grad_kernel if data.is_complex() else self.grad_kernel.real
 #         # Apply circular padding to input, data is extended by channel dimension
@@ -145,9 +186,9 @@ class GradOperators(torch.nn.Module, Operator):
 #         data_fwd = data_fwd[..., self.npad:-self.npad, self.npad:-self.npad]
 
 #         return data_fwd.squeeze()
-        
+
 #     def adj(self, data: torch.Tensor) -> torch.Tensor:
-        
+
 #         # Take only real part of kernel if data is real, complex otherwise
 #         kernel = self.grad_kernel if data.is_complex() else self.grad_kernel.real
 #         # Apply circular padding to input, data is extended by channel dimension

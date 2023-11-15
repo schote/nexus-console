@@ -1,7 +1,9 @@
 """Constructor for spin-echo spectrum sequence."""
 from math import pi
-from console.utilities.sequences.system_settings import system
+
 import pypulseq as pp
+
+from console.utilities.sequences.system_settings import system
 
 # Definition of constants
 ADC_DURATION = 4e-3

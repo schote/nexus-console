@@ -1,8 +1,9 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
 # %%
-from console.utilities.sequences.system_settings import system
 import numpy as np
 import pypulseq as pp
+
+from console.utilities.sequences.system_settings import system
 
 # Definition of constants
 ADC_DURATION = 4e-3
@@ -10,7 +11,7 @@ ADC_DURATION = 4e-3
 
 def constructor(
     n_steps: int = 10,
-    max_flip_angle: float = 5*np.pi/4,
+    max_flip_angle: float = 5 * np.pi / 4,
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,
@@ -48,7 +49,6 @@ def constructor(
     flip_angles = np.linspace(start=0, stop=max_flip_angle, num=n_steps, endpoint=True)
 
     for angle in flip_angles:
-
         if use_sinc:
             rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration, apodization=0.5)
         else:
@@ -64,6 +64,7 @@ def constructor(
             raise ValueError("Sequence timing check failed: ", err)
 
     return seq, flip_angles
+
 
 # %%
 # seq, _ = constructor()

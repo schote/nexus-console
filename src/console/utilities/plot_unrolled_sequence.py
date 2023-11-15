@@ -8,10 +8,10 @@ from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSeque
 
 
 def plot_unrolled_sequence(
-    sequence: UnrolledSequence, 
-    seq_range: tuple[int] = (0, -1), 
+    sequence: UnrolledSequence,
+    seq_range: tuple[int] = (0, -1),
     use_time: bool = True,
-    output_limits: tuple[int] | None = None
+    output_limits: tuple[int] | None = None,
 ) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
     """Plot replay data for spectrum-instrumentation data in final card format.
 

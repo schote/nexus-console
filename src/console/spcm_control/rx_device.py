@@ -10,8 +10,26 @@ from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
 # Define registers lists
-CH_SELECT = [sp.CHANNEL0, sp.CHANNEL1, sp.CHANNEL2, sp.CHANNEL3, sp.CHANNEL4, sp.CHANNEL5, sp.CHANNEL6, sp.CHANNEL7]
-AMP_SELECT = [sp.SPC_AMP0, sp.SPC_AMP1, sp.SPC_AMP2, sp.SPC_AMP3, sp.SPC_AMP4, sp.SPC_AMP5, sp.SPC_AMP6, sp.SPC_AMP7]
+CH_SELECT = [
+    sp.CHANNEL0,
+    sp.CHANNEL1,
+    sp.CHANNEL2,
+    sp.CHANNEL3,
+    sp.CHANNEL4,
+    sp.CHANNEL5,
+    sp.CHANNEL6,
+    sp.CHANNEL7,
+]
+AMP_SELECT = [
+    sp.SPC_AMP0,
+    sp.SPC_AMP1,
+    sp.SPC_AMP2,
+    sp.SPC_AMP3,
+    sp.SPC_AMP4,
+    sp.SPC_AMP5,
+    sp.SPC_AMP6,
+    sp.SPC_AMP7,
+]
 IMP_SELECT = [
     sp.SPC_50OHM0,
     sp.SPC_50OHM1,
@@ -136,7 +154,10 @@ class RxCard(SpectrumDevice):
         # Get the number of actual active channels and compare against provided channel enable list
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
         try:
-            self.log.info("Number of enabled receive channels (read from card): %s", self.num_channels.value)
+            self.log.info(
+                "Number of enabled receive channels (read from card): %s",
+                self.num_channels.value,
+            )
             if not self.num_channels.value == sum(self.channel_enable):
                 raise ValueError("Actual number of enabled channels does not match the provided channel enable list")
         except ValueError as err:
@@ -159,7 +180,11 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
 
         # Setup timestamp mode to read number of samples per gate if available
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMESTAMP_CMD, sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL)
+        sp.spcm_dwSetParam_i32(
+            self.card,
+            sp.SPC_TIMESTAMP_CMD,
+            sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL,
+        )
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_EXT1_MODE, sp.SPC_TM_POS)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_ORMASK, sp.SPC_TMASK_EXT1)
 
@@ -192,7 +217,9 @@ class RxCard(SpectrumDevice):
             # First we will stop the data transfer and then we will stop the card.
             # If time stamp mode is enabled, we need to stop the extra data transfer as well.
             error = sp.spcm_dwSetParam_i32(
-                self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA
+                self.card,
+                sp.SPC_M2CMD,
+                sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA,
             )
             self.handle_error(error)
             self.worker = None
@@ -245,7 +272,9 @@ class RxCard(SpectrumDevice):
 
         # >> Start everything
         err = sp.spcm_dwSetParam_i32(
-            self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_START | sp.M2CMD_CARD_ENABLETRIGGER | sp.M2CMD_DATA_STARTDMA
+            self.card,
+            sp.SPC_M2CMD,
+            sp.M2CMD_CARD_START | sp.M2CMD_CARD_ENABLETRIGGER | sp.M2CMD_DATA_STARTDMA,
         )
         self.handle_error(err)
 
@@ -264,7 +293,11 @@ class RxCard(SpectrumDevice):
             sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
             if available_timestamp_bytes.value >= 32:
                 # read position
-                sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_POS, byref(available_timestamp_postion))
+                sp.spcm_dwGetParam_i64(
+                    self.card,
+                    sp.SPC_TS_AVAIL_USER_POS,
+                    byref(available_timestamp_postion),
+                )
 
                 # Read two timestamps
                 timestamp_0 = pll_data[int(available_timestamp_postion.value / 8)] / (self.sample_rate * 1e6)
@@ -275,18 +308,29 @@ class RxCard(SpectrumDevice):
                 gate_sample = int(gate_length * self.sample_rate * 1e6)
 
                 self.log.info(
-                    "Gate: (%s s, %s s); ADC duration: %s ms", timestamp_0, timestamp_1, round(gate_length * 1e3, 2)
+                    "Gate: (%s s, %s s); ADC duration: %s ms",
+                    timestamp_0,
+                    timestamp_1,
+                    round(gate_length * 1e3, 2),
                 )
 
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
-                sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
+                sp.spcm_dwGetParam_i64(
+                    self.card,
+                    sp.SPC_TS_AVAIL_USER_LEN,
+                    byref(available_timestamp_bytes),
+                )
 
                 # Check for rounding errors
                 total_bytes = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 bytes_sequence = (gate_sample + self.pre_trigger + self.post_trigger) * 2 * self.num_channels.value
 
                 # Read/update available user bytes
-                sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
+                sp.spcm_dwGetParam_i32(
+                    self.card,
+                    sp.SPC_DATA_AVAIL_USER_LEN,
+                    byref(available_user_databytes),
+                )
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
 
                 # Debug log statements
@@ -298,13 +342,21 @@ class RxCard(SpectrumDevice):
 
                 while not self.is_running.is_set():
                     # Read/update available user bytes
-                    sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
+                    sp.spcm_dwGetParam_i32(
+                        self.card,
+                        sp.SPC_DATA_AVAIL_USER_LEN,
+                        byref(available_user_databytes),
+                    )
                     # self.log.debug("Available user length in bytes (adc buffer): %s", available_user_databytes.value)
 
                     if available_user_databytes.value >= total_bytes:
                         total_gates += 1
 
-                        sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
+                        sp.spcm_dwGetParam_i32(
+                            self.card,
+                            sp.SPC_DATA_AVAIL_USER_POS,
+                            byref(data_user_position),
+                        )
 
                         byte_position = data_user_position.value // 2
                         total_bytes_to_read = available_user_databytes.value
@@ -342,7 +394,11 @@ class RxCard(SpectrumDevice):
                         # The card length should be in the order of notify size.
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
-                        sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_user_databytes))
+                        sp.spcm_dwGetParam_i32(
+                            self.card,
+                            sp.SPC_DATA_AVAIL_USER_LEN,
+                            byref(available_user_databytes),
+                        )
                         break
 
                     sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)

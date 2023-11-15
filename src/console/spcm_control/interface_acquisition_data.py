@@ -1,16 +1,17 @@
 """Interface class for acquisition parameters."""
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-import logging
+
 import numpy as np
 
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
-
 log = logging.getLogger("AcqData")
+
 
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
@@ -25,7 +26,7 @@ class AcquisitionData:
 
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
-    
+
     device_config: dict
     """Device configurations (transmit card, receive card and sequence provide) of the experiment."""
 
@@ -47,7 +48,7 @@ class AcquisitionData:
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
 
     is_stored: bool = False
-    """Status flag which indicates if data has already been stored or not. 
+    """Status flag which indicates if data has already been stored or not.
     Must not be initialized, flag is cleared again in ``__post_init__`` method.
     """
 
@@ -109,7 +110,7 @@ class AcquisitionData:
             # TODO: Double check, something goes wrong when saving the unprocessed data
             _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
             np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
-            
+
         log.info("Saved acquisition data to: %s", acq_folder_path)
 
     def add_info(self, info: dict) -> None:

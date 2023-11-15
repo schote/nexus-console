@@ -1,15 +1,20 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
 from math import pi
-from console.utilities.sequences.system_settings import system
+
 import numpy as np
 import pypulseq as pp
+
+from console.utilities.sequences.system_settings import system
 
 # Definition of constants
 ADC_DURATION = 4e-3
 
 
 def constructor(
-    n_steps: int = 10, repetition_time: float = 1000, echo_time: float = 12e-3, rf_duration: float = 400e-6
+    n_steps: int = 10,
+    repetition_time: float = 1000,
+    echo_time: float = 12e-3,
+    rf_duration: float = 400e-6,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 

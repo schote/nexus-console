@@ -1,8 +1,10 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
 from math import pi
-from console.utilities.sequences.system_settings import system
+
 import numpy as np
 import pypulseq as pp
+
+from console.utilities.sequences.system_settings import system
 
 # Definition of constants
 RF_DURATION = 400e-6
@@ -10,7 +12,10 @@ ADC_DURATION = 4e-3
 
 
 def constructor(
-    freq_span: float = 100e3, coil_bandwidth: float = 20e3, repetition_time: float = 250e-3, echo_time: float = 12e-3
+    freq_span: float = 100e3,
+    coil_bandwidth: float = 20e3,
+    repetition_time: float = 250e-3,
+    echo_time: float = 12e-3,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct frequency adjust sequence.
 
@@ -57,7 +62,7 @@ def constructor(
             duration=RF_DURATION,
             apodization=0.5,
             freq_offset=offset,
-            use="excitation"
+            use="excitation",
         )
 
         rf_180 = pp.make_sinc_pulse(
@@ -66,7 +71,7 @@ def constructor(
             duration=RF_DURATION,
             apodization=0.5,
             freq_offset=offset,
-            use="refocusing"
+            use="refocusing",
         )
 
         te_delay_1 = pp.make_delay(echo_time / 2 - RF_DURATION)
