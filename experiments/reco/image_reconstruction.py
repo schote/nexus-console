@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from scipy.signal import decimate
 from console.utilities.reconstruction.chambolle_pock import ChambollePock
 from console.utilities.reconstruction.fft_operator import FFTOperator
-from skimage.restoration import unwrap_phase
 import torch
 
 # %%
@@ -55,30 +54,13 @@ ax.axis("off")
 fig.set_facecolor("black")
 
 # %%
-# Phase unwrapping
-# img_transposed = np.transpose(img)
-
-# img_unwrapped = np.unwrap(img, axis=-1)
-# img_dc = np.copy(img_transposed)
-# unwrapped_phase = unwrap_phase(np.angle(img_dc), wrap_around=(True, False))
-# unwrapped_phase = np.pi * unwrapped_phase / unwrapped_phase.max() 
-# img_unwrapped = np.abs(img_dc) * np.exp(1j*unwrapped_phase)
-
-# fig, ax = plt.subplots(2, 2)
-# fig.colorbar(ax[0, 0].imshow(np.angle(img_transposed), vmin=-np.pi, vmax=np.pi), ax=ax[0, 0])
-# fig.colorbar(ax[0, 1].imshow(np.angle(img_unwrapped)), ax=ax[0, 1])
-# ax[1, 0].imshow(np.abs(img_transposed), cmap="gray")
-# ax[1, 1].imshow(np.abs(img_unwrapped), cmap="gray")
-# plt.tight_layout(pad=0.05)
-
-# %%
 # TV regularization
 ksp_t = torch.tensor(ksp, dtype=torch.cfloat)
 img_t = torch.tensor(img, dtype=torch.cfloat)
 
 ft = FFTOperator()
 cp = ChambollePock(operator=ft)
-img_cp = cp(y=ksp_t, x_0=img_t, num_iterations=200, gamma=0.016)    # without lesions
+img_cp = cp(kspace=ksp_t, x_0=img_t, num_iterations=200, gamma=0.016)    # without lesions
 
 img_cp_corr = img_cp / (corr_fit ** 2)
 
@@ -87,3 +69,5 @@ ax.imshow(img_cp_corr.abs(), cmap="gray", vmin=img_cp_corr.abs().min()*scale_vmi
 ax.axis("off")
 fig.set_facecolor("black")
 plt.tight_layout(pad=0.05)
+
+# %%
