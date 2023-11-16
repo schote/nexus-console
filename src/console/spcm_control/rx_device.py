@@ -4,6 +4,7 @@ import threading
 from ctypes import byref, cast
 from dataclasses import dataclass
 from itertools import compress
+
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
@@ -131,7 +132,7 @@ class RxCard(SpectrumDevice):
             if (num_amp := len(self.max_amplitude)) != num_enable:
                 raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
             if not np.log2(num_enable).is_integer():
-                raise ValueError("Invalid number of enabled channels.")
+                raise ValueError("Invalid number of enabled channels, must be power of 2.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
