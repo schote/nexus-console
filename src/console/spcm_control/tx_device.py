@@ -68,7 +68,11 @@ class TxCard(SpectrumDevice):
             # Set default fraktion to 16, notify size equals 1/16 of ring buffer size
             self.notify_size = spcm.int32(int(self.ring_buffer_size.value / 16))
 
-        self.log.debug("Ring buffer size: %s; Notify size: %s", self.ring_buffer_size.value, self.notify_size.value)
+        self.log.debug(
+            "Ring buffer size: %s; Notify size: %s",
+            self.ring_buffer_size.value,
+            self.notify_size.value,
+        )
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -127,7 +131,9 @@ class TxCard(SpectrumDevice):
 
         # Enable and setup channels
         spcm.spcm_dwSetParam_i32(
-            self.card, spcm.SPC_CHENABLE, spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3
+            self.card,
+            spcm.SPC_CHENABLE,
+            spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3,
         )
 
         # Use loop to enable and setup active channels
@@ -176,6 +182,7 @@ class TxCard(SpectrumDevice):
         )
 
         self.log.debug("Device setup completed")
+        self.log_card_status()
 
     def start_operation(self, data: UnrolledSequence | None = None) -> None:
         """Start transmit (TX) card operation.
@@ -235,7 +242,6 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.log_card_status()
         self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
         self.worker.start()
 
@@ -245,11 +251,14 @@ class TxCard(SpectrumDevice):
             self.is_running.set()
             self.worker.join()
 
-            error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA)
+            error = spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPC_M2CMD,
+                spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA,
+            )
 
             self.handle_error(error)
             self.worker = None
-            self.log_card_status()
         else:
             print("No active replay thread found...")
 
@@ -310,13 +319,19 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
 
         self.log.debug("Starting card memory transfer")
-        error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA)
+        error = spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPC_M2CMD,
+            spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
+        )
         self.handle_error(error)
 
         # Start card
         self.log.debug("Starting card operation")
         error = spcm.spcm_dwSetParam_i32(
-            self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER
+            self.card,
+            spcm.SPC_M2CMD,
+            spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
         )
         self.handle_error(error)
 
@@ -345,7 +360,11 @@ class TxCard(SpectrumDevice):
 
                         # Move memory: Current ring buffer position,
                         # position in sequence data and amount to transfer (=> notify size)
-                        ctypes.memmove(ring_buffer_position, data_buffer_position, self.notify_size.value)
+                        ctypes.memmove(
+                            ring_buffer_position,
+                            data_buffer_position,
+                            self.notify_size.value,
+                        )
 
                 spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.notify_size)
                 transferred_bytes += self.notify_size.value
@@ -386,4 +405,4 @@ class TxCard(SpectrumDevice):
         """
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
-        self.log.debug("Card status: %s", status)
+        self.log.debug("Card status:\n%s", status)

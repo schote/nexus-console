@@ -1,5 +1,6 @@
 """Interface class for acquisition parameters."""
 import json
+import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -8,6 +9,8 @@ import numpy as np
 
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+
+log = logging.getLogger("AcqData")
 
 
 @dataclass(slots=True, frozen=True)
@@ -24,6 +27,9 @@ class AcquisitionData:
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
 
+    device_config: dict
+    """Device configurations (transmit card, receive card and sequence provide) of the experiment."""
+
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
 
@@ -35,23 +41,37 @@ class AcquisitionData:
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
-    unprocessed_data: np.ndarray | None = None
+    # unprocessed_data: np.ndarray | None = None
+    unprocessed_data: list | None = None
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
 
+    is_stored: bool = False
+    """Status flag which indicates if data has already been stored or not.
+    Must not be initialized, flag is cleared again in ``__post_init__`` method.
+    """
+
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
+        datetime_now = datetime.now()
+        if not all([key in list(self.device_config.keys()) for key in ["TxCard", "RxCard", "SequenceProvider"]]):
+            raise log.warning("Device configuration contains unknown keys")
+        seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
-                "date_time": datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
+                "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
                 "raw_dimensions": self.raw.shape,
-                "unprocessed_dimensions": self.unprocessed_data.shape if self.unprocessed_data is not None else None,
+                # "unprocessed_dimensions": self.unprocessed_data.shape if self.unprocessed_data is not None else None,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
-                    "name": self.sequence.definitions["Name"][0].replace(" ", "_"),
-                    "duration": self.sequence.definitions["TotalDuration"],
+                    "name": seq_name,
+                    "duration": self.sequence.duration()[0],
+                    "configuration": self.device_config["SequenceProvider"],
                 },
+                "rx_device_configuration": self.device_config["RxCard"],
+                "tx_device_configuration": self.device_config["TxCard"],
                 "info": {},
             }
         )
@@ -68,7 +88,7 @@ class AcquisitionData:
         base_path = os.path.join(self.storage_path, "")
         os.makedirs(base_path, exist_ok=True)
 
-        acq_folder = datetime.now().strftime("%Y-%m-%d-%H%M%S-") + self.meta["sequence"]["name"]
+        acq_folder = self.meta["folder_name"]
         acq_folder_path = base_path + acq_folder + "/"
         os.makedirs(acq_folder_path, exist_ok=False)
 
@@ -76,15 +96,22 @@ class AcquisitionData:
         with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
             json.dump(self.meta, outfile, indent=4)
 
-        # Write sequence .seq file
-        self.sequence.write(f"{acq_folder_path}sequence.seq")
+        try:
+            # Write sequence .seq file
+            self.sequence.write(f"{acq_folder_path}sequence.seq")
+        except Exception as exc:
+            log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
         np.save(f"{acq_folder_path}raw_data.npy", self.raw)
 
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array
-            np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            # TODO: Double check, something goes wrong when saving the unprocessed data
+            _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
+            np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
+
+        log.info("Saved acquisition data to: %s", acq_folder_path)
 
     def add_info(self, info: dict) -> None:
         """Add entries to meta data dictionary.

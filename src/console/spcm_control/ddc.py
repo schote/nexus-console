@@ -44,7 +44,11 @@ def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: floa
     signal_filtered = np.zeros(num_ddc_samples, dtype=complex)
 
     # 1D strided convolution
-    for i, k in zip(range(num_ddc_samples), range(0, raw_signal.size, int(kernel_size / stride))):
+    for i, k in zip(
+        range(num_ddc_samples),
+        range(0, raw_signal.size, int(kernel_size / stride)),
+        strict=True,
+    ):
         # Skip the last samples of the raw signal
         if (position := k + kernel_size) > raw_signal.size:
             # Position in raw data array exceeded index, truncate leftover

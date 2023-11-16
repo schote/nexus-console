@@ -122,9 +122,21 @@ def get_sequence_plot(
         [
             TraceData(time_points=tx_data[0], signal_values=tx_data[1], name="Tx"),
             TraceData(time_points=rx_data[0], signal_values=rx_data[1], name="Rx"),
-            TraceData(time_points=gradients["gx"][0], signal_values=gradients["gx"][1], name="Gx"),
-            TraceData(time_points=gradients["gy"][0], signal_values=gradients["gy"][1], name="Gy"),
-            TraceData(time_points=gradients["gz"][0], signal_values=gradients["gz"][1], name="Gz"),
+            TraceData(
+                time_points=gradients["gx"][0],
+                signal_values=gradients["gx"][1],
+                name="Gx",
+            ),
+            TraceData(
+                time_points=gradients["gy"][0],
+                signal_values=gradients["gy"][1],
+                name="Gy",
+            ),
+            TraceData(
+                time_points=gradients["gz"][0],
+                signal_values=gradients["gz"][1],
+                name="Gz",
+            ),
         ]
     )
 

@@ -20,25 +20,44 @@ TxCard: !TxCard
 RxCard: !RxCard
   path: "/dev/spcm0"
   # Enable the receive channels
-  channel_enable: [1, 1, 0, 0, 0, 0, 0, 0]
+  channel_enable: [1, 0, 0, 0, 0, 0, 0, 0]
   # Set the max. amplitude per channel, list length must at least match the number of enabled channels
-  max_amplitude: [10000, 10000, 1000, 1000, 1000, 1000, 1000, 1000]
+  max_amplitude: [200, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
-  impedance_50_ohms: [1, 0, 0, 0, 0, 0, 0, 0]
+  # ATTENTION: At the moment only 1 or 2 channels are possible.
+  # > Driver complains if more than 2 channels are enabled.
+  impedance_50_ohms: [0, 0, 0, 0, 0, 0, 0, 0]
   # Device sampling rate in MHz
   sample_rate: 20
 
 # >> Sequence provider configuration
 SequenceProvider: !SequenceProvider
   # Set the transmit card sampling rate, 5e-8 => 20 MHz
-  spcm_dwell_time: 0.00000005
-  grad_to_volt: 0.005
-  rf_to_volt: 0.005
+  spcm_dwell_time: 5.e-8
+
+  # Calculate grad_to_volt per gradient channel:
+  # Gradient efficiency in T/m
+  gradient_efficiency: [0.451e-3, 0.4e-3, 0.37e-3]  # Leiden values
+  # Gradient power amplifier in V/A
+  gpa_gain: [4.7, 4.7, 4.7]
+
+  # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
+  # How to correct this properly, independent of the pulseq sequence?
+  # Or should this be done in pulseq? to be discussed.
+  # gradient_correction_time: 0 # 570 
+
+  # Scales RF in Hz (pulseq) to mV
+  rf_to_mvolt: 5.e-3
+
   system: !Opts
-    max_grad: 250000.0
-    max_slew: 250000.0
-    rise_time: 0
-    rf_dead_time: 0.00005  # 50us
-    rf_ringdown_time: 0
-    adc_dead_time: 0
-    B0: 0.0477
+    max_grad: 250.e+3
+    max_slew: 250.e+3
+    rise_time: 100.e-6
+    rf_dead_time: 20.e-6
+    rf_ringdown_time: 0.
+    adc_dead_time: 0.
+    block_duration_raster: 5.e-8
+    rf_raster_time: 5.e-8
+    grad_raster_time: 5.e-8
+    adc_raster_time: 5.e-8
+    B0: 50.e-3

@@ -1,14 +1,17 @@
 """Acquisition Control Class."""
 
 import logging
+import logging.config
 import os
 import time
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
+import yaml
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.pulseq_interpreter.sequence_provider import Opts, Sequence, SequenceProvider
 from console.spcm_control.ddc import apply_ddc
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
@@ -16,15 +19,20 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
 
+LOG_LEVELS = [
+    logging.DEBUG,
+    logging.INFO,
+    logging.WARNING,
+    logging.ERROR,
+    logging.CRITICAL,
+]
+
 
 class AcquistionControl:
     """Acquisition control class.
 
     The main functionality of the acquisition control is to orchestrate transmit and receive cards using
     ``TxCard`` and ``RxCard`` instances.
-
-    TODO: Implementation of logging mechanism.
-    Use two logs: a high level one as lab-book and a detailed one for debugging.
     """
 
     def __init__(
@@ -60,12 +68,15 @@ class AcquistionControl:
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
+        self.log.info("--- Acquisition control started\n")
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
         self.seq_provider: SequenceProvider = ctx[0]
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
+
+        self.config = yaml.load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)  # noqa: S506
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
@@ -84,7 +95,8 @@ class AcquistionControl:
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray = np.array([])
-        self._unproc: np.ndarray = np.array([])
+        # self._unproc: np.ndarray = np.array([])
+        self._unproc: list = []
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -93,12 +105,13 @@ class AcquistionControl:
         if self.rx_card:
             self.rx_card.disconnect()
         self.log.info("Measurement cards disconnected.")
+        self.log.info("--- Acquisition control terminated\n\n")
 
     def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
-        if console_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if console_level not in LOG_LEVELS:
             raise ValueError("Invalid console log level")
-        if file_level not in [logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL]:
+        if file_level not in LOG_LEVELS:
             raise ValueError("Invalid file log level")
 
         # Disable existing loggers
@@ -110,7 +123,7 @@ class AcquistionControl:
             format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
             datefmt="%d-%m-%Y, %H:%M",
             filename=f"{self.session_path}console.log",
-            filemode="w",
+            filemode="a",
         )
 
         # Define a Handler which writes INFO messages or higher to the sys.stderr
@@ -155,6 +168,10 @@ class AcquistionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
+        self.log.info(
+            "Unrolling sequence: %s",
+            self.seq_provider.definitions["Name"].replace(" ", "_"),
+        )
         sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency,
             b1_scaling=parameter.b1_scaling,
@@ -166,9 +183,11 @@ class AcquistionControl:
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + sqnc.duration
+        self.log.info("Sequence duration: %s s", sqnc.duration)
 
         self._raw = np.array([])
-        self._unproc = np.array([])
+        # self._unproc = np.array([])
+        self._unproc = []
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -204,6 +223,9 @@ class AcquistionControl:
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
+            if parameter.averaging_delay > 0:
+                time.sleep(parameter.averaging_delay)
+
         try:
             if not self._raw.size > 0:
                 raise ValueError("Error during post processing or readout, no raw data")
@@ -211,13 +233,28 @@ class AcquistionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
+        # Update entries of the configuration file
+        for component in [self.tx_card, self.rx_card, self.seq_provider]:
+            comp_name = type(component).__name__
+            if comp_name in self.config.keys():
+                for key in self.config[comp_name].keys():
+                    if isinstance(value := getattr(component, key), Opts):
+                        value = value.__dict__
+                    self.config[comp_name][key] = value
+            else:
+                self.log.warning(
+                    "Key %s missing in configuration, could not fully update configuration",
+                    comp_name,
+                )
+
         return AcquisitionData(
             raw=self._raw,
             unprocessed_data=self._unproc,
             sequence=self.seq_provider,
             storage_path=self.session_path,
+            device_config=self.config,
             # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
-            dwell_time=parameter.downsampling_rate / self.f_spcm,
+            dwell_time=int(2 * parameter.downsampling_rate) / self.f_spcm,
             acquisition_parameters=parameter,
         )
 
@@ -236,7 +273,6 @@ class AcquistionControl:
         f_0 = parameter.larmor_frequency
         ro_start = int(parameter.adc_samples / 2)
         raw_list: list = []
-        unproc_list: list = []
 
         try:
             if not self.rx_card.rx_data:
@@ -244,20 +280,34 @@ class AcquistionControl:
             if not (num_channels := len(self.rx_card.rx_data[0])) >= 1:
                 raise IndexError("No channel data available")
             self.log.debug(
-                "Post processing > Gates: %s; Coils: %s", len(self.rx_card.rx_data), len(self.rx_card.rx_data[0])
+                "Post processing > Gates: %s; Coils: %s",
+                len(self.rx_card.rx_data),
+                len(self.rx_card.rx_data[0]),
             )
+
+            # We observed different raw data sample sized
+            # Take the very first gate as a reference
+            # Truncate the first samples and set the expected max length to reference - truncation
+            # truncation = 100
+            # num_unprocessed_samples = len(self.rx_card.rx_data[0][0]) - truncation
+            self._unproc.append(self.rx_card.rx_data)
 
             for k, gate in enumerate(self.rx_card.rx_data):
                 raw_channel_list = []
-                unproc_channel_list = []
+                # unproc_channel_list = []
 
                 # Process reference signal
                 _ref = (np.array(gate[0]).astype(np.uint16) >> 15).astype(float)
 
-                # Append unprocessed data
-                unproc_channel_list.append(_ref)
+                self.log.debug(
+                    "Gate %s: ADC samples per channel before down-sampling: %s",
+                    k,
+                    _ref.size,
+                )
 
-                self.log.debug("Gate %s: ADC samples per channel before down-sampling: %s", k, _ref.size)
+                # Append unprocessed data
+                # unproc_channel_list.append(_ref[truncation:num_unprocessed_samples])
+
                 # Calculate start point of readout for adc truncation
                 _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
 
@@ -275,7 +325,7 @@ class AcquistionControl:
                 _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
 
                 # Append unprocessed data
-                unproc_channel_list.append(_tmp)
+                # unproc_channel_list.append(_tmp[truncation:num_unprocessed_samples])
 
                 _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
                 _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
@@ -291,7 +341,7 @@ class AcquistionControl:
                         _tmp = (np.array(gate[channel_idx])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx]
 
                         # Append unprocessed data if flag is set
-                        unproc_channel_list.append(_tmp)
+                        # unproc_channel_list.append(_tmp[truncation:num_unprocessed_samples])
 
                         _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
                         ro_start = int(_tmp.size / 2 - parameter.adc_samples / 2)
@@ -304,18 +354,19 @@ class AcquistionControl:
                 # The unprocessed data has coil dimension + 1
                 # since the reference signal is the first entry of coil dimension
                 raw_list.append(np.stack(raw_channel_list, axis=0))
-                unproc_list.append(np.stack(unproc_channel_list, axis=0))
+                # unproc_list.append(np.stack(unproc_channel_list, axis=0))
 
-        except (IndexError, ValueError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+            # Stack phase encoding in axis 1: [coil, pe, ro]
+            raw: np.ndarray = np.stack(raw_list, axis=1)
+            # unproc: np.ndarray = np.stack(unproc_list, axis=1)
 
-        # Stack phase encoding in axis 1: [coil, pe, ro]
-        raw: np.ndarray = np.stack(raw_list, axis=1)
-        unproc: np.ndarray = np.stack(unproc_channel_list, axis=1)
+            # Assign processed data to private class attributes, stack average dimension
+            self._raw = raw[None, ...] if self._raw.size == 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
+            # self._unproc = (
+            #     unproc[None, ...] if self._unproc.size == 0
+            # else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
+            # )
 
-        # Assign processed data to private class attributes, stack average dimension
-        self._raw = raw[None, ...] if self._raw.size == 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
-        self._unproc = (
-            unproc[None, ...] if self._unproc.size == 0 else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
-        )
+        except Exception as exc:
+            self.log.exception(exc, exc_info=True)
+            raise exc

@@ -1,5 +1,4 @@
 """Device interface class."""
-import warnings
 from abc import ABC, abstractmethod
 from ctypes import byref, c_char_p, create_string_buffer
 from logging import Logger
@@ -50,8 +49,7 @@ class SpectrumDevice(ABC):
         if self.card:
             # Raise connection error if card object already exists
             self.log.error("Already connected to card")
-            warnings.warn("Already connected to card")
-            # raise ConnectionError("Already connected to card")
+
         # Only connect, if card is not already defined
         self.card = sp.spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
