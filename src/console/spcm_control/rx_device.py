@@ -4,6 +4,7 @@ import threading
 from ctypes import byref, cast
 from dataclasses import dataclass
 from itertools import compress
+import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
@@ -123,12 +124,14 @@ class RxCard(SpectrumDevice):
         try:
             # if (num_enable := len(self.channel_enable)) < 1 or num_enable > 8:
             if (num_enable := len(self.channel_enable)) != 8:
-                raise ValueError("Not enough channel enable entries: %s/8" % num_enable)
+                raise ValueError("Channel enable list is incomplete: %s/8" % num_enable)
             # Impedance and amplitude configuration lists must match the channel enable list len
             if (num_imp := len(self.impedance_50_ohms)) != num_enable:
-                raise ValueError("Not enough impedance list entries: %s/8" % num_imp)
+                raise ValueError("Channel impedance list is incomplete: %s/8" % num_imp)
             if (num_amp := len(self.max_amplitude)) != num_enable:
-                raise ValueError("Not enough entries in max. amplitude list: %s/8" % num_amp)
+                raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
+            if not np.log2(num_enable).is_integer():
+                raise ValueError("Invalid number of enabled channels.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
