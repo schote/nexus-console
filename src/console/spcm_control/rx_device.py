@@ -1,7 +1,7 @@
 """Implementation of receive card."""
 import logging
 import threading
-from ctypes import byref, cast
+from ctypes import *
 from dataclasses import dataclass
 from itertools import compress
 
@@ -381,18 +381,31 @@ class RxCard(SpectrumDevice):
                             # Get the remaining length after overflow. Then subtract it from the total bytes.
                             index_2 = total_bytes // 2 - index_1
                             
-                            # Numpy array conversation. At the moment does not help for the speed.
-                            #gate_data = np.concatenate([ctonp.as_array(rx_data[index_0 : index_0 + index_1]), 
-                            #                            ctonp.as_array(rx_data[0:index_2])])
-                            gate_data = rx_data[index_0 : index_0 + index_1]
-                            gate_data += rx_data[0:index_2]
+                            # Numpy array conversation. Get the first part of the slice 
+                            offset_bytes_1 =  index_1 * sizeof(c_short)
+                            ptr_to_slice_1 =  cast(addressof(rx_data.contents) + offset_bytes_1, POINTER(c_short))
+                            slice_1        =  np.ctypeslib.as_array(ptr_to_slice_1, ((index_1),))
+                            
+                            # Get the second part of the numpy slice 
+                            offset_bytes_2 =  index_2 * sizeof(c_short)
+                            ptr_to_slice_2 =  cast(addressof(rx_data.contents) + offset_bytes_2, POINTER(c_short))
+                            slice_2        =  np.ctypeslib.as_array(ptr_to_slice_2, ((index_2),))
+                            
+                            # Combine the slices
+                            gate_data      =  np.concatenate((slice_1, slice_2))
+
+                            # Legacy code. Will be removed after successful tests 
+                            #gate_data = rx_data[index_0 : index_0 + index_1]
+                            #gate_data += rx_data[0:index_2]
 
                         else:
                             # If there is no memory position overflow, just get the data.
-                            gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
-                            # Numpy operation. Does not help for the speed at the moment.  
-                            # gate_data = ctonp.as_array(rx_data[index_0 : index_0 + int(total_bytes / 2)])
-                        
+                            # Legacy code. Will be removed after successful tests 
+                            #gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
+                            offset_bytes =  index_0 * sizeof(c_short)
+                            ptr_to_slice =  cast(addressof(rx_data.contents) + offset_bytes, POINTER(c_short))
+                            gate_data    =  np.ctypeslib.as_array(ptr_to_slice, ((total_bytes // 2),))
+
                         # Cut the pretrigger, we do not need it. 
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
