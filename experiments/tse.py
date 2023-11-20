@@ -14,13 +14,13 @@ from scipy.signal import decimate
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct sequence
 seq, traj = sequences.tse.tse_2d.constructor(
     echo_time=20e-3,
-    repetition_time=150e-3,
+    repetition_time=300e-3,
     etl=1,
     gradient_correction=510e-6,
     rf_duration=200e-6,
@@ -34,8 +34,7 @@ seq, traj = sequences.tse.tse_2d.constructor(
 # Plot sequence section
 acq.seq_provider.from_pypulseq(seq)
 seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-# %%
-#fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 640000+150000*30), output_limits=[200, 6000, 6000, 6000])
+fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 640000), output_limits=[200, 6000, 6000, 6000])
 
 
 # %%
@@ -80,39 +79,39 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 
 # %%
 # Load saved data
-# raw = np.load("/home/schote01/spcm-console/2023-11-01-session/2023-11-01-110449-2d_tse_v1/raw_data.npy")
-# ksp = np.mean(raw, axis=0)[0].squeeze()
+raw = np.load("/home/schote01/spcm-console/2023-11-01-session/2023-11-01-110449-2d_tse_v1/raw_data.npy")
+ksp = np.mean(raw, axis=0)[0].squeeze()
 
-# # %%
+# %%
 
-# # First argument data from channel 0 and 1,
-# # second argument contains the phase corrected echo
-# # ksp = np.mean(acq_data.raw, axis=0)[0].squeeze()
+# First argument data from channel 0 and 1,
+# second argument contains the phase corrected echo
+# ksp = np.mean(acq_data.raw, axis=0)[0].squeeze()
 
-# # Use scipy decimate function to reduce k-space readout from 500 to 128 
-# n_pe = ksp.shape[0]
-# ksp_dec = decimate(ksp, int(ksp.shape[1]/ksp.shape[0]), axis=1)
-# window_start = int(ksp_dec.shape[1]/2 - n_pe/2)
-# ksp_dec = ksp_dec[:, window_start:window_start+n_pe]
+# Use scipy decimate function to reduce k-space readout from 500 to 128 
+n_pe = ksp.shape[0]
+ksp_dec = decimate(ksp, int(ksp.shape[1]/ksp.shape[0]), axis=1)
+window_start = int(ksp_dec.shape[1]/2 - n_pe/2)
+ksp_dec = ksp_dec[:, window_start:window_start+n_pe]
 
-# img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp_dec), axes=[-2, -1]))
+img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp_dec), axes=[-2, -1]))
 
-# fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
-# ax[0].imshow(np.abs(ksp_dec), cmap="gray")
-# ax[1].imshow(np.abs(img), cmap="gray")
-# plt.show()
+fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
+ax[0].imshow(np.abs(ksp_dec), cmap="gray")
+ax[1].imshow(np.abs(img), cmap="gray")
+plt.show()
 
 
 
 
 # %%
 
-# acq_data.add_info({
-#     "comment": "Lukas thumb",
-#     "processing": "512 ro samples from DDC, scipy decimation to 64"
-# })
+acq_data.add_info({
+    "comment": "Lukas thumb",
+    "processing": "512 ro samples from DDC, scipy decimation to 64"
+})
 
-# acq_data.write(save_unprocessed=True)
+acq_data.write(save_unprocessed=True)
 
 
 # %%
