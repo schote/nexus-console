@@ -41,8 +41,8 @@ class AcquisitionData:
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
-    # unprocessed_data: np.ndarray | None = None
-    unprocessed_data: list | None = None
+    unprocessed_data: np.ndarray | None = None
+    # unprocessed_data: list | None = None
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
@@ -108,8 +108,9 @@ class AcquisitionData:
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array
             # TODO: Double check, something goes wrong when saving the unprocessed data
-            _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
-            np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
+            # _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
+            # np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
+            np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 

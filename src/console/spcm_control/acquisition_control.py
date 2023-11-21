@@ -95,8 +95,8 @@ class AcquistionControl:
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: np.ndarray = np.array([])
-        # self._unproc: np.ndarray = np.array([])
-        self._unproc: list = []
+        self._unproc: np.ndarray = np.array([])
+        # self._unproc: list = []
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -186,8 +186,8 @@ class AcquistionControl:
         self.log.info("Sequence duration: %s s", sqnc.duration)
 
         self._raw = np.array([])
-        # self._unproc = np.array([])
-        self._unproc = []
+        self._unproc = np.array([])
+        # self._unproc = []
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -227,6 +227,8 @@ class AcquistionControl:
                 time.sleep(parameter.averaging_delay)
 
         try:
+            if self._raw.shape[0] != parameter.num_averages:
+                raise ValueError("Only acquired %s/%s averages", self._raw.shape[0], parameter.num_averages)
             if not self._raw.size > 0:
                 raise ValueError("Error during post processing or readout, no raw data")
         except ValueError as err:
@@ -271,42 +273,34 @@ class AcquistionControl:
         """
         kernel_size = int(2 * parameter.downsampling_rate)
         f_0 = parameter.larmor_frequency
-        ro_start = int(parameter.adc_samples / 2)
         raw_list: list = []
 
         try:
             if not self.rx_card.rx_data:
                 raise IndexError("No gate data available")
-            if not (num_channels := len(self.rx_card.rx_data[0])) >= 1:
-                raise IndexError("No channel data available")
             self.log.debug(
                 "Post processing > Gates: %s; Coils: %s",
                 len(self.rx_card.rx_data),
                 len(self.rx_card.rx_data[0]),
             )
 
-            # We observed different raw data sample sized
-            # Take the very first gate as a reference
-            # Truncate the first samples and set the expected max length to reference - truncation
-            # truncation = 100
-            # num_unprocessed_samples = len(self.rx_card.rx_data[0][0]) - truncation
-            self._unproc.append(self.rx_card.rx_data)
+            # Convert unprocessed data to numpy array
+            unprocessed = np.moveaxis(np.stack(self.rx_card.rx_data, axis=0), source=(0, 1), destination=(1, 0))
+            if self._unproc.size == 0:
+                self._unproc = unprocessed[None, ...]
+            else:
+                self._unproc = np.concatenate((self._unproc, unprocessed[None, ...]), axis=0)
 
             for k, gate in enumerate(self.rx_card.rx_data):
                 raw_channel_list = []
-                # unproc_channel_list = []
 
-                # Process reference signal
-                _ref = (np.array(gate[0]).astype(np.uint16) >> 15).astype(float)
+                _ref = (gate[0, :].astype(np.uint16) >> 15).astype(float)
 
                 self.log.debug(
                     "Gate %s: ADC samples per channel before down-sampling: %s",
                     k,
                     _ref.size,
                 )
-
-                # Append unprocessed data
-                # unproc_channel_list.append(_ref[truncation:num_unprocessed_samples])
 
                 # Calculate start point of readout for adc truncation
                 _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
@@ -316,56 +310,31 @@ class AcquistionControl:
                         "Down-sampled signal size (%s) falls below number of desired adc_samples" % _ref.size
                     )
 
-                # Calculate readout start for truncation
-                ro_start = int(_ref.size / 2 - parameter.adc_samples / 2)
-                _ref = _ref[ro_start : ro_start + parameter.adc_samples]
-
                 # Process channel 0: Read signal data, apply DDC, truncate and append to list
                 # Channel 0 should always exist
-                _tmp = (np.array(gate[0]) << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
+                _tmp = (gate[0, :] << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
 
                 # Append unprocessed data
-                # unproc_channel_list.append(_tmp[truncation:num_unprocessed_samples])
-
                 _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-                _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
 
                 # Append processed data
                 raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
-                if num_channels > 1:
-                    # Read all other channels if more than one channel is enabled
-                    # Separation of channel 0 and all other required, since channel 0 contains digital reference
-                    for channel_idx in range(1, len(gate)):
-                        # Read signal data, apply DDC and append to signal data list
-                        _tmp = (np.array(gate[channel_idx])).astype(np.int16) * self.rx_card.rx_scaling[channel_idx]
-
-                        # Append unprocessed data if flag is set
-                        # unproc_channel_list.append(_tmp[truncation:num_unprocessed_samples])
-
-                        _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-                        ro_start = int(_tmp.size / 2 - parameter.adc_samples / 2)
-                        _tmp = _tmp[ro_start : ro_start + parameter.adc_samples]
-
-                        # Append processed data
-                        raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
+                for ch_gate in list(gate[1:, ...]):
+                    _tmp = ch_gate.astype(np.int16) * self.rx_card.rx_scaling[0]
+                    _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
+                    raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
 
                 # Stack coils in axis 0: [coils, ro]
                 # The unprocessed data has coil dimension + 1
                 # since the reference signal is the first entry of coil dimension
                 raw_list.append(np.stack(raw_channel_list, axis=0))
-                # unproc_list.append(np.stack(unproc_channel_list, axis=0))
 
             # Stack phase encoding in axis 1: [coil, pe, ro]
             raw: np.ndarray = np.stack(raw_list, axis=1)
-            # unproc: np.ndarray = np.stack(unproc_list, axis=1)
 
             # Assign processed data to private class attributes, stack average dimension
             self._raw = raw[None, ...] if self._raw.size == 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
-            # self._unproc = (
-            #     unproc[None, ...] if self._unproc.size == 0
-            # else np.concatenate((self._unproc, unproc[None, ...]), axis=0)
-            # )
 
         except Exception as exc:
             self.log.exception(exc, exc_info=True)
