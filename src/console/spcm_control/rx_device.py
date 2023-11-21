@@ -45,6 +45,10 @@ IMP_SELECT = [
 ]
 
 
+# Set precision for precise gate samples calculation
+getcontext().prec = 28
+
+
 @dataclass
 class RxCard(SpectrumDevice):
     """Implementation of RX device."""
@@ -291,9 +295,6 @@ class RxCard(SpectrumDevice):
         bytes_leftover = 0
         total_leftover = 0
 
-        # Set precision for precise gate samples calculation
-        getcontext().prec = 28
-
         # Start receiver
         self.log.debug("Starting receive")
 
@@ -316,7 +317,7 @@ class RxCard(SpectrumDevice):
                 gate_length = Decimal(str(timestamp_1)) - Decimal(str(timestamp_0))
 
                 # Calculate the number of adc gate sample points (per channel)
-                gate_sample = int(Decimal(str(gate_length)) * (Decimal(str(self.sample_rate)) * Decimal("1e6")))
+                gate_sample = int(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6")))
 
                 self.log.info(
                     "Gate: (%s s, %s s); ADC duration: %s ms ; Gate Sample: % s",
@@ -395,14 +396,8 @@ class RxCard(SpectrumDevice):
                             # Combine the slices
                             gate_data = np.concatenate((slice_1, slice_2))
 
-                            # Legacy code. Will be removed after successful tests
-                            # gate_data = rx_data[index_0 : index_0 + index_1]
-                            # gate_data += rx_data[0:index_2]
-
                         else:
                             # If there is no memory position overflow, just get the data.
-                            # Legacy code. Will be removed after successful tests
-                            # gate_data = rx_data[index_0 : index_0 + int(total_bytes / 2)]
                             offset_bytes = index_0 * sizeof(c_short)
                             ptr_to_slice = cast(addressof(rx_data.contents) + offset_bytes, POINTER(c_short))
                             gate_data = np.ctypeslib.as_array(ptr_to_slice, ((total_bytes // 2),))
@@ -410,14 +405,7 @@ class RxCard(SpectrumDevice):
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-
-                        # Save data to the computer for post processing
-                        _tmp = []
-                        for channel_idx in range(self.num_channels.value):
-                            # Extract channel data, throw pre-trigger
-                            _tmp.append(gate_data[channel_idx :: self.num_channels.value])
-                            # _tmp.append(gate_data)
-                        self.rx_data.append(_tmp)
+                        self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
                         # Most probably we have not filled the whole page. There should be some bytes in the buffer, which are not readable yet.
                         bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value

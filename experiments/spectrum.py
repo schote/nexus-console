@@ -19,7 +19,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 # Construct and plot sequence
 seq = sequences.se_spectrum.constructor(
     echo_time=20e-3,
-    rf_duration=200e-6, 
+    rf_duration=200e-6,
     use_sinc=False
 )
 
@@ -38,7 +38,7 @@ params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=6.5,
     adc_samples=512,
-    num_averages=1,
+    num_averages=10,
 )
 
 # Perform acquisition
@@ -68,14 +68,15 @@ print("Acquisition data shape: ", acq_data.raw.shape)
 
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-ax.plot(fft_freq, np.abs(data_fft))    
+ax.plot(fft_freq, np.abs(data_fft))
 ax.set_xlim([-20e3, 20e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
 
 # %%
-acq_data.write(save_unprocessed=False)
+# acq_data.write(save_unprocessed=False)
+acq_data.write(save_unprocessed=True)
 
 # %%
 del acq
