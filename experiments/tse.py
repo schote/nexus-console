@@ -14,13 +14,13 @@ from scipy.signal import decimate
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct sequence
 seq, traj = sequences.tse.tse_2d.constructor(
     echo_time=20e-3,
-    repetition_time=150e-3,
+    repetition_time=300e-3,
     etl=1,
     gradient_correction=510e-6,
     rf_duration=200e-6,
@@ -34,7 +34,7 @@ seq, traj = sequences.tse.tse_2d.constructor(
 # Plot sequence section
 acq.seq_provider.from_pypulseq(seq)
 seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-#fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 640000), output_limits=[200, 6000, 6000, 6000])
+fig, ax = plot_unrolled_sequence(seq_unrolled, seq_range=(0, 640000), output_limits=[200, 6000, 6000, 6000])
 
 
 # %%
