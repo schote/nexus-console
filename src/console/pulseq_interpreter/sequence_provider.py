@@ -159,19 +159,17 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Calculate delay/dead-time, system dead-time automatically sets delay of an RF block!
-        # Calculate time offset in number of samples
-        samples_delay = int(max(self.system.rf_dead_time, block.dead_time, block.delay) * self.spcm_freq)
-
-        # Zero filling for RF ringdown (maximum of ringdown time defined in RF event and system)
-        ringdown_dur = max(self.system.rf_ringdown_time, block.ringdown_time)
-        num_samgles_ringdown = int(ringdown_dur * self.spcm_freq)
-
-        # Calculate the number of shape sample points
+        # Calculate the number of delay samples before an RF event (and unblanking)
+        num_samples_delay = int(block.delay * self.spcm_freq)
+        # Calculate the number of dead-time samples between unblanking and RF event
+        num_samples_dead_time = int(block.dead_time * self.spcm_freq)
+        # Calculate the number of ringdown samples at the end of RF pulse
+        num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
+        # Calculate the number of RF shape sample points
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[samples_delay : -(num_samgles_ringdown + 1)] = 1
+        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
@@ -193,7 +191,7 @@ class SequenceProvider(Sequence):
         envelope = resample(envelope_scaled, num=num_samples)
 
         # Calculate phase offset of RF according to total sample count
-        carrier_phase_samples = self.sample_count + samples_delay - num_samples_rf_start
+        carrier_phase_samples = self.sample_count + num_samples_delay - num_samples_rf_start
         carrier_phase_offset = carrier_phase_samples * self.spcm_dwell_time
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
@@ -203,12 +201,13 @@ class SequenceProvider(Sequence):
 
         try:
             # Calculate position indices for unrolled RF event
-            idx_signal_end = samples_delay + num_samples
+            idx_signal_start = num_samples_delay + num_samples_dead_time
+            idx_signal_end = idx_signal_start + num_samples
             # Check if end index of unrolled signal exceeds available array dimension
             if idx_signal_end > unroll_arr.size:
                 raise IndexError("Unrolled RF event exceeds number of block samples")
             # Write unrolled RF event in place
-            unroll_arr[samples_delay:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
+            unroll_arr[idx_signal_start : idx_signal_end] = (envelope * carrier).real.astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
             raise err
