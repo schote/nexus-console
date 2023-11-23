@@ -163,8 +163,10 @@ class SequenceProvider(Sequence):
             raise err
 
         # Calculate the number of delay samples before an RF event (and unblanking)
-        num_samples_delay = int(block.delay * self.spcm_freq)
+        # Dead-time is automatically set as delay! Delay accounts for start of RF event
+        num_samples_delay = int(max(block.dead_time, block.delay) * self.spcm_freq)
         # Calculate the number of dead-time samples between unblanking and RF event
+        # Delay - dead-time samples account for start of unblanking
         num_samples_dead_time = int(block.dead_time * self.spcm_freq)
         # Calculate the number of ringdown samples at the end of RF pulse
         num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
@@ -172,7 +174,7 @@ class SequenceProvider(Sequence):
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[num_samples_delay : -(num_samgles_ringdown + 1)] = 1
+        unblanking[num_samples_delay - num_samples_dead_time: -(num_samgles_ringdown + 1)] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
@@ -204,13 +206,12 @@ class SequenceProvider(Sequence):
 
         try:
             # Calculate position indices for unrolled RF event
-            idx_signal_start = num_samples_delay + num_samples_dead_time
-            idx_signal_end = idx_signal_start + num_samples
+            idx_signal_end = num_samples_delay + num_samples
             # Check if end index of unrolled signal exceeds available array dimension
             if idx_signal_end > unroll_arr.size:
                 raise IndexError("Unrolled RF event exceeds number of block samples")
             # Write unrolled RF event in place
-            unroll_arr[idx_signal_start : idx_signal_end] = (envelope * carrier).real.astype(np.int16)
+            unroll_arr[num_samples_delay : idx_signal_end] = (envelope * carrier).real.astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
             raise err

@@ -27,3 +27,8 @@ provider.from_pypulseq(seq)
 # %%
 f_0 = 2.031e6
 sqnc: UnrolledSequence = provider.unroll_sequence(f_0)
+
+# %%
+provider.plot_unrolled(time_range=[0, 50e-6])
+
+# %%
