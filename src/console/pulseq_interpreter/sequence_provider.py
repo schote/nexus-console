@@ -7,6 +7,8 @@ from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
+import matplotlib
+import matplotlib.pyplot as plt
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
@@ -86,6 +88,7 @@ class SequenceProvider(Sequence):
 
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
+        self._seq: np.ndarray | None = None
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
@@ -444,15 +447,15 @@ class SequenceProvider(Sequence):
             if larmor_freq > 10e6:
                 raise ValueError(f"Larmor frequency is above 10 MHz: {larmor_freq*1e-6} MHz")
             self.larmor_freq = larmor_freq
+
             # Check if sequence has block events
             if not len(self.block_events) > 0:
                 raise ValueError("No block events found")
 
             # Sequence timing check
-            # TODO: Reactivate timing check
-            # check, seq_err = self.check_timing()
-            # if not check:
-            #     raise ValueError(f"Sequence timing check failed: {seq_err}")
+            check, seq_err = self.check_timing()
+            if not check:
+                raise ValueError(f"Sequence timing check failed: {seq_err}")
 
             self._check_offsets(grad_offset)
 
@@ -527,6 +530,9 @@ class SequenceProvider(Sequence):
             len(blocks),
         )
 
+        # Save unrolled sequence in class
+        self._seq = np.concatenate(_seq)
+
         return UnrolledSequence(
             seq=_seq,
             adc_gate=_adc,
@@ -540,3 +546,57 @@ class SequenceProvider(Sequence):
             duration=self.duration()[0],
             adc_count=adc_count,
         )
+
+    def plot_unrolled(self, time_range: tuple[int] = (0, -1)) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+        """Plot unrolled waveforms for replay.
+
+        Parameters
+        ----------
+        time_range, default = (0, -1)
+            Specify the time range of the plot in seconds.
+            If the second value is smaller then the first or -1, the whole sequence is plotted.
+
+        Returns
+        -------
+            Matplotlib figure and axis
+        """
+        fig, axis = plt.subplots(5, 1, figsize=(16, 9))
+
+        seq_start = int(time_range[0] * self.spcm_freq)
+        seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
+        samples = np.arange(self.sample_count, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
+
+        rf_signal = self._seq[0::4][seq_start:seq_end]
+        gx_signal = self._seq[1::4][seq_start:seq_end]
+        gy_signal = self._seq[2::4][seq_start:seq_end]
+        gz_signal = self._seq[3::4][seq_start:seq_end]
+
+        # Get digital signals
+        adc_gate = gx_signal.astype(np.uint16) >> 15
+        unblanking = gz_signal.astype(np.uint16) >> 15
+
+        # Get gradient waveforms
+        rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
+        gx_signal = (np.uint16(gx_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+        gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+        gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+
+        axis[0].plot(samples, self.output_limits[0] * rf_signal)
+        axis[1].plot(samples, self.output_limits[1] * gx_signal)
+        axis[2].plot(samples, self.output_limits[2] * gy_signal)
+        axis[3].plot(samples, self.output_limits[3] * gz_signal)
+        axis[4].plot(samples, adc_gate, label="ADC gate")
+        axis[4].plot(samples, unblanking, label="RF unblanking")
+
+        axis[0].set_ylabel("RF [mV]")
+        axis[1].set_ylabel("Gx [mV]")
+        axis[2].set_ylabel("Gy [mV]")
+        axis[3].set_ylabel("Gz [mV]")
+        axis[4].set_ylabel("Digital")
+        axis[4].legend(loc="upper right")
+
+        _ = [ax.grid(axis="x") for ax in axis]
+
+        axis[4].set_xlabel("Time [ms]")
+
+        return fig, axis
