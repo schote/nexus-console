@@ -104,8 +104,8 @@ class AcquistionControl:
             self.tx_card.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
-        self.log.info("Measurement cards disconnected.")
-        self.log.info("--- Acquisition control terminated\n\n")
+        self.log.info("Measurement cards disconnected")
+        self.log.info("\n--- Acquisition control terminated\n\n")
 
     def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid

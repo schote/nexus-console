@@ -13,7 +13,7 @@ import console.utilities.sequences as sequences
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.WARNING, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct and plot sequence
@@ -38,7 +38,7 @@ params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=6.5,
     adc_samples=512,
-    num_averages=10,
+    num_averages=1,
 )
 
 # Perform acquisition
