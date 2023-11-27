@@ -12,7 +12,7 @@ import yaml
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Opts, Sequence, SequenceProvider
-from console.spcm_control.ddc import apply_ddc
+from console.spcm_control import ddc
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
@@ -185,9 +185,10 @@ class AcquistionControl:
         timeout = 5 + sqnc.duration
         self.log.info("Sequence duration: %s s", sqnc.duration)
 
-        self._raw = np.array([])
-        self._unproc = np.array([])
-        # self._unproc = []
+        # self._raw = np.array([])
+        # self._unproc = np.array([])
+        self._unproc = []
+        self._raw = []
 
         for k in range(parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
@@ -227,10 +228,16 @@ class AcquistionControl:
                 time.sleep(parameter.averaging_delay)
 
         try:
-            if self._raw.shape[0] != parameter.num_averages:
-                raise ValueError("Only acquired %s/%s averages", self._raw.shape[0], parameter.num_averages)
-            if not self._raw.size > 0:
+            # if not self._raw.size > 0:
+            if not len(self._raw) > 0:
                 raise ValueError("Error during post processing or readout, no raw data")
+            # if len(self._raw) != parameter.num_averages:
+            if not all(gate.shape[0] == parameter.num_averages for gate in self._raw):
+                raise ValueError(
+                    "Could not acquire all averages. Average dimensions: %s/%s",
+                    [gate.shape[0] for gate in self._raw],
+                    parameter.num_averages,
+                )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -250,92 +257,73 @@ class AcquistionControl:
                 )
 
         return AcquisitionData(
-            raw=self._raw,
-            unprocessed_data=self._unproc,
+            raw=self._raw if len(self._raw) > 1 else self._raw[0],
+            unprocessed_data=self._unproc if len(self._unproc) > 1 else self._unproc[0],
             sequence=self.seq_provider,
             storage_path=self.session_path,
             device_config=self.config,
-            # Dwell time of down sampled signal: 1 / (f_spcm / kernel_size)
-            dwell_time=int(2 * parameter.downsampling_rate) / self.f_spcm,
+            dwell_time=parameter.decimation / self.f_spcm,
             acquisition_parameters=parameter,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
-        """Perform data post processing.
+        """Proces acquired NMR data.
 
-        Apply DDC what contains demodulation, down-sampling and filtering for each gate and coil array.
-        This step further includes the post-processing of the reference signal and phase correction.
+        Data is sorted according to readout size which might vary between different reout windows.
+        Unprocessed and raw data are stored in class attributes _raw and _unproc.
+        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.
+
+        Post processing contains the following steps per readout sample size:
+        (1) Extraction of reference signal and scaling to float values [mV]
+        (2) Concatenate reference data and signal data in coil dimensions
+        (3) Demodulation along readout dimensions
+        (4) Decimation along readout dimension
+        (5) Phase correction with reference signal
+
+        Dimensions: [averages, coils, phase encoding, readout]
+
+        Reference signal is stored in the last entry of the coil dimension.
 
         Parameters
         ----------
         parameter
-            Acquisition parameters
+            Acquisition parameter
         """
-        kernel_size = int(2 * parameter.downsampling_rate)
-        f_0 = parameter.larmor_frequency
-        raw_list: list = []
+        grouped_gates = {samples: [] for samples in np.unique([data.shape[-1] for data in self.rx_card.rx_data])}
+        for data in self.rx_card.rx_data:
+            grouped_gates[data.shape[-1]].append(data)
 
-        try:
-            if not self.rx_card.rx_data:
-                raise IndexError("No gate data available")
-            self.log.debug(
-                "Post processing > Gates: %s; Coils: %s",
-                len(self.rx_card.rx_data),
-                len(self.rx_card.rx_data[0]),
-            )
+        gates = [np.stack(group, axis=1) for group in grouped_gates.values()]
+        raw_size = len(self._raw)
 
-            # Convert unprocessed data to numpy array
-            unprocessed = np.moveaxis(np.stack(self.rx_card.rx_data, axis=0), source=(0, 1), destination=(1, 0))
-            if self._unproc.size == 0:
-                self._unproc = unprocessed[None, ...]
+        for k, data in enumerate(gates):
+            # Extract digital reference signal from channel 0
+            _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
+
+            # Remove digital signal from channel 0
+            data[0, ...] = data[0, ...] << 1
+            data = data.astype(np.int16) * self.rx_card.rx_scaling[0]
+
+            # Stack signal and reference in coil dimension
+            data = np.concatenate((data, _ref), axis=0)
+
+            # Append unprocessed data without post processing (last coil dimension entry contains reference)
+            if raw_size > 0:
+                np.concatenate((self._unproc[k], data[None, ...]), axis=0)
             else:
-                self._unproc = np.concatenate((self._unproc, unprocessed[None, ...]), axis=0)
+                self._unproc.append(data[None, ...])
 
-            for k, gate in enumerate(self.rx_card.rx_data):
-                raw_channel_list = []
+            # Demodulation and decimation
+            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
-                _ref = (gate[0, :].astype(np.uint16) >> 15).astype(float)
+            # data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
+            data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=4)
 
-                self.log.debug(
-                    "Gate %s: ADC samples per channel before down-sampling: %s",
-                    k,
-                    _ref.size,
-                )
+            # Apply phase correction
+            data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
 
-                # Calculate start point of readout for adc truncation
-                _ref = apply_ddc(_ref, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-
-                if _ref.size < parameter.adc_samples:
-                    raise ValueError(
-                        "Down-sampled signal size (%s) falls below number of desired adc_samples" % _ref.size
-                    )
-
-                # Process channel 0: Read signal data, apply DDC, truncate and append to list
-                # Channel 0 should always exist
-                _tmp = (gate[0, :] << 1).astype(np.int16) * self.rx_card.rx_scaling[0]
-
-                # Append unprocessed data
-                _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-
-                # Append processed data
-                raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-
-                for ch_gate in list(gate[1:, ...]):
-                    _tmp = ch_gate.astype(np.int16) * self.rx_card.rx_scaling[0]
-                    _tmp = apply_ddc(_tmp, kernel_size=kernel_size, f_0=f_0, f_spcm=self.f_spcm)
-                    raw_channel_list.append(_tmp * np.exp(-1j * np.angle(_ref)))
-
-                # Stack coils in axis 0: [coils, ro]
-                # The unprocessed data has coil dimension + 1
-                # since the reference signal is the first entry of coil dimension
-                raw_list.append(np.stack(raw_channel_list, axis=0))
-
-            # Stack phase encoding in axis 1: [coil, pe, ro]
-            raw: np.ndarray = np.stack(raw_list, axis=1)
-
-            # Assign processed data to private class attributes, stack average dimension
-            self._raw = raw[None, ...] if self._raw.size == 0 else np.concatenate((self._raw, raw[None, ...]), axis=0)
-
-        except Exception as exc:
-            self.log.exception(exc, exc_info=True)
-            raise exc
+            # Append to global raw data list
+            if raw_size > 0:
+                np.concatenate((self._raw[k], data[None, ...]), axis=0)
+            else:
+                self._raw.append(data[None, ...])

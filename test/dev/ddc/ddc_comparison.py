@@ -51,8 +51,9 @@ def filter_cic_fir_comp(signal, decimation, number_of_stages):
 def filter_moving_average(signal, decimation: int = 100, overlap: int = 4):
     # Calculate kernel size
     kernel_size = int(overlap * decimation)
-    # Exponential function for resampling, don't use [-1, 1] because it leads to a division by zero
-    kernel_space = np.linspace(-1, 1, kernel_size) + 1e-20
+    # Exponential function for resampling
+    # To prevent division by zero for [-1, 1, 0], noise at the scale of 1e-20 is added
+    kernel_space = np.linspace(-1, 1, kernel_size) + np.random.rand(kernel_size) * 1e-20
     # Define kernel
     kernel = np.exp(-1 / (1 - kernel_space**2)) * np.sin(kernel_space * 2.073 * np.pi) / kernel_space
     # Integral for normalization
@@ -174,7 +175,7 @@ pd.DataFrame().from_dict(
 
 comparison_calls = {
     "Moving Average": "filter_moving_average(sig, decimation=decimation, overlap=4)",
-    "Moving Average Rect": "filter_moving_average_std(sig, decimation=decimation, overlap=4)",
+    "Moving Average Rect": "filter_moving_average_rect(sig, decimation=decimation, overlap=4)",
     "CIC": "filter_cic(sig, decimation=decimation, number_of_stages=5)",
     "CIC Compensated": "filter_cic_fir_comp(sig, decimation=decimation, number_of_stages=5)",
     "FIR": "filter_fir(signal=sig, decimation=decimation)",

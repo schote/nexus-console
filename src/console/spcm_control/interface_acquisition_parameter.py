@@ -17,11 +17,10 @@ class AcquisitionParameter:
     """Parameters which define an acquisition."""
 
     larmor_frequency: float
-    adc_samples: int = 500
     b1_scaling: float = 1.0
     gradient_offset: Dimensions = Dimensions(0, 0, 0)
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
-    downsampling_rate: int = 200
+    decimation: int = 200
     num_averages: int = 1
     averaging_delay: float = 0.0
 

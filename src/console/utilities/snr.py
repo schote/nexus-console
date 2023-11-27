@@ -1,3 +1,4 @@
+"""Signal-to-noise ratio (SNR) calculation."""
 import numpy as np
 
 
