@@ -17,16 +17,17 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-seq = sequences.se_spectrum.constructor(
-    echo_time=20e-3,
-    rf_duration=200e-6,
-    use_sinc=False
-)
+# seq = sequences.se_spectrum.constructor(
+#     echo_time=20e-3,
+#     rf_duration=200e-6,
+#     use_sinc=False
+# )
+seq = sequences.se_spectrum_dl.constructor(adc_noise_duration=10e-3)
 
 # Optional:
-acq.seq_provider.from_pypulseq(seq)
-seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-fig, ax = plot_unrolled_sequence(seq_unrolled)
+# acq.seq_provider.from_pypulseq(seq)
+# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+# fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
@@ -37,7 +38,7 @@ f_0 = 2036805.59375   # Berlin system
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=6.5,
-    adc_samples=512,
+    decimation=200,
     num_averages=1,
 )
 
@@ -46,7 +47,8 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 
 # First argument data from channel 0 and 1,
 # second argument contains the phase corrected echo
-data = np.mean(acq_data.raw, axis=0)[0].squeeze()
+# data = np.mean(acq_data.raw, axis=0)[0].squeeze()
+data = np.mean(acq_data.raw[0], axis=0)[0].squeeze()
 
 # FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
@@ -64,7 +66,8 @@ acq_data.add_info({
 
 print(f"Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {max_spec}")
-print("Acquisition data shape: ", acq_data.raw.shape)
+# print("Acquisition data shape: ", acq_data.raw.shape)
+print("Acquisition data shape: ", [data.shape for data in acq_data.raw])
 
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))

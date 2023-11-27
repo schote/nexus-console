@@ -2,13 +2,13 @@
 import logging
 from types import SimpleNamespace
 
+import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
 from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
-import matplotlib
-import matplotlib.pyplot as plt
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
@@ -174,7 +174,7 @@ class SequenceProvider(Sequence):
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[num_samples_delay - num_samples_dead_time: -(num_samgles_ringdown + 1)] = 1
+        unblanking[num_samples_delay - num_samples_dead_time : -(num_samgles_ringdown + 1)] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
@@ -211,7 +211,7 @@ class SequenceProvider(Sequence):
             if idx_signal_end > unroll_arr.size:
                 raise IndexError("Unrolled RF event exceeds number of block samples")
             # Write unrolled RF event in place
-            unroll_arr[num_samples_delay : idx_signal_end] = (envelope * carrier).real.astype(np.int16)
+            unroll_arr[num_samples_delay:idx_signal_end] = (envelope * carrier).real.astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
             raise err
