@@ -22,7 +22,7 @@ RxCard: !RxCard
   # Enable the receive channels
   channel_enable: [1, 0, 0, 0, 0, 0, 0, 0]
   # Set the max. amplitude per channel, list length must at least match the number of enabled channels
-  max_amplitude: [200, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
+  max_amplitude: [200, 200, 200, 200, 1000, 1000, 1000, 1000]
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
   # ATTENTION: At the moment only 1 or 2 channels are possible.
   # > Driver complains if more than 2 channels are enabled.
@@ -39,7 +39,8 @@ SequenceProvider: !SequenceProvider
   # Gradient efficiency in T/m
   gradient_efficiency: [0.451e-3, 0.4e-3, 0.37e-3]  # Leiden values
   # Gradient power amplifier in V/A
-  gpa_gain: [4.7, 4.7, 4.7]
+  # gpa_gain: [4.7, 4.7, 4.7]
+  gpa_gain: [1.0, 1.0, 1.0]
 
   # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
   # How to correct this properly, independent of the pulseq sequence?
