@@ -17,12 +17,12 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-# seq = sequences.se_spectrum.constructor(
-#     echo_time=20e-3,
-#     rf_duration=200e-6,
-#     use_sinc=False
-# )
-seq = sequences.se_spectrum_dl.constructor(adc_noise_duration=10e-3)
+seq = sequences.se_spectrum.constructor(
+    echo_time=12e-3,
+    rf_duration=200e-6,
+    use_sinc=False
+)
+# seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=2e-3, adc_noise_duration=6e-3)
 
 # Optional:
 # acq.seq_provider.from_pypulseq(seq)
@@ -31,15 +31,18 @@ seq = sequences.se_spectrum_dl.constructor(adc_noise_duration=10e-3)
 
 # %%
 # Larmor frequency:
-f_0 = 2036805.59375   # Berlin system
+# f_0 = 2038555   # Berlin system
+f_0 = 2037805
 # f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=6.5,
-    decimation=200,
-    num_averages=1,
+    b1_scaling=2.2, # 8 cm phantom
+    # b1_scaling=6.3,
+    decimation=100,
+    # num_averages=10,
+    # averaging_delay=1,
 )
 
 # Perform acquisition

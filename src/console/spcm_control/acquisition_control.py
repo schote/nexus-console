@@ -286,7 +286,8 @@ class AcquistionControl:
         parameter
             Acquisition parameter
         """
-        grouped_gates = {samples: [] for samples in np.unique([data.shape[-1] for data in self.rx_card.rx_data])}
+        readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
+        grouped_gates = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 
@@ -306,7 +307,7 @@ class AcquistionControl:
 
             # Append unprocessed data without post processing (last coil dimension entry contains reference)
             if raw_size > 0:
-                np.concatenate((self._unproc[k], data[None, ...]), axis=0)
+                self._unproc[k] = np.concatenate((self._unproc[k], data[None, ...]), axis=0)
             else:
                 self._unproc.append(data[None, ...])
 
@@ -321,6 +322,6 @@ class AcquistionControl:
 
             # Append to global raw data list
             if raw_size > 0:
-                np.concatenate((self._raw[k], data[None, ...]), axis=0)
+                self._raw[k] = np.concatenate((self._raw[k], data[None, ...]), axis=0)
             else:
                 self._raw.append(data[None, ...])
