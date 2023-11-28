@@ -94,9 +94,8 @@ class AcquistionControl:
         self.unrolled_sequence: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
-        self._raw: np.ndarray = np.array([])
-        self._unproc: np.ndarray = np.array([])
-        # self._unproc: list = []
+        self._raw: list[np.ndarray] = []
+        self._unproc: list[np.ndarray] = []
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -185,8 +184,6 @@ class AcquistionControl:
         timeout = 5 + sqnc.duration
         self.log.info("Sequence duration: %s s", sqnc.duration)
 
-        # self._raw = np.array([])
-        # self._unproc = np.array([])
         self._unproc = []
         self._raw = []
 
