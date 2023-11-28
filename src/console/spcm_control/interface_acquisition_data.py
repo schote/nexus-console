@@ -42,15 +42,9 @@ class AcquisitionData:
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
     unprocessed_data: np.ndarray | list | None = None
-    # unprocessed_data: list | None = None
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
-
-    is_stored: bool = False
-    """Status flag which indicates if data has already been stored or not.
-    Must not be initialized, flag is cleared again in ``__post_init__`` method.
-    """
 
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
