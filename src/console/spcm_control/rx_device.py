@@ -5,6 +5,7 @@ from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
+import time
 
 import numpy as np
 
@@ -240,7 +241,7 @@ class RxCard(SpectrumDevice):
         # >> Define RX data buffer
         # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
-        rx_size = rx_notify.value * 400
+        rx_size = rx_notify.value * 1600
         rx_buffer_size = sp.uint64(rx_size)
 
         rx_buffer = create_dma_buffer(rx_buffer_size.value)
@@ -354,6 +355,9 @@ class RxCard(SpectrumDevice):
                 self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
+                    # Wait for the page to be available
+                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
+                    
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(
                         self.card,
@@ -423,9 +427,7 @@ class RxCard(SpectrumDevice):
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
 
-                    # Wait again for the next page to be available
-                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
-
+                    
         self.log.debug("Card operation stopped")
 
     def get_status(self) -> int:
