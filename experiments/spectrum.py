@@ -13,16 +13,16 @@ import console.utilities.sequences as sequences
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
 
 # %%
 # Construct and plot sequence
-seq = sequences.se_spectrum.constructor(
-    echo_time=12e-3,
-    rf_duration=200e-6,
-    use_sinc=False
-)
-# seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=2e-3, adc_noise_duration=6e-3)
+# seq = sequences.se_spectrum.constructor(
+#     echo_time=12e-3,
+#     rf_duration=200e-6,
+#     use_sinc=False
+# )
+seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=5e-3, adc_noise_duration=12e-3)
 
 # Optional:
 # acq.seq_provider.from_pypulseq(seq)
@@ -40,7 +40,7 @@ params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=2.2, # 8 cm phantom
     # b1_scaling=6.3,
-    decimation=100,
+     decimation=100,
     # num_averages=10,
     # averaging_delay=1,
 )
@@ -79,7 +79,6 @@ ax.set_xlim([-20e3, 20e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
-
 # %%
 # acq_data.write(save_unprocessed=False)
 acq_data.write(save_unprocessed=True)
