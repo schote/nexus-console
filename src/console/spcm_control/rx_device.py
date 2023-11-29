@@ -241,9 +241,9 @@ class RxCard(SpectrumDevice):
         # >> Define RX data buffer
         # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
-        
+
         # Buffer size set to maximum. Todo check one ADC window is not exceeeding the limit
-        rx_size = sp.uint64(1024**3) 
+        rx_size = 1024**3
         rx_buffer_size = sp.uint64(rx_size)
 
         rx_buffer = create_dma_buffer(rx_buffer_size.value)

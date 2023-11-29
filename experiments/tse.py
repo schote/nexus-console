@@ -14,7 +14,7 @@ from scipy.signal import decimate
 # %%
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
+acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Construct sequence
@@ -22,11 +22,12 @@ seq, traj = sequences.tse.tse_2d.constructor(
     echo_time=20e-3,
     repetition_time=600e-3,
     etl=1,
-    gradient_correction=300e-6,
+    gradient_correction=0,
     rf_duration=200e-6,
     ro_bandwidth=20e3,
-    fov=Dimensions(x=220e-3, y=220e-3, z=225e-3),
+    fov=Dimensions(x=120e-3, y=120e-3, z=120e-3),
     n_enc=Dimensions(x=64, y=64, z=0)
+    # n_enc=Dimensions(x=32, y=32, z=0)
     # n_enc=Dimensions(x=128, y=128, z=0)
 )
 
@@ -40,7 +41,7 @@ seq, traj = sequences.tse.tse_2d.constructor(
 # %%
 # Larmor frequency:
 # f_0 = 1964390.0 # leiden
-f_0 = 2037805
+f_0 = 2040005
 
 # Define acquisition parameters
 params = AcquisitionParameter(
@@ -49,7 +50,7 @@ params = AcquisitionParameter(
     # b1_scaling=6.5,   # berlin
     # b1_scaling=10.0,     # scope
     b1_scaling=2.2,
-    decimation=200,
+    decimation=400,
     fov_scaling=Dimensions(
         # Ball phantom
         # x=1.,
@@ -67,15 +68,16 @@ params = AcquisitionParameter(
         # x=1.,
         # y=1.,
         # z=1.,
+
         # Ball Berlin
-        x=0.5,
-        y=0.5,
-        z=0.5
+        x=0.35,
+        y=0.35,
+        z=0.
     ),
     gradient_offset=Dimensions(0, 0, 0),
-    num_averages=1,
-    # num_averages=10,
-    # averaging_delay=2,
+    # num_averages=1,
+    num_averages=10,
+    averaging_delay=1,
 )
 
 # Perform acquisition
@@ -111,8 +113,7 @@ plt.show()
 # %%
 
 acq_data.add_info({
-    "comment": "Lukas thumb",
-    "processing": "512 ro samples from DDC, scipy decimation to 64"
+    "subject": "8 cm sphere CuSO4 1.5g/L"
 })
 
 acq_data.write(save_unprocessed=True)
