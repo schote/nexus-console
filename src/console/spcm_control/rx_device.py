@@ -5,7 +5,6 @@ from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
-import time
 
 import numpy as np
 
@@ -359,7 +358,7 @@ class RxCard(SpectrumDevice):
                 while not self.is_running.is_set():
                     # Wait for the page to be available
                     sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
-                    
+
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(
                         self.card,
@@ -429,7 +428,7 @@ class RxCard(SpectrumDevice):
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
 
-                    
+
         self.log.debug("Card operation stopped")
 
     def get_status(self) -> int:
