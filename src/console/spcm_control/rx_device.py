@@ -240,7 +240,9 @@ class RxCard(SpectrumDevice):
         # >> Define RX data buffer
         # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
-        rx_size = rx_notify.value * 400
+
+        # Buffer size set to maximum. Todo check one ADC window is not exceeeding the limit
+        rx_size = 1024**3
         rx_buffer_size = sp.uint64(rx_size)
 
         rx_buffer = create_dma_buffer(rx_buffer_size.value)
@@ -354,6 +356,9 @@ class RxCard(SpectrumDevice):
                 self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
+                    # Wait for the page to be available
+                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
+
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(
                         self.card,
@@ -423,8 +428,6 @@ class RxCard(SpectrumDevice):
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
 
-                    # Wait again for the next page to be available
-                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
 
         self.log.debug("Card operation stopped")
 

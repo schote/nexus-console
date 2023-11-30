@@ -17,7 +17,7 @@ log = logging.getLogger("AcqData")
 class AcquisitionData:
     """Parameters which define an acquisition."""
 
-    raw: np.ndarray
+    raw: np.ndarray | list
     """Demodulated, down-sampled and filtered complex-valued raw MRI data.
     The raw data array has following dimensions:[averages, coils, phase encoding, readout]"""
 
@@ -41,16 +41,10 @@ class AcquisitionData:
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
-    unprocessed_data: np.ndarray | None = None
-    # unprocessed_data: list | None = None
+    unprocessed_data: np.ndarray | list | None = None
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
-
-    is_stored: bool = False
-    """Status flag which indicates if data has already been stored or not.
-    Must not be initialized, flag is cleared again in ``__post_init__`` method.
-    """
 
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
@@ -62,7 +56,7 @@ class AcquisitionData:
             {
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
-                "raw_dimensions": self.raw.shape,
+                "raw_dimensions": [_raw.shape for _raw in self.raw] if isinstance(self.raw, list) else self.raw.shape,
                 # "unprocessed_dimensions": self.unprocessed_data.shape if self.unprocessed_data is not None else None,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
@@ -103,14 +97,19 @@ class AcquisitionData:
             log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
-        np.save(f"{acq_folder_path}raw_data.npy", self.raw)
+        if isinstance(self.raw, list):
+            for k, data in enumerate(self.raw):
+                np.save(f"{acq_folder_path}raw_data_{k}.npy", data)
+        else:
+            np.save(f"{acq_folder_path}raw_data.npy", self.raw)
 
         if save_unprocessed and self.unprocessed_data is not None:
-            # Save raw data as numpy array
-            # TODO: Double check, something goes wrong when saving the unprocessed data
-            # _tmp = np.asanyarray(self.unprocessed_data, dtype=object)
-            # np.save(f"{acq_folder_path}unprocessed_data.npy", _tmp, allow_pickle=True)
-            np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            # Save raw data as numpy array(s)
+            if isinstance(self.unprocessed_data, list):
+                for k, data in enumerate(self.unprocessed_data):
+                    np.save(f"{acq_folder_path}unprocessed_data_{k}.npy", data)
+            else:
+                np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 

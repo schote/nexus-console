@@ -103,6 +103,9 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
     with open(file_path, "rb") as file:
         config = yaml.load(file, Loader=Loader)  # noqa: S506
 
+    # Set output limits of sequence provider to the maximum amplitudes from transmit card
+    config["SequenceProvider"].output_limits = config["TxCard"].max_amplitude
+
     return (config["SequenceProvider"], config["TxCard"], config["RxCard"])
 
 

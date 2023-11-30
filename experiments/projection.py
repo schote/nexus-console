@@ -22,12 +22,12 @@ samples = 100
 
 # Construct and plot sequence
 seq = sequences.se_projection.constructor(
-    fov=0.24, 
+    fov=0.24,
     readout_bandwidth=bw,
     gradient_correction=300e-6,  #690e-6,
     num_samples=samples,
     echo_time=20e-3,
-    rf_duration=200e-6, 
+    rf_duration=200e-6,
     use_sinc=False,
     channel="y"
 )
@@ -39,19 +39,20 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
-# f_0 = 2035529.0
-f_0 = 1964390.0
+f_0 = 2037805   # Berlin
+# f_0 = 1964390.0 # Leiden
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.693,
+    # b1_scaling=2.693,
+    b1_scaling=2.2,
     # adc_samples=2000,
-    adc_samples=500,
+    decimation=200,
     fov_scaling=Dimensions(
-        x=1.,
-        y=1.,
-        z=1.,
+        x=.5,
+        y=.5,
+        z=.5,
     ),
     gradient_offset=Dimensions(0, 0, 0),
     num_averages=5,
@@ -69,19 +70,19 @@ data = np.squeeze(acq_data.raw)
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data), axis=-1))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data_fft.shape[-1], acq_data.dwell_time))
 
-# max_spec = np.max(np.abs(data_fft))
+max_spec = np.max(np.abs(data_fft))
 # f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 # print("True f0 [Hz]: ", f_0 - f_0_offset)
 
 # print("Acquisition data shape: ", acq_data.raw.shape)
 
-# # Plot spectrum
-# fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-# ax.plot(fft_freq, np.abs(data_fft)) 
-# ax.set_xlim([-20e3, 20e3])
-# ax.set_ylim([0, max_spec*1.05])
-# ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
-# _ = ax.set_xlabel("Frequency [Hz]")
+# Plot spectrum
+fig, ax = plt.subplots(1, 1, figsize=(10, 6))
+ax.plot(fft_freq, np.abs(np.mean(data_fft, axis=0)))
+ax.set_xlim([-20e3, 20e3])
+ax.set_ylim([0, max_spec*1.05])
+ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
+_ = ax.set_xlabel("Frequency [Hz]")
 
 
 # %%
@@ -92,7 +93,7 @@ for k in range(data_fft.shape[0]):
 
 # plt.plot(fft_freq, np.degrees(np.angle(data_fft)))
 
-ax.set_xlim([-1e3, 1e3])
+ax.set_xlim([-50e3, 50e3])
 
 
 # %%
