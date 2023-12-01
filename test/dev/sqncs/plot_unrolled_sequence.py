@@ -22,7 +22,7 @@ provider = SequenceProvider(rf_to_mvolt=0.005, gpa_gain=[1.0, 1.0, 1.0], gradien
 #     rf_duration=200e-6,
 #     use_sinc=False
 # )
-seq = sequences.se_spectrum_dl.constructor()
+seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, adc_noise_duration=100e-3)
 provider.from_pypulseq(seq)
 
 # %%

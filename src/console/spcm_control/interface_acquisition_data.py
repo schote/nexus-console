@@ -58,6 +58,7 @@ class AcquisitionData:
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
                 "raw_dimensions": [_raw.shape for _raw in self.raw] if isinstance(self.raw, list) else self.raw.shape,
                 # "unprocessed_dimensions": self.unprocessed_data.shape if self.unprocessed_data is not None else None,
+                "dwell_time": self.dwell_time,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": seq_name,
