@@ -2,29 +2,33 @@
 import numpy as np
 
 
-def signal_to_noise_ratio(signal: np.ndarray, noise_threshold: float = 0.2, use_rms: bool = False) -> float:
-    """Calculate the signal to noise ratio.
+def signal_to_noise_ratio(signal: np.ndarray, dwell_time: float, window_width: float | int = 3000) -> float:
+    """Calculate the signal to noise ratio in dB.
 
     Parameters
     ----------
     signal
-        Signal to be evaluated
-    noise_threshold, optional
-        Threshold for noise level, by default 0.2
-    use_rms, optional
-        Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False
+        Centered spectrum of the acquired signal
+    dwell_time
+        Dwell-time of the acquired signal
+    window_width
+        Estimated window width of the signal in Hz
 
     Returns
     -------
-        SNR value
+        Signal to noise ratio in dB
     """
-    # Calculte signal by thresholding
-    signal_win = signal[np.abs(signal) > noise_threshold * np.max(np.abs(signal))]
-    noise_win = signal[np.abs(signal) <= noise_threshold * np.max(np.abs(signal))]
+    peak = np.max(np.abs(signal[..., :]))
+    fft_freq = np.fft.fftshift(np.fft.fftfreq(signal.shape[-1], dwell_time))
 
-    if use_rms:
-        noise = np.sqrt(np.mean(noise_win**2))
-    else:
-        noise = np.mean(np.abs(noise_win))  # Mean abs
+    # Define start and end indices of the window
+    half_width = int(window_width / 2)
+    peak_position = np.argmax(np.abs(signal[..., :]))
+    left_window_idx = np.argmin(np.abs(fft_freq + fft_freq[peak_position] + half_width))
+    right_window_idx = np.argmin(np.abs(fft_freq + fft_freq[peak_position] - half_width))
 
-    return np.abs(np.max(signal_win) / noise)
+    # Extract pure noise from outside the window containing the peak
+    noise = np.concatenate((signal[..., :left_window_idx], signal[..., right_window_idx:]))
+
+    # Return snr in dB
+    return 20 * np.log10(peak / np.mean(np.abs(noise)))
