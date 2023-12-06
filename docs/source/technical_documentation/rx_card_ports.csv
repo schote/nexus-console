@@ -1,0 +1,12 @@
+Port,Type,Input,Description
+0,Analog,+- 10V (max),"(Main) RF coil, 16th bit is used to encode the digital phase reference signal, always enabled"
+1,Analog,+- 10V (max),(Optional) RF coil input
+2,Analog,+- 10V (max),(Optional) RF coil input
+3,Analog,+- 10V (max),(Optional) RF coil input
+4,Analog,+- 10V (max),(Optional) RF coil input
+5,Analog,+- 10V (max),(Optional) RF coil input
+6,Analog,+- 10V (max),(Optional) RF coil input
+7,Analog,+- 10V (max),(Optional) RF coil input
+Clk In,Digital,3.3V,External clock input
+X1,Digital,3.3V,ADC gate signal
+X2,Digital,3.3V,Phase reference signal

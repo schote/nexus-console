@@ -1,0 +1,9 @@
+Port,Type,Output,Description
+0,Analog,+- 6V,RF waveform modulated with carrier wave at larmor frequency
+1,Analog,+- 6V,X gradient waveform
+2,Analog,+- 6V,Y gradient waveform
+3,Analog,+- 6V,Z gradient waveform
+X0,Digital,3.3 V,Clock output
+X1,Digital,3.3 V,ADC gate signal
+X2,Digital,3.3 V,Phase reference signal
+X3,Digital,3.3 V,RF unblanking signal

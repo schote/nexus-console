@@ -1,0 +1,6 @@
+Parameter,Datatype,Description
+spcm_dwell_time,float,Sample rate of the receive card in [s]
+rf_to_volt,float,"Scaling factor of the RF waveform, which translates [Hz] (pypulseq) to [V]"
+gradient_efficiency,"[float, float, float]","Efficiency of the gradient coils x, y and z in [mT/m/A]"
+gpa_gain,"[float, float, float]",Gain of the gradient power amplifier in [V/A]
+system,pypulseq.Opts,Pypulseq system settings
