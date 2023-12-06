@@ -497,6 +497,137 @@ In addition a digital reference signal is transferred during the ADC window.</p>
 <p>Figure 1: Low-field MRI system overview</p>
 <section id="input-output-description">
 <h2>Input/Output Description<a class="headerlink" href="#input-output-description" title="Link to this heading">#</a></h2>
+<table class="table" id="id1">
+<caption><span class="caption-text">Transmit card port description</span><a class="headerlink" href="#id1" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Port</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Output</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 6V</p></td>
+<td><p>RF waveform modulated with carrier wave at larmor frequency</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 6V</p></td>
+<td><p>X gradient waveform</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 6V</p></td>
+<td><p>Y gradient waveform</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 6V</p></td>
+<td><p>Z gradient waveform</p></td>
+</tr>
+<tr class="row-even"><td><p>X0</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3 V</p></td>
+<td><p>Clock output</p></td>
+</tr>
+<tr class="row-odd"><td><p>X1</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3 V</p></td>
+<td><p>ADC gate signal</p></td>
+</tr>
+<tr class="row-even"><td><p>X2</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3 V</p></td>
+<td><p>Phase reference signal</p></td>
+</tr>
+<tr class="row-odd"><td><p>X3</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3 V</p></td>
+<td><p>RF unblanking signal</p></td>
+</tr>
+</tbody>
+</table>
+<table class="table" id="id2">
+<caption><span class="caption-text">Receive card port description</span><a class="headerlink" href="#id2" title="Link to this table">#</a></caption>
+<colgroup>
+<col style="width: 10.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Port</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Input</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Main) RF coil, 16th bit is used to encode the digital phase reference signal, always enabled</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>Analog</p></td>
+<td><p>+- 10V (max)</p></td>
+<td><p>(Optional) RF coil input</p></td>
+</tr>
+<tr class="row-even"><td><p>Clk In</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3V</p></td>
+<td><p>External clock input</p></td>
+</tr>
+<tr class="row-odd"><td><p>X1</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3V</p></td>
+<td><p>ADC gate signal</p></td>
+</tr>
+<tr class="row-even"><td><p>X2</p></td>
+<td><p>Digital</p></td>
+<td><p>3.3V</p></td>
+<td><p>Phase reference signal</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 
