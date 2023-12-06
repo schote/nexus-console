@@ -101,7 +101,10 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, RxCard
     if not file_path.endswith(".yaml"):
         raise FileNotFoundError("Invalid configuration file, yaml file required.")
     with open(file_path, "rb") as file:
-        config = yaml.load(file, Loader=Loader)
+        config = yaml.load(file, Loader=Loader)  # noqa: S506
+
+    # Set output limits of sequence provider to the maximum amplitudes from transmit card
+    config["SequenceProvider"].output_limits = config["TxCard"].max_amplitude
 
     return (config["SequenceProvider"], config["TxCard"], config["RxCard"])
 

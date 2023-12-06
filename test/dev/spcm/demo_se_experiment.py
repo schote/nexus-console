@@ -44,9 +44,9 @@ seq.read(f"../sequences/export/{filename}.seq")
 f_0 = 2031000
 
 # Adjust RF calibration
-# seq.rf_to_volt = 0.03     # large phantom, sinc 400us
-# seq.rf_to_volt = 0.08     # small phantom, sinc 400us
-seq.rf_to_volt = 0.0035
+# seq.rf_to_mvolt = 0.03     # large phantom, sinc 400us
+# seq.rf_to_mvolt = 0.08     # small phantom, sinc 400us
+seq.rf_to_mvolt = 0.0035
 
 # Adjust gradient calibration
 # seq.grad_to_volt = 0.000015

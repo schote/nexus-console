@@ -19,7 +19,6 @@ class UnrolledSequence:
 
     adc_gate: list
     """ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on."""
-    
     rf_unblanking: list
     """Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state
     and 1 to unblanking state."""
@@ -27,29 +26,33 @@ class UnrolledSequence:
     sample_count: int
     """Total number of samples per channel."""
 
-    grad_to_volt: float
+    gpa_gain: float
+    """The gradient waveforms in pulseq are defined in Hz/m.
+    The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
+    The gpa gain is given in V/A and accounts for the voltage required to generate an output of 1A.
+    The gyromagnetic ratio defined by 42.58e6 MHz/T."""
+
+    gradient_efficiency: float
+    """The gradient waveforms in pulseq are defined in Hz/m.
+    The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
+    The gradient efficiency is given in mT/m/A and accounts for the gradient field which is generated per 1A.
+    The gyromagnetic ratio defined by 42.58e6 MHz/T."""
+
+    rf_to_mvolt: float
     """If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
-    This conversion factor represents the scaling from original pulseq gradient values [kHz/m] to card output voltage.
-    """
-    rf_to_volt: float
-    """If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
-    This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage.
-    """
+    This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage."""
 
     dwell_time: float
-    """Dwell time of the spectrum card replay data (unrolled sequence). 
+    """Dwell time of the spectrum card replay data (unrolled sequence).
     Defines the distance in time between to sample points.
-    Note that this dwell time does not correlate to the larmor frequecy. 
-    Due to the sampling theorem `dwell_time < 1/(2*larmor_frequency)` must be satisfied. 
-    Usually a higher factor is chosen.
-    """
+    Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem
+    `dwell_time < 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen."""
 
     larmor_frequency: float
-    """Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.
-    """
+    """Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal."""
 
     duration: float
-    """Total sequence duration calculated by pypulseq ``duration()`` method."""
+    """Total duration of the unrolled sequence in s."""
 
     adc_count: int
-    """Total number of adc events."""
+    """Number of adc events in the sequence."""

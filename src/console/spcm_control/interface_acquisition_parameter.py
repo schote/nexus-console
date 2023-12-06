@@ -22,10 +22,7 @@ class AcquisitionParameter:
     """Parameters which define an acquisition."""
 
     larmor_frequency: float
-    """Larmor frequency (frequency of the carrier signal) which is used for sequence unrolling."""
-
-    adc_samples: int = 500
-    """Number of adc samples after DDC."""
+    """Larmor frequency in MHz."""
 
     b1_scaling: float = 1.0
     """Scaling of the B1 field (RF transmit power)."""
@@ -34,13 +31,16 @@ class AcquisitionParameter:
     """Gradient offset values."""
 
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
-    """Field of view scaling factor."""
+    """Field of view scaling for Gx, Gy and Gz."""
 
-    downsampling_rate: int = 200
-    """Down-sampling rate of acquired samples to raw data."""
+    decimation: int = 200
+    """Decimation rate for initial down-sampling step."""
 
     num_averages: int = 1
-    """Number of averages."""
+    """Number of acquisition averages."""
+
+    averaging_delay: float = 0.0
+    """Delay in seconds between acquisition averages."""
 
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.

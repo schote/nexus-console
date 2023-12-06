@@ -183,7 +183,12 @@ if not os.getenv("GITHUB_ACTIONS"):
             spcm_dwGetContBuf_i64 = getattr(spcmDll, "spcm_dwGetContBuf_i64")
         else:
             spcm_dwGetContBuf_i64 = getattr(spcmDll, "_spcm_dwGetContBuf_i64@16")
-        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, ctypes.POINTER(ctypes.c_void_p), uptr64]
+        spcm_dwGetContBuf_i64.argtype = [
+            drv_handle,
+            uint32,
+            ctypes.POINTER(ctypes.c_void_p),
+            uptr64,
+        ]
         spcm_dwGetContBuf_i64.restype = uint32
 
     elif os.name == "posix":
@@ -259,7 +264,12 @@ if not os.getenv("GITHUB_ACTIONS"):
 
         # load spcm_dwGetContBuf_i64
         spcm_dwGetContBuf_i64 = getattr(spcmDll, "spcm_dwGetContBuf_i64")
-        spcm_dwGetContBuf_i64.argtype = [drv_handle, uint32, ctypes.POINTER(ctypes.c_void_p), uptr64]
+        spcm_dwGetContBuf_i64.argtype = [
+            drv_handle,
+            uint32,
+            ctypes.POINTER(ctypes.c_void_p),
+            uptr64,
+        ]
         spcm_dwGetContBuf_i64.restype = uint32
 
     else:
