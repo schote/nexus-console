@@ -3,7 +3,8 @@ from pypulseq.opts import Opts
 
 system = Opts(
     # time delay at the end of RF event, SETS RF DELAY!
-    rf_dead_time=20e-6,
+    # rf_dead_time=20e-6,
+    rf_dead_time=100e-6,    # active TR switch
     # Set raster times to spectrum card frequency (timing checks)
     grad_raster_time=5e-8,
     rf_raster_time=5e-8,

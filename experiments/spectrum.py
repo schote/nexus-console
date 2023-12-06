@@ -17,12 +17,12 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-# seq = sequences.se_spectrum.constructor(
-#     echo_time=20e-3,
-#     rf_duration=200e-6,
-#     use_sinc=False
-# )
-seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=4e-3, adc_noise_duration=100e-3)
+seq = sequences.se_spectrum.constructor(
+    echo_time=20e-3,
+    rf_duration=200e-6,
+    use_sinc=False
+)
+# seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=4e-3, adc_noise_duration=100e-3)
 
 # Optional:
 acq.seq_provider.from_pypulseq(seq)
@@ -41,8 +41,8 @@ params = AcquisitionParameter(
     b1_scaling=2.2, # 8 cm phantom
     # b1_scaling=6.3,
      decimation=100,
-    num_averages=10,
-    averaging_delay=1,
+    # num_averages=10,
+    # averaging_delay=1,
 )
 
 # Perform acquisition
@@ -69,7 +69,7 @@ print("Acquisition data shape: ", [data.shape for data in acq_data.raw])
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(fft_freq, np.abs(data_fft))
-ax.set_xlim([-25e3, 25e3])
+# ax.set_xlim([-25e3, 25e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")

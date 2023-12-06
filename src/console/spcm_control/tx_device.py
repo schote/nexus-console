@@ -161,23 +161,27 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
 
         # >> Setup digital output channels
-        # Channel X1: digital ADC gate (analog channel 1)
-        # Channel X2: digital RF unblanking signal (analog channel 2)
-        # Channel X3: digital phase reference (analog channel 3)
-
+        # Channel X1: dig. ADC gate (15th bit from analog channel 1)
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        # Channel X2: dig. reference signal (15th bit from analog channel 2)
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X2_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        # Channel X3, X12: dig. unblanking signal (15th bit of analog channel 3)
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X3_MODE,
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        )
+        spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPCM_X12_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
