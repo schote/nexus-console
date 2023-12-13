@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Examples &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>Acquisition Process &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -42,12 +42,12 @@
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'code_examples/index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/acquisition_process';</script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Test" href="test.html" />
-    <link rel="prev" title="Sequence Unrolling" href="../user_guide/sequence_unrolling.html" />
+    <link rel="next" title="Sequence Unrolling" href="sequence_unrolling.html" />
+    <link rel="prev" title="System Setup" href="system_setup.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -156,15 +156,15 @@
                     </li>
                 
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
                         User Guide
                       </a>
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../code_examples/index.html">
                         Examples
                       </a>
                     </li>
@@ -296,15 +296,15 @@ document.write(`
                     </li>
                 
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
+                    <li class="nav-item current active">
+                      <a class="nav-link nav-internal" href="index.html">
                         User Guide
                       </a>
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../code_examples/index.html">
                         Examples
                       </a>
                     </li>
@@ -392,8 +392,10 @@ document.write(`
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
   <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="test.html">Test</a></li>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="system_setup.html">System Setup</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Acquisition Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_unrolling.html">Sequence Unrolling</a></li>
 </ul>
 </div>
 </nav></div>
@@ -431,7 +433,10 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">Examples</li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">Acquisition Process</li>
   </ul>
 </nav>
 </div>
@@ -448,15 +453,65 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="examples">
-<span id="id1"></span><h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">#</a></h1>
-<p>TODO</p>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="test.html">Test</a></li>
+  <section id="acquisition-process">
+<h1>Acquisition Process<a class="headerlink" href="#acquisition-process" title="Link to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>The execution of an MR experiment is achieved by the interaction of multiple components.
+A high-level description of the involved components is shown in the figure below.</p>
+<figure class="align-default">
+<img alt="Overview of the acquisition process" src="../_images/acquisition_overview.png" />
+</figure>
+<p>The experiment managed by an acquisition control object.
+It receives a pulseq sequence, either as a filepath or as an instance of a pypulseq sequence object.
+In addition an acquisition parameter object is defined, which contains experiment specific parameters.</p>
+<p>An experiment can be summarized by the following steps:</p>
+<ol class="arabic simple">
+<li><p>Create a sequence or define the path to a sequence</p></li>
+<li><p>Define the acquisition parameters</p></li>
+<li><p>Create an acquisition control, execute acquisition by passing sequence and parameters</p></li>
+<li><p>Unroll sequence</p></li>
+<li><p>Execute sequence, optionally repeat this step in case of averaging</p></li>
+<li><p>Postprocessing</p></li>
+<li><p>Create acquisition data</p></li>
+</ol>
+</section>
+<section id="interfaces">
+<h2>Interfaces<a class="headerlink" href="#interfaces" title="Link to this heading">#</a></h2>
+<p>The acquisition control has three different interfaces which are implemented as dataclasses:</p>
+<ul class="simple">
+<li><p>The <a class="reference internal" href="../api_reference/pulseq_interpreter.html#unrolled-sequence"><span class="std std-ref">unrolled sequence</span></a> is obtained from the sequence provider which is explained in <a class="reference internal" href="sequence_unrolling.html#seq-provider"><span class="std std-ref">sequence provider</span></a>.</p></li>
+<li><p>Experiment specific <a class="reference internal" href="../api_reference/acquisition_control.html#acquisition-parameter"><span class="std std-ref">acquisition parameter</span></a> defined by the user (e.g. larmor frequency, B1 amplitude scaling, FoV, etc.).</p></li>
+<li><p><a class="reference internal" href="../api_reference/acquisition_control.html#acquisition-data"><span class="std std-ref">Acquisition data</span></a>, which is the result of a successful acquisition and contains the decimated raw data.</p></li>
 </ul>
-</div>
+<figure class="align-default">
+<img alt="Interfaces of the acquisition control" src="../_images/acquisition_control.png" />
+</figure>
+<p>Acquisition parameters are exposed to the whole acquisition routine and must be provided with an experiment.
+Some of the parameters are required by the sequence provider (e.g. Larmor frequency, field of view scaling) and some by the post processing step.
+The unrolled sequence instead is generated by the sequence provider inside the acquisition control.
+It is used only by the transmit card to replay the calculated waveforms.
+The result of a successful acquisition is an acquisition data object which contains the decimated raw data.
+Optionally, it also contains the unprocessed raw data. In both cases the dimensions are defined by <code class="docutils literal notranslate"><span class="pre">[averages,</span> <span class="pre">coils,</span> <span class="pre">phase</span> <span class="pre">encoding</span> <span class="pre">steps,</span> <span class="pre">readout</span> <span class="pre">sample</span> <span class="pre">points]</span></code>.</p>
+</section>
+<section id="postprocessing">
+<h2>Postprocessing<a class="headerlink" href="#postprocessing" title="Link to this heading">#</a></h2>
+<p>When data has been acquired, the post-processing step is started which comprises the following step.</p>
+<ol class="arabic simple">
+<li><p>Separation of MR signal and reference signal.
+To correct for any phase jumps in the received signal, a reference signal is transferred between the measurement cards.
+The digital signal is received by synchronous digital input and encoded by the 16th bit of analog input channel 0.
+In a first step, reference signal and transmit signal are separated.
+This is only the case for analog channel 0, it is assumed that this channel is always enabled.
+All other channels have full resolution.</p></li>
+<li><p>Both signals are demodulated at the Larmor frequency.
+This is the same frequency that was used to modulate the transmit signal.</p></li>
+<li><p>Decimation is applied along the readout dimension, independent of the number of averages, coils or phase encoding steps.</p></li>
+<li><p>The MR signal is corrected with the phase of the decimated and demodulated reference signal.
+The result is stored in an acquisition data object.
+A detailed description can be found in the <a class="reference internal" href="../api_reference/acquisition_control.html#acquisition-data"><span class="std std-ref">api reference</span></a>.</p></li>
+</ol>
+</section>
 </section>
 
 
@@ -470,20 +525,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../user_guide/sequence_unrolling.html"
+       href="system_setup.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Sequence Unrolling</p>
+        <p class="prev-next-title">System Setup</p>
       </div>
     </a>
     <a class="right-next"
-       href="test.html"
+       href="sequence_unrolling.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Test</p>
+        <p class="prev-next-title">Sequence Unrolling</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -498,8 +553,21 @@ document.write(`
 
   <div class="sidebar-secondary-item">
 
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#interfaces">Interfaces</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#postprocessing">Postprocessing</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
   <div class="tocsection sourcelink">
-    <a href="../_sources/code_examples/index.rst.txt">
+    <a href="../_sources/user_guide/acquisition_process.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

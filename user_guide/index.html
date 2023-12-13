@@ -29,7 +29,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=4cc05613" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
@@ -39,11 +41,13 @@
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/design-tabs.js?v=36754332"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/index';</script>
+    <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Hands-on Examples" href="../code_examples/index.html" />
-    <link rel="prev" title="Sequence Unrolling" href="../technical_documentation/sequence_unrolling.html" />
+    <link rel="next" title="System Setup" href="system_setup.html" />
+    <link rel="prev" title="Quick-Start Guide" href="../quick_start/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -121,8 +125,8 @@
       
     
     
-    <img src="../_static/scanner_config.png" class="logo__image only-light" alt=""/>
-    <script>document.write(`<img src="../_static/scanner_config.png" class="logo__image only-dark" alt=""/>`);</script>
+    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
   
   
     <p class="title logo__title">Spectrum-Console</p>
@@ -146,8 +150,8 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../technical_documentation/index.html">
-                        Technical Documentation
+                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                        Quick-Start Guide
                       </a>
                     </li>
                 
@@ -161,13 +165,13 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Hands-on Examples
+                        Examples
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../api_documentation/index.html">
+                      <a class="nav-link nav-internal" href="../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -233,17 +237,6 @@ document.write(`
           <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitLab</span></a>
         </li>
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://www.opensourceimaging.org/" title="Open Source Imaging" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
-        </li>
 </ul></div>
       
     </div>
@@ -297,8 +290,8 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../technical_documentation/index.html">
-                        Technical Documentation
+                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                        Quick-Start Guide
                       </a>
                     </li>
                 
@@ -312,13 +305,13 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Hands-on Examples
+                        Examples
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../api_documentation/index.html">
+                      <a class="nav-link nav-internal" href="../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -370,17 +363,6 @@ document.write(`
           <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitLab</span></a>
         </li>
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://www.opensourceimaging.org/" title="Open Source Imaging" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
-        </li>
 </ul></div>
         
       </div>
@@ -405,6 +387,18 @@ document.write(`
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="system_setup.html">System Setup</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acquisition_process.html">Acquisition Process</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_unrolling.html">Sequence Unrolling</a></li>
+</ul>
+</div>
+</nav></div>
     </div>
   
   
@@ -457,8 +451,41 @@ document.write(`
                 <article class="bd-article" role="main">
                   
   <section id="user-guide">
-<h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">#</a></h1>
-<p>Test</p>
+<span id="id1"></span><h1>User Guide<a class="headerlink" href="#user-guide" title="Link to this heading">#</a></h1>
+<p>Welcome to the Spectrum-Console user guide.
+This guide explains some of the key-concepts of the package and gives some general information about the setup.
+The concept guide contains more general information independent of the implementation.
+We aim to provide a transparent documentation in order to enable developers to understand design decisions, familiarize quickly and be able to further improve the package.
+If you find anything incomprehensible or have suggestions for improvements, please contact me.</p>
+<div class="toctree-wrapper compound">
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="system_setup.html">System Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="system_setup.html#mri-system">MRI System</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system_setup.html#measurement-cards">Measurement Cards</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system_setup.html#outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system_setup.html#inputs">Inputs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="acquisition_process.html">Acquisition Process</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="acquisition_process.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="acquisition_process.html#interfaces">Interfaces</a></li>
+<li class="toctree-l2"><a class="reference internal" href="acquisition_process.html#postprocessing">Postprocessing</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sequence_unrolling.html">Sequence Unrolling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="sequence_unrolling.html#parameter">Parameter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_unrolling.html#gradient-unrolling">Gradient Unrolling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_unrolling.html#rf-unrolling">RF Unrolling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="sequence_unrolling.html#digital-signals">Digital Signals</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>The first section of the user guide gives an overview of the overall system setup.
+It might be different to your specific setup but in general it should be transferable.
+In the subsequent chapter we have a closer look at the overall system architecture, before
+we explain the key concepts of sequence handling and execution.</p>
 </section>
 
 
@@ -472,20 +499,20 @@ document.write(`
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="../technical_documentation/sequence_unrolling.html"
+       href="../quick_start/index.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Sequence Unrolling</p>
+        <p class="prev-next-title">Quick-Start Guide</p>
       </div>
     </a>
     <a class="right-next"
-       href="../code_examples/index.html"
+       href="system_setup.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Hands-on Examples</p>
+        <p class="prev-next-title">System Setup</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

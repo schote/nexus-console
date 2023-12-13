@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Spectrum-Console: Fully Digital Open-Source Console for MRI Acquisitions Written in Python &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>Spectrum-Console &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -29,7 +29,9 @@
 <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
     <link rel="stylesheet" type="text/css" href="_static/custom.css?v=4cc05613" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
@@ -39,10 +41,12 @@
     <script src="_static/documentation_options.js?v=5929fcd5"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/design-tabs.js?v=36754332"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="icon" href="_static/favicon.ico"/>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Technical Documentation" href="technical_documentation/index.html" />
+    <link rel="next" title="Quick-Start Guide" href="quick_start/index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -120,8 +124,8 @@
       
     
     
-    <img src="_static/scanner_config.png" class="logo__image only-light" alt=""/>
-    <script>document.write(`<img src="_static/scanner_config.png" class="logo__image only-dark" alt=""/>`);</script>
+    <img src="_static/logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
   
   
     <p class="title logo__title">Spectrum-Console</p>
@@ -145,8 +149,8 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="technical_documentation/index.html">
-                        Technical Documentation
+                      <a class="nav-link nav-internal" href="quick_start/index.html">
+                        Quick-Start Guide
                       </a>
                     </li>
                 
@@ -160,13 +164,13 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="code_examples/index.html">
-                        Hands-on Examples
+                        Examples
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="api_documentation/index.html">
+                      <a class="nav-link nav-internal" href="api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -232,17 +236,6 @@ document.write(`
           <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitLab</span></a>
         </li>
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://www.opensourceimaging.org/" title="Open Source Imaging" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
-        </li>
 </ul></div>
       
     </div>
@@ -296,8 +289,8 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="technical_documentation/index.html">
-                        Technical Documentation
+                      <a class="nav-link nav-internal" href="quick_start/index.html">
+                        Quick-Start Guide
                       </a>
                     </li>
                 
@@ -311,13 +304,13 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="code_examples/index.html">
-                        Hands-on Examples
+                        Examples
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="api_documentation/index.html">
+                      <a class="nav-link nav-internal" href="api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -369,17 +362,6 @@ document.write(`
           <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
             <span class="sr-only">GitLab</span></a>
         </li>
-        <li class="nav-item">
-          
-          
-          
-          
-          
-          
-          
-          
-          <a href="https://www.opensourceimaging.org/" title="Open Source Imaging" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
-        </li>
 </ul></div>
         
       </div>
@@ -429,36 +411,100 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="spectrum-console-fully-digital-open-source-console-for-mri-acquisitions-written-in-python">
-<h1>Spectrum-Console: Fully Digital Open-Source Console for MRI Acquisitions Written in Python<a class="headerlink" href="#spectrum-console-fully-digital-open-source-console-for-mri-acquisitions-written-in-python" title="Link to this heading">#</a></h1>
-<p>Welcome to the documentation of our open-source console application for MRI.
-In collaboration with many excellent partners throughout Europe, we at PTB Berlin are working on a low-field MRI scanner.
-The scanner is mobile, affordable, fully open source, and intended for human use.</p>
-<p>Low-field MRI comes with two major problems, low signal-to-noise ratio (SNR) and strong field inhomogeneities which can cause geometric distortions in the acquired images if uncorrected.
-In order to compensate these effects we started this MRI console application which aims to allow best possible integration of additional sensor technology and machine learning workflows.</p>
-<p>The technical documentation sections provides an overview of the architecture but also detailed descriptions of all the components.
-Within the user guide we provide a more practical introduction of how to get started.
-The example section contains some hands-on examples and the code documentation is provided in the API section.</p>
+  <section id="spectrum-console">
+<h1>Spectrum-Console<a class="headerlink" href="#spectrum-console" title="Link to this heading">#</a></h1>
+<section id="fully-digital-open-source-console-for-mri-acquisitions-written-in-python">
+<h2>Fully Digital Open-Source Console for MRI Acquisitions Written in Python<a class="headerlink" href="#fully-digital-open-source-console-for-mri-acquisitions-written-in-python" title="Link to this heading">#</a></h2>
+<p>Welcome to the documentation for the Spectrum Console—an open-source MRI console
+designed for low-field magnetic resonance imaging (MRI).
+This console, driven by Spectrum-Instrumentation measurement cards and Python-based software,
+offers a cost-effective and portable solution for exploring sophisticated low-field imaging techniques.
+Successfully implemented and tested on a low-field MRI scanner,
+the Spectrum-Console demonstrates real-time computed Pulseq sequences
+with high fidelity compared to measured waveforms.
+The console’s design holds the potential to enhance the capabilities of low-field MRI systems, fostering opportunities for advanced techniques in the field.
+Explore the documentation to delve into the technical details and possibilities offered by the Spectrum-Console.
+The documentation provides insights, including quick-start guide, user guide, hands-on examples and the API reference.</p>
+<div class="sd-container-fluid sd-sphinx-override sd-mb-4 docutils">
+<div class="sd-row sd-row-cols-2 sd-row-cols-xs-2 sd-row-cols-sm-2 sd-row-cols-md-2 sd-row-cols-lg-2 sd-g-3 sd-g-xs-3 sd-g-sm-3 sd-g-md-3 sd-g-lg-3 docutils">
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<span class="fas fa-rocket fa-xl"></span> Quick Start Guide</div>
+<p class="sd-card-text">This guide provides a quick introduction and explains which requirements must be met,
+how the software can be installed and what an example program looks like.</p>
+<p class="sd-card-text"><span class="sd-d-grid"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-primary sd-stretched-link reference internal" href="quick_start/index.html#quick-start"><span class="std std-ref">To the quick start guide</span></a></span></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<span class="fas fa-box-open fa-xl"></span> Examples</div>
+<p class="sd-card-text">Examples that show how the package is used. A prerequisite is a successful installation.</p>
+<p class="sd-card-text"><span class="sd-d-grid"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-primary sd-stretched-link reference internal" href="code_examples/index.html#examples"><span class="std std-ref">To the examples</span></a></span></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<span class="fas fa-book-open fa-xl"></span> User Guide</div>
+<p class="sd-card-text">The key concept guide contains general information about the package components and their functionality.
+The concept guide contains more general information independent of the implementation.</p>
+<p class="sd-card-text"><span class="sd-d-grid"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-primary sd-stretched-link reference internal" href="user_guide/index.html#user-guide"><span class="std std-ref">To the concepts</span></a></span></p>
+</div>
+</div>
+</div>
+<div class="sd-col sd-d-flex-row docutils">
+<div class="sd-card sd-sphinx-override sd-w-100 sd-shadow-sm docutils">
+<div class="sd-card-body docutils">
+<div class="sd-card-title sd-font-weight-bold docutils">
+<span class="fas fa-code fa-xl"></span> API Reference</div>
+<p class="sd-card-text">The API reference guide contains a detailed description of
+the Spectrum-Console API. The reference describes how the methods work and which parameters can
+be used. It assumes that you have an understanding of the key concepts.</p>
+<p class="sd-card-text"><span class="sd-d-grid"><a class="sd-sphinx-override sd-btn sd-text-wrap sd-btn-primary sd-stretched-link reference internal" href="api_reference/index.html#api"><span class="std std-ref">To the reference</span></a></span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="content-overview">
+<h2>Content Overview<a class="headerlink" href="#content-overview" title="Link to this heading">#</a></h2>
 <div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="technical_documentation/index.html">Technical Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="technical_documentation/system_setup.html">System Setup</a></li>
-<li class="toctree-l2"><a class="reference internal" href="technical_documentation/system_architecture.html">System Architecture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="technical_documentation/sequence_unrolling.html">Sequence Unrolling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start/index.html">Quick-Start Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick_start/index.html#clone-the-spectrum-console-github-repository">1. Clone the Spectrum Console GitHub Repository</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start/index.html#set-up-a-virtual-python-environment-optional">1. Set Up a Virtual Python Environment (Optional)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start/index.html#install-the-repository-locally">1. Install the Repository Locally</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start/index.html#execute-an-example">4. Execute an Example</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="user_guide/index.html">User Guide</a></li>
-<li class="toctree-l1"><a class="reference internal" href="code_examples/index.html">Hands-on Examples</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api_documentation/index.html">API Documentation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api_documentation/pulseq_interpreter.html">Pulseq Sequence Interpreter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api_documentation/spcm_control.html">Spectrum-Instrumentation Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api_documentation/acquisition_control.html">Acquisitions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="api_documentation/utilities.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user_guide/index.html">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/system_setup.html">System Setup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/acquisition_process.html">Acquisition Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="user_guide/sequence_unrolling.html">Sequence Unrolling</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="code_examples/index.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="code_examples/test.html">Test</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api_reference/index.html">API Documentation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/pulseq_interpreter.html">Pulseq Sequence Interpreter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/spcm_control.html">Spectrum-Instrumentation Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/acquisition_control.html">Acquisition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api_reference/utilities.html">Utilities</a></li>
 </ul>
 </li>
 </ul>
 </div>
+</section>
 </section>
 
 
@@ -472,11 +518,11 @@ The example section contains some hands-on examples and the code documentation i
                   
 <div class="prev-next-area">
     <a class="right-next"
-       href="technical_documentation/index.html"
+       href="quick_start/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Technical Documentation</p>
+        <p class="prev-next-title">Quick-Start Guide</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -488,6 +534,18 @@ The example section contains some hands-on examples and the code documentation i
             
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+  <div class="sidebar-secondary-item">
+
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fully-digital-open-source-console-for-mri-acquisitions-written-in-python">Fully Digital Open-Source Console for MRI Acquisitions Written in Python</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#content-overview">Content Overview</a></li>
+</ul>
+  </nav></div>
 
   <div class="sidebar-secondary-item">
 
