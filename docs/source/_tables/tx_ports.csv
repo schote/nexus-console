@@ -6,4 +6,4 @@ Port,Type,Output,Description
 X0,Digital,3.3 V,Clock output
 X1,Digital,3.3 V,ADC gate signal
 X2,Digital,3.3 V,Phase reference signal
-X3,Digital,3.3 V,RF unblanking signal
+X3,Digital,3.3 V,RF unblanking/enable signal

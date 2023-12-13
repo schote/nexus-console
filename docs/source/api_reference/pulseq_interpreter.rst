@@ -14,6 +14,8 @@ Sequence Provider
    :show-inheritance:
 
 
+.. _unrolled-sequence:
+
 Unrolled Sequence
 -----------------
 
