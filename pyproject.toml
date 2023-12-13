@@ -39,7 +39,7 @@ dependencies = [
 reco = ["torch"]
 # test = ["coverage", "codecov"]
 lint = ["ruff", "black", "poethepoet", "types-PyYAML"]
-docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
+docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [tool.black]

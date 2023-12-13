@@ -13,8 +13,8 @@ import os
 import sys
 from sphinx_pyproject import SphinxConfig
 
-sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 config = SphinxConfig('../../pyproject.toml', globalns=globals())
+sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -33,7 +33,10 @@ extensions = [
     # 'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx_design',
 ]
+# autosummary_generate = True
+# autosummary_imported_members = True
 
 # templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -51,14 +54,19 @@ autodoc_mock_imports = ["console.spcm_control.spcm"]
 html_theme = "pydata_sphinx_theme"
 html_show_sphinx = False
 html_static_path = ['_static']
-html_css_files = ['custom.css']
-html_logo = "_static/scanner_config.png"
+html_css_files = [
+    "custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css",
+]
+html_logo = "_static/logo.png"
+html_favicon = "_static/favicon.ico"
 html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}
+numfig = True   # use numbered figures
 html_theme_options = {
     "logo": {"text": "Spectrum-Console"},
     "pygment_light_style": "default",
     "pygment_dark_style": "github-dark",
-    "show_toc_level": 3,
+    "show_toc_level": 2,
     "show_nav_level": 2,
     "icon_links": [
         {
@@ -77,16 +85,15 @@ html_theme_options = {
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
             "icon": "fab fa-gitlab",
         },
-        {
-            # Label for this link
-            "name": "Open Source Imaging",
-            # URL where the link will redirect
-            "url": "https://www.opensourceimaging.org/",  # required
-            # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-            "icon": "http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif",
-            # The type of image to be used (see below for details)
-            "type": "url",
-        },
-        
+        # {
+        #     # Label for this link
+        #     "name": "Open Source Imaging",
+        #     # URL where the link will redirect
+        #     "url": "https://www.opensourceimaging.org/",  # required
+        #     # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
+        #     "icon": "http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif",
+        #     # The type of image to be used (see below for details)
+        #     "type": "url",
+        # },
     ]
 }
