@@ -33,10 +33,9 @@ extensions = [
     # 'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'sphinx.ext.mathjax',
     'sphinx_design',
 ]
-# autosummary_generate = True
-# autosummary_imported_members = True
 
 # templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

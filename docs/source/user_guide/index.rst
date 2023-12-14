@@ -10,7 +10,7 @@ We aim to provide a transparent documentation in order to enable developers to u
 If you find anything incomprehensible or have suggestions for improvements, please contact me.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Content
    
    system_setup
