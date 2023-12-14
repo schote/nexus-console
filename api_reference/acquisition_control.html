@@ -459,100 +459,8 @@ document.write(`
 <section id="acquisition-control">
 <h2>Acquisition Control<a class="headerlink" href="#acquisition-control" title="Link to this heading">#</a></h2>
 </section>
-<section id="module-console.spcm_control.interface_acquisition_parameter">
-<span id="id1"></span><span id="acquisition-parameter"></span><h2>Acquisition Parameter<a class="headerlink" href="#module-console.spcm_control.interface_acquisition_parameter" title="Link to this heading">#</a></h2>
-<p>Interface class for acquisition parameters.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.interface_acquisition_parameter.</span></span><span class="sig-name descname"><span class="pre">AcquisitionParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">larmor_frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b1_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.Dimensions" title="console.spcm_control.interface_acquisition_parameter.Dimensions"><span class="pre">Dimensions</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Dimensions(x=0,</span> <span class="pre">y=0,</span> <span class="pre">z=0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.Dimensions" title="console.spcm_control.interface_acquisition_parameter.Dimensions"><span class="pre">Dimensions</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Dimensions(x=1,</span> <span class="pre">y=1,</span> <span class="pre">z=1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_averages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averaging_delay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_parameter.html#AcquisitionParameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Parameters which define an acquisition.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.averaging_delay">
-<span class="sig-name descname"><span class="pre">averaging_delay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.averaging_delay" title="Link to this definition">#</a></dt>
-<dd><p>Delay in seconds between acquisition averages.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.b1_scaling">
-<span class="sig-name descname"><span class="pre">b1_scaling</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.b1_scaling" title="Link to this definition">#</a></dt>
-<dd><p>Scaling of the B1 field (RF transmit power).</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.decimation">
-<span class="sig-name descname"><span class="pre">decimation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.decimation" title="Link to this definition">#</a></dt>
-<dd><p>Decimation rate for initial down-sampling step.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.dict">
-<span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_strings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_parameter.html#AcquisitionParameter.dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.dict" title="Link to this definition">#</a></dt>
-<dd><p>Return acquisition parameters as dictionary.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>use_strings</strong> – boolean flag indicating if values of dictionary should be represented as strings, by default False</p></li>
-<li><p><strong>optional</strong> – boolean flag indicating if values of dictionary should be represented as strings, by default False</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Acquisition parameter dictionary</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.fov_scaling">
-<span class="sig-name descname"><span class="pre">fov_scaling</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.Dimensions" title="console.spcm_control.interface_acquisition_parameter.Dimensions"><span class="pre">Dimensions</span></a></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.fov_scaling" title="Link to this definition">#</a></dt>
-<dd><p>Field of view scaling for Gx, Gy and Gz.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.gradient_offset">
-<span class="sig-name descname"><span class="pre">gradient_offset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.Dimensions" title="console.spcm_control.interface_acquisition_parameter.Dimensions"><span class="pre">Dimensions</span></a></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.gradient_offset" title="Link to this definition">#</a></dt>
-<dd><p>Gradient offset values.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.larmor_frequency">
-<span class="sig-name descname"><span class="pre">larmor_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.larmor_frequency" title="Link to this definition">#</a></dt>
-<dd><p>Larmor frequency in MHz.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.num_averages">
-<span class="sig-name descname"><span class="pre">num_averages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.num_averages" title="Link to this definition">#</a></dt>
-<dd><p>Number of acquisition averages.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.Dimensions">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.interface_acquisition_parameter.</span></span><span class="sig-name descname"><span class="pre">Dimensions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_parameter.html#Dimensions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.Dimensions" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Dataclass for definition of dimensional parameters.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.Dimensions.x">
-<span class="sig-name descname"><span class="pre">x</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.x" title="Link to this definition">#</a></dt>
-<dd><p>X dimension.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.Dimensions.y">
-<span class="sig-name descname"><span class="pre">y</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.y" title="Link to this definition">#</a></dt>
-<dd><p>Y dimension.</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_parameter.Dimensions.z">
-<span class="sig-name descname"><span class="pre">z</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.z" title="Link to this definition">#</a></dt>
-<dd><p>Z dimension.</p>
-</dd></dl>
-
-</dd></dl>
-
+<section id="acquisition-parameter">
+<span id="id1"></span><h2>Acquisition Parameter<a class="headerlink" href="#acquisition-parameter" title="Link to this heading">#</a></h2>
 </section>
 <section id="acquisition-data">
 <span id="id2"></span><h2>Acquisition Data<a class="headerlink" href="#acquisition-data" title="Link to this heading">#</a></h2>
@@ -604,26 +512,7 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-control">Acquisition Control</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.spcm_control.interface_acquisition_parameter">Acquisition Parameter</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.averaging_delay"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.averaging_delay</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.b1_scaling"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.b1_scaling</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.decimation"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.decimation</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.dict"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.dict()</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.fov_scaling"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.fov_scaling</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.gradient_offset"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.gradient_offset</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.larmor_frequency"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.larmor_frequency</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.num_averages"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.num_averages</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.Dimensions"><code class="docutils literal notranslate"><span class="pre">Dimensions</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.x"><code class="docutils literal notranslate"><span class="pre">Dimensions.x</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.y"><code class="docutils literal notranslate"><span class="pre">Dimensions.y</span></code></a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.Dimensions.z"><code class="docutils literal notranslate"><span class="pre">Dimensions.z</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-parameter">Acquisition Parameter</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-data">Acquisition Data</a></li>
 </ul>
   </nav></div>

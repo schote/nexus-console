@@ -479,15 +479,15 @@ document.write(`
 
 <span class="c1"># Create acquisition control instance</span>
 <span class="n">acq</span> <span class="o">=</span> <span class="n">AcquistionControl</span><span class="p">(</span>
-    <span class="n">configuration_file</span><span class="o">=</span><span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">,</span> 
-    <span class="n">console_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> 
+    <span class="n">configuration_file</span><span class="o">=</span><span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">,</span>
+    <span class="n">console_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
     <span class="n">file_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
 <span class="p">)</span>
 
 <span class="c1"># Construct a spin echo based spectrum sequence</span>
 <span class="n">seq</span> <span class="o">=</span> <span class="n">sequences</span><span class="o">.</span><span class="n">se_spectrum</span><span class="o">.</span><span class="n">constructor</span><span class="p">(</span>
-    <span class="n">echo_time</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">,</span> 
-    <span class="n">rf_duration</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">,</span> 
+    <span class="n">echo_time</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">,</span>
+    <span class="n">rf_duration</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">,</span>
     <span class="n">use_sinc</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 
