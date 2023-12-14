@@ -18,7 +18,7 @@ Clone the `Spectrum-Console repository <https://github.com/schote/spectrum-conso
 
 Make sure, that you are in the directory where the code should be located.
 
-1. Set Up a Virtual Python Environment (Optional)
+2. Set Up a Virtual Python Environment (Optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 This step is optional, but you might want to create a virtual environment to install the package.
 Navigate to the cloned repository directory and create a virtual environment, e.g. using Conda:
@@ -28,7 +28,7 @@ Navigate to the cloned repository directory and create a virtual environment, e.
    conda create --name console-env python=3.10
    conda activate console-env
 
-1. Install the Repository Locally
+3. Install the Repository Locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Install the cloned Spectrum-Console package locally using pip with the editable option, in case you want to modify the code.
 Make sure, that the environment was activated successfully.
@@ -44,6 +44,6 @@ Navigate to the "examples" directory and run an example script:
 .. code-block:: bash
 
    cd examples
-   python run_se_spectrum.py
+   python se_spectrum.py
 
 Congratulations! You have successfully set up and executed an example with the Spectrum Console. For more detailed information, refer to the full documentation.
