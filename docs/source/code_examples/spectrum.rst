@@ -5,7 +5,7 @@ The following example shows how to acquire an NMR spectrum with a spin-echo base
 
 The example can essentially be broken down as follows:
 1. Create an ``AcquisitionControl`` using the default device configuration from the repository. Here we can also set the log level for the log-file and the console log-output.
-2. Construct the spin echo based spectrum sequence. Here we use 20 :math:`ms` echo time and 200 :math:`\mu s` RF block pulse duration.
+2. Construct the spin echo based spectrum sequence. Here we use 20 ms echo time and 200 us RF block pulse duration.
 3. Define the most basic ``AcquisitionParameter``, namely the Larmor frequency :math:`f_0` and the decimation factor for DDC.
 4. Execute the experiment.
 5. Extract the down-sampled raw data.
