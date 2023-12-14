@@ -4,6 +4,7 @@ import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
+from typing import Any
 
 import numpy as np
 
@@ -33,7 +34,7 @@ class AcquisitionData:
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
 
-    meta: dict = field(default_factory=dict)
+    meta: dict[str, Any] = field(default_factory=dict)
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
 
@@ -113,7 +114,7 @@ class AcquisitionData:
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 
-    def add_info(self, info: dict) -> None:
+    def add_info(self, info: dict[str, Any]) -> None:
         """Add entries to meta data dictionary.
 
         Parameters
