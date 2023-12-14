@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Test &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>1. Spin Echo Spectrum &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -42,7 +42,8 @@
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'code_examples/test';</script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'code_examples/spectrum';</script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -391,9 +392,9 @@ document.write(`
 <nav class="bd-docs-nav bd-links"
      aria-label="Section Navigation">
   <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
+  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Experiments</span></p>
 <ul class="current nav bd-sidenav">
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Test</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">1. Spin Echo Spectrum</a></li>
 </ul>
 </div>
 </nav></div>
@@ -434,7 +435,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">Examples</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Test</li>
+    <li class="breadcrumb-item active" aria-current="page"><span...</li>
   </ul>
 </nav>
 </div>
@@ -451,9 +452,80 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="test">
-<h1>Test<a class="headerlink" href="#test" title="Link to this heading">#</a></h1>
-<p>test</p>
+  <section id="spin-echo-spectrum">
+<h1><span class="section-number">1. </span>Spin Echo Spectrum<a class="headerlink" href="#spin-echo-spectrum" title="Link to this heading">#</a></h1>
+<p>The following example shows how to acquire an NMR spectrum with a spin-echo based spectrum sequence written in pypulseq.</p>
+<p>The example can essentially be broken down as follows:
+1. Create an <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> using the default device configuration from the repository. Here we can also set the log level for the log-file and the console log-output.
+2. Construct the spin echo based spectrum sequence. Here we use 20 <span class="math notranslate nohighlight">\(ms\)</span> echo time and 200 <span class="math notranslate nohighlight">\(\mu s\)</span> RF block pulse duration.
+3. Define the most basic <code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code>, namely the Larmor frequency <span class="math notranslate nohighlight">\(f_0\)</span> and the decimation factor for DDC.
+4. Execute the experiment.
+5. Extract the down-sampled raw data.
+6. Apply FFT to obtain the spectrum and calculate the associated frequency axis.
+7. Plot the magnitude spectrum.
+8. Add some note to the meta data of the <code class="docutils literal notranslate"><span class="pre">AcquisitionData</span></code> and save the results using the <code class="docutils literal notranslate"><span class="pre">write</span></code> method.
+9. Delete the acquisition control. This is an important step, as the destructor <code class="docutils literal notranslate"><span class="pre">__del__</span></code> of the <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> class disconnects from the measurement cards.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;Experiment to acquire a spin echo spectrum.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">console.utilities.sequences</span> <span class="k">as</span> <span class="nn">sequences</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.acquisition_control</span> <span class="kn">import</span> <span class="n">AcquistionControl</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_data</span> <span class="kn">import</span> <span class="n">AcquisitionData</span>
+<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span>
+
+<span class="c1"># Create acquisition control instance</span>
+<span class="n">acq</span> <span class="o">=</span> <span class="n">AcquistionControl</span><span class="p">(</span>
+    <span class="n">configuration_file</span><span class="o">=</span><span class="s2">&quot;../device_config.yaml&quot;</span><span class="p">,</span> 
+    <span class="n">console_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span> 
+    <span class="n">file_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span>
+<span class="p">)</span>
+
+<span class="c1"># Construct a spin echo based spectrum sequence</span>
+<span class="n">seq</span> <span class="o">=</span> <span class="n">sequences</span><span class="o">.</span><span class="n">se_spectrum</span><span class="o">.</span><span class="n">constructor</span><span class="p">(</span>
+    <span class="n">echo_time</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">,</span> 
+    <span class="n">rf_duration</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">,</span> 
+    <span class="n">use_sinc</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+
+<span class="c1"># Define acquisition parameters</span>
+<span class="n">params</span> <span class="o">=</span> <span class="n">AcquisitionParameter</span><span class="p">(</span>
+    <span class="n">larmor_frequency</span><span class="o">=</span><span class="mf">2.0395e6</span><span class="p">,</span>
+    <span class="n">decimation</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Run the acquisition</span>
+<span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+
+<span class="c1"># Get decimated data from acquisition data object</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">acq_data</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+
+
+<span class="c1"># Calculate FFT</span>
+<span class="n">data_fft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
+<span class="n">fft_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">acq_data</span><span class="o">.</span><span class="n">dwell_time</span><span class="p">))</span>
+
+<span class="c1"># Plot spectrum</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fft_freq</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">data_fft</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Abs. FFT Spectrum [a.u.]&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Frequency [Hz]&quot;</span><span class="p">)</span>
+
+<span class="c1"># Add information to the acquisition data</span>
+<span class="n">acq_data</span><span class="o">.</span><span class="n">add_info</span><span class="p">({</span>
+    <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="s2">&quot;Example spin echo spectrum experiment&quot;</span>
+<span class="p">})</span>
+
+<span class="c1"># Write acquisition data object</span>
+<span class="n">acq_data</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">save_unprocessed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1"># Delete the acquisition control, which disconnects from the measurement cards</span>
+<span class="k">del</span> <span class="n">acq</span>
+</pre></div>
+</div>
 </section>
 
 
@@ -496,7 +568,7 @@ document.write(`
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/code_examples/test.rst.txt">
+    <a href="../_sources/code_examples/spectrum.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

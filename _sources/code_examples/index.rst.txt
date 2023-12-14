@@ -1,12 +1,13 @@
 .. _examples:
 
 Examples
-=================
+========
 
-TODO
+
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Content
+   :maxdepth: 1
+   :numbered:
+   :caption: Experiments
    
-   test
+   spectrum
