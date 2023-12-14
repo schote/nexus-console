@@ -12,15 +12,15 @@ from console.spcm_control.interface_acquisition_parameter import AcquisitionPara
 
 # Create acquisition control instance
 acq = AcquistionControl(
-    configuration_file="../device_config.yaml", 
-    console_log_level=logging.INFO, 
+    configuration_file="../device_config.yaml",
+    console_log_level=logging.INFO,
     file_log_level=logging.DEBUG
 )
 
 # Construct a spin echo based spectrum sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=20e-3, 
-    rf_duration=200e-6, 
+    echo_time=20e-3,
+    rf_duration=200e-6,
     use_sinc=False
 )
 
