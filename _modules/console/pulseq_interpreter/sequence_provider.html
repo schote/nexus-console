@@ -438,18 +438,28 @@ document.write(`
 <span></span><span class="sd">&quot;&quot;&quot;Sequence provider class.&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-
-<span class="c1"># from line_profiler import profile</span>
 <span class="kn">from</span> <span class="nn">pypulseq.opts</span> <span class="kn">import</span> <span class="n">Opts</span>
 <span class="kn">from</span> <span class="nn">pypulseq.Sequence.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">resample</span>
 
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">Dimensions</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">line_profiler</span> <span class="kn">import</span> <span class="n">profile</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+<div class="viewcode-block" id="profile">
+<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.profile">[docs]</a>
+    <span class="k">def</span> <span class="nf">profile</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define placeholder for profile decorator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">func</span></div>
+
+
 
 <span class="n">INT16_MAX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
 <span class="n">INT16_MIN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span>
@@ -564,9 +574,9 @@ document.write(`
             <span class="k">raise</span> <span class="n">err</span></div>
 
 
-    <span class="c1"># @profile</span>
 <div class="viewcode-block" id="SequenceProvider.calculate_rf">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">[docs]</a>
+    <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">calculate_rf</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span>
@@ -662,9 +672,9 @@ document.write(`
             <span class="k">raise</span> <span class="n">err</span></div>
 
 
-    <span class="c1"># @profile</span>
 <div class="viewcode-block" id="SequenceProvider.calculate_gradient">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">[docs]</a>
+    <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">calculate_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate spectrum-card sample points of a pypulseq gradient block event.</span>
 
@@ -771,9 +781,9 @@ document.write(`
             <span class="k">raise</span> <span class="n">err</span></div>
 
 
-    <span class="c1"># @profile</span>
 <div class="viewcode-block" id="SequenceProvider.add_adc_gate">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">[docs]</a>
+    <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">add_adc_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">clk_ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add ADC gate signal and reference signal during gate inplace to gate and reference arrays.</span>
 
@@ -828,9 +838,9 @@ document.write(`
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Z gradient (channel 3) offset exceeds output limit&quot;</span><span class="p">)</span>
 
-    <span class="c1"># @profile</span>
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
+    <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">unroll_sequence</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">larmor_freq</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
