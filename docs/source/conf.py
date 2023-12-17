@@ -14,8 +14,7 @@ import sys
 from sphinx_pyproject import SphinxConfig
 
 config = SphinxConfig('../../pyproject.toml', globalns=globals())
-# sys.path.insert(0, os.path.abspath('../../src'))  # Source code dir relative to this file
-sys.path.insert(0, os.path.abspath('../..'))  # Source code dir relative to this file
+sys.path.insert(0, os.path.abspath('../../src/'))  # Source code dir relative to this file
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
