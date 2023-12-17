@@ -13,4 +13,7 @@ system = Opts(
     # rf_ringdown_time=100e-6,
     # Time delay at the beginning of ADC event
     # adc_dead_time=200e-6,
+    
+    max_slew=4000,
+    slew_unit="T/m/s",
 )
