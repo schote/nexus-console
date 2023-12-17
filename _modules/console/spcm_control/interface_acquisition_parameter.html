@@ -2,13 +2,12 @@
 <!DOCTYPE html>
 
 
-<html lang="en" data-content_root="../" >
+<html lang="en" data-content_root="../../../" >
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>API Documentation &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>console.spcm_control.interface_acquisition_parameter &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -18,36 +17,34 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+  <link href="../../../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
 
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
-    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=4cc05613" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=4cc05613" />
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
+  <script src="../../../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
 
-    <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
-    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/index';</script>
-    <link rel="icon" href="../_static/favicon.ico"/>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Pulseq Sequence Interpreter" href="pulseq_interpreter.html" />
-    <link rel="prev" title="1. Spin Echo Spectrum" href="../code_examples/spectrum.html" />
+    <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/design-tabs.js?v=36754332"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/spcm_control/interface_acquisition_parameter';</script>
+    <link rel="icon" href="../../../_static/favicon.ico"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -84,7 +81,7 @@
     <div class="search-button__overlay"></div>
     <div class="search-button__search-container">
 <form class="bd-search d-flex align-items-center"
-      action="../search.html"
+      action="../../../search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -114,7 +111,7 @@
 
   
 
-<a class="navbar-brand logo" href="../index.html">
+<a class="navbar-brand logo" href="../../../index.html">
   
   
   
@@ -125,8 +122,8 @@
       
     
     
-    <img src="../_static/logo.png" class="logo__image only-light" alt=""/>
-    <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
+    <img src="../../../_static/logo.png" class="logo__image only-light" alt=""/>
+    <script>document.write(`<img src="../../../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
   
   
     <p class="title logo__title">Spectrum-Console</p>
@@ -150,28 +147,28 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
                         Quick-Start Guide
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
+                      <a class="nav-link nav-internal" href="../../../user_guide/index.html">
                         User Guide
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../code_examples/index.html">
+                      <a class="nav-link nav-internal" href="../../../code_examples/index.html">
                         Examples
                       </a>
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -259,10 +256,6 @@ document.write(`
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
-      <span class="fa-solid fa-outdent"></span>
-    </label>
-  
 </div>
 
     </nav>
@@ -290,28 +283,28 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
                         Quick-Start Guide
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
+                      <a class="nav-link nav-internal" href="../../../user_guide/index.html">
                         User Guide
                       </a>
                     </li>
                 
 
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../code_examples/index.html">
+                      <a class="nav-link nav-internal" href="../../../code_examples/index.html">
                         Examples
                       </a>
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="#">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../../../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -372,7 +365,7 @@ document.write(`
     <div class="sidebar-primary-items__start sidebar-primary__section">
         <div class="sidebar-primary-item">
 <form class="bd-search d-flex align-items-center"
-      action="../search.html"
+      action="../../../search.html"
       method="get">
   <i class="fa-solid fa-magnifying-glass"></i>
   <input type="search"
@@ -387,19 +380,6 @@ document.write(`
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="pulseq_interpreter.html">Pulseq Sequence Interpreter</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spcm_control.html">Spectrum-Instrumentation Control</a></li>
-<li class="toctree-l1"><a class="reference internal" href="acquisition_control.html">Acquisition</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a></li>
-</ul>
-</div>
-</nav></div>
     </div>
   
   
@@ -430,11 +410,14 @@ document.write(`
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
-      <a href="../index.html" class="nav-link" aria-label="Home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    <li class="breadcrumb-item active" aria-current="page">API Documentation</li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page">console.spcm...</li>
   </ul>
 </nav>
 </div>
@@ -451,37 +434,76 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="api-documentation">
-<span id="api"></span><h1>API Documentation<a class="headerlink" href="#api-documentation" title="Link to this heading">#</a></h1>
-<div class="toctree-wrapper compound">
-<p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="pulseq_interpreter.html">Pulseq Sequence Interpreter</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pulseq_interpreter.html#sequence-provider">Sequence Provider</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pulseq_interpreter.html#module-console.pulseq_interpreter.interface_unrolled_sequence">Unrolled Sequence</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="spcm_control.html">Spectrum-Instrumentation Control</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="spcm_control.html#module-console.spcm_control.abstract_device">Transmit and Receive Devices</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="acquisition_control.html">Acquisition</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="acquisition_control.html#acquisition-control">Acquisition Control</a></li>
-<li class="toctree-l2"><a class="reference internal" href="acquisition_control.html#module-console.spcm_control.interface_acquisition_parameter">Acquisition Parameter</a></li>
-<li class="toctree-l2"><a class="reference internal" href="acquisition_control.html#acquisition-data">Acquisition Data</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="utilities.html">Utilities</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#console.utilities.ddc.apply_ddc"><code class="docutils literal notranslate"><span class="pre">apply_ddc()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#console.utilities.ddc.filter_cic_fir_comp"><code class="docutils literal notranslate"><span class="pre">filter_cic_fir_comp()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#console.utilities.ddc.filter_moving_average"><code class="docutils literal notranslate"><span class="pre">filter_moving_average()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="utilities.html#console.utilities.snr.signal_to_noise_ratio"><code class="docutils literal notranslate"><span class="pre">signal_to_noise_ratio()</span></code></a></li>
-</ul>
-</li>
-</ul>
-</div>
-</section>
+  <h1>Source code for console.spcm_control.interface_acquisition_parameter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Interface class for acquisition parameters.&quot;&quot;&quot;</span>
 
+<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">dataclass</span>
+
+
+<div class="viewcode-block" id="Dimensions">
+<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.interface_acquisition_parameter.Dimensions">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Dimensions</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dataclass for definition of dimensional parameters.&quot;&quot;&quot;</span>
+
+    <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;X dimension.&quot;&quot;&quot;</span>
+
+    <span class="n">y</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Y dimension.&quot;&quot;&quot;</span>
+
+    <span class="n">z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span>  <span class="c1"># pylint: disable=invalid-name</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Z dimension.&quot;&quot;&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="AcquisitionParameter">
+<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AcquisitionParameter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameters which define an acquisition.&quot;&quot;&quot;</span>
+
+    <span class="n">larmor_frequency</span><span class="p">:</span> <span class="nb">float</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Larmor frequency in MHz.&quot;&quot;&quot;</span>
+
+    <span class="n">b1_scaling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scaling of the B1 field (RF transmit power).&quot;&quot;&quot;</span>
+
+    <span class="n">gradient_offset</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient offset values.&quot;&quot;&quot;</span>
+
+    <span class="n">fov_scaling</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view scaling for Gx, Gy and Gz.&quot;&quot;&quot;</span>
+
+    <span class="n">decimation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decimation rate for initial down-sampling step.&quot;&quot;&quot;</span>
+
+    <span class="n">num_averages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of acquisition averages.&quot;&quot;&quot;</span>
+
+    <span class="n">averaging_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delay in seconds between acquisition averages.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="AcquisitionParameter.dict">
+<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_strings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return acquisition parameters as dictionary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        use_strings, optional</span>
+<span class="sd">            boolean flag indicating if values of dictionary should be represented as strings, by default False</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            Acquisition parameter dictionary</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">use_strings</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
 
                 </article>
               
@@ -492,43 +514,12 @@ document.write(`
                 <footer class="prev-next-footer">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="../code_examples/spectrum.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title"><span class="section-number">1. </span>Spin Echo Spectrum</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="pulseq_interpreter.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Pulseq Sequence Interpreter</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
             </div>
             
             
-              
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-  <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="../_sources/api_reference/index.rst.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
-
-</div></div>
               
             
           </div>
@@ -541,8 +532,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+  <script src="../../../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">

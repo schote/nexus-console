@@ -6,9 +6,8 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>Utilities &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Overview: module code &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -42,11 +41,10 @@
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/utilities';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/index';</script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="prev" title="Acquisition" href="acquisition_control.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -169,8 +167,8 @@
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="index.html">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -258,10 +256,6 @@ document.write(`
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
-      <span class="fa-solid fa-outdent"></span>
-    </label>
-  
 </div>
 
     </nav>
@@ -309,8 +303,8 @@ document.write(`
                     </li>
                 
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="index.html">
+                    <li class="nav-item">
+                      <a class="nav-link nav-internal" href="../api_reference/index.html">
                         API Documentation
                       </a>
                     </li>
@@ -386,19 +380,6 @@ document.write(`
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="pulseq_interpreter.html">Pulseq Sequence Interpreter</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spcm_control.html">Spectrum-Instrumentation Control</a></li>
-<li class="toctree-l1"><a class="reference internal" href="acquisition_control.html">Acquisition</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Utilities</a></li>
-</ul>
-</div>
-</nav></div>
     </div>
   
   
@@ -433,10 +414,7 @@ document.write(`
         <i class="fa-solid fa-home"></i>
       </a>
     </li>
-    
-    <li class="breadcrumb-item"><a href="index.html" class="nav-link">API Documentation</a></li>
-    
-    <li class="breadcrumb-item active" aria-current="page">Utilities</li>
+    <li class="breadcrumb-item active" aria-current="page">Overview:...</li>
   </ul>
 </nav>
 </div>
@@ -453,106 +431,15 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article" role="main">
                   
-  <section id="module-console.utilities.ddc">
-<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-console.utilities.ddc" title="Link to this heading">#</a></h1>
-<p>Digital down converter (DDC) function.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.ddc.apply_ddc">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.ddc.</span></span><span class="sig-name descname"><span class="pre">apply_ddc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_spcm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/console/utilities/ddc.html#apply_ddc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.ddc.apply_ddc" title="Link to this definition">#</a></dt>
-<dd><p>Apply digital downsampling.</p>
-<p>This function demodulates the raw NMR signal, applies a bandpass filter and does the down-sampling.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>raw_signal</strong> – Raw NMR signal in time-domain</p></li>
-<li><p><strong>kernel_size</strong> – Filter kernel size</p></li>
-<li><p><strong>f_0</strong> – Larmor frequency</p></li>
-<li><p><strong>f_spcm</strong> – Sampling frequency</p></li>
+  <h1>All modules for which code is available</h1>
+<ul><li><a href="console/pulseq_interpreter/interface_unrolled_sequence.html">console.pulseq_interpreter.interface_unrolled_sequence</a></li>
+<li><a href="console/spcm_control/abstract_device.html">console.spcm_control.abstract_device</a></li>
+<li><a href="console/spcm_control/interface_acquisition_parameter.html">console.spcm_control.interface_acquisition_parameter</a></li>
+<li><a href="console/spcm_control/rx_device.html">console.spcm_control.rx_device</a></li>
+<li><a href="console/spcm_control/tx_device.html">console.spcm_control.tx_device</a></li>
+<li><a href="console/utilities/ddc.html">console.utilities.ddc</a></li>
+<li><a href="console/utilities/snr.html">console.utilities.snr</a></li>
 </ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Filtered and down-sampled signal</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.ddc.filter_cic_fir_comp">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.ddc.</span></span><span class="sig-name descname"><span class="pre">filter_cic_fir_comp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_stages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/utilities/ddc.html#filter_cic_fir_comp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.ddc.filter_cic_fir_comp" title="Link to this definition">#</a></dt>
-<dd><p>Decimate data using CIC filter and FIR compensation.</p>
-<p>Two stage decimation:
-(1) CIC decimation by decimation/2 rate
-(2) FIR decimation by factor 2</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>signal</strong> – Unprocessed raw signal to be decimated and filtered.
-Input signal shape is supposed to be [averages, coils, phase encoding, readout].
-Downsampling is applied to the readout dimension.</p></li>
-<li><p><strong>decimation</strong> – Decimation factor, by default 100.
-Must be even, since decimation is performed in two steps.</p></li>
-<li><p><strong>number_of_stages</strong> – Number of CIC stages.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Downsampled signal</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – Uneven decimation factor.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.ddc.filter_moving_average">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.ddc.</span></span><span class="sig-name descname"><span class="pre">filter_moving_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/utilities/ddc.html#filter_moving_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.ddc.filter_moving_average" title="Link to this definition">#</a></dt>
-<dd><p>Decimate data using a moving average filter.</p>
-<p>$kernel = e^{frac{-1}{1 - x^2}} * sin{2.073 * pi x} / x, ; x = -1, …, 1$</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>signal</strong> – Unprocessed raw signal to be decimated and filtered.
-Input signal shape is supposed to be [averages, coils, phase encoding, readout].
-Downsampling is applied to the readout dimension.</p></li>
-<li><p><strong>decimation</strong> – Decimation factor, by default 100</p></li>
-<li><p><strong>optional</strong> – Decimation factor, by default 100</p></li>
-<li><p><strong>overlap</strong> – Overlap factor of the kernel.
-If 2, kernel is applied every kernel_size/2, if 4 every kerne_size/4 and so on.
-By default 4</p></li>
-<li><p><strong>optional</strong> – Overlap factor of the kernel.
-If 2, kernel is applied every kernel_size/2, if 4 every kerne_size/4 and so on.
-By default 4</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Downsampled signal</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p id="module-console.utilities.snr">Signal-to-noise ratio (SNR) calculation.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.snr.signal_to_noise_ratio">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.snr.</span></span><span class="sig-name descname"><span class="pre">signal_to_noise_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_rms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/console/utilities/snr.html#signal_to_noise_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.snr.signal_to_noise_ratio" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the signal to noise ratio.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>signal</strong> – Signal to be evaluated</p></li>
-<li><p><strong>noise_threshold</strong> – Threshold for noise level, by default 0.2</p></li>
-<li><p><strong>optional</strong> – Threshold for noise level, by default 0.2</p></li>
-<li><p><strong>use_rms</strong> – Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False</p></li>
-<li><p><strong>optional</strong> – Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>SNR value</p>
-</dd>
-</dl>
-</dd></dl>
-
-</section>
-
 
                 </article>
               
@@ -563,48 +450,12 @@ By default 4</p></li>
                 <footer class="prev-next-footer">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="acquisition_control.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Acquisition</p>
-      </div>
-    </a>
 </div>
                 </footer>
               
             </div>
             
             
-              
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-  <div class="sidebar-secondary-item">
-
-  <div class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav class="bd-toc-nav page-toc">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.apply_ddc"><code class="docutils literal notranslate"><span class="pre">apply_ddc()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_cic_fir_comp"><code class="docutils literal notranslate"><span class="pre">filter_cic_fir_comp()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_moving_average"><code class="docutils literal notranslate"><span class="pre">filter_moving_average()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.snr.signal_to_noise_ratio"><code class="docutils literal notranslate"><span class="pre">signal_to_noise_ratio()</span></code></a></li>
-</ul>
-  </nav></div>
-
-  <div class="sidebar-secondary-item">
-
-  <div class="tocsection sourcelink">
-    <a href="../_sources/api_reference/utilities.rst.txt">
-      <i class="fa-solid fa-file-lines"></i> Show Source
-    </a>
-  </div>
-</div>
-
-</div></div>
               
             
           </div>
