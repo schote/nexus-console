@@ -456,8 +456,60 @@ document.write(`
                   
   <section id="acquisition">
 <h1>Acquisition<a class="headerlink" href="#acquisition" title="Link to this heading">#</a></h1>
-<section id="acquisition-control">
-<h2>Acquisition Control<a class="headerlink" href="#acquisition-control" title="Link to this heading">#</a></h2>
+<section id="module-console.spcm_control.acquisition_control">
+<span id="acquisition-control"></span><h2>Acquisition Control<a class="headerlink" href="#module-console.spcm_control.acquisition_control" title="Link to this heading">#</a></h2>
+<p>Acquisition Control Class.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquistionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../../../device_config.yaml'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_storage_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/home/runner/spcm-console'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">console_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquistionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Acquisition control class.</p>
+<p>The main functionality of the acquisition control is to orchestrate transmit and receive cards using
+<code class="docutils literal notranslate"><span class="pre">TxCard</span></code> and <code class="docutils literal notranslate"><span class="pre">RxCard</span></code> instances.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.post_processing">
+<span class="sig-name descname"><span class="pre">post_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquistionControl.post_processing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.post_processing" title="Link to this definition">#</a></dt>
+<dd><p>Proces acquired NMR data.</p>
+<p>Data is sorted according to readout size which might vary between different reout windows.
+Unprocessed and raw data are stored in class attributes _raw and _unproc.
+Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.</p>
+<p>Post processing contains the following steps per readout sample size:
+(1) Extraction of reference signal and scaling to float values [mV]
+(2) Concatenate reference data and signal data in coil dimensions
+(3) Demodulation along readout dimensions
+(4) Decimation along readout dimension
+(5) Phase correction with reference signal</p>
+<p>Dimensions: [averages, coils, phase encoding, readout]</p>
+<p>Reference signal is stored in the last entry of the coil dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>parameter</strong> – Acquisition parameter</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquistionControl.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.spcm_control.interface_acquisition_data.AcquisitionData" title="console.spcm_control.interface_acquisition_data.AcquisitionData"><span class="pre">AcquisitionData</span></a></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquistionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquistionControl.run" title="Link to this definition">#</a></dt>
+<dd><p>Run an acquisition job.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sequence</strong> – Path to pulseq sequence file.</p></li>
+<li><p><strong>parameter</strong> – Set of acquisition parameters which are required for the acquisition.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – The measurement cards are not setup properly.</p></li>
+<li><p><strong>FileNotFoundError</strong> – Invalid file ending of sequence file.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 <section id="module-console.spcm_control.interface_acquisition_parameter">
 <span id="id1"></span><span id="acquisition-parameter"></span><h2>Acquisition Parameter<a class="headerlink" href="#module-console.spcm_control.interface_acquisition_parameter" title="Link to this heading">#</a></h2>
@@ -554,8 +606,91 @@ document.write(`
 </dd></dl>
 
 </section>
-<section id="acquisition-data">
-<span id="id2"></span><h2>Acquisition Data<a class="headerlink" href="#acquisition-data" title="Link to this heading">#</a></h2>
+<section id="module-console.spcm_control.interface_acquisition_data">
+<span id="id2"></span><span id="acquisition-data"></span><h2>Acquisition Data<a class="headerlink" href="#module-console.spcm_control.interface_acquisition_data" title="Link to this heading">#</a></h2>
+<p>Interface class for acquisition data.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.interface_acquisition_data.</span></span><span class="sig-name descname"><span class="pre">AcquisitionData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw:</span> <span class="pre">~numpy.ndarray</span> <span class="pre">|</span> <span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acquisition_parameters:</span> <span class="pre">~console.spcm_control.interface_acquisition_parameter.AcquisitionParameter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sequence:</span> <span class="pre">~console.pulseq_interpreter.sequence_provider.SequenceProvider</span> <span class="pre">|</span> <span class="pre">~pypulseq.Sequence.sequence.Sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_config:</span> <span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time:</span> <span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta:</span> <span class="pre">dict[str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'/home/runner/spcm-console'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unprocessed_data:</span> <span class="pre">~numpy.ndarray</span> <span class="pre">|</span> <span class="pre">list</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_data.html#AcquisitionData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parameters which define an acquisition.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.acquisition_parameters">
+<span class="sig-name descname"><span class="pre">acquisition_parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.acquisition_parameters" title="Link to this definition">#</a></dt>
+<dd><p>Acquisition parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.add_info">
+<span class="sig-name descname"><span class="pre">add_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_data.html#AcquisitionData.add_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.add_info" title="Link to this definition">#</a></dt>
+<dd><p>Add entries to meta data dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>info</strong> – Information as dictionary to be added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.device_config">
+<span class="sig-name descname"><span class="pre">device_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.device_config" title="Link to this definition">#</a></dt>
+<dd><p>Device configurations (transmit card, receive card and sequence provide) of the experiment.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.dwell_time">
+<span class="sig-name descname"><span class="pre">dwell_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.dwell_time" title="Link to this definition">#</a></dt>
+<dd><p>Dwell time of down-sampled raw data in seconds.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.meta" title="Link to this definition">#</a></dt>
+<dd><p>Meta data dictionary for additional acquisition info.
+Dictionary is updated (extended) by post-init method with some general information.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.raw">
+<span class="sig-name descname"><span class="pre">raw</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.raw" title="Link to this definition">#</a></dt>
+<dd><p>Demodulated, down-sampled and filtered complex-valued raw MRI data.
+The raw data array has following dimensions:[averages, coils, phase encoding, readout]</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.sequence">
+<span class="sig-name descname"><span class="pre">sequence</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.sequence" title="Link to this definition">#</a></dt>
+<dd><p>Sequence object used for the acquisition acquisition.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.storage_path">
+<span class="sig-name descname"><span class="pre">storage_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.storage_path" title="Link to this definition">#</a></dt>
+<dd><p>Directory the acquisition data will be stored in.
+Within the given <cite>storage_path</cite> a new directory with time stamp and sequence name will be created.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.unprocessed_data">
+<span class="sig-name descname"><span class="pre">unprocessed_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.unprocessed_data" title="Link to this definition">#</a></dt>
+<dd><p>Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
+The first entry of the coil dimension also contains the reference signal (16th bit).
+The data array has the following dimensions: [averages, coils, phase encoding, readout]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.interface_acquisition_data.AcquisitionData.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_unprocessed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/interface_acquisition_data.html#AcquisitionData.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.write" title="Link to this definition">#</a></dt>
+<dd><p>Save all the acquisition data to a given data path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>save_unprocessed</strong> – Flag which indicates if unprocessed data is to be written or not.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -603,7 +738,14 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-control">Acquisition Control</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.spcm_control.acquisition_control">Acquisition Control</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl"><code class="docutils literal notranslate"><span class="pre">AcquistionControl</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.post_processing"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.post_processing()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquistionControl.run"><code class="docutils literal notranslate"><span class="pre">AcquistionControl.run()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.spcm_control.interface_acquisition_parameter">Acquisition Parameter</a><ul class="visible nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter.averaging_delay"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.averaging_delay</span></code></a></li>
@@ -624,7 +766,22 @@ document.write(`
 </li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-data">Acquisition Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.spcm_control.interface_acquisition_data">Acquisition Data</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData"><code class="docutils literal notranslate"><span class="pre">AcquisitionData</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.acquisition_parameters"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.acquisition_parameters</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.add_info"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.add_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.device_config"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.device_config</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.dwell_time"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.dwell_time</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.meta"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.meta</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.raw"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.raw</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.sequence"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.sequence</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.storage_path"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.storage_path</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.unprocessed_data"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.unprocessed_data</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.interface_acquisition_data.AcquisitionData.write"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.write()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
