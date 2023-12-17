@@ -5,7 +5,8 @@ from types import SimpleNamespace
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from line_profiler import profile
+
+# from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
@@ -121,7 +122,7 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-    @profile
+    # @profile
     def calculate_rf(
         self,
         block: SimpleNamespace,
@@ -322,7 +323,7 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-    @profile
+    # @profile
     def add_adc_gate(self, block: SimpleNamespace, gate: np.ndarray, clk_ref: np.ndarray) -> None:
         """Add ADC gate signal and reference signal during gate inplace to gate and reference arrays.
 
@@ -376,7 +377,7 @@ class SequenceProvider(Sequence):
         if np.abs(grad_offset.z) > self.output_limits[3]:
             raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
-    @profile
+    # @profile
     def unroll_sequence(
         self,
         larmor_freq: float,
