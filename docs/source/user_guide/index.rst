@@ -16,6 +16,7 @@ If you find anything incomprehensible or have suggestions for improvements, plea
    system_setup
    acquisition_process
    sequence_unrolling
+   spectrum_devices
 
 The first section of the user guide gives an overview of the overall system setup.
 It might be different to your specific setup but in general it should be transferable.
