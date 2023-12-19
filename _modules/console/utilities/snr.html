@@ -441,32 +441,36 @@ document.write(`
 
 <div class="viewcode-block" id="signal_to_noise_ratio">
 <a class="viewcode-back" href="../../../api_reference/utilities.html#console.utilities.snr.signal_to_noise_ratio">[docs]</a>
-<span class="k">def</span> <span class="nf">signal_to_noise_ratio</span><span class="p">(</span><span class="n">signal</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">noise_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span><span class="p">,</span> <span class="n">use_rms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the signal to noise ratio.</span>
+<span class="k">def</span> <span class="nf">signal_to_noise_ratio</span><span class="p">(</span><span class="n">signal</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">dwell_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">window_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the signal to noise ratio in dB.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    signal</span>
-<span class="sd">        Signal to be evaluated</span>
-<span class="sd">    noise_threshold, optional</span>
-<span class="sd">        Threshold for noise level, by default 0.2</span>
-<span class="sd">    use_rms, optional</span>
-<span class="sd">        Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False</span>
+<span class="sd">        Centered spectrum of the acquired signal</span>
+<span class="sd">    dwell_time</span>
+<span class="sd">        Dwell-time of the acquired signal</span>
+<span class="sd">    window_width</span>
+<span class="sd">        Estimated window width of the signal in Hz</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
-<span class="sd">        SNR value</span>
+<span class="sd">        Signal to noise ratio in dB</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># Calculte signal by thresholding</span>
-    <span class="n">signal_win</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">noise_threshold</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">))]</span>
-    <span class="n">noise_win</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">noise_threshold</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">))]</span>
+    <span class="n">peak</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:]))</span>
+    <span class="n">fft_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dwell_time</span><span class="p">))</span>
 
-    <span class="k">if</span> <span class="n">use_rms</span><span class="p">:</span>
-        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">noise_win</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">noise_win</span><span class="p">))</span>  <span class="c1"># Mean abs</span>
+    <span class="c1"># Define start and end indices of the window</span>
+    <span class="n">half_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">peak_position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:]))</span>
+    <span class="n">left_window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fft_freq</span> <span class="o">+</span> <span class="n">fft_freq</span><span class="p">[</span><span class="n">peak_position</span><span class="p">]</span> <span class="o">+</span> <span class="n">half_width</span><span class="p">))</span>
+    <span class="n">right_window_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fft_freq</span> <span class="o">+</span> <span class="n">fft_freq</span><span class="p">[</span><span class="n">peak_position</span><span class="p">]</span> <span class="o">-</span> <span class="n">half_width</span><span class="p">))</span>
 
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">signal_win</span><span class="p">)</span> <span class="o">/</span> <span class="n">noise</span><span class="p">)</span></div>
+    <span class="c1"># Extract pure noise from outside the window containing the peak</span>
+    <span class="n">noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">left_window_idx</span><span class="p">],</span> <span class="n">signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">right_window_idx</span><span class="p">:]))</span>
+
+    <span class="c1"># Return snr in dB</span>
+    <span class="k">return</span> <span class="mi">20</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">peak</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">noise</span><span class="p">)))</span></div>
 
 </pre></div>
 

@@ -545,13 +545,14 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
-        <span class="c1"># Setup the internal clockmode:</span>
-        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)</span>
+        <span class="c1"># Setup the internal clockmode, clock output enable (use RX clock output to enable anti-alias filter)</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_INTPLL</span><span class="p">)</span>
+        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKOUT</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCKMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CM_EXTERNAL</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCK50OHM</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CLOCK_THRESHOLD</span><span class="p">,</span> <span class="mi">1500</span><span class="p">)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)</span>
+        <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)</span>
 
         <span class="c1"># Set card sampling rate in MHz and read the actual sampling rate</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span>
@@ -689,7 +690,7 @@ document.write(`
         <span class="c1"># RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.</span>
         <span class="n">rx_notify</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">KILO_B</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
 
-        <span class="c1"># Buffer size set to maximum. Todo check one ADC window is not exceeeding the limit</span>
+        <span class="c1"># Buffer size set to maximum. Todo check one ADC window is not exceeding the limit</span>
         <span class="n">rx_size</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">3</span>
         <span class="n">rx_buffer_size</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="n">rx_size</span><span class="p">)</span>
 
@@ -804,9 +805,6 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Left over in bytes: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">bytes_leftover</span><span class="p">)</span>
 
                 <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
-                    <span class="c1"># Wait for the page to be available</span>
-                    <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
-
                     <span class="c1"># Read/update available user bytes</span>
                     <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>

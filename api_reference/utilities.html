@@ -533,20 +533,18 @@ By default 4</p></li>
 <p id="module-console.utilities.snr">Signal-to-noise ratio (SNR) calculation.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="console.utilities.snr.signal_to_noise_ratio">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.snr.</span></span><span class="sig-name descname"><span class="pre">signal_to_noise_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise_threshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_rms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/console/utilities/snr.html#signal_to_noise_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.snr.signal_to_noise_ratio" title="Link to this definition">#</a></dt>
-<dd><p>Calculate the signal to noise ratio.</p>
+<span class="sig-prename descclassname"><span class="pre">console.utilities.snr.</span></span><span class="sig-name descname"><span class="pre">signal_to_noise_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/console/utilities/snr.html#signal_to_noise_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.snr.signal_to_noise_ratio" title="Link to this definition">#</a></dt>
+<dd><p>Calculate the signal to noise ratio in dB.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>signal</strong> – Signal to be evaluated</p></li>
-<li><p><strong>noise_threshold</strong> – Threshold for noise level, by default 0.2</p></li>
-<li><p><strong>optional</strong> – Threshold for noise level, by default 0.2</p></li>
-<li><p><strong>use_rms</strong> – Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False</p></li>
-<li><p><strong>optional</strong> – Flag to switch between RMS and mean abs. of the noise to calculate noise level, by default False</p></li>
+<li><p><strong>signal</strong> – Centered spectrum of the acquired signal</p></li>
+<li><p><strong>dwell_time</strong> – Dwell-time of the acquired signal</p></li>
+<li><p><strong>window_width</strong> – Estimated window width of the signal in Hz</p></li>
 </ul>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>SNR value</p>
+<dd class="field-even"><p>Signal to noise ratio in dB</p>
 </dd>
 </dl>
 </dd></dl>
