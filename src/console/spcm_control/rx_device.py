@@ -105,13 +105,14 @@ class RxCard(SpectrumDevice):
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Setup the internal clockmode:
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        # Setup the internal clockmode, clock output enable (use RX clock output to enable anti-alias filter)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKOUT, 1)
 
         # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
 
         # Set card sampling rate in MHz and read the actual sampling rate
         sp.spcm_dwSetParam_i64(self.card, sp.SPC_SAMPLERATE, sp.MEGA(self.sample_rate))

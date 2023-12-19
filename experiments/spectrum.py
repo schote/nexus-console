@@ -33,13 +33,13 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 # %%
 # Larmor frequency:
 # f_0 = 2038555   # Berlin system
-f_0 = 2039505
+f_0 = 2034500.0
 # f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.05, # 8 cm phantom
+    b1_scaling=2.1, # 8 cm phantom
     # b1_scaling=6.3,
      decimation=200,
     # num_averages=10,
@@ -86,7 +86,8 @@ acq_data.add_info({
     "snr": snr,
     # "note": "Passive TR switch from PTB"
     # "note": "EMI measurement"
-    "note": "Active TR switch, shorter coil-RX connection",
+    # "note": "Passive TR switch, two-stage preamp: china (1), wenteq (2)",
+    "note": "wenteq, rx-clk out, phantom position corrected"
 })
 
 # acq_data.write(save_unprocessed=False)

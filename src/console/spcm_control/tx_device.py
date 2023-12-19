@@ -110,9 +110,13 @@ class TxCard(SpectrumDevice):
         # Set trigger
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
 
-        # Set clock mode
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        # Set clock mode, internal PLL and clock output enable
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        # Configure external clock, TX master clock
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500)
 
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
