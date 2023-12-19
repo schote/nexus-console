@@ -19,7 +19,6 @@ class UnrolledSequence:
 
     adc_gate: list
     """ADC gate signal in binary logic where 0 corresponds to ADC gate off and 1 to ADC gate on."""
-
     rf_unblanking: list
     """Unblanking signal for the RF power amplifier (RFPA) in binary logic. 0 corresponds to blanking state
     and 1 to unblanking state."""

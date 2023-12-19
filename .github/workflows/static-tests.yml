@@ -30,4 +30,4 @@ jobs:
 
     - name: Run linters
       run: |
-        poe linter
+        ruff src/ && ruff examples/

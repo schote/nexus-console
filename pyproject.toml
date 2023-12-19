@@ -38,8 +38,8 @@ dependencies = [
 [project.optional-dependencies]
 reco = ["torch"]
 # test = ["coverage", "codecov"]
-lint = ["ruff", "black", "poethepoet", "types-PyYAML"]
-docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject"]
+lint = ["ruff", "types-PyYAML"]
+docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [tool.black]
@@ -68,19 +68,3 @@ max-statements = 50
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
-
-# Poe task setup for linting and formatting
-[tool.poe.tasks]
-format.sequence = ["black", "ruff-fix"]
-
-    [tool.poe.tasks.linter]
-    help = "Run ruff linter"
-    cmd = "ruff src/"
-
-    [tool.poe.tasks.ruff-fix]
-    help = "Run ruff formatter"
-    cmd = "ruff src/ --fix"
-
-    [tool.poe.tasks.black]
-    help = "Run black"
-    cmd = "black src/"

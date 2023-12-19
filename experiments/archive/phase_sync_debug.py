@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquistionControl
-from console.utilities.spcm_data_plot import plot_spcm_data
+from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
 from console.spcm_control.ddc import apply_ddc
 import time
 from scipy.signal import butter, filtfilt

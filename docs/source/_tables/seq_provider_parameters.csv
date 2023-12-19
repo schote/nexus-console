@@ -1,0 +1,10 @@
+Scope,Parameter,Datatype,Description
+Dev,output_limits,"[float, float, float, float]","Individual output limits of the 4 analog channels in [mV]"
+Dev,spcm_dwell_time,"float","Sample rate of the receive card in [s]"
+Dev,gradient_efficiency,"[float, float, float]","Efficiency of the gradient coils x, y and z in [mT/m/A]"
+Dev,gpa_gain,"[float, float, float]","Gain of the gradient power amplifier in [V/A]"
+Dev,rf_to_volt,"float","Scaling factor of the RF waveform, which translates [Hz] (pypulseq) to [mV]"
+Acq,larmor_freq,"float","Larmor frequency, frequency of the carrier waveform"
+Acq,b1_scaling,"float","Scaling factor for RF waveform, default is 1.0"
+Acq,fov_scaling,"[float, float, float]","Scaling factor per gradient channel, default is 1.0"
+Acq,grad_offset,"[float, float, float]","Offset value per gradient channel in [kHz/m], default is 0.0"

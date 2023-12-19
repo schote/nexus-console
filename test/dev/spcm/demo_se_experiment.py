@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from console.utilities.load_config import get_instances
-from console.utilities.spcm_data_plot import plot_spcm_data
+from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities.processing import apply_ddc
 from scipy import signal
@@ -24,7 +24,7 @@ if not is_setup:
 
 # %%
 # Set max amplitude per channel from TX card to unroll sequence directly to int16
-seq.max_amp_per_channel = tx_card.max_amplitude
+seq.output_limits = tx_card.max_amplitude
 
 # filename = "se_spectrum_400us_sinc_8ms-te"
 # filename = "se_spectrum_400us_sinc_20ms-te"
@@ -56,7 +56,7 @@ seq.grad_to_volt = 0.0
 
 sqnc: UnrolledSequence = seq.unroll_sequence(f_0, b1_scaling=1.)
 
-fig, ax = plot_spcm_data(sqnc, use_time=True)
+fig, ax = plot_unrolled_sequence(sqnc, use_time=True)
 fig.show()
 
 # %%

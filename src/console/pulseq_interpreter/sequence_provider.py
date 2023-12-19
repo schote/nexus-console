@@ -1,17 +1,25 @@
 """Sequence provider class."""
 import logging
 from types import SimpleNamespace
+from typing import Any, Callable
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-from line_profiler import profile
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.interface_acquisition_parameter import Dimensions
+
+try:
+    from line_profiler import profile
+except ImportError:
+    def profile(func: Callable[..., Any]) -> Callable[..., Any]:
+        """Define placeholder for profile decorator."""
+        return func
+
 
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
@@ -216,7 +224,7 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
             raise err
 
-    # @profile
+    @profile
     def calculate_gradient(self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float) -> None:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
