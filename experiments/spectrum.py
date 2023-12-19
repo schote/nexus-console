@@ -33,7 +33,7 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 # %%
 # Larmor frequency:
 # f_0 = 2038555   # Berlin system
-f_0 = 2034500.0
+f_0 = 2033750
 # f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
