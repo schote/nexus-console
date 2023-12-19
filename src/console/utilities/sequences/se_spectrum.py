@@ -46,8 +46,12 @@ def constructor(echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc:
         system=system,
     )
 
-    te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
-    te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)
+    te_delay_1 = pp.make_delay(
+        echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
+    )
+    te_delay_2 = pp.make_delay(
+        echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2 - rf_180.ringdown_time - adc.dead_time
+    )
 
     seq.add_block(rf_90)
     seq.add_block(te_delay_1)
