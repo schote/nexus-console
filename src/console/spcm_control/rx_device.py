@@ -104,13 +104,14 @@ class RxCard(SpectrumDevice):
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Setup the internal clockmode:
-        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        # Setup the internal clockmode, clock output enable (use RX clock output to enable anti-alias filter)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKOUT, 1)
 
         # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK50OHM, 1)
+        # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCK_THRESHOLD, 1500)
 
         # Set card sampling rate in MHz and read the actual sampling rate
         sp.spcm_dwSetParam_i64(self.card, sp.SPC_SAMPLERATE, sp.MEGA(self.sample_rate))
@@ -241,7 +242,7 @@ class RxCard(SpectrumDevice):
         # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
 
-        # Buffer size set to maximum. Todo check one ADC window is not exceeeding the limit
+        # Buffer size set to maximum. Todo check one ADC window is not exceeding the limit
         rx_size = 1024**3
         rx_buffer_size = sp.uint64(rx_size)
 
@@ -356,9 +357,6 @@ class RxCard(SpectrumDevice):
                 self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
-                    # Wait for the page to be available
-                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
-
                     # Read/update available user bytes
                     sp.spcm_dwGetParam_i32(
                         self.card,
