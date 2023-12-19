@@ -5,7 +5,6 @@ from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
-import time
 
 import numpy as np
 
