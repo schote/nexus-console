@@ -19,15 +19,15 @@ acq = AcquistionControl(
 
 # Construct a spin echo based spectrum sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=20e-3,
-    rf_duration=200e-6,
-    use_sinc=False
+    echo_time=12e-3,        # 12 ms echo time
+    rf_duration=200e-6,     # 200 us RF pulseq duration
+    use_sinc=False          # Do not use sinc pulse, but block pulse
 )
 
 # Define acquisition parameters
 params = AcquisitionParameter(
-    larmor_frequency=2.0395e6,
-    decimation=400,
+    larmor_frequency=2.0395e6,  # Set Larmor freqency in MHz
+    decimation=200,             # Set decimation factor for down-sampling
 )
 
 # Run the acquisition
@@ -35,7 +35,6 @@ acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
 
 # Get decimated data from acquisition data object
 data = acq_data.raw.squeeze()
-
 
 # Calculate FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
@@ -53,7 +52,7 @@ acq_data.add_info({
 })
 
 # Write acquisition data object
-acq_data.write(save_unprocessed=False)
+acq_data.write()
 
 # Delete the acquisition control, which disconnects from the measurement cards
 del acq

@@ -279,16 +279,19 @@ class AcquistionControl:
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 
-        gates = [np.stack(group, axis=1) for group in grouped_gates.values()]
+        gate_lengths = [np.stack(group, axis=1) for group in grouped_gates.values()]
         raw_size = len(self._raw)
 
-        for k, data in enumerate(gates):
+        # Define channel dependent scaling
+        scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
+
+        for k, data in enumerate(gate_lengths):
             # Extract digital reference signal from channel 0
             _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
 
             # Remove digital signal from channel 0
             data[0, ...] = data[0, ...] << 1
-            data = data.astype(np.int16) * self.rx_card.rx_scaling[0]
+            data = data.astype(np.int16) * scaling
 
             # Stack signal and reference in coil dimension
             data = np.concatenate((data, _ref), axis=0)

@@ -48,7 +48,7 @@ params = AcquisitionParameter(
 
 # Perform acquisition
 acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
-data = np.mean(acq_data.raw, axis=0)[0].squeeze()
+data = np.mean(acq_data.raw, axis=0).squeeze()
 
 # FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
@@ -62,8 +62,7 @@ f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 print(f"Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {max_spec}")
-# print("Acquisition data shape: ", acq_data.raw.shape)
-print("Acquisition data shape: ", [data.shape for data in acq_data.raw])
+print("Acquisition data shape: ", acq_data.raw.shape)
 print(f"SNR: {snr} dB")
 
 # Plot spectrum
