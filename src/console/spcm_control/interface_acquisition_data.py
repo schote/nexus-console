@@ -18,7 +18,7 @@ log = logging.getLogger("AcqData")
 class AcquisitionData:
     """Parameters which define an acquisition."""
 
-    raw: np.ndarray | list
+    _raw: list[np.ndarray]
     """Demodulated, down-sampled and filtered complex-valued raw MRI data.
     The raw data array has following dimensions:[averages, coils, phase encoding, readout]"""
 
@@ -27,9 +27,6 @@ class AcquisitionData:
 
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
-
-    device_config: dict
-    """Device configurations (transmit card, receive card and sequence provide) of the experiment."""
 
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
@@ -50,35 +47,61 @@ class AcquisitionData:
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         datetime_now = datetime.now()
-        if not all([key in list(self.device_config.keys()) for key in ["TxCard", "RxCard", "SequenceProvider"]]):
-            raise log.warning("Device configuration contains unknown keys")
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
-                "raw_dimensions": [_raw.shape for _raw in self.raw] if isinstance(self.raw, list) else self.raw.shape,
-                # "unprocessed_dimensions": self.unprocessed_data.shape if self.unprocessed_data is not None else None,
+                "dimensions": [r.shape for r in self._raw],
                 "dwell_time": self.dwell_time,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
-                    "configuration": self.device_config["SequenceProvider"],
                 },
-                "rx_device_configuration": self.device_config["RxCard"],
-                "tx_device_configuration": self.device_config["TxCard"],
                 "info": {},
             }
         )
 
-    def write(self, save_unprocessed: bool = False) -> None:
+    def get_data(self, gate_size_index: int) -> np.ndarray:
+        """Get a single raw data array from raw data list.
+
+        During the acquisition, ADC gate events with different durations might occure.
+        The data from the different ADC gate sizes is stored in separate arrays which
+        are gathered in a list.
+
+        Parameters
+        ----------
+        gate_size_index, optional
+            Index of the raw data array to be returned.
+            Raw data from different ADC gate length are stored in separate arrays.
+
+        Returns
+        -------
+            Raw data array.
+        """
+        return self._raw[gate_size_index]
+
+    @property
+    def raw(self) -> np.ndarray:
+        """Get the default raw data array.
+
+        Returns
+        -------
+            Returns the first entry in raw data list.
+        """
+        return self.get_data(gate_size_index=0)
+
+    def write(self, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
         ----------
         save_unprocessed
             Flag which indicates if unprocessed data is to be written or not.
+        overwrite
+            Flag which indicates whether the acquisition data should be overwritten
+            in case it already exists from a previous call to this function.
         """
         # Add trailing slash and make dir
         base_path = os.path.join(self.storage_path, "")
@@ -86,7 +109,13 @@ class AcquisitionData:
 
         acq_folder = self.meta["folder_name"]
         acq_folder_path = base_path + acq_folder + "/"
-        os.makedirs(acq_folder_path, exist_ok=False)
+        try:
+            os.makedirs(acq_folder_path, exist_ok=overwrite)
+        except OSError as exc:
+            raise log.error(
+                "This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
+                exc
+            )
 
         # Save meta data
         with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
@@ -123,4 +152,8 @@ class AcquisitionData:
         info
             Information as dictionary to be added.
         """
+        try:
+            json.dumps(info)
+        except TypeError as exc:
+            log.error("Could not append info to meta data.", exc)
         self.meta["info"].update(info)

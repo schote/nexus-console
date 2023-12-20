@@ -19,7 +19,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 # %%
 # Construct and plot sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=10e-3,
+    echo_time=12e-3,
     rf_duration=200e-6,
     use_sinc=False
 )
@@ -48,11 +48,7 @@ params = AcquisitionParameter(
 
 # Perform acquisition
 acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
-
-# First argument data from channel 0 and 1,
-# second argument contains the phase corrected echo
-# data = np.mean(acq_data.raw, axis=0)[0].squeeze()
-data = np.mean(acq_data.raw[0], axis=0)[0].squeeze()
+data = np.mean(acq_data.raw, axis=0)[0].squeeze()
 
 # FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))

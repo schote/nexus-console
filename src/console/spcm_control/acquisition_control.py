@@ -76,8 +76,6 @@ class AcquistionControl:
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
 
-        self.config = yaml.load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)  # noqa: S506
-
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
         # Setup the cards
@@ -239,26 +237,16 @@ class AcquistionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Update entries of the configuration file
-        for component in [self.tx_card, self.rx_card, self.seq_provider]:
-            comp_name = type(component).__name__
-            if comp_name in self.config.keys():
-                for key in self.config[comp_name].keys():
-                    if isinstance(value := getattr(component, key), Opts):
-                        value = value.__dict__
-                    self.config[comp_name][key] = value
-            else:
-                self.log.warning(
-                    "Key %s missing in configuration, could not fully update configuration",
-                    comp_name,
-                )
-
         return AcquisitionData(
-            raw=self._raw if len(self._raw) > 1 else self._raw[0],
+            _raw=self._raw,
             unprocessed_data=self._unproc if len(self._unproc) > 1 else self._unproc[0],
             sequence=self.seq_provider,
             storage_path=self.session_path,
-            device_config=self.config,
+            meta={
+                self.tx_card.__name__: self.tx_card.dict(),
+                self.rx_card.__name__: self.rx_card.dict(),
+                self.seq_provider.__name__: self.seq_provider.dict()
+            },
             dwell_time=parameter.decimation / self.f_spcm,
             acquisition_parameters=parameter,
         )
