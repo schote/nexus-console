@@ -80,6 +80,15 @@ class RxCard(SpectrumDevice):
         self.rx_data = []
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
+    def dict(self) -> dict:
+        """Returnt class variables which are json serializable as dictionary.
+
+        Returns
+        -------
+            Dictionary containing class variables.
+        """
+        return super().dict()
+
     def setup_card(self):
         """Set up spectrum card in transmit (TX) mode.
 

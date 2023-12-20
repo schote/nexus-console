@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Any, Callable
 
 import matplotlib
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 from pypulseq.opts import Opts
@@ -97,6 +98,24 @@ class SequenceProvider(Sequence):
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
         self._seq: np.ndarray | None = None
+
+    def dict(self) -> dict:
+        """Abstract method which returns variables for logging in dictionary."""
+        attributes = {}
+        for key, var in vars(self).items():
+            # Check if var exists, is not None and its variable name
+            # does not have a leading or ending double underscore
+            if not key.startswith("__") and not key.endswith("__") and not key.startswith("_"):
+                if not var or var is None:
+                    continue
+                try:
+                    # Check if variable can be json serialized
+                    json.dumps(var)
+                except TypeError:
+                    continue
+                attributes[key] = var
+        return attributes
+
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
