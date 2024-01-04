@@ -6,10 +6,10 @@ system = Opts(
     rf_dead_time=20e-6,
 
     # Set raster times to spectrum card frequency (timing checks)
-    grad_raster_time=5e-8,
-    rf_raster_time=5e-8,
-    block_duration_raster=5e-8,
-    adc_raster_time=5e-8,
+    grad_raster_time=1e-6,
+    rf_raster_time=1e-6,
+    block_duration_raster=1e-6,
+    adc_raster_time=1e-6,
 
     # Time delay at the beginning of an RF event
     # rf_ringdown_time=100e-6,
