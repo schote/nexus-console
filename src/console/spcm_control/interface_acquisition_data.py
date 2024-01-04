@@ -92,27 +92,32 @@ class AcquisitionData:
         """
         return self.get_data(gate_size_index=0)
 
-    def write(self, save_unprocessed: bool = False, overwrite: bool = False) -> None:
+    def write(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
         ----------
+        user_path
+            Optional user path, default is None.
+            If provided, it is taken to store the acquisition data.
+            Other wise a datetime-based folder is created.
         save_unprocessed
-            Flag which indicates if unprocessed data is to be written or not.
+            Flag which indicates if unprocessed data is to be written or not, default is False.
         overwrite
             Flag which indicates whether the acquisition data should be overwritten
-            in case it already exists from a previous call to this function.
+            in case it already exists from a previous call to this function, default is False.
         """
         # Add trailing slash and make dir
-        base_path = os.path.join(self.storage_path, "")
+        base_path = os.path.join(self.storage_path, "") if user_path is None else os.path.join(user_path, "")
         os.makedirs(base_path, exist_ok=True)
 
         acq_folder = self.meta["folder_name"]
         acq_folder_path = base_path + acq_folder + "/"
+
         try:
             os.makedirs(acq_folder_path, exist_ok=overwrite)
         except OSError as exc:
-            raise log.error(
+            log.error(
                 "This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
                 exc
             )
