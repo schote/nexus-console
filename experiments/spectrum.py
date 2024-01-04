@@ -19,7 +19,8 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 # %%
 # Construct and plot sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=12e-3,
+    echo_time=10e-3,
+    adc_duration=4e-3,
     rf_duration=200e-6,
     use_sinc=False
 )
@@ -33,17 +34,17 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 # %%
 # Larmor frequency:
 # f_0 = 2038555   # Berlin system
-f_0 = 2033750
+f_0 = 2033250.0
 # f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.1, # 8 cm phantom
+    b1_scaling=2.43, # 8 cm phantom
     # b1_scaling=6.3,
-     decimation=200,
-    # num_averages=10,
-    # averaging_delay=1,
+    decimation=200,
+    num_averages=10,
+    averaging_delay=2,
 )
 
 # Perform acquisition
@@ -72,21 +73,24 @@ ax.set_xlim([-25e3, 25e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
+
 # %%
+# Save
+# model = "wenteq_ABL0100-00-6010_1"
+# model = "wenteq_ABL0100-00-6010_2"
+model = "wenteq_ABL0050-00-4510"
+# model = "minicircuit_ZFL-500LN"
+# model = "no-preamp"
 
 # Add information to acquisition data
 acq_data.add_info({
     "true f0": f_0 - f_0_offset,
     "magnitude spectrum max": max_spec,
     "snr": snr,
-    # "note": "Passive TR switch from PTB"
-    # "note": "EMI measurement"
-    # "note": "Passive TR switch, two-stage preamp: china (1), wenteq (2)",
-    "note": "wenteq, rx-clk out, phantom position corrected"
+    "preamp": model,
 })
 
-# acq_data.write(save_unprocessed=False)
-acq_data.write(save_unprocessed=False)
+acq_data.write(user_path=f"/home/schote01/data/preamp-comparison/{model}/")
 
 # %%
 del acq

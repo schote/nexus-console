@@ -5,11 +5,10 @@ import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system
 
-# Definition of constants
-ADC_DURATION = 4e-3
 
-
-def constructor(echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc: bool = True) -> pp.Sequence:
+def constructor(
+    echo_time: float = 12e-3, rf_duration: float = 400e-6, adc_duration: float = 4e-3, use_sinc: bool = True
+    ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
     Parameters
@@ -42,7 +41,7 @@ def constructor(echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc:
 
     adc = pp.make_adc(
         num_samples=1000,  # Is not taken into account atm
-        duration=ADC_DURATION,
+        duration=adc_duration,
         system=system,
     )
 
@@ -50,7 +49,7 @@ def constructor(echo_time: float = 12e-3, rf_duration: float = 400e-6, use_sinc:
         echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
     )
     te_delay_2 = pp.make_delay(
-        echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2 - rf_180.ringdown_time - adc.dead_time
+        echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time
     )
 
     seq.add_block(rf_90)
