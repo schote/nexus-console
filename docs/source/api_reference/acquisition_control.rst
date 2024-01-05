@@ -1,6 +1,8 @@
 Acquisition
 ===========
 
+.. _acquisition-control:
+
 Acquisition Control
 -------------------
 
