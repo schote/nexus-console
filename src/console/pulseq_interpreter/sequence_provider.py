@@ -4,7 +4,6 @@ from types import SimpleNamespace
 from typing import Any, Callable
 
 import matplotlib
-import json
 import matplotlib.pyplot as plt
 import numpy as np
 from pypulseq.opts import Opts

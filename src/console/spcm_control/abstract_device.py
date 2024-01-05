@@ -1,7 +1,7 @@
 """Device interface class."""
 import json
 from abc import ABC, abstractmethod
-from ctypes import byref, c_char_p, create_string_buffer, _SimpleCData
+from ctypes import _SimpleCData, byref, c_char_p, create_string_buffer
 from logging import Logger
 
 import console.spcm_control.spcm.pyspcm as sp

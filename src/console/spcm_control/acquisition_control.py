@@ -5,13 +5,11 @@ import logging.config
 import os
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
-import yaml
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Opts, Sequence, SequenceProvider
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard

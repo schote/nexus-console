@@ -1,7 +1,7 @@
 """Constructor for spin-echo spectrum sequence."""
 from math import pi
-import numpy as np
 
+import numpy as np
 import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system
