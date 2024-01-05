@@ -4,8 +4,8 @@ import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
 from importlib.metadata import version
+from typing import Any
 
 import numpy as np
 

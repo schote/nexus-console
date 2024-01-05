@@ -3,9 +3,9 @@
 # imports
 from timeit import timeit
 
+import console.utilities.sequences as sequences
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import Dimensions
-import console.utilities.sequences as sequences
 
 # %load_ext line_profiler
 

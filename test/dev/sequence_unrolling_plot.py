@@ -1,10 +1,9 @@
 """Read and plot unrolled pulseq files with sequence provider class."""
 # %%
 # imports
-from console.utilities.load_config import get_instances
-
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 import console.utilities.sequences as sequences
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.utilities.load_config import get_instances
 from console.utilities.sequences import Dimensions
 
 # %%
