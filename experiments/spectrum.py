@@ -18,14 +18,12 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-# seq = sequences.se_spectrum.constructor(echo_time=10e-3, adc_duration=4e-3, rf_duration=200e-6, use_sinc=False)
-# seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=4e-3, adc_noise_duration=100e-3)
-seq, te_values = sequences.T2.constructor(echo_time_range=(10e-3, 100e-3), num_steps=50, repetition_time=600e-3)
+seq = sequences.se_spectrum.constructor(echo_time=10e-3, adc_duration=4e-3, rf_duration=200e-6, use_sinc=False)
 
 # Optional:
-# acq.seq_provider.from_pypulseq(seq)
-# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-# fig, ax = plot_unrolled_sequence(seq_unrolled)
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
+fig, ax = plot_unrolled_sequence(seq_unrolled)
 
 # %%
 # Larmor frequency:
@@ -73,6 +71,8 @@ _ = ax.set_xlabel("Frequency [Hz]")
 
 # %%
 # Save
+
+# Preamp comparison
 model = "china_preamp"
 # model = "wenteq_ABL0100-00-6010_1"
 # model = "wenteq_ABL0100-00-6010_2"
@@ -86,7 +86,6 @@ acq_data.add_info({
     "magnitude spectrum max": max_spec,
     "snr": snr,
     "preamp": model,
-    # "te_values": list(te_values)
 })
 
 acq_data.write(user_path=f"/home/schote01/data/preamp-comparison/{model}/")
