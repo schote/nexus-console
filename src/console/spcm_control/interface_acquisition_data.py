@@ -5,6 +5,7 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
+from importlib.metadata import version
 
 import numpy as np
 
@@ -50,6 +51,7 @@ class AcquisitionData:
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
+                "version": version("console"),
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
                 "dimensions": [r.shape for r in self._raw],
