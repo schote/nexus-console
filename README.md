@@ -35,7 +35,7 @@ Installs additional (optional) dependencies that are required to build the sphin
 Installs additional (optional) developer dependencies for profiling and developing in vs code.
 
 
-    _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for instance._
+_Hint: Multiple dependency groups can be installed using `".[lint, test]"` for instance._
 
 ## Usage
 
