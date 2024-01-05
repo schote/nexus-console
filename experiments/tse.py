@@ -2,14 +2,14 @@
 # %%
 # imports
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import numpy as np
+
+import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-import console.utilities.sequences as sequences
-from scipy.signal import decimate
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 
 # %%
 # Create acquisition control instance
@@ -41,7 +41,7 @@ seq, traj = sequences.tse.tse_2d.constructor(
 # %%
 # Larmor frequency:
 # f_0 = 1964390.0 # leiden
-f_0 = 2040005
+f_0 = 2033250.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
@@ -49,7 +49,7 @@ params = AcquisitionParameter(
     # b1_scaling=2.9623,    # leiden
     # b1_scaling=6.5,   # berlin
     # b1_scaling=10.0,     # scope
-    b1_scaling=2.2,
+    b1_scaling=2.43,
     decimation=400,
     fov_scaling=Dimensions(
         # Ball phantom
@@ -70,12 +70,14 @@ params = AcquisitionParameter(
         # z=1.,
 
         # Ball Berlin
-        x=0.35,
+        x=0.25,
         y=0.35,
         z=0.
+        # x=0.5,
+        # y=0.5,
+        # z=0.
     ),
     gradient_offset=Dimensions(0, 0, 0),
-    # num_averages=1,
     num_averages=10,
     averaging_delay=1,
 )
@@ -96,11 +98,12 @@ ksp = np.mean(acq_data.raw, axis=0)[0].squeeze()
 
 # Use scipy decimate function to reduce k-space readout from 500 to 128
 n_pe = ksp.shape[0]
-ksp_dec = decimate(ksp, int(ksp.shape[1]/ksp.shape[0]), axis=1)
+# ksp_dec = decimate(ksp, int(ksp.shape[1]/ksp.shape[0]), axis=1)
+ksp_dec = ksp
 window_start = int(ksp_dec.shape[1]/2 - n_pe/2)
 ksp_dec = ksp_dec[:, window_start:window_start+n_pe]
 
-img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp_dec), axes=[-2, -1]))
+img = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(ksp_dec)))
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
 ax[0].imshow(np.abs(ksp_dec), cmap="gray")
@@ -111,13 +114,14 @@ plt.show()
 
 
 # %%
-
+# Save
+model = "wenteq_ABL0050-00-4510"
 acq_data.add_info({
-    "subject": "8 cm sphere CuSO4 1.5g/L"
+    "subject": "8 cm sphere CuSO4 1.5g/L",
+    "preamp": model,
 })
 
-acq_data.write(save_unprocessed=True)
-
+acq_data.write(user_path=f"/home/schote01/data/preamp-comparison/{model}/", save_unprocessed=True)
 
 # %%
 del acq

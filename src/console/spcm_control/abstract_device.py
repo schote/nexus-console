@@ -1,6 +1,7 @@
 """Device interface class."""
+import json
 from abc import ABC, abstractmethod
-from ctypes import byref, c_char_p, create_string_buffer
+from ctypes import _SimpleCData, byref, c_char_p, create_string_buffer
 from logging import Logger
 
 import console.spcm_control.spcm.pyspcm as sp
@@ -23,6 +24,27 @@ class SpectrumDevice(ABC):
         self.name: str | None = None
         self.path = path
         self.log = log
+
+    @abstractmethod
+    def dict(self) -> dict:
+        """Abstract method which returns variables for logging in dictionary."""
+        attributes = {}
+        for key, var in vars(self).items():
+            # Check if var exists, is not None and its variable name
+            # does not have a leading or ending double underscore
+            if not key.startswith("__") and not key.endswith("__"):
+                if not var or var is None:
+                    continue
+                if isinstance(var, _SimpleCData):
+                    # Is a ctypes type
+                    attributes[key] = var.value
+                try:
+                    # Check if variable can be json serialized
+                    json.dumps(var)
+                except TypeError:
+                    continue
+                attributes[key] = var
+        return attributes
 
     def disconnect(self):
         """Disconnect card."""

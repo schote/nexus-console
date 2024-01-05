@@ -2,14 +2,14 @@
 # %%
 # imports
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import numpy as np
+
+import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-import console.utilities.sequences as sequences
-from console.utilities.reconstruction.calibrate import flip_angle_fit
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 
 # %%
 # Create acquisition control instance

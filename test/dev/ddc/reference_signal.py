@@ -1,10 +1,9 @@
 # %%
 # imports
-from console.spcm_control.ddc import apply_ddc
-import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
-from scipy.optimize import curve_fit
+import numpy as np
+
+from console.spcm_control.ddc import apply_ddc
 
 # %%
 

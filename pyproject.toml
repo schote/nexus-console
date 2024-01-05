@@ -8,7 +8,7 @@ package-dir = {"" = "src"}
 
 [project]
 name = "console"
-version = "0.1.0"
+version = "0.0.1"
 description = "MRI console application for pulseq sequences build on Spectrum-Instrumentation measurement cards."
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},

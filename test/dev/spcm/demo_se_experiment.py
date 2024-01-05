@@ -2,14 +2,14 @@
 # %%
 # imports
 import time
-from datetime import datetime
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities.load_config import get_instances
 from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities.processing import apply_ddc
-from scipy import signal
 
 is_setup = False
 # Get instances from configuration file

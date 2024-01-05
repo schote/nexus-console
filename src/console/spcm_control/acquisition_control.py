@@ -5,13 +5,11 @@ import logging.config
 import os
 import time
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
-import yaml
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Opts, Sequence, SequenceProvider
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
@@ -75,8 +73,6 @@ class AcquistionControl:
         self.seq_provider: SequenceProvider = ctx[0]
         self.tx_card: TxCard = ctx[1]
         self.rx_card: RxCard = ctx[2]
-
-        self.config = yaml.load(Path(configuration_file).read_text(), Loader=yaml.BaseLoader)  # noqa: S506
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
@@ -239,26 +235,16 @@ class AcquistionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Update entries of the configuration file
-        for component in [self.tx_card, self.rx_card, self.seq_provider]:
-            comp_name = type(component).__name__
-            if comp_name in self.config.keys():
-                for key in self.config[comp_name].keys():
-                    if isinstance(value := getattr(component, key), Opts):
-                        value = value.__dict__
-                    self.config[comp_name][key] = value
-            else:
-                self.log.warning(
-                    "Key %s missing in configuration, could not fully update configuration",
-                    comp_name,
-                )
-
         return AcquisitionData(
-            raw=self._raw if len(self._raw) > 1 else self._raw[0],
+            _raw=self._raw,
             unprocessed_data=self._unproc if len(self._unproc) > 1 else self._unproc[0],
             sequence=self.seq_provider,
             storage_path=self.session_path,
-            device_config=self.config,
+            meta={
+                self.tx_card.__name__: self.tx_card.dict(),
+                self.rx_card.__name__: self.rx_card.dict(),
+                self.seq_provider.__name__: self.seq_provider.dict()
+            },
             dwell_time=parameter.decimation / self.f_spcm,
             acquisition_parameters=parameter,
         )
@@ -291,16 +277,19 @@ class AcquistionControl:
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 
-        gates = [np.stack(group, axis=1) for group in grouped_gates.values()]
+        gate_lengths = [np.stack(group, axis=1) for group in grouped_gates.values()]
         raw_size = len(self._raw)
 
-        for k, data in enumerate(gates):
+        # Define channel dependent scaling
+        scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
+
+        for k, data in enumerate(gate_lengths):
             # Extract digital reference signal from channel 0
             _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
 
             # Remove digital signal from channel 0
             data[0, ...] = data[0, ...] << 1
-            data = data.astype(np.int16) * self.rx_card.rx_scaling[0]
+            data = data.astype(np.int16) * scaling
 
             # Stack signal and reference in coil dimension
             data = np.concatenate((data, _ref), axis=0)

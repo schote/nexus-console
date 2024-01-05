@@ -2,11 +2,12 @@
 # %%
 # imports
 import time
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.utilities.load_config import get_instances
-from console.utilities.spcm_data_plot import plot_spcm_data
+import numpy as np
+
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.utilities.load_config import get_instances
 
 # %%
 # Get instances from configuration file
@@ -67,8 +68,8 @@ for i in range(n_pulses_display):
     ax[i//4, i%4].label_outer()
     ax[i//4, i%4].set_xlabel("Time / ms")
     #ax[i//4, i%4].set_ylabel("Amp / V")
-    
-    
+
+
 # Plot all gates in one plot
 plt.show()
 # %%

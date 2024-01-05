@@ -50,8 +50,8 @@ unblanking = np.zeros(n_samples, dtype=np.int8)
 # print("RF unrolling duration: ", t_execution)
 
 t = timeit(
-    "seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)", 
-    number=1000, 
+    "seq.calculate_rf(rf_block=block.rf, unblanking=unblanking, num_total_samples=n_samples)",
+    number=1000,
     globals=globals()
 )
 print(f"RF unrolling 1k calls: {t}s")
@@ -105,8 +105,8 @@ n_samples = int(block.block_duration / seq.spcm_dwell_time)
 
 # Time the execution of 1k samples
 t = timeit(
-    "seq.calculate_gradient(block.gz, n_samples)", 
-    number=1000, 
+    "seq.calculate_gradient(block.gz, n_samples)",
+    number=1000,
     globals=globals()
 )
 print(f"RF unrolling 1k calls: {t}s")
@@ -122,8 +122,8 @@ n_samples = int(block.block_duration / seq.spcm_dwell_time)
 
 # Time the execution of 1k samples
 t = timeit(
-    "seq.calculate_gradient(block.gx, n_samples)", 
-    number=1000, 
+    "seq.calculate_gradient(block.gx, n_samples)",
+    number=1000,
     globals=globals()
 )
 print(f"RF unrolling 1k calls: {t}s")

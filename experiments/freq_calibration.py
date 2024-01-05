@@ -2,13 +2,14 @@
 # %%
 # imports
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import numpy as np
+
+import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-import console.utilities.sequences as sequences
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 
 # %%
 # Create acquisition control instance
@@ -52,7 +53,7 @@ data = np.mean(acq_data.raw, axis=0)[0].squeeze()
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.shape[-1], acq_data.dwell_time))
 
-# Calculate center frequency 
+# Calculate center frequency
 max_per_shot = np.max(np.abs(data_fft), axis=-1)
 global_max_idx = np.argmax(max_per_shot)
 spectrum_max_idx = np.argmax(np.abs(data_fft)[global_max_idx, ...])
@@ -74,7 +75,7 @@ print("Acquisition data shape: ", acq_data.raw.shape)
 # Plot spectra
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 for k, spectrum in enumerate(data_fft[:, ...]):
-    ax.plot(fft_freq, np.abs(spectrum), label=f"{k}: f_0 = {f0_offsets[k]} Hz")    
+    ax.plot(fft_freq, np.abs(spectrum), label=f"{k}: f_0 = {f0_offsets[k]} Hz")
 ax.set_xlim([-10e3, 10e3])
 ax.legend()
 ax.set_ylim([0, max_value*1.05])
@@ -94,14 +95,14 @@ for k in list(seq.block_events.keys()):
     if (rf_block := seq.get_block(k).rf) is not None and rf_block.use == "excitation":
         offsets.append(rf_block.freq_offset)
         spectra.append(np.fft.ifftshift(np.fft.fft(np.fft.fftshift(rf_block.signal), norm="ortho")))
-        
+
         # Determine frequency axis
         kmax = 0.5 * (1/(rf_block.t[1]-rf_block.t[0]))
         freq = np.linspace(-kmax, kmax, len(spectra[-1])) + offsets[-1]
-        
+
         # Plot pulse magnitude over frequency
         ax.plot(freq*1e-3, np.abs(spectra[-1])*1e-3, label=f"{offsets[-1]/1e3} kHz")
-        
+
 ax.set_xlim((-50, 50))
 ax.set_ylabel("Excitation B1 [kHz]")
 ax.set_xlabel("Frequency [kHz]")

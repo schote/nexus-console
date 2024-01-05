@@ -5,7 +5,7 @@
 
 # # %%
 # def calculate_rf(waveform, unrolled_data):
-#     n_samples = unrolled_data.size 
+#     n_samples = unrolled_data.size
 #     ref_time = np.arange(n_samples) / 20e6
 #     envelope = resample(waveform, num=n_samples)
 #     unrolled_data[:] = (envelope + 0j) * np.exp(2j * np.pi * (2e6 * ref_time))

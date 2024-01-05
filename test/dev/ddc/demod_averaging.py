@@ -1,6 +1,7 @@
 # %%
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from console.spcm_control.ddc import apply_ddc
 
 # %%

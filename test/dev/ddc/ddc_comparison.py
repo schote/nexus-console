@@ -1,12 +1,14 @@
 # %%
-import numpy as np
 import json
 from timeit import timeit
+
 import matplotlib.pyplot as plt
-from scipy.signal import decimate, firwin, convolve, lfilter
+import numpy as np
+import pandas as pd
+from scipy.signal import decimate
+
 from console.utilities.snr import signal_to_noise_ratio
 
-import pandas as pd
 
 # %%
 def filter_cic(signal, decimation, number_of_stages):

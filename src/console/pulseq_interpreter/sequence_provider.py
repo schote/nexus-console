@@ -80,13 +80,14 @@ class SequenceProvider(Sequence):
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
-        self.output_limits: list[int] = [] if output_limits is None else output_limits
 
         try:
             if len(gradient_efficiency) != 3:
-                raise ValueError("Invalid number of output limits, 4 values must be provided")
+                raise ValueError("Invalid number of gradient efficiency values, 3 values must be provided")
             if len(gpa_gain) != 3:
-                raise ValueError("Invalid number of output limits, 4 values must be provided")
+                raise ValueError("Invalid number of GPA gain values, 3 values must be provided")
+            if isinstance(output_limits, list) and len(output_limits) != 4:
+                raise ValueError("Invalid number of output limits, 4 valies must be provided.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
 
@@ -97,6 +98,19 @@ class SequenceProvider(Sequence):
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
         self._seq: np.ndarray | None = None
+
+    def dict(self) -> dict:
+        """Abstract method which returns variables for logging in dictionary."""
+        return {
+            "rf_to_mvolt": self.rf_to_mvolt,
+            "spcm_freq": self.spcm_freq,
+            "spcm_dwell_time": self.spcm_dwell_time,
+            "gpa_gain": self.gpa_gain,
+            "gradient_efficiency": self.gradient_efficiency,
+            "output_limits": self.output_limits,
+            "larmor_freq": self.larmor_freq,
+            "sample_count": self.sample_count
+        }
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.

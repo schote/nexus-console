@@ -2,13 +2,15 @@
 # %%
 # imports
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import numpy as np
+
+import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquistionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-import console.utilities.sequences as sequences
 from console.utilities.snr import signal_to_noise_ratio
 
 # %%
@@ -18,12 +20,7 @@ acq = AcquistionControl(configuration_file=configuration, console_log_level=logg
 
 # %%
 # Construct and plot sequence
-seq = sequences.se_spectrum.constructor(
-    echo_time=10e-3,
-    rf_duration=200e-6,
-    use_sinc=False
-)
-# seq = sequences.se_spectrum_dl.constructor(rf_duration=200e-6, use_sinc=False, adc_ro_duration=4e-3, adc_noise_duration=100e-3)
+seq = sequences.se_spectrum.constructor(echo_time=10e-3, adc_duration=4e-3, rf_duration=200e-6, use_sinc=False)
 
 # Optional:
 acq.seq_provider.from_pypulseq(seq)
@@ -33,27 +30,24 @@ fig, ax = plot_unrolled_sequence(seq_unrolled)
 # %%
 # Larmor frequency:
 # f_0 = 2038555   # Berlin system
-f_0 = 2033750
+f_0 = 2038550
 # f_0 = 1964690.0   # Leiden system
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.1, # 8 cm phantom
+    b1_scaling=2.43, # 8 cm phantom
     # b1_scaling=6.3,
-     decimation=200,
+    decimation=200,
     # num_averages=10,
-    # averaging_delay=1,
+    # averaging_delay=2,
 )
 
 # Perform acquisition
 acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+data = np.mean(acq_data.raw, axis=0).squeeze()
 
-# First argument data from channel 0 and 1,
-# second argument contains the phase corrected echo
-# data = np.mean(acq_data.raw, axis=0)[0].squeeze()
-data = np.mean(acq_data.raw[0], axis=0)[0].squeeze()
-
+# %%
 # FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
 fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
@@ -66,8 +60,7 @@ f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 print(f"Frequency offset [Hz]: {f_0_offset}, new frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {max_spec}")
-# print("Acquisition data shape: ", acq_data.raw.shape)
-print("Acquisition data shape: ", [data.shape for data in acq_data.raw])
+print("Acquisition data shape: ", acq_data.raw.shape)
 print(f"SNR: {snr} dB")
 
 # Plot spectrum
@@ -77,21 +70,27 @@ ax.set_xlim([-25e3, 25e3])
 ax.set_ylim([0, max_spec*1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 _ = ax.set_xlabel("Frequency [Hz]")
+
 # %%
+# Save
+
+# Preamp comparison
+model = "china_preamp"
+# model = "wenteq_ABL0100-00-6010_1"
+# model = "wenteq_ABL0100-00-6010_2"
+# model = "wenteq_ABL0050-00-4510"
+# model = "minicircuit_ZFL-500LN"
+# model = "no-preamp"
 
 # Add information to acquisition data
 acq_data.add_info({
     "true f0": f_0 - f_0_offset,
     "magnitude spectrum max": max_spec,
     "snr": snr,
-    # "note": "Passive TR switch from PTB"
-    # "note": "EMI measurement"
-    # "note": "Passive TR switch, two-stage preamp: china (1), wenteq (2)",
-    "note": "wenteq, rx-clk out, phantom position corrected"
+    "preamp": model,
 })
 
-# acq_data.write(save_unprocessed=False)
-acq_data.write(save_unprocessed=False)
+acq_data.write(user_path=f"/home/schote01/data/preamp-comparison/{model}/")
 
 # %%
 del acq

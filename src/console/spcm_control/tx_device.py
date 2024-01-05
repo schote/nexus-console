@@ -78,6 +78,15 @@ class TxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
 
+    def dict(self) -> dict:
+        """Returnt class variables which are json serializable as dictionary.
+
+        Returns
+        -------
+            Dictionary containing class variables.
+        """
+        return super().dict()
+
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
 

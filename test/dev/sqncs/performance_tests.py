@@ -1,13 +1,10 @@
 # %%
-import csv
 from timeit import timeit
 
 import numpy as np
-from scipy.signal import resample
-from scipy.interpolate import interpn
 
 
-# Define function to test calls 
+# Define function to test calls
 def test_calls(calls: list) -> dict:
     r = dict()
     for c in calls:
@@ -25,7 +22,7 @@ order = "F"
 
 array_a = np.zeros(n_samples)
 array_b = np.ones(n_samples)
-list_a = [0.] * n_samples 
+list_a = [0.] * n_samples
 list_b = [0.] * n_samples
 
 x = np.arange(2*np.pi, step=(2*np.pi)/n_samples)
@@ -87,7 +84,7 @@ results.update(test_calls([
     "np.array([list_a, list_b]).flatten(order=order)",
 ]))
 
-# %% 
+# %%
 # Interpolation functions
 results.update(test_calls([
     "interpn(points=(t, ), values=y, xi=t_interp)",

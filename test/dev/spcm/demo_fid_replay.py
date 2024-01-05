@@ -3,9 +3,9 @@
 # imports
 import time
 
+from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities.load_config import get_instances
 from console.utilities.plot_unrolled_sequence import plot_unrolled_sequence
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 
 # %%
 # Get sequence provider object and read sequence
