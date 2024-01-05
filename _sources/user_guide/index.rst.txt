@@ -5,9 +5,9 @@ User Guide
 
 Welcome to the Spectrum-Console user guide.
 This guide explains some of the key-concepts of the package and gives some general information about the setup.
-The concept guide contains more general information independent of the implementation.
+This user guide contains more general information independent of the implementation.
 We aim to provide a transparent documentation in order to enable developers to understand design decisions, familiarize quickly and be able to further improve the package.
-If you find anything incomprehensible or have suggestions for improvements, please contact me.
+If you find anything incomprehensible or have suggestions for improvements, please feel free to open a `new issue <https://github.com/schote/spectrum-console/issues/new/choose>`_ or `contact me <mailto:david.schote@ptb.de>`_.
 
 .. toctree::
    :maxdepth: 1

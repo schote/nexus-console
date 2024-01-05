@@ -18,15 +18,15 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+  <link href="../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
@@ -34,9 +34,9 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=bd9e20870c6007c4c509" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=bd9e20870c6007c4c509" />
+  <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=bd9e20870c6007c4c509"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
@@ -58,7 +58,7 @@
 
   
   
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
   
   <div id="pst-scroll-pixel-helper"></div>
 
@@ -101,8 +101,10 @@
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
   </div>
+
+  <header>
   
-    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    <div class="bd-header navbar navbar-expand-lg bd-navbar">
 <div class="bd-header__inner bd-page-width">
   <label class="sidebar-toggle primary-toggle" for="__primary">
     <span class="fa-solid fa-bars"></span>
@@ -142,12 +144,6 @@
       
         <div class="navbar-item">
 <nav class="navbar-nav">
-  <p class="sidebar-header-items__title"
-     role="heading"
-     aria-level="1"
-     aria-label="Site Navigation">
-    Site Navigation
-  </p>
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
@@ -266,10 +262,14 @@ document.write(`
   
 </div>
 
-    </nav>
+    </div>
   
+  </header>
+
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
+      
+      
       
       <div class="bd-sidebar-primary bd-sidebar">
         
@@ -282,12 +282,6 @@ document.write(`
         
           <div class="navbar-item">
 <nav class="navbar-nav">
-  <p class="sidebar-header-items__title"
-     role="heading"
-     aria-level="1"
-     aria-label="Site Navigation">
-    Site Navigation
-  </p>
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
@@ -450,21 +444,23 @@ document.write(`
               
                 
 <div id="searchbox"></div>
-                <article class="bd-article" role="main">
+                <article class="bd-article">
                   
   <section id="spin-echo-spectrum">
 <h1><span class="section-number">1. </span>Spin Echo Spectrum<a class="headerlink" href="#spin-echo-spectrum" title="Link to this heading">#</a></h1>
 <p>The following example shows how to acquire an NMR spectrum with a spin-echo based spectrum sequence written in pypulseq.</p>
-<p>The example can essentially be broken down as follows:
-1. Create an <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> using the default device configuration from the repository. Here we can also set the log level for the log-file and the console log-output.
-2. Construct the spin echo based spectrum sequence. Here we use 20 ms echo time and 200 us RF block pulse duration.
-3. Define the most basic <code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code>, namely the Larmor frequency <span class="math notranslate nohighlight">\(f_0\)</span> and the decimation factor for DDC.
-4. Execute the experiment.
-5. Extract the down-sampled raw data.
-6. Apply FFT to obtain the spectrum and calculate the associated frequency axis.
-7. Plot the magnitude spectrum.
-8. Add some note to the meta data of the <code class="docutils literal notranslate"><span class="pre">AcquisitionData</span></code> and save the results using the <code class="docutils literal notranslate"><span class="pre">write</span></code> method.
-9. Delete the acquisition control. This is an important step, as the destructor <code class="docutils literal notranslate"><span class="pre">__del__</span></code> of the <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> class disconnects from the measurement cards.</p>
+<p>The example can essentially be broken down as follows:</p>
+<ol class="arabic simple">
+<li><p>Create an <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> using the default device configuration from the repository. Here we can also set the log level for the log-file and the console log-output.</p></li>
+<li><p>Construct the spin echo based spectrum sequence. Here we use 20 ms echo time and 200 us RF block pulse duration.</p></li>
+<li><p>Define the most basic <code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code>, namely the Larmor frequency <span class="math notranslate nohighlight">\(f_0\)</span> and the decimation factor for DDC.</p></li>
+<li><p>Execute the experiment.</p></li>
+<li><p>Extract the down-sampled raw data.</p></li>
+<li><p>Apply FFT to obtain the spectrum and calculate the associated frequency axis.</p></li>
+<li><p>Plot the magnitude spectrum.</p></li>
+<li><p>Add some note to the meta data of the <code class="docutils literal notranslate"><span class="pre">AcquisitionData</span></code> and save the results using the <code class="docutils literal notranslate"><span class="pre">write</span></code> method.</p></li>
+<li><p>Delete the acquisition control. This is an important step, as the destructor <code class="docutils literal notranslate"><span class="pre">__del__</span></code> of the <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> class disconnects from the measurement cards.</p></li>
+</ol>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;Experiment to acquire a spin echo spectrum.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">logging</span>
@@ -486,15 +482,15 @@ document.write(`
 
 <span class="c1"># Construct a spin echo based spectrum sequence</span>
 <span class="n">seq</span> <span class="o">=</span> <span class="n">sequences</span><span class="o">.</span><span class="n">se_spectrum</span><span class="o">.</span><span class="n">constructor</span><span class="p">(</span>
-    <span class="n">echo_time</span><span class="o">=</span><span class="mf">20e-3</span><span class="p">,</span>
-    <span class="n">rf_duration</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">,</span>
-    <span class="n">use_sinc</span><span class="o">=</span><span class="kc">False</span>
+    <span class="n">echo_time</span><span class="o">=</span><span class="mf">12e-3</span><span class="p">,</span>        <span class="c1"># 12 ms echo time</span>
+    <span class="n">rf_duration</span><span class="o">=</span><span class="mf">200e-6</span><span class="p">,</span>     <span class="c1"># 200 us RF pulseq duration</span>
+    <span class="n">use_sinc</span><span class="o">=</span><span class="kc">False</span>          <span class="c1"># Do not use sinc pulse, but block pulse</span>
 <span class="p">)</span>
 
 <span class="c1"># Define acquisition parameters</span>
 <span class="n">params</span> <span class="o">=</span> <span class="n">AcquisitionParameter</span><span class="p">(</span>
-    <span class="n">larmor_frequency</span><span class="o">=</span><span class="mf">2.0395e6</span><span class="p">,</span>
-    <span class="n">decimation</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span>
+    <span class="n">larmor_frequency</span><span class="o">=</span><span class="mf">2.0395e6</span><span class="p">,</span>  <span class="c1"># Set Larmor freqency in MHz</span>
+    <span class="n">decimation</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>             <span class="c1"># Set decimation factor for down-sampling</span>
 <span class="p">)</span>
 
 <span class="c1"># Run the acquisition</span>
@@ -502,7 +498,6 @@ document.write(`
 
 <span class="c1"># Get decimated data from acquisition data object</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">acq_data</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
-
 
 <span class="c1"># Calculate FFT</span>
 <span class="n">data_fft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">data</span><span class="p">)))</span>
@@ -520,7 +515,7 @@ document.write(`
 <span class="p">})</span>
 
 <span class="c1"># Write acquisition data object</span>
-<span class="n">acq_data</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">save_unprocessed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">acq_data</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
 
 <span class="c1"># Delete the acquisition control, which disconnects from the measurement cards</span>
 <span class="k">del</span> <span class="n">acq</span>
@@ -565,6 +560,7 @@ document.write(`
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
+
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
@@ -587,8 +583,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=bd9e20870c6007c4c509"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=bd9e20870c6007c4c509"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -613,7 +609,7 @@ document.write(`
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.1.
 </p></div>
       
     </div>

@@ -18,15 +18,15 @@
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=5b4479735964841361fd" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=5b4479735964841361fd" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=5b4479735964841361fd" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+  <link href="../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=bd9e20870c6007c4c509" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
     <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
@@ -34,9 +34,9 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd" />
-  <script src="../_static/vendor/fontawesome/6.1.2/js/all.min.js?digest=5b4479735964841361fd"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=bd9e20870c6007c4c509" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=bd9e20870c6007c4c509" />
+  <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=bd9e20870c6007c4c509"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
@@ -57,7 +57,7 @@
 
   
   
-  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
   
   <div id="pst-scroll-pixel-helper"></div>
 
@@ -100,8 +100,10 @@
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
   </div>
+
+  <header>
   
-    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    <div class="bd-header navbar navbar-expand-lg bd-navbar">
 <div class="bd-header__inner bd-page-width">
   <label class="sidebar-toggle primary-toggle" for="__primary">
     <span class="fa-solid fa-bars"></span>
@@ -141,12 +143,6 @@
       
         <div class="navbar-item">
 <nav class="navbar-nav">
-  <p class="sidebar-header-items__title"
-     role="heading"
-     aria-level="1"
-     aria-label="Site Navigation">
-    Site Navigation
-  </p>
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
@@ -265,10 +261,14 @@ document.write(`
   
 </div>
 
-    </nav>
+    </div>
   
+  </header>
+
   <div class="bd-container">
     <div class="bd-container__inner bd-page-width">
+      
+      
       
       <div class="bd-sidebar-primary bd-sidebar">
         
@@ -281,12 +281,6 @@ document.write(`
         
           <div class="navbar-item">
 <nav class="navbar-nav">
-  <p class="sidebar-header-items__title"
-     role="heading"
-     aria-level="1"
-     aria-label="Site Navigation">
-    Site Navigation
-  </p>
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
@@ -452,27 +446,70 @@ document.write(`
               
                 
 <div id="searchbox"></div>
-                <article class="bd-article" role="main">
+                <article class="bd-article">
                   
   <section id="spectrum-devices">
 <span id="spcm-devices"></span><h1>Spectrum Devices<a class="headerlink" href="#spectrum-devices" title="Link to this heading">#</a></h1>
+<p>The acquisition process involves a minimum of two measurement cards, responsible for transmitting and receiving data.
+The coordination between these two devices is supervised by the <a class="reference internal" href="../api_reference/acquisition_control.html#acquisition-control"><span class="std std-ref">acquisition control</span></a> and is elaborated upon in the subsequent section.</p>
 <section id="device-interaction">
 <h2>Device Interaction<a class="headerlink" href="#device-interaction" title="Link to this heading">#</a></h2>
-<figure class="align-center" id="seq-provider-flow">
-<a class="reference internal image-reference" href="../_images/device-interaction.png"><img alt="../_images/device-interaction.png" src="../_images/device-interaction.png" style="width: 100%;" /></a>
-<figcaption>
-<p><span class="caption-number">Fig. 5 </span><span class="caption-text">Interaction of transmit and receive device within the acquisition control.</span><a class="headerlink" href="#seq-provider-flow" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-</section>
-<section id="tx-device">
-<h2>TX Device<a class="headerlink" href="#tx-device" title="Link to this heading">#</a></h2>
+<p>The acquisition control supervises both the transmit and receive devices, each of which operates in its own thread
+Each device is required to implement start and stop operations, responsible for initiating and terminating their respective threads.</p>
+<p>To guarantee the seamless operation of the receive card during the execution of the sequence, the threads are initiated with a delay.
+This precautionary measure ensures proper coordination during execution time.</p>
 <figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/tx-device.png"><img alt="../_images/tx-device.png" src="../_images/tx-device.png" style="width: 100%;" /></a>
+<a class="reference internal image-reference" href="../_images/device-interaction.png"><img alt="../_images/device-interaction.png" src="../_images/device-interaction.png" style="width: 70%;" /></a>
 <figcaption>
-<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Continuous memory transfer within the operation loop of the transmit device.</span><a class="headerlink" href="#id1" title="Link to this image">#</a></p>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">Interaction of transmit and receive device within the acquisition control.</span><a class="headerlink" href="#id1" title="Link to this image">#</a></p>
 </figcaption>
 </figure>
+<p>Upon initiation, the transmit device executes the sequence obtained by streaming the unrolled sequence data to the transmit card.
+While the sequence is executed, the receive card remains in a state of readiness, awaiting the completion of a full gate to transfer the acquired data.</p>
+<p>Following the commencement of the transmit operation thread, the acquisition control keeps track of the number of ADC gates and monitors the total runtime, as depicted in <a class="reference internal" href="#id1"><span class="std std-numref">Fig. 5</span></a>.
+The acquisition process concludes either when all ADC gates have been recorded or when the runtime surpasses the sequence timeout.
+At this point, both threads are terminated, and the acquired data is then handled in the subsequent postprocessing step.</p>
+</section>
+<section id="transmit-device-tx">
+<h2>Transmit Device (TX)<a class="headerlink" href="#transmit-device-tx" title="Link to this heading">#</a></h2>
+<p>The transmit device is response for executing the sequence, i.e. transferring the sequence data to the card memory and replaying it.
+The <a class="reference internal" href="sequence_unrolling.html#seq-provider"><span class="std std-ref">sequece provider</span></a> calculates the sequence sample points and ensures their correct order.</p>
+<figure class="align-center" id="tx-device">
+<a class="reference internal image-reference" href="../_images/tx-device.png"><img alt="../_images/tx-device.png" src="../_images/tx-device.png" style="width: 60%;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Continuous memory transfer within the operation loop of the transmit device.</span><a class="headerlink" href="#tx-device" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<p>In <a class="reference internal" href="#tx-device"><span class="std std-numref">Fig. 6</span></a> the streaming process of sequence data is illustrated.
+The on-board memory of the transmit card imposes limitations, as the sequence data may surpass the available card memory.
+To address this constraint, the sequence is transferred in segments.</p>
+<p>Initially, the entire card buffer is filled.
+As the sequence is replayed, new memory becomes available, measured in units of a notify size.
+The available user length is continuously monitored throughout the sequence execution.
+When there is sufficient space for a new section of the sequence, the sequence data is transferred to the corresponding memory position (user position).</p>
+<p>After the new sequence data is transferred, the available user length must be updated to inform the card about the new data.
+The card updates the user position, ensuring that the next write operation occurs at the end of the last transferred data.
+This process is reiterated until the entire sequence has been successfully transferred and replayed.</p>
+</section>
+<section id="receive-device">
+<h2>Receive Device<a class="headerlink" href="#receive-device" title="Link to this heading">#</a></h2>
+<p>The receive card is responsible to acquire data within a digital gate signal, which is generated by the transmit card according to the sequence.
+The transmission of the gate signal is facilitated through a wired connection that is established between the transmit and receive cards.</p>
+<figure class="align-center" id="rx-device">
+<a class="reference internal image-reference" href="../_images/rx-device.png"><img alt="../_images/rx-device.png" src="../_images/rx-device.png" style="width: 100%;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">Gate detection and transfer of acquired gate data.</span><a class="headerlink" href="#rx-device" title="Link to this image">#</a></p>
+</figcaption>
+</figure>
+<p>In the gated timestamp mode, the receive card continuously samples data, selectively storing the samples acquired within the gate along with additional samples based on pre and post-trigger sizes.</p>
+<p>During operation, the upper loop of the receive card is dedicated to monitoring the timestamp buffer as illustrated in <a class="reference internal" href="#rx-device"><span class="std std-numref">Fig. 7</span></a>.
+Each timestamp is represented by a 16-bit value, with a complete gate corresponding to 32 bits.
+While the receive card thread is active and the timestamp buffer holds fewer than two timestamps, the card remains in a waiting state until new memory is written.</p>
+<p>Upon detecting a full gate, the gate size is computed from the timestamps, and the timestamp memory becomes available again.
+Using the calculated gate size, the receive card supervises the sample memory, transferring the sample data when all required data is accessible.</p>
+<p>Since the card memory is continuously written, there is a potential risk of memory overflow, which is detected and processed accordingly.
+The transferred sample point data of a gate is stored in a Numpy array, which is then appended to a list.
+After setting the available sample buffer size, the operation returns to the upper loop, where it resumes monitoring the timestamp buffer.</p>
 </section>
 </section>
 
@@ -513,15 +550,18 @@ document.write(`
               
                 <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
-  <div class="sidebar-secondary-item">
 
-  <div class="page-toc tocsection onthispage">
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> On this page
   </div>
-  <nav class="bd-toc-nav page-toc">
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#device-interaction">Device Interaction</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tx-device">TX Device</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transmit-device-tx">Transmit Device (TX)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#receive-device">Receive Device</a></li>
 </ul>
   </nav></div>
 
@@ -547,8 +587,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=5b4479735964841361fd"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=5b4479735964841361fd"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=bd9e20870c6007c4c509"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=bd9e20870c6007c4c509"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -573,7 +613,7 @@ document.write(`
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.14.4.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.1.
 </p></div>
       
     </div>
