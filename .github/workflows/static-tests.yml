@@ -24,7 +24,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install .[lint]
+        pip install ".[lint]"
 
     - name: Run linters
       run: |
