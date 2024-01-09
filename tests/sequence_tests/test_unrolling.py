@@ -1,6 +1,7 @@
 """Testing of sequence unrolling function."""
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities import sequences
+from tests.config import seq_provider
 
 
 def test_se_sequence(seq_provider):
@@ -10,5 +11,4 @@ def test_se_sequence(seq_provider):
     unrolled_seq: UnrolledSequence = seq_provider.unroll_sequence(larmor_freq=2e6)
 
     assert unrolled_seq.duration == seq.duration()[0]
-
 
