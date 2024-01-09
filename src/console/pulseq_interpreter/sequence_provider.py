@@ -91,9 +91,9 @@ class SequenceProvider(Sequence):
         except ValueError as err:
             self.log.exception(err, exc_info=True)
 
-        self.gpa_gain: list[int] = gpa_gain
-        self.gradient_efficiency: list[int] = gradient_efficiency
-        self.output_limits: list[int] = output_limits
+        self.gpa_gain: list[float] = gpa_gain
+        self.gradient_efficiency: list[float] = gradient_efficiency
+        self.output_limits: list[int] = output_limits if output_limits is not None else []
 
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
@@ -570,7 +570,7 @@ class SequenceProvider(Sequence):
             adc_count=adc_count,
         )
 
-    def plot_unrolled(self, time_range: tuple[int] = (0, -1)) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+    def plot_unrolled(self, time_range: tuple[int, int] = (0, -1)) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
         """Plot unrolled waveforms for replay.
 
         Parameters
@@ -584,6 +584,10 @@ class SequenceProvider(Sequence):
             Matplotlib figure and axis
         """
         fig, axis = plt.subplots(5, 1, figsize=(16, 9))
+
+        if self._seq is None:
+            print("No unrolled sequence...")
+            return fig, axis
 
         seq_start = int(time_range[0] * self.spcm_freq)
         seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1

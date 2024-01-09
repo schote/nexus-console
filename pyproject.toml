@@ -37,12 +37,25 @@ dependencies = [
 # Dependency groupds (optional)
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
-lint = ["ruff", "types-PyYAML"]
+lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+
+[tool.mypy]
+warn_return_any = "False"
+check_untyped_defs = "True"
+warn_no_return = "True"
+warn_unreachable = "True"
+python_version = "3.10"
+ignore_missing_imports = true
+mypy_path = "console"
+exclude = ["docs"]
+
 
 [tool.ruff]
 src = ["src"]

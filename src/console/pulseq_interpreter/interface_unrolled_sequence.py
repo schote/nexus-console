@@ -26,13 +26,13 @@ class UnrolledSequence:
     sample_count: int
     """Total number of samples per channel."""
 
-    gpa_gain: float
+    gpa_gain: list[float]
     """The gradient waveforms in pulseq are defined in Hz/m.
     The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
     The gpa gain is given in V/A and accounts for the voltage required to generate an output of 1A.
     The gyromagnetic ratio defined by 42.58e6 MHz/T."""
 
-    gradient_efficiency: float
+    gradient_efficiency: list[float]
     """The gradient waveforms in pulseq are defined in Hz/m.
     The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
     The gradient efficiency is given in mT/m/A and accounts for the gradient field which is generated per 1A.

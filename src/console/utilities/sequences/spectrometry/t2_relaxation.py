@@ -8,7 +8,7 @@ from console.utilities.sequences.system_settings import system
 
 
 def constructor(
-    echo_time_range: tuple[float] = (10e-3, 100e-3),
+    echo_time_range: tuple[float, float] = (10e-3, 100e-3),
     num_steps: int = 10,
     repetition_time: float = 600e-3,
     rf_duration: float = 400e-6,

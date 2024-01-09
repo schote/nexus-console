@@ -273,7 +273,7 @@ class AcquistionControl:
             Acquisition parameter
         """
         readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
+        grouped_gates: dict[int, list] = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 

@@ -135,11 +135,11 @@ class AcquisitionData:
             log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
-        if isinstance(self.raw, list):
+        if len(self.raw) == 1:
+            np.save(f"{acq_folder_path}raw_data.npy", self.raw[0])
+        else:
             for k, data in enumerate(self.raw):
                 np.save(f"{acq_folder_path}raw_data_{k}.npy", data)
-        else:
-            np.save(f"{acq_folder_path}raw_data.npy", self.raw)
 
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array(s)

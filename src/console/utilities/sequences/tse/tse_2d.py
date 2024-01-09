@@ -25,7 +25,7 @@ def constructor(
     ro_bandwidth: float = 20e3,
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
-) -> tuple[pp.Sequence, tuple[np.ndarray]]:
+) -> tuple[pp.Sequence, np.ndarray, np.ndarray]:
     """Construct 2D TSE imaging sequence.
 
     The k-space trajectory is constructed the following way:
@@ -151,8 +151,8 @@ def constructor(
         )
 
     ro_counter = 0
-    pe_traj_idx = np.zeros(n_enc.y)
-    pe_traj_mom = np.zeros(n_enc.y)
+    pe_traj_idx = np.zeros((int(n_enc.y), ))
+    pe_traj_mom = np.zeros((int(n_enc.y), ))
 
     for pe_1_train in pe_1_trains:
         for _ in range(etl):
@@ -203,7 +203,7 @@ def constructor(
     if not check_passed:
         raise RuntimeError("Sequence timing check failed: ", err)
 
-    return seq, (pe_traj_idx, pe_traj_mom)
+    return (seq, pe_traj_idx, pe_traj_mom)
 
 
 # %%
