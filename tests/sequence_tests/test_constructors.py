@@ -17,7 +17,7 @@ def test_se_projection():
 
 def test_tse_2d():
     """Test 2D TSE imaging sequence constructor."""
-    seq, _ = sequences.tse_2d.constructor(etl=1)
+    seq = sequences.tse_2d.constructor(etl=1)[0]
     assert seq.check_timing()[0] == True
 
 

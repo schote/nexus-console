@@ -26,6 +26,11 @@ jobs:
         pip install --upgrade pip
         pip install ".[lint]"
 
-    - name: Run linters
-      run: |
-        ruff check && mypy src
+    - name: Run ruff check
+      run: ruff check
+
+    - name: Run mypy
+      run: mypy src
+
+
+    
