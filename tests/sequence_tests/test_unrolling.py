@@ -1,7 +1,6 @@
 """Testing of sequence unrolling function."""
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.utilities import sequences
-from tests.config import seq_provider
 
 
 def test_se_sequence(seq_provider):
