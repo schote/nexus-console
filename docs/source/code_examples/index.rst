@@ -14,3 +14,4 @@ All the examples can be found in the *examples/* folder of the repository.
    :caption: Experiments
    
    spectrum
+   t2_measurement
