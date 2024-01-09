@@ -1,3 +1,4 @@
+"""Test configuration file."""
 import pytest
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
@@ -6,6 +7,7 @@ from console.utilities.sequences.system_settings import system
 
 @pytest.fixture()
 def seq_provider():
+    """Construct default sequence provider as fixture for testing."""
     return SequenceProvider(
         gradient_efficiency=[.4, .4, .4],
         gpa_gain=[1.0, 1.0, 1.0],
