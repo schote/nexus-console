@@ -1,7 +1,9 @@
 """Test digital down converter (DDC) functions."""
-import pytest
-from console.utilities.ddc import filter_cic_fir_comp, filter_moving_average
 import numpy as np
+import pytest
+
+from console.utilities.ddc import filter_cic_fir_comp, filter_moving_average
+
 
 @pytest.mark.parametrize("coils", [1, 2, 4])
 @pytest.mark.parametrize("phase_encoding", [1, 16])

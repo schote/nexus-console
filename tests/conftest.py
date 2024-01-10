@@ -1,9 +1,9 @@
 """Test configuration file."""
+import numpy as np
 import pytest
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
-import numpy as np
 
 
 @pytest.fixture
