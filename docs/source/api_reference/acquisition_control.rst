@@ -1,6 +1,9 @@
 Acquisition
 ===========
 
+.. seealso:: 
+   User guide on the :ref:`acquisition process <acquisition-process>`.
+
 .. _acquisition-control:
 
 Acquisition Control

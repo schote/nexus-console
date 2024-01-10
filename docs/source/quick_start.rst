@@ -40,6 +40,7 @@ Use the ``-e`` flag to install the package in editable mode.
 There are also optional dependencies which can be installed the following way.
 
 .. code-block:: bash
+   
    pip install -e ".[test, lint, docs, dev]"
 
 Using the same syntax the optional dependency groups can also be installed separately, e.g. if only the dependencies for testing are required.

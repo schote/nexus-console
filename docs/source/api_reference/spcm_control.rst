@@ -1,6 +1,8 @@
 Spectrum-Instrumentation Control
 ================================
 
+.. seealso:: 
+   User guide on the :ref:`spectrum devices <spcm-devices>`.
 
 Transmit and Receive Devices
 ----------------------------

@@ -70,9 +70,9 @@ Content Overview
 ----------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    
-   quick_start/index
+   quick_start
    user_guide/index
    code_examples/index
    api_reference/index

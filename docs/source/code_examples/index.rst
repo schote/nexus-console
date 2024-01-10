@@ -1,7 +1,7 @@
 .. _examples:
 
-Examples
-========
+Example Experiments
+===================
 
 This section contains a selection of code examples which explain how to use the spectrum-console package.
 A prerequisite is a successful installation.

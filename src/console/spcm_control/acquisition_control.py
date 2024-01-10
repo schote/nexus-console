@@ -256,7 +256,7 @@ class AcquistionControl:
         Unprocessed and raw data are stored in class attributes _raw and _unproc.
         Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.
 
-        Post processing contains the following steps per readout sample size:
+        Post processing contains the following steps (per readout sample size):
         (1) Extraction of reference signal and scaling to float values [mV]
         (2) Concatenate reference data and signal data in coil dimensions
         (3) Demodulation along readout dimensions
