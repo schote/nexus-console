@@ -143,24 +143,25 @@ def filter_cic_fir_comp(signal, decimation, number_of_stages):
     ValueError
         Uneven decimation factor.
     """
-    if not (cic_decimation := decimation / 2).is_integer():
-        raise ValueError("Decimation factor must be even.")
+    cic_samples = 2 * (signal.shape[-1] // decimation)
+    cic_decimation = signal.shape[-1] // cic_samples
 
-    # Integrator Stages
+    # CIC integrator Stages
     for _ in range(number_of_stages):
-        signal = np.cumsum(signal)
+        signal = np.cumsum(signal, axis=-1)
 
-    # Decimation
-    decimated_signal = signal[:: int(cic_decimation)]
+    # CIC decimation, truncate decimated signal to cic_samples (throw last sample if present)
+    decimated_signal = signal[..., :: int(cic_decimation)][..., :cic_samples]
 
     # Comb Stages
     for _ in range(number_of_stages):
         delayed_signal = np.zeros_like(decimated_signal)
-        delayed_signal[1:] = decimated_signal[:-1]
+        delayed_signal[..., 1:] = decimated_signal[..., :-1]
         decimated_signal = decimated_signal - delayed_signal
 
     # Normalization
     gain = np.power(cic_decimation, number_of_stages)
     decimated_signal = decimated_signal / gain
 
-    return decimate(x=decimated_signal, q=2, ftype="fir")
+    # Apply FIR decimation with decimation factor of 2 along readout axis
+    return decimate(x=decimated_signal, q=2, ftype="fir", axis=-1)
