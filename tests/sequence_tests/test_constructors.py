@@ -1,5 +1,6 @@
 """Test sequence constructors contained in the package."""
 import pytest
+
 from console.utilities import sequences
 
 
