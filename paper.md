@@ -28,33 +28,23 @@ The emergence of low-field MRI presents a cost-effective and portable solution i
 
 Most available MRI consoles are not inherently designed to facilitate these complex techniques @negnevitsky:2023 or their proprietary nature poses limitations on the customizability (e.g. limited on-board computing power, extension modules, or number of analog input/output channels).
 
-Our novel approach aims to bridge this gap and by providing a versatile, yet powerful console that enables a simple implementation of sophisticated methodologies and is easy to customize. The console is implemented with two measurement cards from Spectrum-Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive) module. The console application was implemented with measurement cards that provide 4 analog output channels with 40 Msps (M2p.6546-x4) and 8 single-ended or 4 differental analog input channels with 40 Msps (M2p.5933-x4). In principle the measurement cards
+Our novel approach aims to bridge this gap and by providing a versatile, yet powerful console that enables a simple implementation of sophisticated methodologies and is easy to customize. The console is implemented with two measurement cards from Spectrum-Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive) module. The console application was implemented with measurement cards that provide 4 analog output channels with 40 Msps (M2p.6546-x4) and 8 single-ended or 4 differental analog input channels with 40 Msps (M2p.5933-x4).
 
+Implementation orchestrates the execution of an MRI pulse sequence provided in the community-developed standard Pulseq. This includes the calculation of the sequence from its compressed format to unrolled sample points, the replay of the calculated sample points and the precicely timed, phase sensitive acquisition of the MR signal.
+Additionally, different methods for sequence construction, post-processing and data provisioning are provided.
 
- Especially for portable imaging applications, the employment of advanced approaches, such as EMI suppression @liu:2021 and elaborate reconstruction models for B0 inhomogeneity corrections, has yielded substantial improvements in image fidelity [@schote:2022; @schote:2023; @koolstra:2021]. The domain is currently experiencing swift progress, particularly in the integration of auxiliary sensors @srinivas:2023 and the dynamic optimization of imaging parameters through feedback loop analytics @loktyushin:2021. Nonetheless, most available MRI consoles are not inherently designed to facilitate these complex techniques @negnevitsky:2023 or their proprietary nature poses limitations on customizability (e.g. limited on-board computing power, extension modules, or number of analog input/output channels). Our novel approach aims to bridge this gap and by providing a versatile, yet powerful console that enables a simple implementation of sophisticated methodologies and is easy to customize.
-
-Spectrum-Instrumentation measurement cards serve as the foundational core component of the console. As arbitrary waveform generator the M2p.6546-x4 with additional 16 GPIO ports (FX2 connector) and as digitizer the M2p.5933-x4 were chosen. This allows for a total of 4 analog (16-bit) transmit channels with 40 MS/s. For reception 8 single-ended or 4 differential analog input channels can be used with up to 40 MS/s at 16-bit resolution. Both cards accommodate a 512 MS (1 GB) memory. The measurement-cards were installed via the PCI express slots of the console main board. The console is equipped with a 24 core Intel CPU (6312U) and 256 GB RAM. The configuration is shown in Figure 1.
-
-
-It serves not only as a console but also as a high-performance reconstruction system enabling real-time data processing steps. It is tailored for advanced techniques and has the potential to significantly enhance the capabilities of low-field MRI systems, propelling the imaging performance beyond its current limits.
-
-# Statement of need
+# Statement of needa
 
 - Advanced approaches in low-field MRI such as EMI, sequence optimization MR-zero or B0-inhomogeneity compensation
-- Utilization of additional sensors
+- Utilization of additional sensors: e.g. for B0-field supervision, noise-cancelling or GIRF based trajectory corrections
 - A modular and easy-to-customize approach, yet delivering the necessary performance
-- Combination of console and reconstruction system in a single edge-device
-- Streaming to CPU/GPU, for AI driven data processing
+- Combination of console and reconstruction system in a single edge-device capable of real-time data processing
+- Direct streaming to GPU for rapid AI-driven data processing, i.e. image reconstruction or real-time adaptive feedback systems
+- Versatile Python based open-source software framework
+- Console build upon community-developed pulseq standard
+- Developed for low-field MRI but easily transferable to ultra-low, mid or high-field MRI through spectrum-instrumentation programming interface
 
-
-
-
-
-
-
-The presented MR console was successfully implemented and tested on a low-field MRI scanner. The Python-based open-source implementation of the console software, along with the integration of Pulseq compatibility is publicly available and facilitates broad and straightforward adoption across the community for a multitude of applications.
-In the current setup, gradient waveforms are replayed through the analog transmission channels capable of driving the GPA directly. Nonetheless, it is also feasible to dispatch these waveforms through the synchronous GPIO channels what would liberate three analog transmission channels. Moreover, the system's ability to synchronize up to eight measurement cards simplifies the expansion to even more transmit and receive channels as necessitated by more demanding applications, like B0-field supervision, noise-cancelling or GIRF based trajectory corrections.
-The utilized cards enable direct data streaming to GPU memory, which paves the way for rapid AI-driven image reconstruction techniques and the potential to implement real-time adaptive feedback systems. This could significantly optimize both the sequence execution and the performance of external hardware components, which potentially enhances the image quality and the diagnostic value. Furthermore, the implementation facilitates effortless integration with the web-based acquisition control platform, ScanHub @schote-scanhub:2023.
+  **Consequence:** Optimize both the sequence execution and the performance of external hardware components, which potentially enhances the image quality and the diagnostic value. Has the potential to significantly enhance the capabilities of low-field MRI systems, propelling the imaging performance beyond its current limits.
 
 # Acknowledgements
 
