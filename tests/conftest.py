@@ -1,5 +1,6 @@
 """Test configuration file."""
 import numpy as np
+import pypulseq as pp
 import pytest
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
@@ -49,3 +50,17 @@ def test_spectrum():
 
         return spcm
     return _test_signal
+
+
+@pytest.fixture
+def test_sequence():
+    """Construct a test sequence."""
+    seq = pp.Sequence()
+    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi/2))
+    seq.add_block(pp.make_delay(10e-6))
+    seq.add_block(pp.make_trapezoid(channel="x", area=5e-3))
+    seq.add_block(
+        pp.make_arbitrary_grad(channel="y", waveform=np.array([0, 200, 400, 400, 400, 600, 600, 400, 200, 0]))
+    )
+    seq.add_block(pp.make_adc(num_samples=200, dwell=1e-5))
+    return seq

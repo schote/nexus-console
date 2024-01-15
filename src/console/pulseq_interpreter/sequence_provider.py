@@ -570,7 +570,9 @@ class SequenceProvider(Sequence):
             adc_count=adc_count,
         )
 
-    def plot_unrolled(self, time_range: tuple[int, int] = (0, -1)) -> tuple[matplotlib.figure.Figure, matplotlib.axes.Axes]:
+    def plot_unrolled(
+            self, time_range: tuple[int, int] = (0, -1)
+        ) -> tuple[matplotlib.figure.Figure, np.ndarray]:
         """Plot unrolled waveforms for replay.
 
         Parameters
