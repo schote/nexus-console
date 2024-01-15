@@ -35,3 +35,17 @@ def random_acquisition_data():
         im = np.random.rand(num_averages, num_coils, num_pe, num_ro)
         return re + 1j * im
     return _random_acquisition_data
+
+@pytest.fixture
+def test_spectrum():
+    """Sinusoidal test signal."""
+    np.random.seed(seed=0)
+    def _test_signal(num_samples: int, noise_scale: float):
+        x = np.linspace(-5, 5, num_samples)
+        echo = np.exp(-x**2/2) / np.sqrt(2*np.pi) * 10
+        noise = np.random.normal(loc=0, scale=noise_scale, size=num_samples)
+
+        spcm = np.fft.fftshift(np.fft.fft(np.fft.fftshift(echo + noise)))
+
+        return spcm
+    return _test_signal
