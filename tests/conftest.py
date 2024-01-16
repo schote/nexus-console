@@ -56,6 +56,7 @@ def test_spectrum():
 def test_sequence():
     """Construct a test sequence."""
     seq = pp.Sequence()
+    seq.set_definition("Name", "test_sequence")
     seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi/2))
     seq.add_block(pp.make_delay(10e-6))
     seq.add_block(pp.make_trapezoid(channel="x", area=5e-3))
