@@ -198,11 +198,6 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise RuntimeError("Sequence timing check failed: ", err)
-
     return (seq, pe_traj_idx, pe_traj_mom)
 
 

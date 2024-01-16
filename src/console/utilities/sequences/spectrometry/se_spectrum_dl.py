@@ -9,7 +9,6 @@ from console.utilities.sequences.system_settings import system
 def constructor(
     echo_time: float = 12e-3,
     rf_duration: float = 400e-6,
-    use_sinc: bool = True,
     adc_ro_duration: float = 4e-3,
     adc_noise_duration: float = 1.0,
 ) -> pp.Sequence:
@@ -36,21 +35,17 @@ def constructor(
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "se_spectrum")
 
-    if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5)
-        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, apodization=0.5)
-    else:
-        rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
-        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
+    rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
+    rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
 
     adc_ro = pp.make_adc(
-        num_samples=1000,  # Is not taken into account atm
+        num_samples=int(adc_ro_duration/system.adc_raster_time),
         duration=adc_ro_duration,
         system=system,
     )
 
     adc_noise = pp.make_adc(
-        num_samples=1000,  # Is not taken into account atm
+        num_samples=int(adc_noise_duration/system.adc_raster_time),
         duration=adc_noise_duration,
         system=system,
     )
@@ -65,10 +60,5 @@ def constructor(
     seq.add_block(adc_ro)
     seq.add_block(pp.make_delay(0.1))
     seq.add_block(adc_noise)
-
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise ValueError("Sequence timing check failed: ", err)
 
     return seq

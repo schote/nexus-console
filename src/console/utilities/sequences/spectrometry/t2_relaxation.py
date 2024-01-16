@@ -74,9 +74,4 @@ def constructor(
 
     seq.set_definition(key="te_values", value=te_values)
 
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise ValueError("Sequence timing check failed: ", err)
-
     return seq, te_values

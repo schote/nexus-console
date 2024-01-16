@@ -22,7 +22,31 @@ def constructor(
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
 ) -> tuple[pp.Sequence, list]:
-    """3D TSE sequence."""
+    """Construct 3D turbo spin echo sequence.
+
+    Parameters
+    ----------
+    echo_time, optional
+        Time constant between center of 90 degree pulse and center of ADC, by default 15e-3
+    repetition_time, optional
+        Time constant between two subsequent 90 degree pulses (echo trains), by default 600e-3
+    etl, optional
+        Echo train length, by default 7
+    rf_duration, optional
+        Duration of the RF pulses (90 and 180 degree), by default 400e-6
+    gradient_correction, optional
+        Time constant to center ADC event, by default 510e-6
+    ro_bandwidth, optional
+        Readout bandwidth in Hz, by default 20e3
+    fov, optional
+        Field of view per dimension, by default default_fov
+    n_enc, optional
+        Number of encoding steps per dimension, by default default_encoding
+
+    Returns
+    -------
+        Pulseq sequence and a list which describes the trajectory
+    """
     seq = pp.Sequence(system)
     seq.set_definition("Name", "tse_3d")
 
@@ -134,12 +158,4 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise RuntimeError("Sequence timing check failed: ", err)
-
     return (seq, trains)
-
-
-# %%

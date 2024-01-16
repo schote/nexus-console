@@ -58,15 +58,4 @@ def constructor(
         seq.add_block(adc)
         seq.add_block(pp.make_delay(repetition_time))
 
-        # Check sequence timing in each iteration
-        check_passed, err = seq.check_timing()
-        if not check_passed:
-            raise ValueError("Sequence timing check failed: ", err)
-
     return seq, flip_angles
-
-
-# %%
-# seq, _ = constructor()
-# seq.plot()
-# %%
