@@ -41,6 +41,10 @@ class AcquisitionData:
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
 
+    storage_path: str = os.path.expanduser("~") + "/spcm-console"
+    """Directory the acquisition data will be stored in.
+    Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
+
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         datetime_now = datetime.now()
@@ -106,7 +110,7 @@ class AcquisitionData:
             in case it already exists from a previous call to this function, default is False.
         """
         # Add trailing slash and make dir
-        base_path = os.path.expanduser("~") + "/spcm-console/" if user_path is None else os.path.join(user_path, "")
+        base_path = self.storage_path if user_path is None else os.path.join(user_path, "")
         os.makedirs(base_path, exist_ok=True)
 
         acq_folder = self.meta["folder_name"]

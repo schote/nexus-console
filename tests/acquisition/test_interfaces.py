@@ -1,3 +1,4 @@
+"""Test functions for interface classes."""
 import os
 
 from console.spcm_control.interface_acquisition_data import AcquisitionData
