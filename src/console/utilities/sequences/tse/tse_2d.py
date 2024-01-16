@@ -25,7 +25,7 @@ def constructor(
     ro_bandwidth: float = 20e3,
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
-) -> tuple[pp.Sequence, tuple[np.ndarray]]:
+) -> tuple[pp.Sequence, np.ndarray, np.ndarray]:
     """Construct 2D TSE imaging sequence.
 
     The k-space trajectory is constructed the following way:
@@ -88,7 +88,6 @@ def constructor(
         system=system,
         flat_area=n_enc.x / fov.x,
         flat_time=adc_duration + gradient_correction,
-        rise_time=GRAD_RISE_TIME,
     )
 
     grad_ro_pre = pp.make_trapezoid(
@@ -96,7 +95,6 @@ def constructor(
         system=system,
         area=grad_ro.area / 2,
         duration=pp.calc_duration(grad_ro) / 2,
-        rise_time=GRAD_RISE_TIME,
     )
 
     # Delay between excitation and first refoccusing pulse
@@ -105,9 +103,9 @@ def constructor(
     # Define adc event
     adc = pp.make_adc(
         system=system,
-        num_samples=1000,  # Is not taken into account atm
+        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
-        delay=gradient_correction + GRAD_RISE_TIME,
+        delay=gradient_correction + grad_ro.rise_time,
     )
 
     # Calculate available space for phase encoding gradients
@@ -153,15 +151,15 @@ def constructor(
         )
 
     ro_counter = 0
-    pe_traj_idx = np.zeros(n_enc.y)
-    pe_traj_mom = np.zeros(n_enc.y)
+    pe_traj_idx = np.zeros((int(n_enc.y), ))
+    pe_traj_mom = np.zeros((int(n_enc.y), ))
 
     for pe_1_train in pe_1_trains:
         for _ in range(etl):
             # Add RF excitation for the echo train
             seq.add_block(rf_90)
             seq.add_block(grad_ro_pre)
-            seq.add_block(pp.make_delay(tau_1_delay))
+            seq.add_block(pp.make_delay(round(tau_1_delay / 1e-6) * 1e-6))
 
             for tau_j in range(etl):
                 seq.add_block(rf_180)
@@ -169,12 +167,12 @@ def constructor(
                 # Inner echo-train loop which adds all the events of the train to the sequence
                 # Add phase encoding
                 seq.add_block(get_pe_grad(channel="y", area=pe_1_train[tau_j], duration=pe_duration))
-                seq.add_block(pp.make_delay(pe_space_1))
+                seq.add_block(pp.make_delay(round(pe_space_1 / 1e-6) * 1e-6))
 
                 # Frequency encoding and adc
                 seq.add_block(grad_ro, adc)
 
-                seq.add_block(pp.make_delay(pe_space_2))
+                seq.add_block(pp.make_delay(round(pe_space_2 / 1e-6) * 1e-6))
                 # Phase encoding inverse area
                 seq.add_block(get_pe_grad(channel="y", area=-pe_1_train[tau_j], duration=pe_duration))
 
@@ -187,7 +185,7 @@ def constructor(
 
             # Add TR after echo train
             if ro_counter < n_enc.y:
-                seq.add_block(pp.make_delay(tr_delay))
+                seq.add_block(pp.make_delay(round(tr_delay / 1e-6) * 1e-6))
 
     # Calculate some sequence measures
     n_total_trains = len(pe_1_trains) * etl
@@ -200,12 +198,7 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise RuntimeError("Sequence timing check failed: ", err)
-
-    return seq, (pe_traj_idx, pe_traj_mom)
+    return (seq, pe_traj_idx, pe_traj_mom)
 
 
 # %%

@@ -36,22 +36,36 @@ dependencies = [
 
 # Dependency groupds (optional)
 [project.optional-dependencies]
-reco = ["torch"]
-# test = ["coverage", "codecov"]
-lint = ["ruff", "types-PyYAML"]
+test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
+lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
-[tool.black]
-line-length = 120
-target-version = ['py310']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+
+[tool.mypy]
+warn_return_any = "False"
+check_untyped_defs = "True"
+warn_no_return = "True"
+warn_unreachable = "True"
+python_version = "3.10"
+ignore_missing_imports = true
+mypy_path = "console"
+exclude = ["docs"]
+
 
 [tool.ruff]
 src = ["src"]
 line-length = 120
 indent-width = 4
 target-version = "py310"
-extend-exclude = ["src/console/spcm_control/spcm"]
+extend-exclude = ["src/console/spcm_control/spcm", "docs"]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["S101"]
 
 [tool.ruff.lint]
 # Enable linters

@@ -1,0 +1,64 @@
+name: Pytest
+
+on:
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      pull-requests: write
+      contents: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[test]"
+
+      - name: Install pytest-github-actions-annotate-failures plugin
+        run: pip install pytest-github-actions-annotate-failures
+
+      - name: Run pytest
+        run: |
+          python -m pytest -n 4 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=console | tee pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@v1.1.48
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
+
+      - name: Create the Badge
+        uses: schneegans/dynamic-badges-action@v1.6.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 4d47c22492a23337a79400f4859a4c25
+          filename: coverage.json
+          label: Coverage Report
+          message: ${{ steps.coverageComment.outputs.coverage }}
+          color: ${{ steps.coverageComment.outputs.color }}
+          namedLogo: python
+
+      - name: Set pipeline status
+        run: |
+          if [[ ${{ steps.coverageComment.outputs.errors }} -ne 0 || ${{ steps.coverageComment.outputs.failures }} -ne 0 ]]; then
+            echo "Errors or failures detected, marking pipeline as failure."
+            exit 1
+          fi
+        
+  

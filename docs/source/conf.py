@@ -60,7 +60,16 @@ html_css_files = [
 ]
 html_logo = "_static/logo.png"
 html_favicon = "_static/favicon.ico"
-html_sidebars = {"**": ["search-field", "sidebar-nav-bs"]}
+html_sidebars = {
+    "index": [],
+    "quick_start": [],
+    "api_reference/index": [],
+    "code_examples/index": [],
+    "**": ["search-field", "sidebar-nav-bs.html"],
+}
+
+
+
 numfig = True   # use numbered figures
 html_theme_options = {
     "logo": {"text": "Spectrum-Console"},

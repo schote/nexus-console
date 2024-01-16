@@ -6,9 +6,6 @@ import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system
 
-# Definition of constants
-GRAD_RISE_TIME = 200e-6
-
 
 def constructor(
     fov: float = 0.25,
@@ -61,33 +58,30 @@ def constructor(
         system=system,
         channel=channel,
         flat_area=k_width,
-        flat_time=gradient_duration,
-        rise_time=GRAD_RISE_TIME,
+        flat_time=gradient_duration
     )
-    # Prephaser gradient: Same amplitude (180° pulse inverts), halve of the duration
-    # prephaser = pp.make_trapezoid(
-    #     system=system, channel=channel, flat_area=k_width/2, flat_time=gradient_duration/2, rise_time=GRAD_RISE_TIME
-    # )
-    # prephaser.flat_time += gradient_correction / 2
+
     prephaser = pp.make_trapezoid(
         system=system,
         channel=channel,
         area=gradient.area / 2,
         duration=pp.calc_duration(gradient) / 2,
-        rise_time=GRAD_RISE_TIME,
     )
 
     adc = pp.make_adc(
-        num_samples=1000,  # Is not taken into account atm
+        num_samples=int(adc_duration/system.adc_raster_time),
         duration=adc_duration,
         system=system,
-        delay=gradient_correction + GRAD_RISE_TIME,
+        delay=gradient_correction + gradient.rise_time,
     )
 
     # Calculate delays
-    te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration - pp.calc_duration(prephaser))
-    te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - adc_duration / 2 - gradient_correction)
+    te_delay_1_val = echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
+    te_delay_1 = pp.make_delay(round(te_delay_1_val / 1e-6) * 1e-6)
+    te_delay_2_val = echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time
+    te_delay_2 = pp.make_delay(round((te_delay_2_val - gradient_correction) / 1e-6) * 1e-6)
 
+    # construct sequence
     seq.add_block(rf_90)
     seq.add_block(prephaser)
     seq.add_block(te_delay_1)
@@ -95,14 +89,4 @@ def constructor(
     seq.add_block(te_delay_2)
     seq.add_block(gradient, adc)
 
-    # Check sequence timing in each iteration
-    # check_passed, err = seq.check_timing()
-    # if not check_passed:
-    #     raise ValueError("Sequence timing check failed: ", err)
-
     return seq
-
-
-# %%
-seq = constructor(echo_time=20e-3)
-# %%

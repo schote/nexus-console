@@ -4,9 +4,10 @@ Sequence Provider
 =================
 
 For sequence description, the open-source standard pulseq, i.e. the python implementation `PyPulseq <https://github.com/imr-framework/pypulseq>`_ is used.
-For detailed documentation of this package, see `PyPulseq documentation <https://pypulseq.readthedocs.io/en/dev/>`_.
 The sequence provider is build on top of the ``Sequence`` class from the pypulseq package and adds functionalities to compute the waveforms described by pulseq.
 
+.. seealso:: 
+   For detailed documentation of the PyPulseq package, see `PyPulseq documentation <https://pypulseq.readthedocs.io/en/dev/>`_.
 
 Overview
 --------

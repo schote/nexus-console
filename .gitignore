@@ -146,3 +146,4 @@ dmypy.json
 # Code documentation, autosummary
 /docs/source/_autosummary
 /experiments/_evaluations
+tmp

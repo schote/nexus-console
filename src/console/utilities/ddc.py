@@ -3,66 +3,6 @@ import numpy as np
 from scipy.signal import decimate
 
 
-def apply_ddc(raw_signal: np.ndarray, kernel_size: int, f_0: float, f_spcm: float) -> np.ndarray:
-    """Apply digital downsampling.
-
-    This function demodulates the raw NMR signal, applies a bandpass filter and does the down-sampling.
-
-    Parameters
-    ----------
-    raw_signal
-        Raw NMR signal in time-domain
-    kernel_size
-        Filter kernel size
-    f_0
-        Larmor frequency
-    f_spcm
-        Sampling frequency
-
-    Returns
-    -------
-        Filtered and down-sampled signal
-    """
-    DeprecationWarning("This method is deprecated.")
-    # Exponential function for demodulation
-    demod = np.exp(2j * np.pi * f_0 * np.arange(kernel_size) / f_spcm)
-
-    # Exponential function for resampling, don't use [-1, 1] because it leads to a division by zero warning.
-    kernel_space = np.linspace(-1 + 1e-12, 1 - 1e-12, kernel_size)
-    kernel_space[kernel_space == 0] = 1e-12
-    mixer = np.exp(-1 / (1 - kernel_space**2)) * np.sin(kernel_space * 2.073 * np.pi) / kernel_space
-
-    # Integral for normalization
-    norm = np.sum(mixer)
-
-    # Kernel function
-    kernel = demod * mixer
-
-    # Calculate the stride size/overlap, 2 -> half overlap, 4 -> quarter overlap, ...
-    stride = 4
-
-    # Calculate size of down-sampled signal
-    num_ddc_samples = raw_signal.size // int(kernel_size / stride)
-    signal_filtered = np.zeros(num_ddc_samples, dtype=complex)
-
-    # 1D strided convolution
-    for i, k in zip(
-        range(num_ddc_samples),
-        range(0, raw_signal.size, int(kernel_size / stride)),
-        strict=True,
-    ):
-        # Skip the last samples of the raw signal
-        if (position := k + kernel_size) > raw_signal.size:
-            # Position in raw data array exceeded index, truncate leftover
-            break
-        # _time = (k + int(kernel_size / stride)) / f_spcm
-        _time = k / f_spcm  # time point of window start
-        _tmp = np.sum(raw_signal[k:position] * kernel)
-        signal_filtered[i] = 2 * _tmp * np.exp(2j * np.pi * f_0 * _time) / norm
-
-    return signal_filtered
-
-
 def filter_moving_average(signal, decimation: int = 100, overlap: int = 4):
     r"""Decimate data using a moving average filter.
 
@@ -122,6 +62,12 @@ def filter_cic_fir_comp(signal, decimation, number_of_stages):
     (1) CIC decimation by decimation/2 rate
     (2) FIR decimation by factor 2
 
+    The signal size after decimation can be determined by
+    >>> signal.shape[-1] // decimation
+
+    The number of decimated samples after the first stage depends output sample size.
+    Any left over samples in CIC decimation stage are truncated.
+
     Parameters
     ----------
     signal
@@ -143,24 +89,25 @@ def filter_cic_fir_comp(signal, decimation, number_of_stages):
     ValueError
         Uneven decimation factor.
     """
-    if not (cic_decimation := decimation / 2).is_integer():
-        raise ValueError("Decimation factor must be even.")
+    cic_samples = 2 * (signal.shape[-1] // decimation)
+    cic_decimation = signal.shape[-1] // cic_samples
 
-    # Integrator Stages
+    # CIC integrator Stages
     for _ in range(number_of_stages):
-        signal = np.cumsum(signal)
+        signal = np.cumsum(signal, axis=-1)
 
-    # Decimation
-    decimated_signal = signal[:: int(cic_decimation)]
+    # CIC decimation, truncate decimated signal to cic_samples (throw last sample if present)
+    decimated_signal = signal[..., :: int(cic_decimation)][..., :cic_samples]
 
     # Comb Stages
     for _ in range(number_of_stages):
         delayed_signal = np.zeros_like(decimated_signal)
-        delayed_signal[1:] = decimated_signal[:-1]
+        delayed_signal[..., 1:] = decimated_signal[..., :-1]
         decimated_signal = decimated_signal - delayed_signal
 
     # Normalization
     gain = np.power(cic_decimation, number_of_stages)
     decimated_signal = decimated_signal / gain
 
-    return decimate(x=decimated_signal, q=2, ftype="fir")
+    # Apply FIR decimation with decimation factor of 2 along readout axis
+    return decimate(x=decimated_signal, q=2, ftype="fir", axis=-1)

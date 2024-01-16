@@ -46,10 +46,10 @@ def constructor(
     )
 
     te_delay_1 = pp.make_delay(
-        echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
+        round((echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time) / 1e-6) * 1e-6
     )
     te_delay_2 = pp.make_delay(
-        echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time
+        round((echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
     )
 
     seq.add_block(rf_90)
@@ -57,10 +57,5 @@ def constructor(
     seq.add_block(rf_180)
     seq.add_block(te_delay_2)
     seq.add_block(adc)
-
-    # Check sequence timing in each iteration
-    check_passed, err = seq.check_timing()
-    if not check_passed:
-        raise ValueError("Sequence timing check failed: ", err)
 
     return seq
