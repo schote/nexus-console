@@ -1,3 +1,5 @@
+.. _acquisition-process:
+
 Acquisition Process
 ===================
 

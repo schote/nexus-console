@@ -12,11 +12,13 @@ If you find anything incomprehensible or have suggestions for improvements, plea
 .. toctree::
    :maxdepth: 1
    :caption: Content
+   :hidden:
    
    system_setup
    acquisition_process
    sequence_unrolling
    spectrum_devices
+   post_processing
 
 The first section of the user guide gives an overview of the overall system setup.
 It might be different to your specific setup but in general it should be transferable.

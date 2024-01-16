@@ -143,7 +143,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -158,7 +158,7 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -283,7 +283,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -298,7 +298,7 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -440,69 +440,6 @@ document.write(`
 <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">decimate</span>
 
 
-<div class="viewcode-block" id="apply_ddc">
-<a class="viewcode-back" href="../../../api_reference/utilities.html#console.utilities.ddc.apply_ddc">[docs]</a>
-<span class="k">def</span> <span class="nf">apply_ddc</span><span class="p">(</span><span class="n">raw_signal</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">f_0</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">f_spcm</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply digital downsampling.</span>
-
-<span class="sd">    This function demodulates the raw NMR signal, applies a bandpass filter and does the down-sampling.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    raw_signal</span>
-<span class="sd">        Raw NMR signal in time-domain</span>
-<span class="sd">    kernel_size</span>
-<span class="sd">        Filter kernel size</span>
-<span class="sd">    f_0</span>
-<span class="sd">        Larmor frequency</span>
-<span class="sd">    f_spcm</span>
-<span class="sd">        Sampling frequency</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">        Filtered and down-sampled signal</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="ne">DeprecationWarning</span><span class="p">(</span><span class="s2">&quot;This method is deprecated.&quot;</span><span class="p">)</span>
-    <span class="c1"># Exponential function for demodulation</span>
-    <span class="n">demod</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f_0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">kernel_size</span><span class="p">)</span> <span class="o">/</span> <span class="n">f_spcm</span><span class="p">)</span>
-
-    <span class="c1"># Exponential function for resampling, don&#39;t use [-1, 1] because it leads to a division by zero warning.</span>
-    <span class="n">kernel_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-12</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">)</span>
-    <span class="n">kernel_space</span><span class="p">[</span><span class="n">kernel_space</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-12</span>
-    <span class="n">mixer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">kernel_space</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kernel_space</span> <span class="o">*</span> <span class="mf">2.073</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel_space</span>
-
-    <span class="c1"># Integral for normalization</span>
-    <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mixer</span><span class="p">)</span>
-
-    <span class="c1"># Kernel function</span>
-    <span class="n">kernel</span> <span class="o">=</span> <span class="n">demod</span> <span class="o">*</span> <span class="n">mixer</span>
-
-    <span class="c1"># Calculate the stride size/overlap, 2 -&gt; half overlap, 4 -&gt; quarter overlap, ...</span>
-    <span class="n">stride</span> <span class="o">=</span> <span class="mi">4</span>
-
-    <span class="c1"># Calculate size of down-sampled signal</span>
-    <span class="n">num_ddc_samples</span> <span class="o">=</span> <span class="n">raw_signal</span><span class="o">.</span><span class="n">size</span> <span class="o">//</span> <span class="nb">int</span><span class="p">(</span><span class="n">kernel_size</span> <span class="o">/</span> <span class="n">stride</span><span class="p">)</span>
-    <span class="n">signal_filtered</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_ddc_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">)</span>
-
-    <span class="c1"># 1D strided convolution</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-        <span class="nb">range</span><span class="p">(</span><span class="n">num_ddc_samples</span><span class="p">),</span>
-        <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">raw_signal</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">kernel_size</span> <span class="o">/</span> <span class="n">stride</span><span class="p">)),</span>
-        <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="c1"># Skip the last samples of the raw signal</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">position</span> <span class="o">:=</span> <span class="n">k</span> <span class="o">+</span> <span class="n">kernel_size</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">raw_signal</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-            <span class="c1"># Position in raw data array exceeded index, truncate leftover</span>
-            <span class="k">break</span>
-        <span class="c1"># _time = (k + int(kernel_size / stride)) / f_spcm</span>
-        <span class="n">_time</span> <span class="o">=</span> <span class="n">k</span> <span class="o">/</span> <span class="n">f_spcm</span>  <span class="c1"># time point of window start</span>
-        <span class="n">_tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">raw_signal</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">position</span><span class="p">]</span> <span class="o">*</span> <span class="n">kernel</span><span class="p">)</span>
-        <span class="n">signal_filtered</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">_tmp</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">f_0</span> <span class="o">*</span> <span class="n">_time</span><span class="p">)</span> <span class="o">/</span> <span class="n">norm</span>
-
-    <span class="k">return</span> <span class="n">signal_filtered</span></div>
-
-
-
 <div class="viewcode-block" id="filter_moving_average">
 <a class="viewcode-back" href="../../../api_reference/utilities.html#console.utilities.ddc.filter_moving_average">[docs]</a>
 <span class="k">def</span> <span class="nf">filter_moving_average</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">decimation</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">overlap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">):</span>
@@ -567,6 +504,12 @@ document.write(`
 <span class="sd">    (1) CIC decimation by decimation/2 rate</span>
 <span class="sd">    (2) FIR decimation by factor 2</span>
 
+<span class="sd">    The signal size after decimation can be determined by</span>
+<span class="sd">    &gt;&gt;&gt; signal.shape[-1] // decimation</span>
+
+<span class="sd">    The number of decimated samples after the first stage depends output sample size.</span>
+<span class="sd">    Any left over samples in CIC decimation stage are truncated.</span>
+
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    signal</span>
@@ -588,27 +531,28 @@ document.write(`
 <span class="sd">    ValueError</span>
 <span class="sd">        Uneven decimation factor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">cic_decimation</span> <span class="o">:=</span> <span class="n">decimation</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">is_integer</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Decimation factor must be even.&quot;</span><span class="p">)</span>
+    <span class="n">cic_samples</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">decimation</span><span class="p">)</span>
+    <span class="n">cic_decimation</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">cic_samples</span>
 
-    <span class="c1"># Integrator Stages</span>
+    <span class="c1"># CIC integrator Stages</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_stages</span><span class="p">):</span>
-        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
-    <span class="c1"># Decimation</span>
-    <span class="n">decimated_signal</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[::</span> <span class="nb">int</span><span class="p">(</span><span class="n">cic_decimation</span><span class="p">)]</span>
+    <span class="c1"># CIC decimation, truncate decimated signal to cic_samples (throw last sample if present)</span>
+    <span class="n">decimated_signal</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">::</span> <span class="nb">int</span><span class="p">(</span><span class="n">cic_decimation</span><span class="p">)][</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">cic_samples</span><span class="p">]</span>
 
     <span class="c1"># Comb Stages</span>
     <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_stages</span><span class="p">):</span>
         <span class="n">delayed_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">decimated_signal</span><span class="p">)</span>
-        <span class="n">delayed_signal</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">decimated_signal</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">delayed_signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">decimated_signal</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">decimated_signal</span> <span class="o">=</span> <span class="n">decimated_signal</span> <span class="o">-</span> <span class="n">delayed_signal</span>
 
     <span class="c1"># Normalization</span>
     <span class="n">gain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">cic_decimation</span><span class="p">,</span> <span class="n">number_of_stages</span><span class="p">)</span>
     <span class="n">decimated_signal</span> <span class="o">=</span> <span class="n">decimated_signal</span> <span class="o">/</span> <span class="n">gain</span>
 
-    <span class="k">return</span> <span class="n">decimate</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">decimated_signal</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">)</span></div>
+    <span class="c1"># Apply FIR decimation with decimation factor of 2 along readout axis</span>
+    <span class="k">return</span> <span class="n">decimate</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">decimated_signal</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 </pre></div>
 

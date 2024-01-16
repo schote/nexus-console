@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Spectrum Devices &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>Post Processing &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
   
   
   
@@ -42,12 +42,12 @@
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/spectrum_devices';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/post_processing';</script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Post Processing" href="post_processing.html" />
-    <link rel="prev" title="Sequence Provider" href="sequence_unrolling.html" />
+    <link rel="next" title="Example Experiments" href="../code_examples/index.html" />
+    <link rel="prev" title="Spectrum Devices" href="spectrum_devices.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -420,7 +420,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">Spectrum Devices</li>
+    <li class="breadcrumb-item active" aria-current="page">Post Processing</li>
   </ul>
 </nav>
 </div>
@@ -437,69 +437,9 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="spectrum-devices">
-<span id="spcm-devices"></span><h1>Spectrum Devices<a class="headerlink" href="#spectrum-devices" title="Link to this heading">#</a></h1>
-<p>The acquisition process involves a minimum of two measurement cards, responsible for transmitting and receiving data.
-The coordination between these two devices is supervised by the <a class="reference internal" href="../api_reference/acquisition_control.html#acquisition-control"><span class="std std-ref">acquisition control</span></a> and is elaborated upon in the subsequent section.</p>
-<section id="device-interaction">
-<h2>Device Interaction<a class="headerlink" href="#device-interaction" title="Link to this heading">#</a></h2>
-<p>The acquisition control supervises both the transmit and receive devices, each of which operates in its own thread
-Each device is required to implement start and stop operations, responsible for initiating and terminating their respective threads.</p>
-<p>To guarantee the seamless operation of the receive card during the execution of the sequence, the threads are initiated with a delay.
-This precautionary measure ensures proper coordination during execution time.</p>
-<figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/device-interaction.png"><img alt="../_images/device-interaction.png" src="../_images/device-interaction.png" style="width: 70%;" /></a>
-<figcaption>
-<p><span class="caption-number">Fig. 5 </span><span class="caption-text">Interaction of transmit and receive device within the acquisition control.</span><a class="headerlink" href="#id1" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p>Upon initiation, the transmit device executes the sequence obtained by streaming the unrolled sequence data to the transmit card.
-While the sequence is executed, the receive card remains in a state of readiness, awaiting the completion of a full gate to transfer the acquired data.</p>
-<p>Following the commencement of the transmit operation thread, the acquisition control keeps track of the number of ADC gates and monitors the total runtime, as depicted in <a class="reference internal" href="#id1"><span class="std std-numref">Fig. 5</span></a>.
-The acquisition process concludes either when all ADC gates have been recorded or when the runtime surpasses the sequence timeout.
-At this point, both threads are terminated, and the acquired data is then handled in the subsequent postprocessing step.</p>
-</section>
-<section id="transmit-device-tx">
-<h2>Transmit Device (TX)<a class="headerlink" href="#transmit-device-tx" title="Link to this heading">#</a></h2>
-<p>The transmit device is response for executing the sequence, i.e. transferring the sequence data to the card memory and replaying it.
-The <a class="reference internal" href="sequence_unrolling.html#seq-provider"><span class="std std-ref">sequece provider</span></a> calculates the sequence sample points and ensures their correct order.</p>
-<figure class="align-center" id="tx-device">
-<a class="reference internal image-reference" href="../_images/tx-device.png"><img alt="../_images/tx-device.png" src="../_images/tx-device.png" style="width: 60%;" /></a>
-<figcaption>
-<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Continuous memory transfer within the operation loop of the transmit device.</span><a class="headerlink" href="#tx-device" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p>In <a class="reference internal" href="#tx-device"><span class="std std-numref">Fig. 6</span></a> the streaming process of sequence data is illustrated.
-The on-board memory of the transmit card imposes limitations, as the sequence data may surpass the available card memory.
-To address this constraint, the sequence is transferred in segments.</p>
-<p>Initially, the entire card buffer is filled.
-As the sequence is replayed, new memory becomes available, measured in units of a notify size.
-The available user length is continuously monitored throughout the sequence execution.
-When there is sufficient space for a new section of the sequence, the sequence data is transferred to the corresponding memory position (user position).</p>
-<p>After the new sequence data is transferred, the available user length must be updated to inform the card about the new data.
-The card updates the user position, ensuring that the next write operation occurs at the end of the last transferred data.
-This process is reiterated until the entire sequence has been successfully transferred and replayed.</p>
-</section>
-<section id="receive-device">
-<h2>Receive Device<a class="headerlink" href="#receive-device" title="Link to this heading">#</a></h2>
-<p>The receive card is responsible to acquire data within a digital gate signal, which is generated by the transmit card according to the sequence.
-The transmission of the gate signal is facilitated through a wired connection that is established between the transmit and receive cards.</p>
-<figure class="align-center" id="rx-device">
-<a class="reference internal image-reference" href="../_images/rx-device.png"><img alt="../_images/rx-device.png" src="../_images/rx-device.png" style="width: 100%;" /></a>
-<figcaption>
-<p><span class="caption-number">Fig. 7 </span><span class="caption-text">Gate detection and transfer of acquired gate data.</span><a class="headerlink" href="#rx-device" title="Link to this image">#</a></p>
-</figcaption>
-</figure>
-<p>In the gated timestamp mode, the receive card continuously samples data, selectively storing the samples acquired within the gate along with additional samples based on pre and post-trigger sizes.</p>
-<p>During operation, the upper loop of the receive card is dedicated to monitoring the timestamp buffer as illustrated in <a class="reference internal" href="#rx-device"><span class="std std-numref">Fig. 7</span></a>.
-Each timestamp is represented by a 16-bit value, with a complete gate corresponding to 32 bits.
-While the receive card thread is active and the timestamp buffer holds fewer than two timestamps, the card remains in a waiting state until new memory is written.</p>
-<p>Upon detecting a full gate, the gate size is computed from the timestamps, and the timestamp memory becomes available again.
-Using the calculated gate size, the receive card supervises the sample memory, transferring the sample data when all required data is accessible.</p>
-<p>Since the card memory is continuously written, there is a potential risk of memory overflow, which is detected and processed accordingly.
-The transferred sample point data of a gate is stored in a Numpy array, which is then appended to a list.
-After setting the available sample buffer size, the operation returns to the upper loop, where it resumes monitoring the timestamp buffer.</p>
-</section>
+  <section id="post-processing">
+<span id="id1"></span><h1>Post Processing<a class="headerlink" href="#post-processing" title="Link to this heading">#</a></h1>
+<p>Hello world!</p>
 </section>
 
 
@@ -513,20 +453,20 @@ After setting the available sample buffer size, the operation returns to the upp
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="sequence_unrolling.html"
+       href="spectrum_devices.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">Sequence Provider</p>
+        <p class="prev-next-title">Spectrum Devices</p>
       </div>
     </a>
     <a class="right-next"
-       href="post_processing.html"
+       href="../code_examples/index.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">Post Processing</p>
+        <p class="prev-next-title">Example Experiments</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -541,23 +481,9 @@ After setting the available sample buffer size, the operation returns to the upp
 
 
   <div class="sidebar-secondary-item">
-<div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> On this page
-  </div>
-  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#device-interaction">Device Interaction</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transmit-device-tx">Transmit Device (TX)</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#receive-device">Receive Device</a></li>
-</ul>
-  </nav></div>
-
-  <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/user_guide/spectrum_devices.rst.txt">
+    <a href="../_sources/user_guide/post_processing.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

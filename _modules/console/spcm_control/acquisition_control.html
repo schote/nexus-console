@@ -143,7 +143,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -158,7 +158,7 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -283,7 +283,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../../../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../../../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -298,7 +298,7 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../../../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -700,7 +700,7 @@ document.write(`
 <span class="sd">        Unprocessed and raw data are stored in class attributes _raw and _unproc.</span>
 <span class="sd">        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.</span>
 
-<span class="sd">        Post processing contains the following steps per readout sample size:</span>
+<span class="sd">        Post processing contains the following steps (per readout sample size):</span>
 <span class="sd">        (1) Extraction of reference signal and scaling to float values [mV]</span>
 <span class="sd">        (2) Concatenate reference data and signal data in coil dimensions</span>
 <span class="sd">        (3) Demodulation along readout dimensions</span>
@@ -717,7 +717,7 @@ document.write(`
 <span class="sd">            Acquisition parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">readout_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">]</span>
-        <span class="n">grouped_gates</span> <span class="o">=</span> <span class="p">{</span><span class="n">readout_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">readout_sizes</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])}</span>
+        <span class="n">grouped_gates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">readout_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">readout_sizes</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])}</span>
         <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">:</span>
             <span class="n">grouped_gates</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 

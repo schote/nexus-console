@@ -147,7 +147,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -162,7 +162,7 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -271,6 +271,8 @@ document.write(`
       
       
       
+        
+      
       <div class="bd-sidebar-primary bd-sidebar">
         
 
@@ -285,7 +287,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -300,7 +302,7 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -382,19 +384,6 @@ document.write(`
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
-        <div class="sidebar-primary-item">
-<nav class="bd-docs-nav bd-links"
-     aria-label="Section Navigation">
-  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
-  <div class="bd-toc-item navbar-nav"><p aria-level="2" class="caption" role="heading"><span class="caption-text">Content</span></p>
-<ul class="current nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="system_setup.html">System Setup</a></li>
-<li class="toctree-l1"><a class="reference internal" href="acquisition_process.html">Acquisition Process</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">Sequence Provider</a></li>
-<li class="toctree-l1"><a class="reference internal" href="spectrum_devices.html">Spectrum Devices</a></li>
-</ul>
-</div>
-</nav></div>
     </div>
   
   
@@ -452,8 +441,11 @@ document.write(`
   <section id="sequence-provider">
 <span id="seq-provider"></span><h1>Sequence Provider<a class="headerlink" href="#sequence-provider" title="Link to this heading">#</a></h1>
 <p>For sequence description, the open-source standard pulseq, i.e. the python implementation <a class="reference external" href="https://github.com/imr-framework/pypulseq">PyPulseq</a> is used.
-For detailed documentation of this package, see <a class="reference external" href="https://pypulseq.readthedocs.io/en/dev/">PyPulseq documentation</a>.
 The sequence provider is build on top of the <code class="docutils literal notranslate"><span class="pre">Sequence</span></code> class from the pypulseq package and adds functionalities to compute the waveforms described by pulseq.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>For detailed documentation of the PyPulseq package, see <a class="reference external" href="https://pypulseq.readthedocs.io/en/dev/">PyPulseq documentation</a>.</p>
+</div>
 <section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
 <p>Once the sequence provider has been created, a new pulseq sequence can be loaded by using the build in routine which reads a sequence from <em>.seq</em> file.

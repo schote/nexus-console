@@ -145,7 +145,7 @@
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -160,7 +160,7 @@
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -283,7 +283,7 @@ document.write(`
   <ul class="bd-navbar-elements navbar-nav">
     
                     <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start/index.html">
+                      <a class="nav-link nav-internal" href="../quick_start.html">
                         Quick-Start Guide
                       </a>
                     </li>
@@ -298,7 +298,7 @@ document.write(`
 
                     <li class="nav-item">
                       <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Examples
+                        Example Experiments
                       </a>
                     </li>
                 
@@ -447,29 +447,15 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-console.utilities.ddc">
-<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-console.utilities.ddc" title="Link to this heading">#</a></h1>
-<p>Digital down converter (DDC) function.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="console.utilities.ddc.apply_ddc">
-<span class="sig-prename descclassname"><span class="pre">console.utilities.ddc.</span></span><span class="sig-name descname"><span class="pre">apply_ddc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_spcm</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/console/utilities/ddc.html#apply_ddc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.ddc.apply_ddc" title="Link to this definition">#</a></dt>
-<dd><p>Apply digital downsampling.</p>
-<p>This function demodulates the raw NMR signal, applies a bandpass filter and does the down-sampling.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>raw_signal</strong> – Raw NMR signal in time-domain</p></li>
-<li><p><strong>kernel_size</strong> – Filter kernel size</p></li>
-<li><p><strong>f_0</strong> – Larmor frequency</p></li>
-<li><p><strong>f_spcm</strong> – Sampling frequency</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>Filtered and down-sampled signal</p>
-</dd>
-</dl>
-</dd></dl>
-
+  <section id="utilities">
+<h1>Utilities<a class="headerlink" href="#utilities" title="Link to this heading">#</a></h1>
+<section id="digital-down-converter-ddc">
+<h2>Digital Down Converter (DDC)<a class="headerlink" href="#digital-down-converter-ddc" title="Link to this heading">#</a></h2>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p>User guide on <a class="reference internal" href="../user_guide/post_processing.html#post-processing"><span class="std std-ref">post processing</span></a>.</p>
+</div>
+<p id="module-console.utilities.ddc">Digital down converter (DDC) function.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="console.utilities.ddc.filter_cic_fir_comp">
 <span class="sig-prename descclassname"><span class="pre">console.utilities.ddc.</span></span><span class="sig-name descname"><span class="pre">filter_cic_fir_comp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number_of_stages</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/utilities/ddc.html#filter_cic_fir_comp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.ddc.filter_cic_fir_comp" title="Link to this definition">#</a></dt>
@@ -477,6 +463,10 @@ document.write(`
 <p>Two stage decimation:
 (1) CIC decimation by decimation/2 rate
 (2) FIR decimation by factor 2</p>
+<p>The signal size after decimation can be determined by
+&gt;&gt;&gt; signal.shape[-1] // decimation</p>
+<p>The number of decimated samples after the first stage depends output sample size.
+Any left over samples in CIC decimation stage are truncated.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -524,7 +514,10 @@ By default 4</p></li>
 </dl>
 </dd></dl>
 
-<p id="module-console.utilities.snr">Signal-to-noise ratio (SNR) calculation.</p>
+</section>
+<section id="module-console.utilities.snr">
+<span id="quality-assessment"></span><h2>Quality Assessment<a class="headerlink" href="#module-console.utilities.snr" title="Link to this heading">#</a></h2>
+<p>Signal-to-noise ratio (SNR) calculation.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="console.utilities.snr.signal_to_noise_ratio">
 <span class="sig-prename descclassname"><span class="pre">console.utilities.snr.</span></span><span class="sig-name descname"><span class="pre">signal_to_noise_ratio</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">signal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwell_time</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">window_width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/console/utilities/snr.html#signal_to_noise_ratio"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.utilities.snr.signal_to_noise_ratio" title="Link to this definition">#</a></dt>
@@ -543,6 +536,7 @@ By default 4</p></li>
 </dl>
 </dd></dl>
 
+</section>
 </section>
 
 
@@ -582,10 +576,15 @@ By default 4</p></li>
   </div>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.apply_ddc"><code class="docutils literal notranslate"><span class="pre">apply_ddc()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_cic_fir_comp"><code class="docutils literal notranslate"><span class="pre">filter_cic_fir_comp()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_moving_average"><code class="docutils literal notranslate"><span class="pre">filter_moving_average()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.snr.signal_to_noise_ratio"><code class="docutils literal notranslate"><span class="pre">signal_to_noise_ratio()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#digital-down-converter-ddc">Digital Down Converter (DDC)</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_cic_fir_comp"><code class="docutils literal notranslate"><span class="pre">filter_cic_fir_comp()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.ddc.filter_moving_average"><code class="docutils literal notranslate"><span class="pre">filter_moving_average()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.utilities.snr">Quality Assessment</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.utilities.snr.signal_to_noise_ratio"><code class="docutils literal notranslate"><span class="pre">signal_to_noise_ratio()</span></code></a></li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
