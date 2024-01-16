@@ -27,7 +27,7 @@ def test_se_spectrum_dl():
 
 def test_t2_relaxation():
     """Test sequence to measure T2."""
-    seq = sequences.t2_relaxation.constructor()
+    seq, _ = sequences.t2_relaxation.constructor()
     assert seq.check_timing()[0]
 
 
