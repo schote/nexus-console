@@ -24,16 +24,25 @@ bibliography: paper.bib
 
 # Summary
 
-The emergence of low-field MRI presents a cost-effective and portable solution in magnetic resonance imaging [@oreilly:2021; @cooley:2020; @wald:2020; guallart-naval:2023]. Especially for portable imaging applications, the employment of advanced approaches with local processing is desired. The domain is currently experiencing swift progress, particularly in the integration of auxiliary sensors @srinivas:2023 and the dynamic optimization of imaging parameters through feedback loop analytics @loktyushin:2021.
 
+The emergence of low-field MRI presents a cost-effective and portable solution in magnetic resonance imaging (MRI)[@oreilly:2021; @cooley:2020; @wald:2020; guallart-naval:2023]. Especially [open-source MRI systems](https://www.opensourceimaging.org/2023/01/09/first-open-source-mri-scanner-presented-the-osii-one/) foster transparency and accessibility of this important imaging modality. Usually, an MRI system is build as described in the figure below. One of the key components is the console computer which controls all the different hardware modules. It control the gradient power amplifier, the RF power amplifier and samples the MR signal.
+
+Especially for portable imaging applications, the employment of advanced approaches with local processing is desired. The domain is currently experiencing swift progress, particularly in the integration of auxiliary sensors @srinivas:2023 and the dynamic optimization of imaging parameters through feedback loop analytics @loktyushin:2021.
 Most available MRI consoles are not inherently designed to facilitate these complex techniques @negnevitsky:2023 or their proprietary nature poses limitations on the customizability (e.g. limited on-board computing power, extension modules, or number of analog input/output channels).
+Our novel approach aims to bridge this gap by providing a versatile, yet powerful console that enables a simple implementation of sophisticated methodologies and is easy to customize. The console is implemented with two measurement cards from Spectrum-Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive) module. The console application was implemented with measurement cards that provide 4 analog output channels with 40 Msps (M2p.6546-x4) and 8 single-ended or 4 differential analog input channels with 40 Msps (M2p.5933-x4).
 
-Our novel approach aims to bridge this gap and by providing a versatile, yet powerful console that enables a simple implementation of sophisticated methodologies and is easy to customize. The console is implemented with two measurement cards from Spectrum-Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive) module. The console application was implemented with measurement cards that provide 4 analog output channels with 40 Msps (M2p.6546-x4) and 8 single-ended or 4 differental analog input channels with 40 Msps (M2p.5933-x4).
+This open-source software package implements a console application which orchestrates the execution of an MRI experiment using measurement cards from Spectrum-Instrumentation as described in the figure below.
+An experiment description is contained in a pulse sequence provided by the community-developed standard called Pulseq.
+In a first step, the sequence is interpreted and the calculation of the unrolled sample points from its compressed format is performed.
+Two instances of an abstract device class manage the replay of the calculated sample points, as well as the acquisition of the MR signal which is phase sensitive and must be timed precicely.
+The package implements an acquisition control class which handles all the tasks described below and is yet simple to utilize.
+It is implemented in python and can be used stand-alone or as a sub-component for acquisition software which also implements a user interface for instance.
+In addition to the execution of an MRI experiment, the package also implements different methods for sequence construction, post-processing and data provisioning.
 
-Implementation orchestrates the execution of an MRI pulse sequence provided in the community-developed standard Pulseq. This includes the calculation of the sequence from its compressed format to unrolled sample points, the replay of the calculated sample points and the precicely timed, phase sensitive acquisition of the MR signal.
-Additionally, different methods for sequence construction, post-processing and data provisioning are provided.
+![alt text](/docs/source/_figures/system_components.png "System Setup")
 
-# Statement of needa
+
+# Statement of Need
 
 - Advanced approaches in low-field MRI such as EMI, sequence optimization MR-zero or B0-inhomogeneity compensation
 - Utilization of additional sensors: e.g. for B0-field supervision, noise-cancelling or GIRF based trajectory corrections
