@@ -26,7 +26,7 @@ LOG_LEVELS = [
 ]
 
 
-class AcquistionControl:
+class AcquisitionControl:
     """Acquisition control class.
 
     The main functionality of the acquisition control is to orchestrate transmit and receive cards using

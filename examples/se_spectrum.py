@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import console.utilities.sequences as sequences
-from console.spcm_control.acquisition_control import AcquistionControl
+from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
 # Create acquisition control instance
-acq = AcquistionControl(
+acq = AcquisitionControl(
     configuration_file="../device_config.yaml",
     console_log_level=logging.INFO,
     file_log_level=logging.DEBUG
