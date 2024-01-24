@@ -197,7 +197,7 @@ class SequenceProvider(Sequence):
 
         # Set unblanking signal: 16th bit set to 1 (high)
         unblanking_start = num_samples_delay - num_samples_dead_time
-        unblanking_end = unblanking_start + num_samples
+        unblanking_end = num_samples_delay + num_samples
         unblanking[unblanking_start:unblanking_end] = 1
 
         # Calculate the static phase offset, defined by RF pulse
