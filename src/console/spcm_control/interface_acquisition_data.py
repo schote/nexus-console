@@ -92,7 +92,7 @@ class AcquisitionData:
         """
         return self.get_data(gate_size_index=0)
 
-    def write(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
+    def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
@@ -135,7 +135,7 @@ class AcquisitionData:
             log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
-        if len(self.raw) == 1:
+        if len(self._raw) == 1:
             np.save(f"{acq_folder_path}raw_data.npy", self.raw[0])
         else:
             for k, data in enumerate(self.raw):

@@ -70,6 +70,6 @@ acq_data.add_info({
     "te_values": list(te_values),
     "T2_ms": t2
 })
-acq_data.write()
+acq_data.save()
 
 del acq
