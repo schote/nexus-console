@@ -26,7 +26,7 @@ LOG_LEVELS = [
 ]
 
 
-class AcquistionControl:
+class AcquisitionControl:
     """Acquisition control class.
 
     The main functionality of the acquisition control is to orchestrate transmit and receive cards using
@@ -304,7 +304,7 @@ class AcquistionControl:
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
             # data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-            data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=4)
+            data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
 
             # Apply phase correction
             data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))

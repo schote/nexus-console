@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import decimate
 
 
-def filter_moving_average(signal, decimation: int = 100, overlap: int = 4):
+def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
     r"""Decimate data using a moving average filter.
 
     $kernel = e^{\frac{-1}{1 - x^2}} * \sin{2.073 * \pi \ x} / x, \; x = -1, ..., 1$

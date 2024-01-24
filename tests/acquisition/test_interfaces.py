@@ -25,7 +25,7 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
 
     assert info == acq_data.meta["info"]
 
-    acq_data.write("./tmp/")
+    acq_data.save("./tmp/")
     acq_data_files = list(os.walk("./tmp/"))[-1][-1]
 
     assert "meta.json" in acq_data_files

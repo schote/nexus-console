@@ -191,12 +191,14 @@ class SequenceProvider(Sequence):
         # Delay - dead-time samples account for start of unblanking
         num_samples_dead_time = int(block.dead_time * self.spcm_freq)
         # Calculate the number of ringdown samples at the end of RF pulse
-        num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
+        # num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
         # Calculate the number of RF shape sample points
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[num_samples_delay - num_samples_dead_time : -(num_samgles_ringdown + 1)] = 1
+        unblanking_start = num_samples_delay - num_samples_dead_time
+        unblanking_end = num_samples_delay + num_samples
+        unblanking[unblanking_start:unblanking_end] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)

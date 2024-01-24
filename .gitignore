@@ -147,3 +147,4 @@ dmypy.json
 /docs/source/_autosummary
 /experiments/_evaluations
 tmp
+.ruff_cache
