@@ -269,10 +269,10 @@ class SequenceProvider(Sequence):
         # Both gradient types have a delay, calculate delay in number of samples
         samples_delay = int(block.delay * self.spcm_freq)
         # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
-        idx = ["x", "y", "z"].index(block.channel) + 1
+        idx = ["x", "y", "z"].index(block.channel)
 
         # Calculate gradient offset in mV
-        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx]
+        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx+1]
         # Calculat waveform scaling
         # scaling = self.grad_to_volt[idx] * fov_scaling
         scaling = fov_scaling / (42.58e3 * self.gpa_gain[idx] * self.gradient_efficiency[idx])
@@ -282,17 +282,17 @@ class SequenceProvider(Sequence):
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
-                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx]:
+                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx+1]:
                     raise ValueError(
                         "Amplitude of %s (%s) gradient exceeded output limit (%s)"
                         % (
                             block.channel,
                             np.amax(waveform) + offset,
-                            self.output_limits[idx],
+                            self.output_limits[idx+1],
                         )
                     )
                 # Trasnfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx]
+                waveform *= INT16_MAX / self.output_limits[idx+1]
 
                 gradient = np.interp(
                     x=np.linspace(
@@ -306,11 +306,13 @@ class SequenceProvider(Sequence):
 
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx]:
-                    raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
+                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx+1]:
+                    raise ValueError(
+                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx+1]}."
+                    )
 
                 # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx])
+                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx+1])
 
                 rise = np.linspace(
                     0,
