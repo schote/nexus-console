@@ -77,7 +77,7 @@ def constructor(
 
     adc = pp.make_adc(
         system=system,
-        num_samples=int(adc_duration/system.adc_raster_time),
+        num_samples=int((adc_duration + adc_correction)/system.adc_raster_time),
         duration=raster(val=adc_duration + adc_correction, precision=system.adc_raster_time),
         delay=raster(val=gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
     )
