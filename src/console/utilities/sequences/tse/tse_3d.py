@@ -42,7 +42,8 @@ def constructor(
     fov, optional
         Field of view per dimension, by default default_fov
     n_enc, optional
-        Number of encoding steps per dimension, by default default_encoding
+        Number of encoding steps per dimension, by default default_encoding = Dimensions(x=70, y=70, z=49).
+        If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
 
     Returns
     -------
@@ -97,8 +98,8 @@ def constructor(
     pe0 = np.arange(n_enc.y) - int((n_enc.y - 1) / 2)
     pe1 = np.arange(n_enc.z) - int((n_enc.z - 1) / 2)
 
-    pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.5))]
-    pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.5))]
+    pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.1))]
+    pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.1))]
 
     pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe0_ordered, pe1_ordered, indexing='ij')], axis=-1)
 
@@ -140,9 +141,9 @@ def constructor(
 
             ro_counter += 1
 
-            # Add TR after echo train, if not the last readout
-            if ro_counter < n_enc.y * n_enc.z:
-                seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
+        # Add TR after echo train, if not the last readout
+        if ro_counter < n_enc.y * n_enc.z:
+            seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0] + tr_delay) / len(trains)
