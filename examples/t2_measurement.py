@@ -33,7 +33,8 @@ params = AcquisitionParameter(
 )
 
 # Perform acquisition
-acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+acq.set_sequence(parameter=params, sequence=seq)
+acq_data: AcquisitionData = acq.run()
 data = np.mean(acq_data.raw, axis=0).squeeze()
 
 peaks = np.max(data, axis=-1)
