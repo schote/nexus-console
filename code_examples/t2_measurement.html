@@ -497,7 +497,8 @@ E.g. if <code class="docutils literal notranslate"><span class="pre">num_steps</
 <span class="p">)</span>
 
 <span class="c1"># Perform acquisition</span>
-<span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">acq_data</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
 <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>

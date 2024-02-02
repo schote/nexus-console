@@ -484,8 +484,22 @@ Both attributes are list, which store numpy arrays of readout data with the same
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquisitionControl.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.spcm_control.interface_acquisition_data.AcquisitionData" title="console.spcm_control.interface_acquisition_data.AcquisitionData"><span class="pre">AcquisitionData</span></a></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.run" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.spcm_control.interface_acquisition_data.AcquisitionData" title="console.spcm_control.interface_acquisition_data.AcquisitionData"><span class="pre">AcquisitionData</span></a></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.run" title="Link to this definition">#</a></dt>
 <dd><p>Run an acquisition job.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – The measurement cards are not setup properly</p></li>
+<li><p><strong>ValueError</strong> – Missing raw data or missing averages</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquisitionControl.set_sequence">
+<span class="sig-name descname"><span class="pre">set_sequence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sequence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.spcm_control.interface_acquisition_parameter.AcquisitionParameter" title="console.spcm_control.interface_acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.set_sequence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.set_sequence" title="Link to this definition">#</a></dt>
+<dd><p>Set sequence and acquisition parameter.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -495,7 +509,7 @@ Both attributes are list, which store numpy arrays of readout data with the same
 </dd>
 <dt class="field-even">Raises<span class="colon">:</span></dt>
 <dd class="field-even"><ul class="simple">
-<li><p><strong>RuntimeError</strong> – The measurement cards are not setup properly.</p></li>
+<li><p><strong>AttributeError</strong> – Invalid sequence provided.</p></li>
 <li><p><strong>FileNotFoundError</strong> – Invalid file ending of sequence file.</p></li>
 </ul>
 </dd>
@@ -765,6 +779,7 @@ The data array has the following dimensions: [averages, coils, phase encoding, r
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquisitionControl"><code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquisitionControl.post_processing"><code class="docutils literal notranslate"><span class="pre">AcquisitionControl.post_processing()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquisitionControl.run"><code class="docutils literal notranslate"><span class="pre">AcquisitionControl.run()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.acquisition_control.AcquisitionControl.set_sequence"><code class="docutils literal notranslate"><span class="pre">AcquisitionControl.set_sequence()</span></code></a></li>
 </ul>
 </li>
 </ul>

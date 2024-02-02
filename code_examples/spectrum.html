@@ -493,7 +493,8 @@ Here we use 20 ms echo time and 200 us RF block pulse duration.</p></li>
 <span class="p">)</span>
 
 <span class="c1"># Run the acquisition</span>
-<span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <span class="c1"># Get decimated data from acquisition data object</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">acq_data</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
