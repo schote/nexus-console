@@ -14,13 +14,13 @@ import sequence_snr
 
 # %%
 # acquisition control instance
-configuration = "../device_config.yaml"
+configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # construct the sequence
-# seq = sequence_snr.constructor(rf_duration=200e-6, gate_duration=1e-3)
-seq = sequence_snr.constructor(rf_duration=0, gate_duration=2e-3)
+seq = sequence_snr.constructor(rf_duration=200e-6, gate_duration=1e-3)
+# seq = sequence_snr.constructor(rf_duration=0, gate_duration=2e-3)
 
 # optional plot:
 acq.seq_provider.from_pypulseq(seq)
@@ -63,11 +63,8 @@ ax[1].plot(fft_freq*1e-3, np.abs(data_fft))
 ax[1].set_ylabel("Abs. spectrum [a.u.]")
 ax[1].set_xlabel("Frequency [kHz]")
 
-std_re = np.std(data.real)
-std_im = np.std(data.imag)
-std_cp = np.std(data)
-# print(f"\nSTANDARD DEVIATION\nre: {std_re}, im: {std_im}")
-print(f"\nCOMPLEX STANDARD DEVIATION: {std_cp}")
+std = np.std(data)
+print(f"\nCOMPLEX STANDARD DEVIATION: {std}")
 
 # unprocessed signal
 # plt.plot(acq_data.unprocessed_data[0, 0, 0, :])
@@ -75,29 +72,12 @@ print(f"\nCOMPLEX STANDARD DEVIATION: {std_cp}")
 # %%
 # save
 acq_data.add_info({
-    "std. re": std_re,
-    "std. im": std_im,
-    "std. complex": std_cp,
-    # "note": "large coil only, shielded room at 3T"
-    # "note": "large coil, tr-switch and preamp, shielded room at 3T"
-    # "note": "small coil, tr-switch and preamp, shielded room at 3T"
-    # "note": "small coil only, shielded room at 3T"
-    # "note": "small coil only, outside shielded room at 3T"
-    # "note": "small coil, tr-switch and preamp, outside shielded room at 3T"
-    # "note": "feed through only, no coil, 50 ohms, shielded room at 3T"
-    # "note": "tr-swtch, preamp, feed through, no coil, 50 ohms termination, shielded room at 3T"
-    # "note": "tx-rx-test coil only"
+    "std. complex": std,
+    "note": "tx-rx-test coil only"
     # "note": "rx-rx-test coil + tr-switch"
     # "note": "tx-rx-test coil + tr-switch + wenteq preamp"
-    # "note": "tx-rx-test coil + tr-switch + wenteq preamp, outside 3T room"
-    # "note": "tx-rx-test coil + tr-switch, outside 3T room"
-    "note": "tx-rx-test coil only, outside 3T room"
 })
-acq_data.save(
-    # user_path="/home/schote01/data/noise_characterization/",
-    user_path="/home/schote01/data/test/", 
-    save_unprocessed=True
-)
+acq_data.save(user_path="~/spcm-console-data/", save_unprocessed=True)
 
 # %%
 del acq

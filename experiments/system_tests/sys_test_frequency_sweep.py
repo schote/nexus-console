@@ -31,7 +31,7 @@ import sequence_freq_sweep
 
 # %%
 # acquisition control instance
-configuration = "../device_config.yaml"
+configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
@@ -52,13 +52,13 @@ f_0 = 2.0395e6
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    # b1_scaling=4.0,
-    b1_scaling=20.0,
+    b1_scaling=10.0,
     decimation=200,
 )
 
 acq.set_sequence(parameter=params, sequence=seq)
 acq_data: AcquisitionData = acq.run()
+
 data = np.mean(acq_data.raw, axis=0).squeeze()
 
 # plot result
@@ -82,10 +82,8 @@ acq_data.add_info({
     # "note": "tr-switch"
     "note": "preamp"
 })
-acq_data.save(
-    user_path="/home/schote01/data/feedback_test/freq_sweep/", 
-    save_unprocessed=False
-)
+
+acq_data.save(user_path="~/spcm-console-data/", save_unprocessed=True)
 
 # %%
 del acq
