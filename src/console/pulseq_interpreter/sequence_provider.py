@@ -97,7 +97,7 @@ class SequenceProvider(Sequence):
 
         self.larmor_freq: float = float("nan")
         self.sample_count: int = 0
-        self._seq: np.ndarray | None = None
+        self._sqnc_cache: list = []
 
     def dict(self) -> dict:
         """Abstract method which returns variables for logging in dictionary."""
@@ -191,12 +191,14 @@ class SequenceProvider(Sequence):
         # Delay - dead-time samples account for start of unblanking
         num_samples_dead_time = int(block.dead_time * self.spcm_freq)
         # Calculate the number of ringdown samples at the end of RF pulse
-        num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
+        # num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
         # Calculate the number of RF shape sample points
         num_samples = int(block.shape_dur * self.spcm_freq)
 
         # Set unblanking signal: 16th bit set to 1 (high)
-        unblanking[num_samples_delay - num_samples_dead_time : -(num_samgles_ringdown + 1)] = 1
+        unblanking_start = num_samples_delay - num_samples_dead_time
+        unblanking_end = num_samples_delay + num_samples
+        unblanking[unblanking_start:unblanking_end] = 1
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
@@ -267,10 +269,10 @@ class SequenceProvider(Sequence):
         # Both gradient types have a delay, calculate delay in number of samples
         samples_delay = int(block.delay * self.spcm_freq)
         # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
-        idx = ["x", "y", "z"].index(block.channel) + 1
+        idx = ["x", "y", "z"].index(block.channel)
 
         # Calculate gradient offset in mV
-        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx]
+        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx+1]
         # Calculat waveform scaling
         # scaling = self.grad_to_volt[idx] * fov_scaling
         scaling = fov_scaling / (42.58e3 * self.gpa_gain[idx] * self.gradient_efficiency[idx])
@@ -280,17 +282,17 @@ class SequenceProvider(Sequence):
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
-                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx]:
+                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx+1]:
                     raise ValueError(
                         "Amplitude of %s (%s) gradient exceeded output limit (%s)"
                         % (
                             block.channel,
                             np.amax(waveform) + offset,
-                            self.output_limits[idx],
+                            self.output_limits[idx+1],
                         )
                     )
                 # Trasnfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx]
+                waveform *= INT16_MAX / self.output_limits[idx+1]
 
                 gradient = np.interp(
                     x=np.linspace(
@@ -304,11 +306,13 @@ class SequenceProvider(Sequence):
 
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx]:
-                    raise ValueError(f"Amplitude of {block.channel} gradient exceeded max. amplitude of channel {idx}.")
+                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx+1]:
+                    raise ValueError(
+                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx+1]}."
+                    )
 
                 # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx])
+                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx+1])
 
                 rise = np.linspace(
                     0,
@@ -465,6 +469,12 @@ class SequenceProvider(Sequence):
 
         As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.
         """
+        if self._sqnc_cache:
+            # Reset unrolled sequence cache to free memory
+            print("Resetting sequence cache...")
+            del self._sqnc_cache
+            self._sqnc_cache = []
+
         try:
             # Check larmor frequency
             if larmor_freq > 10e6:
@@ -554,7 +564,7 @@ class SequenceProvider(Sequence):
         )
 
         # Save unrolled sequence in class
-        self._seq = np.concatenate(_seq)
+        self._sqnc_cache = _seq
 
         return UnrolledSequence(
             seq=_seq,
@@ -587,7 +597,7 @@ class SequenceProvider(Sequence):
         """
         fig, axis = plt.subplots(5, 1, figsize=(16, 9))
 
-        if self._seq is None:
+        if not self._sqnc_cache:
             print("No unrolled sequence...")
             return fig, axis
 
@@ -595,10 +605,11 @@ class SequenceProvider(Sequence):
         seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
         samples = np.arange(self.sample_count, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
 
-        rf_signal = self._seq[0::4][seq_start:seq_end]
-        gx_signal = self._seq[1::4][seq_start:seq_end]
-        gy_signal = self._seq[2::4][seq_start:seq_end]
-        gz_signal = self._seq[3::4][seq_start:seq_end]
+        sqnc = np.concatenate(self._sqnc_cache)
+        rf_signal = sqnc[0::4][seq_start:seq_end]
+        gx_signal = sqnc[1::4][seq_start:seq_end]
+        gy_signal = sqnc[2::4][seq_start:seq_end]
+        gz_signal = sqnc[3::4][seq_start:seq_end]
 
         # Get digital signals
         adc_gate = gx_signal.astype(np.uint16) >> 15

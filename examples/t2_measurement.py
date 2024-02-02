@@ -7,13 +7,13 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 import console.utilities.sequences as sequences
-from console.spcm_control.acquisition_control import AcquistionControl
+from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
 # Create acquisition control instance
 configuration = "../device_config.yaml"
-acq = AcquistionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # Construct and plot sequence
 seq, te_values = sequences.t2_relaxation.constructor(echo_time_range=(10e-3, 100e-3), num_steps=50, repetition_time=600e-3)
@@ -33,7 +33,8 @@ params = AcquisitionParameter(
 )
 
 # Perform acquisition
-acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+acq.set_sequence(parameter=params, sequence=seq)
+acq_data: AcquisitionData = acq.run()
 data = np.mean(acq_data.raw, axis=0).squeeze()
 
 peaks = np.max(data, axis=-1)
@@ -70,6 +71,6 @@ acq_data.add_info({
     "te_values": list(te_values),
     "T2_ms": t2
 })
-acq_data.write()
+acq_data.save()
 
 del acq
