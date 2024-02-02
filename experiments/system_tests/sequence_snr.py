@@ -1,6 +1,5 @@
 """Constructor for spin-echo spectrum sequence."""
 from math import pi
-import numpy as np
 import pypulseq as pp
 
 system = pp.Opts(

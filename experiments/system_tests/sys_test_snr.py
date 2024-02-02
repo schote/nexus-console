@@ -37,12 +37,13 @@ params = AcquisitionParameter(
     b1_scaling=20.0,
     decimation=200,
 
-    averaging_delay=100e-3,
+    # averaging_delay=100e-3,
     # num_averages=50
-    num_averages=2
+    # num_averages=2
 )
 
-acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+acq.set_sequence(parameter=params, sequence=seq)
+acq_data: AcquisitionData = acq.run()
 data = np.mean(acq_data.raw, axis=0).squeeze()
 
 # fft
