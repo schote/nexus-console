@@ -173,6 +173,7 @@ class AcquisitionControl:
             grad_offset=parameter.gradient_offset,
         )
         self.parameter = parameter
+        self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
 
     def run(self) -> AcquisitionData:
@@ -197,7 +198,6 @@ class AcquisitionControl:
 
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + self.unrolled_seq.duration
-        self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
         self._unproc = []
         self._raw = []
