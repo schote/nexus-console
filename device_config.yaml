@@ -39,7 +39,7 @@ SequenceProvider: !SequenceProvider
   # Gradient efficiency in T/m
   gradient_efficiency: [0.451e-3, 0.4e-3, 0.37e-3]  # Leiden values
   # Gradient power amplifier in V/A
-  gpa_gain: [1.0, 1.0, 1.0]
+  gpa_gain: [4.7, 4.7, 4.7]
 
   # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
   # How to correct this properly, independent of the pulseq sequence?
