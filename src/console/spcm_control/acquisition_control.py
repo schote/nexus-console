@@ -87,7 +87,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.sqnc: UnrolledSequence | None = None
+        self.unrolled_seq: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -161,12 +161,12 @@ class AcquisitionControl:
             raise err
 
         # Calculate sequence
-        self.sqnc = None
+        self.unrolled_seq = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
-        self.sqnc = self.seq_provider.unroll_sequence(
+        self.unrolled_seq = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency,
             b1_scaling=parameter.b1_scaling,
             fov_scaling=parameter.fov_scaling,
@@ -189,15 +189,15 @@ class AcquisitionControl:
             # Check setup
             if not self.is_setup:
                 raise RuntimeError("Measurement cards are not setup.")
-            if self.sqnc is None:
+            if self.unrolled_seq is None:
                 raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
         except (RuntimeError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
         # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + self.sqnc.duration
-        self.log.info("Sequence duration: %s s", self.sqnc.duration)
+        timeout = 5 + self.unrolled_seq.duration
+        self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
         self._unproc = []
         self._raw = []
@@ -208,16 +208,16 @@ class AcquisitionControl:
             # Start masurement card operations
             self.rx_card.start_operation()
             time.sleep(0.5)
-            self.tx_card.start_operation(self.sqnc)
+            self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
             time_start = time.time()
 
-            while len(self.rx_card.rx_data) < self.sqnc.adc_count:
+            while len(self.rx_card.rx_data) < self.unrolled_seq.adc_count:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
-                if len(self.rx_card.rx_data) >= self.sqnc.adc_count:
+                if len(self.rx_card.rx_data) >= self.unrolled_seq.adc_count:
                     break
 
                 if time.time() - time_start > timeout:
@@ -225,7 +225,7 @@ class AcquisitionControl:
                     self.log.warning(
                         "Acquisition Timeout: Only received %s/%s adc events",
                         len(self.rx_card.rx_data),
-                        self.sqnc.adc_count,
+                        self.unrolled_seq.adc_count,
                         stack_info=True,
                     )
                     break
