@@ -189,7 +189,9 @@ class AcquisitionControl:
             # Check setup
             if not self.is_setup:
                 raise RuntimeError("Measurement cards are not setup.")
-        except RuntimeError as err:
+            if self.sqnc is None:
+                raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
+        except (RuntimeError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 

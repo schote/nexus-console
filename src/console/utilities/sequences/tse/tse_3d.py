@@ -6,7 +6,7 @@ import numpy as np
 import pypulseq as pp
 
 from console.spcm_control.interface_acquisition_parameter import Dimensions
-from console.utilities.sequences.system_settings import system, raster
+from console.utilities.sequences.system_settings import raster, system
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
 default_encoding = Dimensions(x=70, y=70, z=49)

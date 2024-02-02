@@ -1,8 +1,6 @@
 """Global definition of system settings to be imported by sequence constructors."""
-from pypulseq.opts import Opts
-import numpy as np
-from decimal import Decimal
 
+from pypulseq.opts import Opts
 
 system = Opts(
     # time delay at the end of RF event, SETS RF DELAY!
