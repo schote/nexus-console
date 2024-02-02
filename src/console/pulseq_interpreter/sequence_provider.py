@@ -471,7 +471,7 @@ class SequenceProvider(Sequence):
         """
         if self._sqnc_cache:
             # Reset unrolled sequence cache to free memory
-            print("Resetting sequence cache...")
+            self.log.debug("Resetting sequence cache...")
             del self._sqnc_cache
             self._sqnc_cache = []
 
