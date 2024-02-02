@@ -37,6 +37,9 @@ def constructor(
         Duration of the RF pulses (90 and 180 degree), by default 400e-6
     gradient_correction, optional
         Time constant to center ADC event, by default 510e-6
+    adc_correction, optional
+        Time constant which is added at the end of the ADC and readout gradient.
+        This value is not taken into account for the prephaser calculation.
     ro_bandwidth, optional
         Readout bandwidth in Hz, by default 20e3
     fov, optional
@@ -64,22 +67,25 @@ def constructor(
         channel="x",
         system=system,
         flat_area=n_enc.x / fov.x,
-        flat_time=adc_duration + gradient_correction,
+        # Add gradient correction time and ADC correction time
+        flat_time=raster(adc_duration + gradient_correction + adc_correction, precision=system.grad_raster_time),
     )
 
-    ro_pre_duration = (pp.calc_duration(grad_ro) - gradient_correction) / 2
+    # Calculate readout prephaser without correction times
+    ro_pre_duration = (pp.calc_duration(grad_ro) - gradient_correction - adc_correction) / 2
 
     grad_ro_pre = pp.make_trapezoid(
         channel="x",
         system=system,
         area=grad_ro.area / 2,
-        duration=ro_pre_duration,
+        duration=raster(ro_pre_duration, precision=system.grad_raster_time),
     )
 
     adc = pp.make_adc(
         system=system,
         num_samples=int((adc_duration + adc_correction)/system.adc_raster_time),
         duration=raster(val=adc_duration + adc_correction, precision=system.adc_raster_time),
+        # Add gradient correction time and ADC correction time
         delay=raster(val=gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
     )
 
@@ -98,6 +104,9 @@ def constructor(
     pe0 = np.arange(n_enc.y) - int((n_enc.y - 1) / 2)
     pe1 = np.arange(n_enc.z) - int((n_enc.z - 1) / 2)
 
+    # Add offset of -0.1 to ensure that positive PE step comes first:
+    # e.g. PE values without offset (-1, 0, 1) -> abs: (1, 0, 1) -> argsort: (1, 0/2)
+    # PE values with offset (-1.1, -0.1, 0.9) -> abs: (1.1, 0.1, 0.9) -> argsort: (1, 2, 0)
     pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.1))]
     pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.1))]
 
@@ -106,6 +115,7 @@ def constructor(
     pe_traj[:, 0] / fov.y
     pe_traj[:, 1] / fov.z
 
+    # Divide all PE steps into echo trains
     num_trains = int(np.ceil(pe_traj.shape[0] / etl))
     trains = [pe_traj[k*etl:(k+1)*etl] for k in range(num_trains)]
 
