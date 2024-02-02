@@ -87,7 +87,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.unrolled_sequence: UnrolledSequence | None = None
+        self.unrolled_seq: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -128,8 +128,8 @@ class AcquisitionControl:
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
 
-    def run(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> AcquisitionData:
-        """Run an acquisition job.
+    def set_sequence(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> None:
+        """Set sequence and acquisition parameter.
 
         Parameters
         ----------
@@ -140,15 +140,12 @@ class AcquisitionControl:
 
         Raises
         ------
-        RuntimeError
-            The measurement cards are not setup properly.
+        AttributeError
+            Invalid sequence provided.
         FileNotFoundError
             Invalid file ending of sequence file.
         """
         try:
-            # Check setup
-            if not self.is_setup:
-                raise RuntimeError("Measurement cards are not setup.")
             # Check sequence
             if isinstance(sequence, Sequence):
                 self.seq_provider.from_pypulseq(sequence)
@@ -159,46 +156,68 @@ class AcquisitionControl:
             else:
                 raise AttributeError("Invalid sequence, must be either string to .seq file or Sequence instance")
 
-        except (RuntimeError, FileNotFoundError, AttributeError) as err:
+        except (FileNotFoundError, AttributeError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
+        # Calculate sequence
+        self.unrolled_seq = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
-        sqnc: UnrolledSequence = self.seq_provider.unroll_sequence(
+        self.unrolled_seq = self.seq_provider.unroll_sequence(
             larmor_freq=parameter.larmor_frequency,
             b1_scaling=parameter.b1_scaling,
             fov_scaling=parameter.fov_scaling,
             grad_offset=parameter.gradient_offset,
         )
-        # Save unrolled sequence
-        self.unrolled_sequence = sqnc if sqnc else None
+        self.parameter = parameter
+
+
+    def run(self) -> AcquisitionData:
+        """Run an acquisition job.
+
+        Raises
+        ------
+        RuntimeError
+            The measurement cards are not setup properly
+        ValueError
+            Missing raw data or missing averages
+        """
+        try:
+            # Check setup
+            if not self.is_setup:
+                raise RuntimeError("Measurement cards are not setup.")
+            if self.unrolled_seq is None:
+                raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
+        except (RuntimeError, ValueError) as err:
+            self.log.exception(err, exc_info=True)
+            raise err
 
         # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + sqnc.duration
-        self.log.info("Sequence duration: %s s", sqnc.duration)
+        timeout = 5 + self.unrolled_seq.duration
+        self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
         self._unproc = []
         self._raw = []
 
-        for k in range(parameter.num_averages):
-            self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
+        for k in range(self.parameter.num_averages):
+            self.log.info("Acquisition %s/%s", k + 1, self.parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
             time.sleep(0.5)
-            self.tx_card.start_operation(sqnc)
+            self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
             time_start = time.time()
 
-            while len(self.rx_card.rx_data) < sqnc.adc_count:
+            while len(self.rx_card.rx_data) < self.unrolled_seq.adc_count:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
-                if len(self.rx_card.rx_data) >= sqnc.adc_count:
+                if len(self.rx_card.rx_data) >= self.unrolled_seq.adc_count:
                     break
 
                 if time.time() - time_start > timeout:
@@ -206,30 +225,30 @@ class AcquisitionControl:
                     self.log.warning(
                         "Acquisition Timeout: Only received %s/%s adc events",
                         len(self.rx_card.rx_data),
-                        sqnc.adc_count,
+                        self.unrolled_seq.adc_count,
                         stack_info=True,
                     )
                     break
 
             if len(self.rx_card.rx_data) > 0:
-                self.post_processing(parameter)
+                self.post_processing(self.parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if parameter.averaging_delay > 0:
-                time.sleep(parameter.averaging_delay)
+            if self.parameter.averaging_delay > 0:
+                time.sleep(self.parameter.averaging_delay)
 
         try:
             # if not self._raw.size > 0:
             if not len(self._raw) > 0:
-                raise ValueError("Error during post processing or readout, no raw data")
+                raise ValueError("No raw data acquired...")
             # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == parameter.num_averages for gate in self._raw):
+            if not all(gate.shape[0] == self.parameter.num_averages for gate in self._raw):
                 raise ValueError(
-                    "Could not acquire all averages. Average dimensions: %s/%s",
+                    "Missing averages: %s/%s",
                     [gate.shape[0] for gate in self._raw],
-                    parameter.num_averages,
+                    self.parameter.num_averages,
                 )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -245,8 +264,8 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=parameter.decimation / self.f_spcm,
-            acquisition_parameters=parameter,
+            dwell_time=self.parameter.decimation / self.f_spcm,
+            acquisition_parameters=self.parameter,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:

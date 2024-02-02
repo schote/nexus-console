@@ -31,7 +31,8 @@ params = AcquisitionParameter(
 )
 
 # Run the acquisition
-acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+acq.set_sequence(parameter=params, sequence=seq)
+acq_data: AcquisitionData = acq.run()
 
 # Get decimated data from acquisition data object
 data = acq_data.raw.squeeze()
