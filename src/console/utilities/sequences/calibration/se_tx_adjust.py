@@ -12,6 +12,7 @@ ADC_DURATION = 4e-3
 
 def constructor(
     n_steps: int = 10,
+    flip_angle_range=(pi/4, 3*pi/2),
     repetition_time: float = 1000,
     echo_time: float = 12e-3,
     rf_duration: float = 400e-6,
@@ -46,7 +47,7 @@ def constructor(
     )
 
     # Define flip angles
-    flip_angles = np.linspace(start=(2 * pi) / n_steps, stop=2 * pi, num=n_steps, endpoint=True)
+    flip_angles = np.linspace(flip_angle_range[0], flip_angle_range[1], n_steps, endpoint=True)
 
     for angle in flip_angles:
         rf_90 = pp.make_sinc_pulse(

@@ -2,6 +2,7 @@
 # %%
 import numpy as np
 import pypulseq as pp
+from math import pi
 
 from console.utilities.sequences.system_settings import system
 
@@ -11,7 +12,7 @@ ADC_DURATION = 4e-3
 
 def constructor(
     n_steps: int = 10,
-    max_flip_angle: float = 5 * np.pi / 4,
+    flip_angle_range=(pi/4, 3*pi/2),
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,
@@ -46,7 +47,7 @@ def constructor(
     )
 
     # Define flip angles
-    flip_angles = np.linspace(start=0, stop=max_flip_angle, num=n_steps, endpoint=True)
+    flip_angles = np.linspace(flip_angle_range[0], flip_angle_range[1], n_steps, endpoint=True)
 
     for angle in flip_angles:
         if use_sinc:
