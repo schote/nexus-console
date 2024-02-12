@@ -167,4 +167,22 @@ def constructor(
 
     return (seq, trains)
 
-# %%
+
+
+def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray) -> np.ndarray:
+    """
+    Sort acquired k-space lines.
+
+    Parameters
+    ----------
+    kspace
+        Acquired k-space data in the format (averages, coils, pe, ro)
+    trajectory
+        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
+    """
+    # Last key in the sequence passed to lexsort is used for the primary key
+    # Trajectory is passed as (z-koords, y-koords) to obtain yz-order
+    # Neg. sign sorts trajectory in descending order
+    order = np.lexsort((-trajectory[:, 1], -trajectory[:, 0]))
+    # Apply the order to the phase encoding dimension of k-space
+    return kspace[..., order, :]
