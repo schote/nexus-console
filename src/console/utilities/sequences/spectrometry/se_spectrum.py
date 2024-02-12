@@ -11,7 +11,7 @@ def constructor(
     rf_duration: float = 400e-6,
     adc_duration: float = 4e-3,
     use_sinc: bool = True,
-    time_bw_produt: float = 4,
+    time_bw_product: float = 4,
     ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
@@ -37,8 +37,8 @@ def constructor(
     seq.set_definition("Name", "se_spectrum")
 
     if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, time_bw_product=time_bw_produt)
-        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, time_bw_product=time_bw_produt)
+        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, time_bw_product=time_bw_product)
+        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, time_bw_product=time_bw_product)
     else:
         rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
