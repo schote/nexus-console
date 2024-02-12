@@ -17,30 +17,31 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Spinecho
-# seq, flip_angles = se_tx_adjust.constructor(
-    # echo_time=12e-3, 
-    # rf_duration=200e-6, 
-    # repetition_time=4, 
-    # n_steps=50, 
-    # flip_angle_range=(pi/4, 3*pi/2), 
-    # pulse_type="block"
-    # )
+seq, flip_angles = se_tx_adjust.constructor(
+    echo_time=12e-3,
+    rf_duration=200e-6,
+    repetition_time=2,
+    n_steps=10,
+    # flip_angle_range=(pi/4, 3*pi/2),
+    flip_angle_range=(pi/4, 3*pi/4),
+    use_sinc=False
+)
     
 # FID
-seq, flip_angles = fid_tx_adjust.constructor(
-    rf_duration=200e-6, repetition_time = 4, 
-    n_steps=50, 
-    flip_angle_range=(pi/4, 3*pi/2), 
-    pulse_type="block"
-    )
+# seq, flip_angles = fid_tx_adjust.constructor(
+#     rf_duration=200e-6, repetition_time = 4, 
+#     n_steps=50, 
+#     flip_angle_range=(pi/4, 3*pi/2), 
+#     pulse_type="block"
+#     )
 
 # %%
 # Larmor frequency:
-f_0 = 2037750.0  
+f_0 = 2039250.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.7,
+    b1_scaling=2.51,
     decimation=200,
 )
 
