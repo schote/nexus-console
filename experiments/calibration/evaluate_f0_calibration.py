@@ -1,27 +1,27 @@
 """Spin-echo spectrum."""
 # %%
 import logging
-import numpy as np
-import matplotlib.pyplot as plt
 
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import matplotlib.pyplot as plt
+import numpy as np
+
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.utilities.snr import signal_to_noise_ratio
-
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.utilities.sequences.spectrometry import se_spectrum
+from console.utilities.snr import signal_to_noise_ratio
 
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
-# %%  
+# %%
 # Spinecho
 seq = se_spectrum.constructor(
-    echo_time=12e-3, 
-    rf_duration=100e-6, 
-    time_bw_product=0, 
+    echo_time=12e-3,
+    rf_duration=100e-6,
+    time_bw_product=0,
     pulse_type="block")
 
 # Optional:
@@ -83,7 +83,7 @@ for freq in freq_range:
 
     # Save acquisition data
     acq_data.save(save_unprocessed=False)
-    
+
     final_result = {
         "offset": f_0_offset,
         "freq": freq,

@@ -1,16 +1,15 @@
+"""SNR measurement."""
 # %%
 # imports
 import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sequence_snr
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
-
-import sequence_snr
-
 
 # %%
 # acquisition control instance
@@ -95,7 +94,7 @@ acq_data.add_info({
 })
 acq_data.save(
     # user_path="/home/schote01/data/noise_characterization/",
-    user_path="/home/schote01/data/test/", 
+    user_path="/home/schote01/data/test/",
     save_unprocessed=True
 )
 

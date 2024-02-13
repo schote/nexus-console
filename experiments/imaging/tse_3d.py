@@ -2,12 +2,14 @@
 # %%
 # imports
 import logging
-import numpy as np
+
 import matplotlib.pyplot as plt
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+import numpy as np
+
+import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-import console.utilities.sequences as sequences
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 
 # %%
 # Create acquisition control instance
