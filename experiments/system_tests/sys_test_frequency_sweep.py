@@ -21,13 +21,11 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
+import sequence_freq_sweep
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
-
-import sequence_freq_sweep
-
 
 # %%
 # acquisition control instance
@@ -82,8 +80,15 @@ acq_data.add_info({
     # "note": "tr-switch"
     "note": "preamp"
 })
+<<<<<<< HEAD
 
 acq_data.save(user_path="~/spcm-console-data/", save_unprocessed=True)
+=======
+acq_data.save(
+    user_path="/home/schote01/data/feedback_test/freq_sweep/",
+    save_unprocessed=False
+)
+>>>>>>> 4a7458b7d77eb1a86f1e68902225677514130f15
 
 # %%
 del acq

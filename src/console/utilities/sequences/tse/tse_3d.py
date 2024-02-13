@@ -165,6 +165,26 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    return (seq, trains)
+    return (seq, pe_traj)
 
-# %%
+
+
+def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> np.ndarray:
+    """
+    Sort acquired k-space lines.
+
+    Parameters
+    ----------
+    kspace
+        Acquired k-space data in the format (averages, coils, pe, ro)
+    trajectory
+        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
+    """
+    # Last key in the sequence passed to lexsort is used for the primary key
+    # Trajectory is passed as (y-koords, z-koords) to obtain zy-order
+    # Neg. sign sorts trajectory in descending order
+    order = np.lexsort((-trajectory[:, 0], -trajectory[:, 1]))
+    # Apply the order to the phase encoding dimension of k-space
+    ksp_sorted = kspace[..., order, :]
+    n_avg, n_coil, _, n_ro = kspace.shape
+    return np.reshape(ksp_sorted, (n_avg, n_coil, dim.z, dim.y, n_ro))
