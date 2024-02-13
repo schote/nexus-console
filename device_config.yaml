@@ -26,7 +26,7 @@ RxCard: !RxCard
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
   # ATTENTION: At the moment only 1 or 2 channels are possible.
   # > Driver complains if more than 2 channels are enabled.
-  impedance_50_ohms: [0, 0, 0, 0, 0, 0, 0, 0]
+  impedance_50_ohms: [1, 0, 0, 0, 0, 0, 0, 0]
   # Device sampling rate in MHz
   sample_rate: 20
 
@@ -39,7 +39,6 @@ SequenceProvider: !SequenceProvider
   # Gradient efficiency in T/m
   gradient_efficiency: [0.451e-3, 0.4e-3, 0.37e-3]  # Leiden values
   # Gradient power amplifier in V/A
-  # gpa_gain: [4.7, 4.7, 4.7]
   gpa_gain: [1.0, 1.0, 1.0]
 
   # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC

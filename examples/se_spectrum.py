@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import console.utilities.sequences as sequences
-from console.spcm_control.acquisition_control import AcquistionControl
+from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
 # Create acquisition control instance
-acq = AcquistionControl(
+acq = AcquisitionControl(
     configuration_file="../device_config.yaml",
     console_log_level=logging.INFO,
     file_log_level=logging.DEBUG
@@ -31,7 +31,8 @@ params = AcquisitionParameter(
 )
 
 # Run the acquisition
-acq_data: AcquisitionData = acq.run(parameter=params, sequence=seq)
+acq.set_sequence(parameter=params, sequence=seq)
+acq_data: AcquisitionData = acq.run()
 
 # Get decimated data from acquisition data object
 data = acq_data.raw.squeeze()
@@ -52,7 +53,7 @@ acq_data.add_info({
 })
 
 # Write acquisition data object
-acq_data.write()
+acq_data.save()
 
 # Delete the acquisition control, which disconnects from the measurement cards
 del acq

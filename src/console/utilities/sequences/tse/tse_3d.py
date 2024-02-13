@@ -6,7 +6,7 @@ import numpy as np
 import pypulseq as pp
 
 from console.spcm_control.interface_acquisition_parameter import Dimensions
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import raster, system
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
 default_encoding = Dimensions(x=70, y=70, z=49)
@@ -17,7 +17,8 @@ def constructor(
     repetition_time: float = 600e-3,
     etl: int = 7,
     rf_duration: float = 400e-6,
-    gradient_correction: float = 510e-6,
+    gradient_correction: float = 0.,
+    adc_correction: float = 0.,
     ro_bandwidth: float = 20e3,
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
@@ -36,12 +37,16 @@ def constructor(
         Duration of the RF pulses (90 and 180 degree), by default 400e-6
     gradient_correction, optional
         Time constant to center ADC event, by default 510e-6
+    adc_correction, optional
+        Time constant which is added at the end of the ADC and readout gradient.
+        This value is not taken into account for the prephaser calculation.
     ro_bandwidth, optional
         Readout bandwidth in Hz, by default 20e3
     fov, optional
         Field of view per dimension, by default default_fov
     n_enc, optional
-        Number of encoding steps per dimension, by default default_encoding
+        Number of encoding steps per dimension, by default default_encoding = Dimensions(x=70, y=70, z=49).
+        If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
 
     Returns
     -------
@@ -62,29 +67,27 @@ def constructor(
         channel="x",
         system=system,
         flat_area=n_enc.x / fov.x,
-        flat_time=adc_duration + gradient_correction,
+        # Add gradient correction time and ADC correction time
+        flat_time=raster(adc_duration + gradient_correction + adc_correction, precision=system.grad_raster_time),
     )
 
-    ro_pre_duration = (pp.calc_duration(grad_ro) - gradient_correction) / 2
+    # Calculate readout prephaser without correction times
+    ro_pre_duration = (pp.calc_duration(grad_ro) - gradient_correction - adc_correction) / 2
 
     grad_ro_pre = pp.make_trapezoid(
         channel="x",
         system=system,
         area=grad_ro.area / 2,
-        duration=ro_pre_duration,
+        duration=raster(ro_pre_duration, precision=system.grad_raster_time),
     )
 
     adc = pp.make_adc(
         system=system,
-        num_samples=int(adc_duration/system.adc_raster_time),
-        duration=adc_duration,
-        delay=gradient_correction + grad_ro.rise_time,
+        num_samples=int((adc_duration + adc_correction)/system.adc_raster_time),
+        duration=raster(val=adc_duration + adc_correction, precision=system.adc_raster_time),
+        # Add gradient correction time and ADC correction time
+        delay=raster(val=gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
     )
-
-    def grad_raster(val: float) -> float:
-        """Fit value to gradient raster."""
-        # return round(val / system.grad_raster_time) * system.grad_raster_time
-        return np.ceil(val / system.grad_raster_time) * system.grad_raster_time
 
     # Calculate delays
     # Note: RF dead-time is contained in RF delay
@@ -101,14 +104,18 @@ def constructor(
     pe0 = np.arange(n_enc.y) - int((n_enc.y - 1) / 2)
     pe1 = np.arange(n_enc.z) - int((n_enc.z - 1) / 2)
 
-    pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.5))]
-    pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.5))]
+    # Add offset of -0.1 to ensure that positive PE step comes first:
+    # e.g. PE values without offset (-1, 0, 1) -> abs: (1, 0, 1) -> argsort: (1, 0/2)
+    # PE values with offset (-1.1, -0.1, 0.9) -> abs: (1.1, 0.1, 0.9) -> argsort: (1, 2, 0)
+    pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.1))]
+    pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.1))]
 
     pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe0_ordered, pe1_ordered, indexing='ij')], axis=-1)
 
     pe_traj[:, 0] / fov.y
     pe_traj[:, 1] / fov.z
 
+    # Divide all PE steps into echo trains
     num_trains = int(np.ceil(pe_traj.shape[0] / etl))
     trains = [pe_traj[k*etl:(k+1)*etl] for k in range(num_trains)]
 
@@ -118,7 +125,7 @@ def constructor(
 
         seq.add_block(rf_90)
         seq.add_block(grad_ro_pre)
-        seq.add_block(pp.make_delay(grad_raster(tau_1)))
+        seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
         for echo in train:
 
@@ -131,11 +138,11 @@ def constructor(
                 pp.make_trapezoid(channel="z", area=-pe_1, duration=ro_pre_duration, system=system)
             )
 
-            seq.add_block(pp.make_delay(grad_raster(tau_2)))
+            seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
             seq.add_block(grad_ro, adc)
 
-            seq.add_block(pp.make_delay(grad_raster(tau_3)))
+            seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
             seq.add_block(
                 pp.make_trapezoid(channel="y", area=pe_0, duration=ro_pre_duration, system=system),
@@ -144,9 +151,9 @@ def constructor(
 
             ro_counter += 1
 
-            # Add TR after echo train, if not the last readout
-            if ro_counter < n_enc.y * n_enc.z:
-                seq.add_block(pp.make_delay(round(tr_delay / 1e-6) * 1e-6))
+        # Add TR after echo train, if not the last readout
+        if ro_counter < n_enc.y * n_enc.z:
+            seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0] + tr_delay) / len(trains)
@@ -159,3 +166,5 @@ def constructor(
     seq.set_definition("tr_delay", tr_delay)
 
     return (seq, trains)
+
+# %%

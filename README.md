@@ -1,8 +1,11 @@
 # Spectrum-Pulseq MRI Console
 
+![Python](https://img.shields.io/badge/python-3.10-blue)
+[![License](https://img.shields.io/github/license/schote/spectrum-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
 [![Sphinx Docs](https://github.com/schote/spectrum-console/actions/workflows/docs.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/docs.yml)
 [![Static Tests](https://github.com/schote/spectrum-console/actions/workflows/static-tests.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/static-tests.yml)
 [![Pytest](https://github.com/schote/spectrum-console/actions/workflows/pytest.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/pytest.yml)
+![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fschote%2F4d47c22492a23337a79400f4859a4c25%2Fraw%2Fcd5263422b929b375047c5b78e145f5cec6197ad%2Fcoverage.json)
 
 This project aims to implement a console for magnetic resonance imaging (MRI) acquisitions. The central hardware components are two spectrum cards from Spectrum Instrumentation. They serve as arbitrary waveform generators (AWG) and analog to digital converter (digitizer). This application controls AWG and digitizer cards to perform MRI scans from a sequence description with the open-source pulseq framework. The console application is formerly designed for low-field applications, but might be extendable also for higher field strength.
 

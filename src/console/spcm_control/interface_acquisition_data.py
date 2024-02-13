@@ -12,8 +12,6 @@ import numpy as np
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
-log = logging.getLogger("AcqData")
-
 
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
@@ -94,7 +92,7 @@ class AcquisitionData:
         """
         return self.get_data(gate_size_index=0)
 
-    def write(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
+    def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
@@ -109,6 +107,7 @@ class AcquisitionData:
             Flag which indicates whether the acquisition data should be overwritten
             in case it already exists from a previous call to this function, default is False.
         """
+        log = logging.getLogger("AcqData")
         # Add trailing slash and make dir
         base_path = self.storage_path if user_path is None else os.path.join(user_path, "")
         os.makedirs(base_path, exist_ok=True)
@@ -118,11 +117,12 @@ class AcquisitionData:
 
         try:
             os.makedirs(acq_folder_path, exist_ok=overwrite)
-        except OSError as exc:
-            log.error(
-                "This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
-                exc
+        except Exception as exc:
+            log.exception(
+                msg="This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
+                exc_info=exc
             )
+            return
 
         # Save meta data
         with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
@@ -135,7 +135,7 @@ class AcquisitionData:
             log.warning("Could not save sequence: %s", exc)
 
         # Save raw data as numpy array
-        if len(self.raw) == 1:
+        if len(self._raw) == 1:
             np.save(f"{acq_folder_path}raw_data.npy", self.raw[0])
         else:
             for k, data in enumerate(self.raw):
@@ -159,6 +159,7 @@ class AcquisitionData:
         info
             Information as dictionary to be added.
         """
+        log = logging.getLogger("AcqData")
         try:
             json.dumps(info)
         except TypeError as exc:

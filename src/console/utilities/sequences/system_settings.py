@@ -1,4 +1,5 @@
 """Global definition of system settings to be imported by sequence constructors."""
+
 from pypulseq.opts import Opts
 
 system = Opts(
@@ -20,3 +21,25 @@ system = Opts(
     max_slew=5000,
     slew_unit="T/m/s",
 )
+
+
+# Helper function
+def raster(val: float, precision: float) -> float:
+    """Fit value to gradient raster.
+
+    Parameters
+    ----------
+    val
+        Time value to be aligned on the raster.
+    precision
+        Raster precision, e.g. system.grad_raster_time or system.adc_raster_time
+
+    Returns
+    -------
+        Value wih given time/raster precision
+    """
+    # return np.round(val / precision) * precision
+    gridded_val = round(val / precision) * precision
+    return gridded_val
+    # decimals = abs(Decimal(str(precision)).as_tuple().exponent)
+    # return round(gridded_val, ndigits=decimals)
