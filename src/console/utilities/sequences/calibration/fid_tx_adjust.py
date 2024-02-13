@@ -1,8 +1,9 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
 # %%
+from math import pi
+
 import numpy as np
 import pypulseq as pp
-from math import pi
 
 from console.utilities.sequences.system_settings import system
 
