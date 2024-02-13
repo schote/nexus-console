@@ -41,6 +41,10 @@ SequenceProvider: !SequenceProvider
   # Gradient power amplifier in V/A
   gpa_gain: [4.7, 4.7, 4.7]
 
+  # Per channel specification of the transmit RF and gradient impedances
+  # (!) If an analog output is terminated into high impedance load, the output is doubled
+  high_impedance: [False, True, True, True]
+
   # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
   # How to correct this properly, independent of the pulseq sequence?
   # Or should this be done in pulseq? to be discussed.
