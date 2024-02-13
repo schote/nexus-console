@@ -52,6 +52,7 @@ class SequenceProvider(Sequence):
         self,
         gradient_efficiency: list[float],
         gpa_gain: list[float],
+        high_impedance: list[bool],
         output_limits: list[int] | None = None,
         spcm_dwell_time: float = 1 / 20e6,
         rf_to_mvolt: float = 1,
@@ -87,12 +88,18 @@ class SequenceProvider(Sequence):
             if len(gpa_gain) != 3:
                 raise ValueError("Invalid number of GPA gain values, 3 values must be provided")
             if isinstance(output_limits, list) and len(output_limits) != 4:
-                raise ValueError("Invalid number of output limits, 4 valies must be provided.")
+                raise ValueError("Invalid number of output limits, 4 values must be provided.")
+            if len(high_impedance) != 4:
+                raise ValueError("Invalid number of output impedance indicators, 4 values must be provided.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
 
+        # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
+        # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
+        self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
+
         self.gpa_gain: list[float] = gpa_gain
-        self.gradient_efficiency: list[float] = gradient_efficiency
+        self.grad_eff: list[float] = gradient_efficiency
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
         self.larmor_freq: float = float("nan")
@@ -106,7 +113,7 @@ class SequenceProvider(Sequence):
             "spcm_freq": self.spcm_freq,
             "spcm_dwell_time": self.spcm_dwell_time,
             "gpa_gain": self.gpa_gain,
-            "gradient_efficiency": self.gradient_efficiency,
+            "gradient_efficiency": self.grad_eff,
             "output_limits": self.output_limits,
             "larmor_freq": self.larmor_freq,
             "sample_count": self.sample_count
@@ -207,7 +214,7 @@ class SequenceProvider(Sequence):
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_mvolt / self.output_limits[0]
+            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
             if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
                 raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
@@ -275,7 +282,7 @@ class SequenceProvider(Sequence):
         offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx+1]
         # Calculat waveform scaling
         # scaling = self.grad_to_volt[idx] * fov_scaling
-        scaling = fov_scaling / (42.58e3 * self.gpa_gain[idx] * self.gradient_efficiency[idx])
+        scaling = fov_scaling * self.imp_scaling[idx+1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
@@ -572,7 +579,7 @@ class SequenceProvider(Sequence):
             rf_unblanking=_unblanking,
             sample_count=self.sample_count,
             gpa_gain=self.gpa_gain,
-            gradient_efficiency=self.gradient_efficiency,
+            gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
