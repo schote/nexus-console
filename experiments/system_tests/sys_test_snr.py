@@ -18,8 +18,8 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # construct the sequence
-seq = sequence_snr.constructor(rf_duration=200e-6, gate_duration=1e-3)
-# seq = sequence_snr.constructor(rf_duration=0, gate_duration=2e-3)
+# seq = sequence_snr.constructor(rf_duration=200e-6, gate_duration=1e-3)
+seq = sequence_snr.constructor(rf_duration=0, gate_duration=2e-3)
 
 # optional plot:
 acq.seq_provider.from_pypulseq(seq)
@@ -28,7 +28,7 @@ fig, ax = acq.seq_provider.plot_unrolled()
 
 # %%
 # experiment
-f_0 = 2.0395e6
+f_0 = 1.965e6
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,

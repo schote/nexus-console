@@ -18,40 +18,43 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Construct sequence
-# dim = Dimensions(x=64, y=64, z=1)
-dim = Dimensions(x=64, y=64, z=32)
+dim = Dimensions(x=64, y=64, z=1)
+# dim = Dimensions(x=16, y=16, z=1)
+# dim = Dimensions(x=64, y=64, z=32)
 
 seq, traj = sequences.tse.tse_3d.constructor(
+    # echo_time=6e-3,
     echo_time=20e-3,
     repetition_time=600e-3,
-    etl=7,
+    # etl=7,
+    etl=1,
     gradient_correction=0,
     adc_correction=0,
     rf_duration=200e-6,
     ro_bandwidth=20e3,
-    fov=Dimensions(x=200e-3, y=200e-3, z=200e-3),
+    fov=Dimensions(x=150e-3, y=150e-3, z=150e-3),
     n_enc=dim
 )
 # Optional: overwrite sequence name (used to identify experiment data)
-seq.set_definition("Name", "tse_3d")
+# seq.set_definition("Name", "tse_3d")
 # If z=1, image acquisition is 2D
-# seq.set_definition("Name", "tse_2d")
+seq.set_definition("Name", "tse_2d")
 
 # %%
 # Larmor frequency:
-# f_0 = 1964390.0 # leiden
-f_0 = 2039250.0
+f_0 = 1964500.0
+
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=2.9623,  # leiden
-    b1_scaling=2.51,
+    b1_scaling=3.53,
     fov_scaling=Dimensions(
         # Ball phantom
-        x=1.,
-        y=0.7,
-        z=0.,
+        # x=1.,
+        # y=0.7,
+        # z=0.,
 
         # Brain slice 64 x 64
         # x=0.5,
@@ -62,10 +65,10 @@ params = AcquisitionParameter(
         # x=0.825,
         # y=0.275,
 
-        # # Scope
-        # x=1.,
-        # y=1.,
-        # z=1.,
+        # Scope
+        x=1.,
+        y=1.,
+        z=1.,
     ),
     gradient_offset=Dimensions(0, 0, 0),
     decimation=400,
@@ -94,10 +97,10 @@ plt.show()
 # %%
 
 acq_data.add_info({
-    "subject": ""
+    "subject": "sphere, 8cm"
 })
 
-acq_data.save(save_unprocessed=False, user_path="~/spcm-console-data/")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
 
 
 # %%

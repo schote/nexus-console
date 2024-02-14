@@ -10,7 +10,7 @@ from scipy.optimize import curve_fit
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
-from console.utilities.sequences.calibration import se_tx_adjust
+from console.utilities.sequences.calibration import se_tx_adjust, fid_tx_adjust
 
 # %%
 configuration = "../../device_config.yaml"
@@ -18,31 +18,31 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Spinecho
-seq, flip_angles = se_tx_adjust.constructor(
-    echo_time=12e-3,
-    rf_duration=200e-6,
-    repetition_time=2,
-    n_steps=10,
-    # flip_angle_range=(pi/4, 3*pi/2),
-    flip_angle_range=(pi/4, 3*pi/4),
+# seq, flip_angles = se_tx_adjust.constructor(
+#     echo_time=12e-3,
+#     rf_duration=200e-6,
+#     repetition_time=4,
+#     n_steps=50,
+#     flip_angle_range=(pi/4, 3*pi/2),
+#     # flip_angle_range=(pi/4, 3*pi/4),
+#     use_sinc=False
+# )
+
+# FID
+seq, flip_angles = fid_tx_adjust.constructor(
+    rf_duration=200e-6, repetition_time = 4,
+    n_steps=15,
+    flip_angle_range=(pi/4, 3*pi/2),
     use_sinc=False
 )
 
-# FID
-# seq, flip_angles = fid_tx_adjust.constructor(
-#     rf_duration=200e-6, repetition_time = 4,
-#     n_steps=50,
-#     flip_angle_range=(pi/4, 3*pi/2),
-#     pulse_type="block"
-#     )
-
 # %%
 # Larmor frequency:
-f_0 = 2039250.0
+f_0 = 1964750.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.51,
+    b1_scaling=3.53,
     decimation=200,
 )
 
@@ -68,10 +68,10 @@ def fa_model(samples: np.ndarray, amp: float, amp_offset: float, step_size: floa
     return amp * np.abs(np.sin(step_size * samples + phase_offset)) + amp_offset
 
 init = [peaks.max(), peaks.min(), 1, flip_angles[0]]
-params = curve_fit(fa_model, xdata=flip_angles, ydata=peaks, p0=init, method="lm")[0]
+fit_params = curve_fit(fa_model, xdata=flip_angles, ydata=peaks, p0=init, method="lm")[0]
 
 fa = np.linspace(flip_angles[0], flip_angles[-1], num=2000)
-fit = fa_model(fa, *params)
+fit = fa_model(fa, *fit_params)
 
 
 # Plot
@@ -89,6 +89,7 @@ print("Max. signal at flip angle (measurement): ", flip_angle_max_amp)
 print("Max. signal at flip angle (fit): ", )
 factor = flip_angle_max_amp_fit / 90
 print("Scale B1 by: ", factor)
+print("new B1 Scale: ", factor*params.b1_scaling)
 
 # %%
 acq_data.add_info({
