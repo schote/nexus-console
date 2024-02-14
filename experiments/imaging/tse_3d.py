@@ -19,8 +19,14 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # Construct sequence
 dim = Dimensions(x=64, y=64, z=1)
+<<<<<<< HEAD
 # dim = Dimensions(x=16, y=16, z=1)
 # dim = Dimensions(x=64, y=64, z=32)
+=======
+# dim = Dimensions(x=64, y=64, z=32)
+
+ro_bw = 20e3
+>>>>>>> 7008a1cf39993c63e9367dd211e89fdc5fba1e76
 
 seq, traj = sequences.tse.tse_3d.constructor(
     # echo_time=6e-3,
@@ -31,14 +37,24 @@ seq, traj = sequences.tse.tse_3d.constructor(
     gradient_correction=0,
     adc_correction=0,
     rf_duration=200e-6,
+<<<<<<< HEAD
     ro_bandwidth=20e3,
     fov=Dimensions(x=150e-3, y=150e-3, z=150e-3),
+=======
+    ro_bandwidth=ro_bw,
+    fov=Dimensions(x=200e-3, y=200e-3, z=200e-3),
+>>>>>>> 7008a1cf39993c63e9367dd211e89fdc5fba1e76
     n_enc=dim
 )
 # Optional: overwrite sequence name (used to identify experiment data)
 # seq.set_definition("Name", "tse_3d")
 # If z=1, image acquisition is 2D
 seq.set_definition("Name", "tse_2d")
+
+# Calculate decimation:
+# adc_duration = dim.x / ro_bw; num_samples = adc_duration * spcm_sample_rate; decimation = num_samples / dim.x
+# => decimation = spcm_sample_rate / ro_bw
+decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 
 # %%
 # Larmor frequency:
