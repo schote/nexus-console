@@ -19,30 +19,34 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # Spinecho
 seq = se_spectrum.constructor(
-    echo_time=12e-3,
-    rf_duration=100e-6,
+    echo_time=15e-3,
+    rf_duration=200e-6,
+    adc_duration=50e-3,
     time_bw_product=0,
     use_sinc=False
 )
 
 # Optional:
-# acq.seq_provider.from_pypulseq(seq)
-# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-# fig, ax = acq.seq_provider.plot_unrolled()
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6)
+fig, ax = acq.seq_provider.plot_unrolled()
 
 # %%
 # Larmor frequency:
-f_0 = 1964750.0
+f_0 = 1963908.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.3,
-    num_averages=1,
+    b1_scaling=3.054,
+    decimation=1000,
+    # num_averages=10,
+    # averaging_delay=2,
 )
 
 acq.set_sequence(parameter=params, sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
+# %%
 # FFT
 data = np.mean(acq_data.raw, axis=0)[0].squeeze()
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
@@ -71,7 +75,7 @@ print("SNR [dB]: ", snr)
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(fft_freq, np.abs(data_fft))
-# ax.set_xlim([-20e3, 20e3])
+ax.set_xlim([-20e3, 20e3])
 ax.set_ylim([0, max_spec * 1.05])
 ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
 ax.set_xlabel("Frequency [Hz]")
@@ -79,6 +83,6 @@ plt.show()
 
 # %%
 # Save acquisition data
-acq_data.save(save_unprocessed=False)
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 
 # %%

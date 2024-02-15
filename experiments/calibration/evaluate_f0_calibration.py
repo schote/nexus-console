@@ -19,19 +19,22 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # Spinecho
 seq = se_spectrum.constructor(
-    echo_time=12e-3,
-    rf_duration=100e-6,
+    echo_time=20e-3,
+    rf_duration=400e-6,
     time_bw_product=0,
-    pulse_type="block")
+    use_sinc=False,
+    adc_duration=16e-3,
+    )
+
 
 # Optional:
-# acq.seq_provider.from_pypulseq(seq)
-# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6, grad_offset=Dimensions(0, 0, 0))
-# fig, ax = acq.seq_provider.plot_unrolled()
+acq.seq_provider.from_pypulseq(seq)
+seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6)
+fig, ax = acq.seq_provider.plot_unrolled()
 
 # %%
 # Larmor frequency:
-f_0 = 2036250
+f_0 = 1963908.0
 
 freq_range = np.linspace(f_0 -10000, f_0 +10000, 21, endpoint=True)
 
@@ -40,7 +43,7 @@ results = []
 for freq in freq_range:
     params = AcquisitionParameter(
         larmor_frequency=freq,
-        b1_scaling=2.3,
+        b1_scaling=3.054,
         num_averages=1,
     )
 
@@ -82,7 +85,7 @@ for freq in freq_range:
     plt.show()
 
     # Save acquisition data
-    acq_data.save(save_unprocessed=False)
+    acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 
     final_result = {
         "offset": f_0_offset,

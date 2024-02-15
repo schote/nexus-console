@@ -18,33 +18,34 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Spinecho
-# seq, flip_angles = se_tx_adjust.constructor(
-#     echo_time=12e-3,
-#     rf_duration=200e-6,
-#     repetition_time=4,
-#     n_steps=50,
-#     flip_angle_range=(pi/4, 3*pi/2),
-#     # flip_angle_range=(pi/4, 3*pi/4),
-#     use_sinc=False
-# )
-
-# FID
-seq, flip_angles = fid_tx_adjust.constructor(
-    rf_duration=200e-6, repetition_time = 4,
-    n_steps=15,
-    # flip_angle_range=(pi/4, 3*pi/2),
-    flip_angle_range=(np.deg2rad(10), np.deg2rad(200)),
+seq, flip_angles = se_tx_adjust.constructor(
+    echo_time=15e-3,
+    rf_duration=200e-6,
+    repetition_time=2,
+    n_steps=50,
+    flip_angle_range=(np.deg2rad(10), np.deg2rad(270)),
     use_sinc=False
 )
 
+# FID
+# seq, flip_angles = fid_tx_adjust.constructor(
+#     rf_duration=200e-6, repetition_time = 2,
+#     n_steps=50,
+#     adc_duration = 25e-3,
+#     # flip_angle_range=(pi/4, 3*pi/2),
+#     flip_angle_range=(np.deg2rad(10), np.deg2rad(270)),
+#     use_sinc=False
+# )
+
 # %%
 # Larmor frequency:
-f_0 = 1965489
+f_0 = 1963908.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=3.53,
-    b1_scaling=3.054,
+    # b1_scaling=3.054,
+    b1_scaling=3.74,
     decimation=200,
 )
 
@@ -62,7 +63,7 @@ data = np.abs(np.fft.fftshift(np.fft.fft(np.fft.fftshift(data), axis=-1)))
 center_window = 100
 window_start = int(data.shape[-1]/2-center_window/2)
 peak_window = data[:, window_start:window_start+center_window]
-peaks = np.max(peak_window, axis=-1)
+peaks = np.sum(data, axis = -1)
 
 
 # def fa_model(samples: np.ndarray, amp: float, amp_offset: float, step_size: float, phase_offset: float) -> np.ndarray:
@@ -89,7 +90,7 @@ flip_angle_max_amp = np.degrees(flip_angles[np.argmax(peaks)])
 # flip_angle_max_amp_fit = np.degrees(fa[np.argmax(fit)])
 print("Max. signal at flip angle (measurement): ", flip_angle_max_amp)
 print("Max. signal at flip angle (fit): ", )
-factor = flip_angle_max_amp / 90
+factor = flip_angle_max_amp/ 90
 print("Scale B1 by: ", factor)
 print("new B1 Scale: ", factor*params.b1_scaling)
 
@@ -100,7 +101,7 @@ acq_data.add_info({
 })
 
 # %%
-acq_data.save(save_unprocessed=False)
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 # %%
 del acq
 # %%

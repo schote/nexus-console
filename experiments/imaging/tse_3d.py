@@ -19,31 +19,24 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # Construct sequence
 dim = Dimensions(x=64, y=64, z=1)
-<<<<<<< HEAD
-# dim = Dimensions(x=16, y=16, z=1)
+# dim = Dimensions(x=64, y=16, z=1)
 # dim = Dimensions(x=64, y=64, z=32)
-=======
 # dim = Dimensions(x=64, y=64, z=32)
 
 ro_bw = 20e3
->>>>>>> 7008a1cf39993c63e9367dd211e89fdc5fba1e76
 
 seq, traj = sequences.tse.tse_3d.constructor(
     # echo_time=6e-3,
     echo_time=20e-3,
-    repetition_time=600e-3,
-    # etl=7,
-    etl=1,
-    gradient_correction=0,
+    repetition_time=1000e-3,
+    etl=7,
+    # etl=5,
+    gradient_correction=100e-6,
     adc_correction=0,
     rf_duration=200e-6,
-<<<<<<< HEAD
-    ro_bandwidth=20e3,
     fov=Dimensions(x=150e-3, y=150e-3, z=150e-3),
-=======
     ro_bandwidth=ro_bw,
-    fov=Dimensions(x=200e-3, y=200e-3, z=200e-3),
->>>>>>> 7008a1cf39993c63e9367dd211e89fdc5fba1e76
+    # fov=Dimensions(x=200e-3, y=200e-3, z=200e-3),
     n_enc=dim
 )
 # Optional: overwrite sequence name (used to identify experiment data)
@@ -58,14 +51,16 @@ decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 
 # %%
 # Larmor frequency:
-f_0 = 1964500.0
+f_0 = 1964188.0
 
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=2.9623,  # leiden
-    b1_scaling=3.53,
+    # b1_scaling=3.53,
+    # b1_scaling=3.054,
+    b1_scaling=4,
     fov_scaling=Dimensions(
         # Ball phantom
         # x=1.,
@@ -87,7 +82,7 @@ params = AcquisitionParameter(
         z=1.,
     ),
     gradient_offset=Dimensions(0, 0, 0),
-    decimation=400,
+    decimation=decimation,
 
     # num_averages=10,
     # averaging_delay=1,
@@ -99,6 +94,12 @@ acq_data: AcquisitionData = acq.run()
 
 ksp = sequences.tse_3d.sort_kspace(acq_data.raw, trajectory=traj, dim=dim)
 ksp = ksp.squeeze()
+
+#%%
+plt.figure()
+plt.plot(np.abs(ksp).T)
+
+np.argmax(np.abs(ksp), axis = 1)
 
 
 # %%
@@ -113,7 +114,8 @@ plt.show()
 # %%
 
 acq_data.add_info({
-    "subject": "sphere, 8cm"
+    "subject": "sphere, 8cm",
+    "sequence_info": "etl = 7",
 })
 
 acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
