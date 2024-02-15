@@ -19,14 +19,14 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # Construct sequence
 # dim = Dimensions(x=64, y=64, z=1)
-dim = Dimensions(x=64, y=64, z=16)
+# dim = Dimensions(x=64, y=64, z=16)
 # dim = Dimensions(x=64, y=16, z=1)
-# dim = Dimensions(x=64, y=64, z=32)
+dim = Dimensions(x=64, y=64, z=32)
 # dim = Dimensions(x=64, y=64, z=32)
 
 ro_bw = 20e3
-# te = 20e-3
-te = 25e-3
+te = 20e-3
+# te = 25e-3
 
 seq, traj = sequences.tse.tse_3d.constructor(
     echo_time=te,
@@ -118,8 +118,10 @@ num_cols = int(np.ceil(np.sqrt(num_slices)))
 num_rows = int(np.ceil(num_slices/num_cols))
 fig, ax = plt.subplots(num_rows, num_cols, figsize=(10, 10))
 ax = ax.ravel()
+total_max = np.amax(np.abs(img))
+total_min = 0   # np.amin(np.abs(img))
 for k, x in enumerate(img[:, ...]):
-    ax[k].imshow(np.abs(x), cmap="gray")
+    ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray")
     ax[k].axis("off")
 _ = [a.remove() for a in ax[k+1:]]
 fig.set_tight_layout(tight=0.)
@@ -136,8 +138,15 @@ acq_data.add_info({
     # "sequence_info": "etl = 7, optimized grad correction",
 })
 
+acq_data.add_data({
+    "trajectory": traj,
+    "kspace": ksp,
+    "image": img
+})
+
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\15-02-24_3d-image")
+# acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
 # %%
 del acq
