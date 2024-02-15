@@ -43,6 +43,11 @@ class AcquisitionData:
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
+    _additional_data: dict = field(default_factory=dict)
+    """Dictionarz containing addition (numpy) data.
+    Use the function add_data to update this dictionarz before saving.
+    They key of each entry is used as filename."""
+
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         datetime_now = datetime.now()
@@ -141,6 +146,10 @@ class AcquisitionData:
             for k, data in enumerate(self.raw):
                 np.save(f"{acq_folder_path}raw_data_{k}.npy", data)
 
+        if len(self._additional_data) > 0:
+            for key, value in self._additional_data.items():
+                np.save(f"{acq_folder_path}{key}.npy", value)
+
         if save_unprocessed and self.unprocessed_data is not None:
             # Save raw data as numpy array(s)
             if isinstance(self.unprocessed_data, list):
@@ -165,3 +174,18 @@ class AcquisitionData:
         except TypeError as exc:
             log.error("Could not append info to meta data.", exc)
         self.meta["info"].update(info)
+
+    def add_data(self, data: dict[str, np.ndarray]) -> None:
+        """Add data to additional_data dictionary.
+
+        Parameters
+        ----------
+        data
+            Data which is to be added to acquisition data.
+        """
+        log = logging.getLogger("AcqData")
+        for val in data.values():
+            if not isinstance(val, np.ndarray):
+                log.error("Could not add data to acquisition data.")
+                return
+        self._additional_data.update(data)
