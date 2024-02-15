@@ -7,9 +7,6 @@ import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system
 
-# Definition of constants
-ADC_DURATION = 4e-3
-
 
 def constructor(
     n_steps: int = 10,
@@ -17,6 +14,7 @@ def constructor(
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,
+    adc_duration: float = 4e-3,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -43,7 +41,7 @@ def constructor(
 
     adc = pp.make_adc(
         num_samples=1000,  # Is not taken into account atm
-        duration=ADC_DURATION,
+        duration=adc_duration,
         system=system,
     )
 
