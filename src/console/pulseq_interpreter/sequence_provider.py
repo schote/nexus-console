@@ -370,7 +370,7 @@ class SequenceProvider(Sequence):
         """
         delay = max(int(block.delay * self.spcm_freq), int(block.dead_time * self.spcm_freq))
         adc_dur = block.num_samples * block.dwell
-        adc_len = int(adc_dur * self.spcm_freq)
+        adc_len = round(adc_dur * self.spcm_freq)
         # Gate signal
         gate[delay : delay + adc_len] = 1
 
@@ -523,12 +523,12 @@ class SequenceProvider(Sequence):
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks, strict=True)):
             # Set gradient offsets
-            if grad_offset.x > 0:
-                _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
-            if grad_offset.y > 0:
-                _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
-            if grad_offset.z > 0:
-                _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
+            if grad_offset.x != 0:
+                _seq[k][1::4] += np.int16((grad_offset.x * self.imp_scaling[1] / self.output_limits[1]) * INT16_MAX)
+            if grad_offset.y != 0:
+                _seq[k][2::4] += np.int16((grad_offset.y * self.imp_scaling[2] / self.output_limits[2]) * INT16_MAX)
+            if grad_offset.z != 0:
+                _seq[k][3::4] += np.int16((grad_offset.z * self.imp_scaling[3] / self.output_limits[3]) * INT16_MAX)
 
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
