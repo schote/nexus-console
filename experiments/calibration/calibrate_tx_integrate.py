@@ -9,7 +9,7 @@ from scipy.optimize import curve_fit
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.utilities.sequences.calibration import se_tx_adjust, fid_tx_adjust
 
 # %%
@@ -18,35 +18,38 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Spinecho
-seq, flip_angles = se_tx_adjust.constructor(
-    echo_time=15e-3,
-    rf_duration=200e-6,
-    repetition_time=2,
-    n_steps=50,
-    flip_angle_range=(np.deg2rad(10), np.deg2rad(270)),
-    use_sinc=False
-)
-
-# FID
-# seq, flip_angles = fid_tx_adjust.constructor(
-#     rf_duration=200e-6, repetition_time = 2,
+# seq, flip_angles = se_tx_adjust.constructor(
+#     echo_time=15e-3,
+#     rf_duration=200e-6,
+#     repetition_time=2,
 #     n_steps=50,
-#     adc_duration = 25e-3,
-#     # flip_angle_range=(pi/4, 3*pi/2),
 #     flip_angle_range=(np.deg2rad(10), np.deg2rad(270)),
 #     use_sinc=False
 # )
 
+# FID
+seq, flip_angles = fid_tx_adjust.constructor(
+    rf_duration=200e-6,
+    repetition_time=2,
+    n_steps=40,
+    adc_duration = 25e-3,
+    # flip_angle_range=(pi/4, 3*pi/2),
+    flip_angle_range=(np.deg2rad(45), np.deg2rad(270)),
+    use_sinc=False
+)
+
 # %%
 # Larmor frequency:
-f_0 = 1963908.0
+f_0 = 1963468.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=3.53,
     # b1_scaling=3.054,
-    b1_scaling=3.74,
+    # b1_scaling=3.74,
+    b1_scaling=3.7,
     decimation=200,
+    # gradient_offset=Dimensions(x=-200, y=0., z=0.)
 )
 
 # Perform acquisition
@@ -66,34 +69,36 @@ peak_window = data[:, window_start:window_start+center_window]
 peaks = np.sum(data, axis = -1)
 
 
-# def fa_model(samples: np.ndarray, amp: float, amp_offset: float, step_size: float, phase_offset: float) -> np.ndarray:
-#     """Fit sinusoidal function to measured flip angle values."""
-#     return amp * np.abs(np.sin(step_size * samples + phase_offset)) + amp_offset
+def fa_model(samples: np.ndarray, amp: float, step_size: float, phase_offset: float) -> np.ndarray:
+    """Fit sinusoidal function to measured flip angle values."""
+    return amp * np.abs(np.sin(step_size * samples + phase_offset))
 
-# init = [peaks.max(), peaks.min(), 1, flip_angles[0]]
-# fit_params = curve_fit(fa_model, xdata=flip_angles, ydata=peaks, p0=init, method="lm")[0]
+init = [peaks.max(), 1, flip_angles[0]]
+fit_params = curve_fit(fa_model, xdata=flip_angles, ydata=peaks, p0=init, method="lm")[0]
 
-# fa = np.linspace(flip_angles[0], flip_angles[-1], num=2000)
-# fit = fa_model(fa, *fit_params)
+fa = np.linspace(flip_angles[0], flip_angles[-1], num=2000)
+fit = fa_model(fa, *fit_params)
 
 
 # Plot
 fig, ax = plt.subplots(1, 1, figsize=(10, 6))
 ax.scatter(np.degrees(flip_angles), peaks, label="measurement")
-# ax.plot(np.degrees(fa), fit, label="fit")
+ax.plot(np.degrees(fa), fit, label="fit", linestyle="--")
 ax.legend()
 ax.set_ylabel("Amplitude [a.u.]")
 ax.set_xlabel("Flip angle [°]")
 
 # Calculate and print the maximum flip angle corresponding to the peak
 flip_angle_max_amp = np.degrees(flip_angles[np.argmax(peaks)])
-# flip_angle_max_amp_fit = np.degrees(fa[np.argmax(fit)])
+flip_angle_max_amp_fit = np.degrees(fa[:1000][np.argmax(fit[:1000])])
 print("Max. signal at flip angle (measurement): ", flip_angle_max_amp)
-print("Max. signal at flip angle (fit): ", )
-factor = flip_angle_max_amp/ 90
-print("Scale B1 by: ", factor)
-print("new B1 Scale: ", factor*params.b1_scaling)
-
+print("Max. signal at flip angle (fit): ", flip_angle_max_amp_fit)
+factor_meas = flip_angle_max_amp / 90
+factor_fit = flip_angle_max_amp_fit / 90
+print("B1-scaling factor (meas): ", factor_meas)
+print("B1-scaling factor (fit): ", factor_fit)
+print("New B1-scaling (meas): ", factor_meas*params.b1_scaling)
+print("New B1-scaling (fit): ", factor_fit*params.b1_scaling)
 # %%
 acq_data.add_info({
     "flip_angles": list(flip_angles),
@@ -101,7 +106,7 @@ acq_data.add_info({
 })
 
 # %%
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
+acq_data.save(user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map", save_unprocessed=False)
 # %%
 del acq
 # %%

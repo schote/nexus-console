@@ -18,31 +18,35 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Construct sequence
-dim = Dimensions(x=64, y=64, z=1)
+# dim = Dimensions(x=64, y=64, z=1)
+dim = Dimensions(x=64, y=64, z=16)
 # dim = Dimensions(x=64, y=16, z=1)
 # dim = Dimensions(x=64, y=64, z=32)
 # dim = Dimensions(x=64, y=64, z=32)
 
 ro_bw = 20e3
+# te = 20e-3
+te = 25e-3
 
 seq, traj = sequences.tse.tse_3d.constructor(
-    # echo_time=6e-3,
-    echo_time=20e-3,
+    echo_time=te,
     repetition_time=1000e-3,
+    # etl=1,
     etl=7,
-    # etl=5,
-    gradient_correction=100e-6,
+    # gradient_correction=100e-6,
+    # gradient_correction=153e-6,
+    gradient_correction=150e-6,
     adc_correction=0,
     rf_duration=200e-6,
+    # fov=Dimensions(x=250e-3, y=250e-3, z=150e-3),
     fov=Dimensions(x=150e-3, y=150e-3, z=150e-3),
     ro_bandwidth=ro_bw,
-    # fov=Dimensions(x=200e-3, y=200e-3, z=200e-3),
     n_enc=dim
 )
 # Optional: overwrite sequence name (used to identify experiment data)
-# seq.set_definition("Name", "tse_3d")
+seq.set_definition("Name", "tse_3d")
 # If z=1, image acquisition is 2D
-seq.set_definition("Name", "tse_2d")
+# seq.set_definition("Name", "tse_2d")
 
 # Calculate decimation:
 # adc_duration = dim.x / ro_bw; num_samples = adc_duration * spcm_sample_rate; decimation = num_samples / dim.x
@@ -51,37 +55,24 @@ decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 
 # %%
 # Larmor frequency:
-f_0 = 1964188.0
-
+f_0 = 1963468.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    # b1_scaling=2.9623,  # leiden
-    # b1_scaling=3.53,
-    # b1_scaling=3.054,
-    b1_scaling=4,
+    # b1_scaling=3.4,   # 8cm sphere phantom
+    b1_scaling=3.7,
     fov_scaling=Dimensions(
-        # Ball phantom
+        # Compensation of high impedance
+        x=1/0.85,
+        y=1/0.85,
+        z=1/0.85,
+        # No scaling
         # x=1.,
-        # y=0.7,
-        # z=0.,
-
-        # Brain slice 64 x 64
-        # x=0.5,
-        # y=0.3,
-
-        # Brain slice 128 x 128
-        # x=0.5,
-        # x=0.825,
-        # y=0.275,
-
-        # Scope
-        x=1.,
-        y=1.,
-        z=1.,
+        # y=1.,
+        # z=1.,
     ),
-    gradient_offset=Dimensions(0, 0, 0),
+    # gradient_offset=Dimensions(-200, 0, 0),
     decimation=decimation,
 
     # num_averages=10,
@@ -90,36 +81,63 @@ params = AcquisitionParameter(
 
 # Perform acquisition
 acq.set_sequence(parameter=params, sequence=seq)
+
+
+
+# %%
 acq_data: AcquisitionData = acq.run()
 
 ksp = sequences.tse_3d.sort_kspace(acq_data.raw, trajectory=traj, dim=dim)
 ksp = ksp.squeeze()
 
-#%%
-plt.figure()
-plt.plot(np.abs(ksp).T)
 
-np.argmax(np.abs(ksp), axis = 1)
+# fig, ax = plt.subplots(1, 1)
+# _ = ax.plot(np.abs(ksp).T)
+# np.argmax(np.abs(ksp), axis = 1)
+
+# %%
+# img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
+img = np.fft.ifftshift(np.fft.fftn(ksp))
+
+idx = int(img.shape[0]/2)
+fig, ax = plt.subplots(1, 2, figsize=(8, 4))
+if len(img.shape) == 3:
+    ax[0].imshow(np.abs(ksp[idx, ...]), cmap="gray")
+    ax[1].imshow(np.abs(img[idx, ...]), cmap="gray")
+else:
+    ax[0].imshow(np.abs(ksp), cmap="gray")
+    ax[1].imshow(np.abs(img), cmap="gray")
+plt.show()
+
 
 
 # %%
-img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp), axes=[-2, -1]))
+# 3D plot
+num_slices = img.shape[0]
+num_cols = int(np.ceil(np.sqrt(num_slices)))
+num_rows = int(np.ceil(num_slices/num_cols))
+fig, ax = plt.subplots(num_rows, num_cols, figsize=(10, 10))
+ax = ax.ravel()
+for k, x in enumerate(img[:, ...]):
+    ax[k].imshow(np.abs(x), cmap="gray")
+    ax[k].axis("off")
+_ = [a.remove() for a in ax[k+1:]]
+fig.set_tight_layout(tight=0.)
+fig.set_facecolor("black")
 
-fig, ax = plt.subplots(1, 2, figsize=(10, 5), dpi=300)
-ax[0].imshow(np.abs(ksp), cmap="gray", aspect=ksp.shape[-1]/ksp.shape[-2])
-ax[1].imshow(np.abs(img), cmap="gray", aspect=img.shape[-1]/img.shape[-2])
-plt.show()
 
 
 # %%
 
 acq_data.add_info({
     "subject": "sphere, 8cm",
-    "sequence_info": "etl = 7",
+    "echo_time": te,
+    # "subject": "brain-slice",
+    # "sequence_info": "etl = 7, optimized grad correction",
 })
 
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
-
-
+# acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
+# acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
 # %%
 del acq

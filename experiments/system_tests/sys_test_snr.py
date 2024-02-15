@@ -19,7 +19,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # construct the sequence
 # seq = sequence_snr.constructor(rf_duration=200e-6, gate_duration=1e-3)
-seq = sequence_snr.constructor(rf_duration=0, gate_duration=2e-3)
+seq = sequence_snr.constructor(rf_duration=0, gate_duration=4e-3)
 
 # optional plot:
 acq.seq_provider.from_pypulseq(seq)
@@ -28,16 +28,16 @@ fig, ax = acq.seq_provider.plot_unrolled()
 
 # %%
 # experiment
-f_0 = 1.965e6
+f_0 = 1964188
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=4.0,
-    b1_scaling=20.0,
+    b1_scaling=1.,
     decimation=200,
 
-    # averaging_delay=100e-3,
-    # num_averages=50
+    averaging_delay=1,
+    num_averages=50
     # num_averages=2
 )
 
@@ -72,11 +72,16 @@ print(f"\nCOMPLEX STANDARD DEVIATION: {std}")
 # save
 acq_data.add_info({
     "std. complex": std,
-    "note": "tx-rx-test coil only"
+    "note": "noise measurement, preamp, input to 50 ohms, without low-pass"
+    # "note": "noise measurement, preamp, input to 50 ohms"
+    # "note": "noise measurement, tr-switch, coil-port to 50 ohms"
+    # "note": "noise measurement, end-to-end"
+    # "note": "tx-rx-test coil only"
     # "note": "rx-rx-test coil + tr-switch"
     # "note": "tx-rx-test coil + tr-switch + wenteq preamp"
 })
-acq_data.save(user_path="~/spcm-console-data/", save_unprocessed=True)
+# acq_data.save(user_path="~/spcm-console-data/", save_unprocessed=True)
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\system-test")
 
 # %%
 del acq
