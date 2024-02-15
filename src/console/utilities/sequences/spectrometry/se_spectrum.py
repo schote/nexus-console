@@ -12,6 +12,7 @@ def constructor(
     adc_duration: float = 4e-3,
     use_sinc: bool = True,
     time_bw_product: float = 4,
+    use_se_fid: bool = True,
     ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
@@ -52,9 +53,14 @@ def constructor(
     te_delay_1 = pp.make_delay(
         round((echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time) / 1e-6) * 1e-6
     )
-    te_delay_2 = pp.make_delay(
-        round((echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
-    )
+    if use_se_fid:
+        te_delay_2 = pp.make_delay(
+            round((echo_time / 2 - rf_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
+        )
+    else:
+        te_delay_2 = pp.make_delay(
+            round((echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
+        )
 
     seq.add_block(rf_90)
     seq.add_block(te_delay_1)
