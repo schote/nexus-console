@@ -37,7 +37,7 @@ SequenceProvider: !SequenceProvider
 
   # Calculate grad_to_volt per gradient channel:
   # Gradient efficiency in T/m
-  gradient_efficiency: [0.451e-3, 0.4e-3, 0.37e-3]  # Leiden values
+  gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]  # Leiden values
   # Gradient power amplifier in V/A
   gpa_gain: [4.7, 4.7, 4.7]
 
