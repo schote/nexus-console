@@ -38,6 +38,7 @@ def constructor(
     """
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "tx_adjust_fid")
+    seq.system.rf_ringdown_time = 2e-3
 
     adc = pp.make_adc(
         num_samples=1000,  # Is not taken into account atm
