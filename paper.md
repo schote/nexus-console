@@ -57,7 +57,7 @@ An experiment description is contained in a pulse sequence provided by the commu
 In a first step, the sequence is interpreted and the calculation of the unrolled sample points from its compressed format is performed.
 Two instances of an abstract device class manage the replay of the calculated sample points, as well as the acquisition of the MR signal which is phase sensitive and must be timed precicely. The package implements an acquisition control class which handles all the tasks described below and is yet simple to utilize. An overview of all the components involved in an acquisition is depicted below.
 
-![Overview of the MRI system, which performs an image acquisition based on a given pulseq file; The calculated sequence is replayed by spectrum-instrumentation measurement cards, which control gradient and RF signals; Up to 8 channels can be configured for data acquisition, the sampled data is down-converted and provided as numpy array.\label{fig:overview}](/docs/source/_figures/system_components.png)
+![Overview of the MRI system, which performs an image acquisition based on a given pulseq file; The calculated sequence is replayed by spectrum-instrumentation measurement cards, which control gradient and RF signals; Up to 8 channels can be configured for data acquisition, the sampled data is down-converted and provided as numpy array.\label{fig:overview}](docs/source/_figures/system_components.png)
 
 The console-software is implemented in python and can be used stand-alone or as a sub-component for acquisition software which implements a user interface for instance. In addition to the execution of an MRI experiment, the package also implements different methods for sequence construction, post-processing and data provisioning.
 
