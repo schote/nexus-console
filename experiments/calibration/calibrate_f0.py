@@ -34,11 +34,11 @@ seq = se_spectrum.constructor(
 
 # %%
 # Larmor frequency:
-f_0 = 1963468.0
+f_0 = 1965068
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=3.7,
+    b1_scaling=4.67,
     decimation=1000,
 
     # num_averages=100,
@@ -85,5 +85,5 @@ plt.show()
 
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\se-spectrum")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
 # %%

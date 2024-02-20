@@ -21,16 +21,16 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # dim = Dimensions(x=64, y=64, z=1)
 # dim = Dimensions(x=64, y=64, z=16)
 # dim = Dimensions(x=64, y=16, z=1)
-dim = Dimensions(x=64, y=64, z=32)
 # dim = Dimensions(x=64, y=64, z=32)
+dim = Dimensions(x=120, y=100, z=42)
 
 ro_bw = 20e3
-te = 20e-3
+te = 16e-3
 # te = 25e-3
 
 seq, traj = sequences.tse.tse_3d.constructor(
     echo_time=te,
-    repetition_time=1000e-3,
+    repetition_time=600e-3,
     # etl=1,
     etl=7,
     # gradient_correction=100e-6,
@@ -39,7 +39,7 @@ seq, traj = sequences.tse.tse_3d.constructor(
     adc_correction=0,
     rf_duration=200e-6,
     # fov=Dimensions(x=250e-3, y=250e-3, z=150e-3),
-    fov=Dimensions(x=150e-3, y=150e-3, z=150e-3),
+    fov=Dimensions(x=240e-3, y=200e-3, z=210e-3),
     ro_bandwidth=ro_bw,
     n_enc=dim
 )
@@ -55,13 +55,13 @@ decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 
 # %%
 # Larmor frequency:
-f_0 = 1963468.0
+f_0 = 1965068
 
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=3.4,   # 8cm sphere phantom
-    b1_scaling=3.7,
+    b1_scaling=4.67,
     fov_scaling=Dimensions(
         # Compensation of high impedance
         x=1/0.85,
@@ -134,6 +134,7 @@ fig.set_facecolor("black")
 acq_data.add_info({
     "subject": "sphere, 8cm",
     "echo_time": te,
+    "dim": [dim.x, dim.y, dim.z],
     # "subject": "brain-slice",
     # "sequence_info": "etl = 7, optimized grad correction",
 })
@@ -145,7 +146,7 @@ acq_data.add_data({
 })
 
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data")
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\15-02-24_3d-image")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
 # %%
