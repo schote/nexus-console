@@ -68,7 +68,7 @@ class AcquisitionData:
             }
         )
 
-    def get_data(self, gate_size_index: int) -> np.ndarray:
+    def get_data(self, gate_index: int) -> np.ndarray:
         """Get a single raw data array from raw data list.
 
         During the acquisition, ADC gate events with different durations might occure.
@@ -85,7 +85,7 @@ class AcquisitionData:
         -------
             Raw data array.
         """
-        return self._raw[gate_size_index]
+        return self._raw[gate_index]
 
     @property
     def raw(self) -> np.ndarray:
@@ -95,7 +95,7 @@ class AcquisitionData:
         -------
             Returns the first entry in raw data list.
         """
-        return self.get_data(gate_size_index=0)
+        return self.get_data(gate_index=0)
 
     def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
@@ -141,9 +141,9 @@ class AcquisitionData:
 
         # Save raw data as numpy array
         if len(self._raw) == 1:
-            np.save(f"{acq_folder_path}raw_data.npy", self.raw[0])
+            np.save(f"{acq_folder_path}raw_data.npy", self._raw[0])
         else:
-            for k, data in enumerate(self.raw):
+            for k, data in enumerate(self._raw):
                 np.save(f"{acq_folder_path}raw_data_{k}.npy", data)
 
         if len(self._additional_data) > 0:
