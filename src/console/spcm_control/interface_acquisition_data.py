@@ -185,7 +185,7 @@ class AcquisitionData:
         """
         log = logging.getLogger("AcqData")
         for val in data.values():
-            if not isinstance(val, np.ndarray):
-                log.error("Could not add data to acquisition data.")
+            if not hasattr(val, "shape"):
+                log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
                 return
         self._additional_data.update(data)

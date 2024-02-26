@@ -166,7 +166,7 @@ def constructor(
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
             seq.add_block(grad_ro, adc)
-            
+
             seq.add_block(
                 pp.make_trapezoid(channel=channel_pe1, area=pe_0, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
                 pp.make_trapezoid(channel=channel_pe2, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
@@ -212,4 +212,4 @@ def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> 
     # Apply the order to the phase encoding dimension of k-space
     ksp_sorted = kspace[..., order, :]
     n_avg, n_coil, _, n_ro = kspace.shape
-    return np.reshape(ksp_sorted, (n_avg, n_coil, dim.z, dim.y, n_ro))
+    return np.reshape(ksp_sorted, (n_avg, n_coil, int(dim.z), int(dim.y), n_ro))
