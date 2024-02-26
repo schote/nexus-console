@@ -6,16 +6,15 @@ import os
 import time
 from datetime import datetime
 
-from scipy import signal
 import numpy as np
+from scipy import signal
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -168,10 +167,11 @@ class AcquisitionControl:
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
         self.unrolled_seq = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency,
-            b1_scaling=parameter.b1_scaling,
-            fov_scaling=parameter.fov_scaling,
-            grad_offset=parameter.gradient_offset,
+            # larmor_freq=parameter.larmor_frequency,
+            # b1_scaling=parameter.b1_scaling,
+            # fov_scaling=parameter.fov_scaling,
+            # grad_offset=parameter.gradient_offset,
+            parameter=parameter
         )
         self.parameter = parameter
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
@@ -202,6 +202,9 @@ class AcquisitionControl:
 
         self._unproc = []
         self._raw = []
+
+        # Set gradient offset values
+        self.tx_card.set_gradien_offsets(self.parameter.gradient_offset)
 
         for k in range(self.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, self.parameter.num_averages)
@@ -239,6 +242,9 @@ class AcquisitionControl:
 
             if self.parameter.averaging_delay > 0:
                 time.sleep(self.parameter.averaging_delay)
+
+        # Reset gradient offset values
+        self.tx_card.set_gradien_offsets(Dimensions(x=0, y=0, z=0))
 
         try:
             # if not self._raw.size > 0:
