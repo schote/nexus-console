@@ -16,7 +16,7 @@ def seq_provider():
         output_limits=[200, 6000, 6000, 6000],
         spcm_dwell_time=5e-8,
         rf_to_mvolt=5e-3,
-        high_impedance=[False, True, True, True]
+        high_impedance=[False, True, True, True],
         system=system
     )
 
