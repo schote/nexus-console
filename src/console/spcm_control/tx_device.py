@@ -202,7 +202,7 @@ class TxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         self.log_card_status()
 
-    def set_gradien_offsets(self, offsets: Dimensions) -> None:
+    def set_gradient_offsets(self, offsets: Dimensions) -> None:
         """Set offset values of the gradient output channels.
 
         Parameters

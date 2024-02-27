@@ -204,7 +204,7 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradien_offsets(self.parameter.gradient_offset)
+        self.tx_card.set_gradient_offsets(self.parameter.gradient_offset)
 
         for k in range(self.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, self.parameter.num_averages)
@@ -244,7 +244,7 @@ class AcquisitionControl:
                 time.sleep(self.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradien_offsets(Dimensions(x=0, y=0, z=0))
+        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0))
 
         try:
             # if not self._raw.size > 0:
