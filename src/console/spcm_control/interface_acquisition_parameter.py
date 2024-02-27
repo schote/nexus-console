@@ -1,9 +1,10 @@
 """Interface class for acquisition parameters."""
 
+import pickle
 from dataclasses import asdict, dataclass
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class Dimensions:
     """Dataclass for definition of dimensional parameters."""
 
@@ -17,11 +18,16 @@ class Dimensions:
     """Z dimension."""
 
 
-@dataclass(slots=True, frozen=True)
+@dataclass(frozen=True)
 class AcquisitionParameter:
-    """Parameters which define an acquisition."""
+    """
+    Parameters which define an acquisition.
 
-    larmor_frequency: float
+    Is defined as frozen dataclass to have hashable acquisition parameters.
+    Can be updated using `dataclasses.replace(instance, larmor_frequency=2.1e6)`.
+    """
+
+    larmor_frequency: float = 2e6
     """Larmor frequency in MHz."""
 
     b1_scaling: float = 1.0
@@ -57,3 +63,28 @@ class AcquisitionParameter:
         if use_strings:
             return {k: str(v) for k, v in asdict(self).items()}
         return asdict(self)
+
+    def save(self, file_path: str = "acq-param-state.pkl") -> None:
+        """Save current acquisition parameter state.
+
+        Parameters
+        ----------
+        file_path, optional
+            Path to the pickle state file, by default "acq-param-state.pkl"
+        """
+        with open(file_path, "wb") as file:
+            pickle.dump(self.__dict__, file)
+
+    @classmethod
+    def load(cls, file_path: str = "acq-param-state.pkl") -> "AcquisitionParameter":
+        """Load acquisition parameter state from state file and return AcquisitionParameter instance.
+
+        Parameters
+        ----------
+        file_path, optional
+            Path to the pickle state file, by default "acq-param-state.pkl"
+        """
+        with open(file_path, "rb") as file:
+            state = pickle.load(file)  # noqa: S301
+        # self.__dict__.update(state)
+        return cls(**state)
