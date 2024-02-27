@@ -11,7 +11,8 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.spcm_control.acquisition_parameters import parameter
+from console.spcm_control.interface_acquisition_parameter import Dimensions
 
 try:
     from line_profiler import profile
@@ -412,7 +413,7 @@ class SequenceProvider(Sequence):
     @profile
     def unroll_sequence(
         self,
-        parameter: AcquisitionParameter
+        # parameter: AcquisitionParameter
         # larmor_freq: float,
         # b1_scaling: float = 1.0,
         # fov_scaling: Dimensions = default_fov_scaling,
