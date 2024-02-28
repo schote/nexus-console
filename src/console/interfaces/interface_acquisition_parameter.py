@@ -1,7 +1,8 @@
 """Interface class for acquisition parameters."""
 
+import copy
 import pickle
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 
 from console.interfaces.interface_dimensions import Dimensions
 
@@ -9,9 +10,10 @@ from console.interfaces.interface_dimensions import Dimensions
 @dataclass(frozen=True)
 class AcquisitionParameter:
     """
-    Parameters which define an acquisition.
+    Parameters to define an acquisition.
 
-    Is defined as frozen dataclass to have hashable acquisition parameters.
+    The acquisition parameters are defined as a frozen dataclass, i.e. they are immutable.
+    This makes acquisition parameters hashable, which makes it easier to recognize any changes.
     Can be updated using `dataclasses.replace(instance, larmor_frequency=2.1e6)`.
     """
 
@@ -80,3 +82,28 @@ class AcquisitionParameter:
             state = pickle.load(file)  # noqa: S301
         # self.__dict__.update(state)
         return cls(**state)
+
+    def copy(self) -> "AcquisitionParameter":
+        """Create a deepcopy of the acquisition parameters."""
+        return copy.deepcopy(self)
+
+    def update(self, /, **changes) -> "AcquisitionParameter":
+        """Create a modified version and return it as new acquisition parameter object.
+
+        Takes any keyword argument, must be attribute of acquisition parameter object.
+        Wrapper for `dataclasses.replace()`.
+
+        Example
+        -------
+        params = AcquisitionParameter()
+        new_params = params.update(larmor_frequency=2.1e6)
+
+        Returns
+        -------
+            Returns a new acquisition parameter object with a new hash
+        """
+        return replace(self, **changes)
+
+    def get_hash(self) -> int:
+        """Return acquisition parameter integer hash."""
+        return self.__hash__()

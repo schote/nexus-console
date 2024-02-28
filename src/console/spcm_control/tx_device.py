@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.interface_acquisition_parameter import Dimensions
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
@@ -214,6 +214,14 @@ class TxCard(SpectrumDevice):
         -------
             List of integer values read from card for x, y and z offset values
         """
+        # Check card connection
+        try:
+            if not self.card:
+                raise ConnectionError("No connection to TX card.")
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+        # Check offset values
         if abs(offsets.x) > self.max_amplitude[1]:
             self.log.error("Gradient offset of channel x exceeds maximum amplitude.")
         if abs(offsets.y) > self.max_amplitude[2]:
