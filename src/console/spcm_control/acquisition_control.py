@@ -9,11 +9,11 @@ from datetime import datetime
 import numpy as np
 from scipy import signal
 
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
-from console.spcm_control.acquisition_parameters import parameter
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.spcm_control.acquisition_parameter import parameter
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances

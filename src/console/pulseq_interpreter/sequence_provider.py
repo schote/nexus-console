@@ -10,9 +10,9 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.spcm_control.acquisition_parameters import parameter
-from console.spcm_control.interface_acquisition_parameter import Dimensions
+from console.interfaces.interface_dimensions import Dimensions
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+from console.spcm_control.acquisition_parameter import parameter
 
 try:
     from line_profiler import profile

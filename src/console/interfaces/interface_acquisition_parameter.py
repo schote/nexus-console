@@ -3,19 +3,7 @@
 import pickle
 from dataclasses import asdict, dataclass
 
-
-@dataclass(frozen=True)
-class Dimensions:
-    """Dataclass for definition of dimensional parameters."""
-
-    x: float | int  # pylint: disable=invalid-name
-    """X dimension."""
-
-    y: float | int  # pylint: disable=invalid-name
-    """Y dimension."""
-
-    z: float | int  # pylint: disable=invalid-name
-    """Z dimension."""
+from console.interfaces.interface_dimensions import Dimensions
 
 
 @dataclass(frozen=True)
@@ -34,7 +22,7 @@ class AcquisitionParameter:
     """Scaling of the B1 field (RF transmit power)."""
 
     gradient_offset: Dimensions = Dimensions(0, 0, 0)
-    """Gradient offset values."""
+    """Gradient offset values in mV."""
 
     fov_scaling: Dimensions = Dimensions(1, 1, 1)
     """Field of view scaling for Gx, Gy and Gz."""
@@ -47,6 +35,10 @@ class AcquisitionParameter:
 
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
+
+    def __del__(self):
+        """Call save method on delete."""
+        self.save()
 
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
