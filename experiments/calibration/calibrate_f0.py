@@ -34,11 +34,11 @@ seq = se_spectrum.constructor(
 
 # %%
 # Larmor frequency:
-f_0 = 1965068
+f_0 = 1965728.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=4.67,
+    b1_scaling=3.56,
     decimation=1000,
 
     # num_averages=100,
@@ -58,6 +58,7 @@ f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 snr = signal_to_noise_ratio(data_fft, dwell_time=acq_data.dwell_time)
 
+
 # Add information to acquisition data
 acq_data.add_info({
     "adc-indo": "FID of the spin-echo, 50 ms readout",
@@ -72,12 +73,17 @@ print("Acquisition data shape: ", acq_data.raw.shape)
 print("SNR [dB]: ", snr)
 
 # Plot spectrum
-fig, ax = plt.subplots(1, 1, figsize=(10, 5))
-ax.plot(fft_freq, np.abs(data_fft))
+timeAxis = np.arange(data.size)*acq_data.dwell_time*1e3
+fig, ax = plt.subplots(1, 2, figsize=(10, 5))
+ax[0].plot(timeAxis, np.abs(data))
+ax[0].set_xlabel("Time [ms]")
+ax[0].set_xlim((0, np.max(timeAxis)))
+ax[1].plot(fft_freq, np.abs(data_fft))
 # ax.set_xlim([-20e3, 20e3])
-ax.set_ylim([0, max_spec * 1.05])
-ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
-ax.set_xlabel("Frequency [Hz]")
+ax[1].set_ylim([0, max_spec * 1.05])
+ax[1].set_ylabel("Abs. FFT Spectrum [a.u.]")
+ax[1].set_xlabel("Frequency [Hz]")
+fig.set_tight_layout(True)
 plt.show()
 
 # %%

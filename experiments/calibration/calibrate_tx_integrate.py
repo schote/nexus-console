@@ -31,7 +31,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 seq, flip_angles = fid_tx_adjust.constructor(
     rf_duration=200e-6,
     repetition_time=2,
-    n_steps=40,
+    n_steps=20,
     adc_duration = 25e-3,
     # flip_angle_range=(pi/4, 3*pi/2),
     flip_angle_range=(np.deg2rad(45), np.deg2rad(270)),
@@ -40,14 +40,14 @@ seq, flip_angles = fid_tx_adjust.constructor(
 
 # %%
 # Larmor frequency:
-f_0 = 1965068
+f_0 = 1965728.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=3.53,
     # b1_scaling=3.054,
     # b1_scaling=3.74,
-    b1_scaling=4.67,
+    b1_scaling=3.56,
     decimation=200,
     # gradient_offset=Dimensions(x=-200, y=0., z=0.)
 )
@@ -69,11 +69,11 @@ peak_window = data[:, window_start:window_start+center_window]
 peaks = np.sum(data, axis = -1)
 
 
-def fa_model(samples: np.ndarray, amp: float, step_size: float, phase_offset: float) -> np.ndarray:
+def fa_model(samples: np.ndarray, amp: float, step_size: float, phase_offset: float, noise: float) -> np.ndarray:
     """Fit sinusoidal function to measured flip angle values."""
-    return amp * np.abs(np.sin(step_size * samples + phase_offset))
+    return amp * np.abs(np.sin(step_size * samples + phase_offset)) + noise
 
-init = [peaks.max(), 1, flip_angles[0]]
+init = [peaks.max(), 1, flip_angles[0], peaks.min()]
 fit_params = curve_fit(fa_model, xdata=flip_angles, ydata=peaks, p0=init, method="lm")[0]
 
 fa = np.linspace(flip_angles[0], flip_angles[-1], num=2000)

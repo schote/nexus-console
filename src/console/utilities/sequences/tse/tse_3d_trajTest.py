@@ -129,20 +129,26 @@ def constructor(
     pe0 = np.arange(n_enc.y) - (n_enc.y - 1) / 2
     pe1 = np.arange(n_enc.z) - (n_enc.z - 1) / 2
 
-    # Add offset of -0.1 to ensure that positive PE step comes first:
-    # e.g. PE values without offset (-1, 0, 1) -> abs: (1, 0, 1) -> argsort: (1, 0/2)
-    # PE values with offset (-1.1, -0.1, 0.9) -> abs: (1.1, 0.1, 0.9) -> argsort: (1, 2, 0)
-    pe0_ordered = pe0[np.argsort(np.abs(pe0 - 0.1))]
-    pe1_ordered = pe1[np.argsort(np.abs(pe1 - 0.1))]
+    pe0_pos = np.arange(n_enc.y)
+    pe1_pos = np.arange(n_enc.z)
 
-    pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe0_ordered, pe1_ordered, indexing='ij')], axis=-1)
+    pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe0, pe1)], axis=-1)
+    pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
 
+    pe_mag = np.sum(np.square(pe_traj), axis = -1) #calculate magnitude of all gradient combinations
+    pe_mag_sorted = np.argsort(pe_mag)
+
+    pe_traj[:,0] = pe_traj[pe_mag_sorted,0] #sort the points based on magnitude
+    pe_traj[:,1] = pe_traj[pe_mag_sorted,1] #sort the points based on magnitude
+
+    pe_traj2 = pe_pos[pe_mag_sorted,:]
+    #calculate the required gradient area for each k-point
     pe_traj[:, 0] /= fov.y
     pe_traj[:, 1] /= fov.z
 
     # Divide all PE steps into echo trains
     num_trains = int(np.ceil(pe_traj.shape[0] / etl))
-    trains = [pe_traj[k*etl:(k+1)*etl] for k in range(num_trains)]
+    trains = [pe_traj[k::num_trains,:] for k in range(num_trains)]
 
     ro_counter = 0
 
@@ -190,7 +196,7 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    return (seq, pe_traj)
+    return (seq, pe_traj, trains, pe_traj2)
 
 
 
@@ -209,7 +215,6 @@ def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> 
     # Trajectory is passed as (y-koords, z-koords) to obtain zy-order
     # Neg. sign sorts trajectory in descending order
     order = np.lexsort((-trajectory[:, 0], -trajectory[:, 1]))
-    print(order)
     # Apply the order to the phase encoding dimension of k-space
     ksp_sorted = kspace[..., order, :]
     n_avg, n_coil, _, n_ro = kspace.shape

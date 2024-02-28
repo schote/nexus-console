@@ -28,7 +28,7 @@ ro_bw = 20e3
 te = 16e-3
 # te = 25e-3
 
-seq, traj = sequences.tse.tse_3d.constructor(
+seq, traj, trains, traj2= sequences.tse.tse_3d_trajTest.constructor(
     echo_time=te,
     repetition_time=600e-3,
     # etl=1,
@@ -44,7 +44,7 @@ seq, traj = sequences.tse.tse_3d.constructor(
     n_enc=dim
 )
 # Optional: overwrite sequence name (used to identify experiment data)
-seq.set_definition("Name", "tse_3d")
+seq.set_definition("Name", "tse_3d_trajTest")
 # If z=1, image acquisition is 2D
 # seq.set_definition("Name", "tse_2d")
 
@@ -87,17 +87,25 @@ acq.set_sequence(parameter=params, sequence=seq)
 # %%
 acq_data: AcquisitionData = acq.run()
 
-ksp = sequences.tse_3d.sort_kspace(acq_data.raw, trajectory=traj, dim=dim)
-ksp = ksp.squeeze()
+ksp = np.zeros((dim.z,dim.y,dim.x), dtype = complex)
 
+numTrains = np.shape(trains)[0]
+etl = np.shape(trains[0])[0]
+temp = np.zeros((dim.y*dim.z,2), dtype = int)
 
-# fig, ax = plt.subplots(1, 1)
-# _ = ax.plot(np.abs(ksp).T)
-# np.argmax(np.abs(ksp), axis = 1)
+sum_kpts = int(0)
+for idx in range(numTrains):
+    k_pts = traj2[idx::numTrains,:]
+    num_kpts = np.size(k_pts, axis = 0)
+    temp[sum_kpts:sum_kpts+num_kpts,:] = k_pts
+    sum_kpts += num_kpts
+    
+for idx in range(np.size(traj2,0)):
+    ksp[temp[idx,1], temp[idx,0],: ] = acq_data.raw[0,0,idx,:]
 
 # %%
-# img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
-img = np.fft.ifftshift(np.fft.fftn(ksp))
+img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
+#img = np.fft.ifftshift(np.fft.fftn(ksp))
 
 idx = int(img.shape[0]/2)
 fig, ax = plt.subplots(1, 2, figsize=(8, 4))
@@ -132,7 +140,7 @@ fig.set_facecolor("black")
 # %%
 
 acq_data.add_info({
-    "subject": "brain_slice, tse_david, miteq_preamp - noise",
+    "subject": "brain_slice, tse_tom - FOV:240,200,200, ETL = 7, miteq_preamp",
     "echo_time": te,
     "dim": [dim.x, dim.y, dim.z],
     # "subject": "brain-slice",
@@ -145,7 +153,7 @@ acq_data.add_data({
     "image": img
 })
 
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240227 - SNR tests")
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240227 - SNR tests")
 #acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
