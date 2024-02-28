@@ -229,19 +229,24 @@ class TxCard(SpectrumDevice):
         if abs(offsets.z) > self.max_amplitude[3]:
             self.log.error("Gradient offset of channel z exceeds maximum amplitude.")
 
+        print("Offsets to set: ", offsets)
+
         # Set offset values
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, offsets.x)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, offsets.y)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, offsets.z)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z))
+        # Write setup
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_WRITESETUP)
 
         # Define variables to read offset values
         offset_x = spcm.int32(0)
         offset_y = spcm.int32(0)
         offset_z = spcm.int32(0)
+
         # Read offset values from card
         spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS1, ctypes.byref(offset_x))
-        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS1, ctypes.byref(offset_y))
-        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS1, ctypes.byref(offset_z))
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS2, ctypes.byref(offset_y))
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS3, ctypes.byref(offset_z))
 
         set_offsets = [offset_x.value, offset_y.value, offset_z.value]
         self.log.info("Set gradient values %s mV for x, y and z.", set_offsets)
