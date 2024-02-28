@@ -202,7 +202,7 @@ class TxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         self.log_card_status()
 
-    def set_gradient_offsets(self, offsets: Dimensions) -> None:
+    def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool]) -> None:
         """Set offset values of the gradient output channels.
 
         Parameters
@@ -229,12 +229,12 @@ class TxCard(SpectrumDevice):
         if abs(offsets.z) > self.max_amplitude[3]:
             self.log.error("Gradient offset of channel z exceeds maximum amplitude.")
 
-        print("Offsets to set: ", offsets)
-
-        # Set offset values
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x))
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y))
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z))
+        # Extract per channel flag for high impedance termination
+        _, x_high_imp, y_high_imp, z_high_imp = high_impedance
+        # Set offset values, scale offset by 0.5 if channel is terminated into high impedance
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x/2) if x_high_imp else int(offsets.x))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y/2) if y_high_imp else int(offsets.y))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z/2) if z_high_imp else int(offsets.z))
         # Write setup
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_WRITESETUP)
 

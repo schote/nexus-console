@@ -98,6 +98,7 @@ class SequenceProvider(Sequence):
         # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
         # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
         self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
+        self.high_impedance = high_impedance
 
         self.gpa_gain: list[float] = gpa_gain
         self.grad_eff: list[float] = gradient_efficiency

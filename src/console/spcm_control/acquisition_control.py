@@ -217,7 +217,7 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        # self.tx_card.set_gradient_offsets(acq_params.parameter.gradient_offset)
+        self.tx_card.set_gradient_offsets(acq_params.parameter.gradient_offset, self.seq_provider.high_impedance)
 
         for k in range(acq_params.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, acq_params.parameter.num_averages)
@@ -230,24 +230,22 @@ class AcquisitionControl:
             # Get start time of acquisition
             time_start = time.time()
 
-            while len(self.rx_card.rx_data) < self.unrolled_seq.adc_count:
+            while (num_gates := len(self.rx_card.rx_data)) < self.unrolled_seq.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
-                if len(self.rx_card.rx_data) >= self.unrolled_seq.adc_count:
-                    break
-
-                if time.time() - time_start > timeout:
+                if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
                     self.log.warning(
                         "Acquisition Timeout: Only received %s/%s adc events",
-                        len(self.rx_card.rx_data),
-                        self.unrolled_seq.adc_count,
-                        stack_info=True,
+                        num_gates, self.unrolled_seq.adc_count
                     )
                     break
 
-            if len(self.rx_card.rx_data) > 0:
+                if num_gates >= self.unrolled_seq.adc_count and num_gates > 0:
+                    break
+
+            if num_gates > 0:
                 self.post_processing(acq_params.parameter)
 
             self.tx_card.stop_operation()
@@ -257,7 +255,7 @@ class AcquisitionControl:
                 time.sleep(acq_params.parameter.averaging_delay)
 
         # Reset gradient offset values
-        # self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0))
+        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance)
 
         try:
             # if len(self._raw) != parameter.num_averages:
