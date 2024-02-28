@@ -38,8 +38,12 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    def __del__(self):
-        """Call save method on delete."""
+    def __post_init__(self) -> None:
+        """Save state after initialization.
+
+        Class is immutable, that means a new object is created for any update of the values.
+        By calling the save method after initialization, updates are automatically saved as latest state.
+        """
         self.save()
 
     def dict(self, use_strings: bool = False) -> dict:

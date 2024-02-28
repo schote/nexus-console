@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
 
 @dataclass(slots=True, frozen=True)

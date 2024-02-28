@@ -1,8 +1,8 @@
 """Test functions for interface classes."""
 import os
 
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 
 
 def test_acquisition_data(test_sequence, random_acquisition_data):
