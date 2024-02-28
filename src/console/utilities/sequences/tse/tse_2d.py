@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import numpy as np
 import pypulseq as pp
 
-from console.spcm_control.interface_acquisition_parameter import Dimensions
+from console.interfaces.interface_dimensions import Dimensions
 from console.utilities.sequences.system_settings import system
 
 GRAD_RISE_TIME = 200e-6
