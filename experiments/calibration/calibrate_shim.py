@@ -184,12 +184,12 @@ snr = signal_to_noise_ratio(data_fft, dwell_time=dwell_time)
 acq_data.add_info({
     "adc-indo": "FID , 50 ms readout",
     "true f0": f_0 - f_0_offset,
-    "magnitude spectrum max": max_spec,
+    "magnitude spectrum max": amp_best,
     "snr dB": snr,
 })
 
 print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {f_0 - f_0_offset}")
-print(f"Frequency spectrum max.: {max_spec}")
+print(f"Frequency spectrum max.: {amp_best}")
 print("Acquisition data shape: ", acq_data.raw.shape)
 print("SNR [dB]: ", snr)
 
