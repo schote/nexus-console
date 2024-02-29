@@ -74,6 +74,7 @@ class AcquisitionParameter:
         file_path, optional
             Path to the pickle state file, by default "acq-param-state.pkl"
         """
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as file:
             pickle.dump(self.__dict__, file)
 
