@@ -1,10 +1,14 @@
 """Interface class for acquisition parameters."""
 
 import copy
+import os
 import pickle
 from dataclasses import asdict, dataclass, replace
+from pathlib import Path
 
 from console.interfaces.interface_dimensions import Dimensions
+
+STATE_FILE: str = os.path.join(Path.home(), "spcm-console/acq-parameter-state.pkl")
 
 
 @dataclass(frozen=True)
@@ -62,7 +66,7 @@ class AcquisitionParameter:
             return {k: str(v) for k, v in asdict(self).items()}
         return asdict(self)
 
-    def save(self, file_path: str = "acq-param-state.pkl") -> None:
+    def save(self, file_path: str = STATE_FILE) -> None:
         """Save current acquisition parameter state.
 
         Parameters
@@ -74,7 +78,7 @@ class AcquisitionParameter:
             pickle.dump(self.__dict__, file)
 
     @classmethod
-    def load(cls, file_path: str = "acq-param-state.pkl") -> "AcquisitionParameter":
+    def load(cls, file_path: str = STATE_FILE) -> "AcquisitionParameter":
         """Load acquisition parameter state from state file and return AcquisitionParameter instance.
 
         Parameters

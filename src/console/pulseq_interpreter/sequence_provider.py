@@ -10,9 +10,9 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
+import console.spcm_control.globals as glob
 from console.interfaces.interface_dimensions import Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
-import console.spcm_control.acquisition_parameter as acq_param
 
 try:
     from line_profiler import profile
@@ -490,9 +490,9 @@ class SequenceProvider(Sequence):
 
         try:
             # Check larmor frequency
-            if acq_param.parameter.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {acq_param.parameter.larmor_frequency*1e-6} MHz")
-            self.larmor_freq = acq_param.parameter.larmor_frequency
+            if glob.parameter.larmor_frequency > 10e6:
+                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency*1e-6} MHz")
+            self.larmor_freq = glob.parameter.larmor_frequency
 
             # Check if sequence has block events
             if not len(self.block_events) > 0:
@@ -544,7 +544,7 @@ class SequenceProvider(Sequence):
                     block=block.rf,
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
-                    b1_scaling=acq_param.parameter.b1_scaling,
+                    b1_scaling=glob.parameter.b1_scaling,
                     num_samples_rf_start=rf_start_sample_pos,
                 )
 
@@ -555,17 +555,17 @@ class SequenceProvider(Sequence):
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
                 self.calculate_gradient(
-                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=acq_param.parameter.fov_scaling.x
+                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=glob.parameter.fov_scaling.x
                 )
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
                 self.calculate_gradient(
-                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=acq_param.parameter.fov_scaling.y
+                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=glob.parameter.fov_scaling.y
                 )
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
                 self.calculate_gradient(
-                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=acq_param.parameter.fov_scaling.z
+                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=glob.parameter.fov_scaling.z
                 )
 
             # Bitwise operations to merge gx with adc and gy with unblanking
