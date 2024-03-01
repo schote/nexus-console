@@ -73,11 +73,11 @@ print("Acquisition data shape: ", acq_data.raw.shape)
 print("SNR [dB]: ", snr)
 
 # Plot spectrum
-timeAxis = np.arange(data.size)*acq_data.dwell_time*1e3
+time_axis = np.arange(data.size)*acq_data.dwell_time*1e3
 fig, ax = plt.subplots(1, 2, figsize=(10, 5))
-ax[0].plot(timeAxis, np.abs(data))
+ax[0].plot(time_axis, np.abs(data))
 ax[0].set_xlabel("Time [ms]")
-ax[0].set_xlim((0, np.max(timeAxis)))
+ax[0].set_xlim((0, np.max(time_axis)))
 ax[1].plot(fft_freq, np.abs(data_fft))
 # ax.set_xlim([-20e3, 20e3])
 ax[1].set_ylim([0, max_spec * 1.05])
