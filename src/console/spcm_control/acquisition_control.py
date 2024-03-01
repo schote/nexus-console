@@ -6,8 +6,8 @@ import os
 import time
 from datetime import datetime
 
-from scipy import signal
 import numpy as np
+from scipy import signal
 
 from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
@@ -15,7 +15,6 @@ from console.spcm_control.interface_acquisition_data import AcquisitionData
 from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
