@@ -17,17 +17,17 @@ configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
-# dim = Dimensions(x=64, y=64, z=1)
+# Create sequence
 dim = Dimensions(x=120, y=20, z=2)
 
 ro_bw = 20e3
 te = 16e-3
 # te = 25e-3
 
-seq, traj, trains, traj2= sequences.tse.tse_3d_trajTest.constructor(
+seq, traj = sequences.tse.tse_3d_trajTest.constructor(
     echo_time=te,
     repetition_time=600e-3,
-    etl=7,
+    etl=5,
     gradient_correction=160e-6,
     rf_duration=200e-6,
     fov=Dimensions(x=240e-3, y=200e-3, z=200e-3),
@@ -45,6 +45,8 @@ seq.set_definition("Name", "tse_3d")
 decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 
 # %%
+#Unroll and run sequence
+
 # Larmor frequency:
 f_0 = 1965788.0
 
@@ -68,22 +70,9 @@ acq.set_sequence(parameter=params, sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
 # %%
+#sort data in to kspace array
+ksp = sequences.tse.tse_3d_trajTest.sort_kspace(acq_data.raw, traj, dim).squeeze()
 
-ksp = np.zeros((dim.z,dim.y,dim.x), dtype = complex)
-
-num_trains = np.shape(trains)[0]
-etl = np.shape(trains[0])[0]
-temp = np.zeros((dim.y*dim.z,2), dtype = int)
-
-sum_kpts = int(0)
-for idx in range(num_trains):
-    k_pts = traj2[idx::num_trains,:]
-    num_kpts = np.size(k_pts, axis = 0)
-    temp[sum_kpts:sum_kpts+num_kpts,:] = k_pts
-    sum_kpts += num_kpts
-
-for idx in range(np.size(traj2,0)):
-    ksp[temp[idx,1], temp[idx,0],: ] = acq_data.raw[0,0,idx,:]
 
 # %%
 img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))

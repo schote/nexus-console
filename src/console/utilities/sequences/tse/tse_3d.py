@@ -209,7 +209,6 @@ def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> 
     # Trajectory is passed as (y-koords, z-koords) to obtain zy-order
     # Neg. sign sorts trajectory in descending order
     order = np.lexsort((-trajectory[:, 0], -trajectory[:, 1]))
-    print(order)
     # Apply the order to the phase encoding dimension of k-space
     ksp_sorted = kspace[..., order, :]
     n_avg, n_coil, _, n_ro = kspace.shape

@@ -1,9 +1,8 @@
 """Constructor for 3D TSE Imaging sequence.
 
-TODO: add corrected kspace sorting
 TODO: add dummy scans
 TODO: add optional inversion pulse
-TODO: add variable refocussing pulses
+TODO: add optional variable refocussing pulses (pass list rather than float)
 TODO: move trajectory calculation to seperate file to sharew with other imaging experiments (needed?)
 
 """
@@ -105,6 +104,36 @@ def constructor(
         print("Defaulting to readout in y, pe1 in z, pe2 in x")
         channel_ro = "y"; channel_pe1 = "z"; channel_pe2 = "x"
 
+    # Calculate center out trajectory
+    pe1 = np.arange(n_enc.y) - (n_enc.y - 1) / 2
+    pe2 = np.arange(n_enc.z) - (n_enc.z - 1) / 2
+
+    pe0_pos = np.arange(n_enc.y)
+    pe1_pos = np.arange(n_enc.z)
+
+    pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe1, pe2)], axis=-1)
+    pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
+
+    pe_mag = np.sum(np.square(pe_traj), axis = -1) #calculate magnitude of all gradient combinations
+    pe_mag_sorted = np.argsort(pe_mag)
+
+    pe_traj = pe_traj[pe_mag_sorted,:] #sort the points based on magnitude
+    pe_order = pe_pos[pe_mag_sorted,:] #kspace position for each of the gradients
+
+    #calculate the required gradient area for each k-point
+    pe_traj[:, 0] /= fov.y
+    pe_traj[:, 1] /= fov.z
+
+    # Divide all PE steps into echo trains
+    num_trains = int(np.ceil(pe_traj.shape[0] / etl))
+    trains = [pe_traj[k::num_trains,:] for k in range(num_trains)]
+
+    #Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
+    trains_pos = [pe_order[k::num_trains,:] for k in range(num_trains)]
+    acq_pos = []
+    for train_pos in trains_pos:
+        acq_pos.extend(train_pos)
+
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(system=system, flip_angle=excitation_angle, phase_offset = excitation_phase, duration=rf_duration, use="excitation")
     rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle,phase_offset =refocussing_phase,duration=rf_duration, use="refocusing")
@@ -123,7 +152,7 @@ def constructor(
         # Add gradient correction time and ADC correction time
         flat_time=raster(adc_duration, precision=system.grad_raster_time),
     )
-    grad_ro = pp.make_trapezoid(
+    grad_ro = pp.make_trapezoid(#using the previous calculation for the amplitde, hacky, should find a better way
         channel=channel_ro,
         system=system,
         amplitude=grad_ro.amplitude,
@@ -162,34 +191,7 @@ def constructor(
     # Delay duration between readout and Gy, Gz gradient rephaser
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration
     # Delay between echo trains
-    tr_delay = repetition_time - echo_time - adc_duration / 2 - rf_90.delay
-
-    # Calculate center out trajectory
-    pe0 = np.arange(n_enc.y) - (n_enc.y - 1) / 2
-    pe1 = np.arange(n_enc.z) - (n_enc.z - 1) / 2
-
-    pe0_pos = np.arange(n_enc.y)
-    pe1_pos = np.arange(n_enc.z)
-
-    pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe0, pe1)], axis=-1)
-    pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
-
-    pe_mag = np.sum(np.square(pe_traj), axis = -1) #calculate magnitude of all gradient combinations
-    pe_mag_sorted = np.argsort(pe_mag)
-
-    pe_traj[:,0] = pe_traj[pe_mag_sorted,0] #sort the points based on magnitude
-    pe_traj[:,1] = pe_traj[pe_mag_sorted,1] #sort the points based on magnitude
-
-    pe_traj2 = pe_pos[pe_mag_sorted,:]
-    #calculate the required gradient area for each k-point
-    pe_traj[:, 0] /= fov.y
-    pe_traj[:, 1] /= fov.z
-
-    # Divide all PE steps into echo trains
-    num_trains = int(np.ceil(pe_traj.shape[0] / etl))
-    trains = [pe_traj[k::num_trains,:] for k in range(num_trains)]
-
-    ro_counter = 0
+    tr_delay = repetition_time - echo_time*etl - adc_duration / 2 - rf_90.delay
 
     for train in trains:
 
@@ -198,14 +200,13 @@ def constructor(
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
         for echo in train:
-
-            pe_0, pe_1 = echo
+            pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
 
             seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=-pe_0, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=-pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                pp.make_trapezoid(channel=channel_pe1, area=-pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
+                pp.make_trapezoid(channel=channel_pe2, area=-pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
             )
 
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
@@ -213,20 +214,19 @@ def constructor(
             seq.add_block(grad_ro, adc)
 
             seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=pe_0, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                pp.make_trapezoid(channel=channel_pe1, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
+                pp.make_trapezoid(channel=channel_pe2, area=pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
             )
 
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
-            ro_counter += 1
-
-        # Add TR after echo train, if not the last readout
-        if ro_counter < n_enc.y * n_enc.z:
-            seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
+        #recalculate TR each train because train length is not guaranteed to be constant
+        tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
+        
+        seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
-    train_duration_tr = (seq.duration()[0] + tr_delay) / len(trains)
+    train_duration_tr = (seq.duration()[0]) / len(trains)
     train_duration = train_duration_tr - tr_delay
 
     # Add measures to sequence definition
@@ -235,11 +235,9 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    return (seq, pe_traj, trains, pe_traj2)
+    return (seq, acq_pos)
 
-
-
-def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> np.ndarray:
+def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
@@ -249,14 +247,13 @@ def sort_kspace(kspace: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> 
         Acquired k-space data in the format (averages, coils, pe, ro)
     trajectory
         k-Space trajectory returned by TSE constructor with dimension (pe, 2)
+    dim
+        dimensions of kspace
     """
-    # Last key in the sequence passed to lexsort is used for the primary key
-    # Trajectory is passed as (y-koords, z-koords) to obtain zy-order
-    # Neg. sign sorts trajectory in descending order
-    order = np.lexsort((-trajectory[:, 0], -trajectory[:, 1]))
-    # Apply the order to the phase encoding dimension of k-space
-    ksp_sorted = kspace[..., order, :]
-    n_avg, n_coil, _, n_ro = kspace.shape
-    return np.reshape(ksp_sorted, (n_avg, n_coil, dim.z, dim.y, n_ro))
+    n_avg, n_coil, _, n_ro = raw_data.shape
+    ksp = np.zeros((n_avg, n_coil, dim.z, dim.y, dim.x), dtype = complex)
+    for idx, kpt in enumerate(trajectory):
+        ksp[...,kpt[1],kpt[0],:] = raw_data[:,:,idx,:]
+    return ksp
 
 # %%
