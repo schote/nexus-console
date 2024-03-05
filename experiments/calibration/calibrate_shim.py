@@ -21,7 +21,7 @@ from console.utilities.snr import signal_to_noise_ratio
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
-acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.ERROR, file_log_level=logging.DEBUG)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
 
 # %%
 # FID
@@ -45,7 +45,7 @@ def grad_mt_to_mv(grad_strength):
 def run_fid(f0, shims):
     """Call the FID sequence with the specified shims."""
     params = AcquisitionParameter(
-        larmor_frequency=f_0,
+        larmor_frequency=f0,
         b1_scaling=3.4,
         decimation=1000,
         gradient_offset=Dimensions(x=shims[0], y=shims[1], z=shims[2]),)
@@ -63,7 +63,7 @@ shims_current =  [0.0,0.0,0.0] #temporary, with new offset implementation read t
 
 # %%
 # Larmor frequency:
-f_0 = 1964848.0
+f_0 = 1964648.0
 
 shim_range = start_range
 shims_best = shims_current
@@ -177,22 +177,22 @@ plt.plot(amp_data)
 plt.xlabel("Shim iteration")
 plt.ylabel("Peak amplitude")
 
-
 f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
 snr = signal_to_noise_ratio(data_fft, dwell_time=dwell_time)
 
 # Add information to acquisition data
-acq_data.add_info({
-    "adc-indo": "Shimming",
-    "true f0": f_0 - f_0_offset,
-    "magnitude spectrum max": amp_best,
-    "snr dB": snr,
-})
+# acq_data.add_info({
+#     "adc-indo": "Shimming",
+#     "true f0": f_0 - f_0_offset,
+#     "magnitude spectrum max": amp_best,
+#     "snr dB": snr,
+# })
 
+print("Shim offsets: ", shims_best, "mT/m")
+print("Shim offsets: ", grad_mt_to_mv(shims_best), " mV")
 print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {amp_best}")
-print("Acquisition data shape: ", acq_data.raw.shape)
 print("SNR [dB]: ", snr)
 
 

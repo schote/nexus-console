@@ -7,7 +7,7 @@ import numpy as np
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.utilities.sequences.spectrometry import se_spectrum
 from console.utilities.snr import signal_to_noise_ratio
 
@@ -34,13 +34,13 @@ seq = se_spectrum.constructor(
 
 # %%
 # Larmor frequency:
-f_0 = 1965728.0
+f_0 = 1964628.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     b1_scaling=3.56,
     decimation=1000,
-
+    gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08),
     # num_averages=100,
     # averaging_delay=2,
 )

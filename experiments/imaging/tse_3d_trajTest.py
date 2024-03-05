@@ -18,19 +18,22 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Create sequence
-dim = Dimensions(x=120, y=20, z=2)
+dim = Dimensions(x=5, y=120, z=100)
 
 ro_bw = 20e3
 te = 16e-3
 # te = 25e-3
 
-seq, traj = sequences.tse.tse_3d_trajTest.constructor(
+seq, traj, kdims = sequences.tse.tse_3d_trajTest.constructor(
     echo_time=te,
     repetition_time=600e-3,
-    etl=5,
+    etl=7,
     gradient_correction=160e-6,
     rf_duration=200e-6,
-    fov=Dimensions(x=240e-3, y=200e-3, z=200e-3),
+    fov=Dimensions(x=200e-3, y=240e-3, z=200e-3),
+    channel_ro="y",
+    channel_pe1="z",
+    channel_pe2="x",
     ro_bandwidth=ro_bw,
     n_enc=dim
 )
@@ -48,7 +51,7 @@ decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 #Unroll and run sequence
 
 # Larmor frequency:
-f_0 = 1965788.0
+f_0 = 1964408.0
 
 # Define acquisition parameters
 params = AcquisitionParameter(
@@ -61,6 +64,8 @@ params = AcquisitionParameter(
         z=1/0.85,
     ),
     decimation=decimation,
+    gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08)
+
     # num_averages=10,
     # averaging_delay=1,
 )
@@ -71,7 +76,7 @@ acq_data: AcquisitionData = acq.run()
 
 # %%
 #sort data in to kspace array
-ksp = sequences.tse.tse_3d_trajTest.sort_kspace(acq_data.raw, traj, dim).squeeze()
+ksp = sequences.tse.tse_3d_trajTest.sort_kspace(acq_data.raw, traj, kdims).squeeze()
 
 
 # %%
@@ -111,7 +116,7 @@ fig.set_facecolor("black")
 # %%
 
 acq_data.add_info({
-    "subject": "brain_slice, tse_tom - FOV:240,200,200, ETL = 7, miteq_preamp",
+    "subject": "brain_slice, tse_tom - FOV:240,200,200, ETL = 7, herman_preamp_plus_miteq_noise",
     "echo_time": te,
     "dim": [dim.x, dim.y, dim.z],
     # "subject": "brain-slice",
@@ -124,7 +129,9 @@ acq_data.add_data({
     "image": img
 })
 
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240227 - SNR tests")
+
+
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240305 - TSE test")
 #acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")

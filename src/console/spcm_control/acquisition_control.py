@@ -207,7 +207,8 @@ class AcquisitionControl:
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            time.sleep(0.5)
+            # time.sleep(0.5)
+            time.sleep(0.001)
             self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
@@ -215,7 +216,9 @@ class AcquisitionControl:
 
             while len(self.rx_card.rx_data) < self.unrolled_seq.adc_count:
                 # Delay poll by 10 ms
-                time.sleep(0.01)
+                # time.sleep(0.01)
+                time.sleep(0.001)
+
 
                 if len(self.rx_card.rx_data) >= self.unrolled_seq.adc_count:
                     break

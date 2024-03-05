@@ -1,5 +1,7 @@
 """Constructor for 3D TSE Imaging sequence.
 
+TODO: add different trajectories
+TODO: add sampling patterns (elliptical masks, partial fourier, CS)
 TODO: add dummy scans
 TODO: add optional inversion pulse
 TODO: add optional variable refocussing pulses (pass list rather than float)
@@ -104,12 +106,37 @@ def constructor(
         print("Defaulting to readout in y, pe1 in z, pe2 in x")
         channel_ro = "y"; channel_pe1 = "z"; channel_pe2 = "x"
 
-    # Calculate center out trajectory
-    pe1 = np.arange(n_enc.y) - (n_enc.y - 1) / 2
-    pe2 = np.arange(n_enc.z) - (n_enc.z - 1) / 2
+    if(channel_ro == "x"):
+        n_enc_ro = n_enc.x; fov_ro = fov.x
+        if channel_pe1 == "y":
+            n_enc_pe1 = n_enc.y; fov_pe1 = fov.y
+            n_enc_pe2 = n_enc.z; fov_pe2 = fov.z
+        else:
+            n_enc_pe1 = n_enc.z; fov_pe1 = fov.z
+            n_enc_pe2 = n_enc.y; fov_pe2 = fov.y
+    elif(channel_ro == "y"):
+        n_enc_ro = n_enc.y; fov_ro = fov.y
+        if channel_pe1 == "x":
+            n_enc_pe1 = n_enc.x; fov_pe1 = fov.x
+            n_enc_pe2 = n_enc.z; fov_pe2 = fov.z
+        else:
+            n_enc_pe1 = n_enc.z; fov_pe1 = fov.z
+            n_enc_pe2 = n_enc.x; fov_pe2 = fov.x
+    else:
+        n_enc_ro = n_enc.z; fov_ro = fov.z
+        if channel_pe1 == "y":
+            n_enc_pe1 = n_enc.y; fov_pe1 = fov.y
+            n_enc_pe2 = n_enc.x; fov_pe2 = fov.x
+        else:
+            n_enc_pe1 = n_enc.x; fov_pe1 = fov.x
+            n_enc_pe2 = n_enc.y; fov_pe2 = fov.y
 
-    pe0_pos = np.arange(n_enc.y)
-    pe1_pos = np.arange(n_enc.z)
+    # Calculate center out trajectory
+    pe1 = np.arange(n_enc_pe1) - (n_enc_pe1 - 1) / 2
+    pe2 = np.arange(n_enc_pe2) - (n_enc_pe2 - 1) / 2
+
+    pe0_pos = np.arange(n_enc_pe1)
+    pe1_pos = np.arange(n_enc_pe2)
 
     pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe1, pe2)], axis=-1)
     pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
@@ -121,8 +148,8 @@ def constructor(
     pe_order = pe_pos[pe_mag_sorted,:] #kspace position for each of the gradients
 
     #calculate the required gradient area for each k-point
-    pe_traj[:, 0] /= fov.y
-    pe_traj[:, 1] /= fov.z
+    pe_traj[:, 0] /= fov_pe1
+    pe_traj[:, 1] /= fov_pe2
 
     # Divide all PE steps into echo trains
     num_trains = int(np.ceil(pe_traj.shape[0] / etl))
@@ -139,14 +166,14 @@ def constructor(
     rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle,phase_offset =refocussing_phase,duration=rf_duration, use="refocusing")
 
     # ADC duration
-    adc_duration = n_enc.x / ro_bandwidth
+    adc_duration = n_enc_ro / ro_bandwidth
 
     # Define readout gradient and prewinder
 
     grad_ro = pp.make_trapezoid(
         channel=channel_ro,
         system=system,
-        flat_area=n_enc.x / fov.x,
+        flat_area=n_enc_ro / fov_ro,
         rise_time=ramp_duration,
         fall_time=ramp_duration,
         # Add gradient correction time and ADC correction time
@@ -222,7 +249,6 @@ def constructor(
 
         #recalculate TR each train because train length is not guaranteed to be constant
         tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
-        
         seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
@@ -235,9 +261,9 @@ def constructor(
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    return (seq, acq_pos)
+    return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
 
-def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -> np.ndarray:
+def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
@@ -251,7 +277,7 @@ def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, dim: Dimensions) -
         dimensions of kspace
     """
     n_avg, n_coil, _, n_ro = raw_data.shape
-    ksp = np.zeros((n_avg, n_coil, dim.z, dim.y, dim.x), dtype = complex)
+    ksp = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
     for idx, kpt in enumerate(trajectory):
         ksp[...,kpt[1],kpt[0],:] = raw_data[:,:,idx,:]
     return ksp

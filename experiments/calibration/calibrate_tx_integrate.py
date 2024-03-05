@@ -34,22 +34,22 @@ seq, flip_angles = fid_tx_adjust.constructor(
     n_steps=20,
     adc_duration = 25e-3,
     # flip_angle_range=(pi/4, 3*pi/2),
-    flip_angle_range=(np.deg2rad(45), np.deg2rad(270)),
+    flip_angle_range=(np.deg2rad(15), np.deg2rad(270)),
     use_sinc=False
 )
 
 # %%
 # Larmor frequency:
-f_0 = 1965728.0
+f_0 = 1964408.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
     # b1_scaling=3.53,
     # b1_scaling=3.054,
     # b1_scaling=3.74,
-    b1_scaling=3.56,
+    b1_scaling=3.25,
     decimation=200,
-    # gradient_offset=Dimensions(x=-200, y=0., z=0.)
+    gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08)
 )
 
 # Perform acquisition
