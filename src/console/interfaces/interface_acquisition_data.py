@@ -9,8 +9,8 @@ from typing import Any
 
 import numpy as np
 
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 
 
 @dataclass(slots=True, frozen=True)
@@ -34,7 +34,7 @@ class AcquisitionData:
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
 
-    unprocessed_data: np.ndarray | list | None = None
+    unprocessed_data: list[np.ndarray] = field(default_factory=list)
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
@@ -68,7 +68,7 @@ class AcquisitionData:
             }
         )
 
-    def get_data(self, gate_size_index: int) -> np.ndarray:
+    def get_data(self, gate_index: int) -> np.ndarray:
         """Get a single raw data array from raw data list.
 
         During the acquisition, ADC gate events with different durations might occure.
@@ -85,7 +85,7 @@ class AcquisitionData:
         -------
             Raw data array.
         """
-        return self._raw[gate_size_index]
+        return self._raw[gate_index]
 
     @property
     def raw(self) -> np.ndarray:
@@ -95,7 +95,7 @@ class AcquisitionData:
         -------
             Returns the first entry in raw data list.
         """
-        return self.get_data(gate_size_index=0)
+        return self.get_data(gate_index=0)
 
     def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
@@ -141,22 +141,22 @@ class AcquisitionData:
 
         # Save raw data as numpy array
         if len(self._raw) == 1:
-            np.save(f"{acq_folder_path}raw_data.npy", self.raw[0])
+            np.save(f"{acq_folder_path}raw_data.npy", self._raw[0])
         else:
-            for k, data in enumerate(self.raw):
+            for k, data in enumerate(self._raw):
                 np.save(f"{acq_folder_path}raw_data_{k}.npy", data)
 
         if len(self._additional_data) > 0:
             for key, value in self._additional_data.items():
                 np.save(f"{acq_folder_path}{key}.npy", value)
 
-        if save_unprocessed and self.unprocessed_data is not None:
+        if save_unprocessed and self.unprocessed_data:
             # Save raw data as numpy array(s)
-            if isinstance(self.unprocessed_data, list):
+            if len(self.unprocessed_data) > 1:
                 for k, data in enumerate(self.unprocessed_data):
                     np.save(f"{acq_folder_path}unprocessed_data_{k}.npy", data)
-            else:
-                np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data)
+            elif len(self.unprocessed_data) == 1:
+                np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data[0])
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 
@@ -185,7 +185,7 @@ class AcquisitionData:
         """
         log = logging.getLogger("AcqData")
         for val in data.values():
-            if not isinstance(val, np.ndarray):
-                log.error("Could not add data to acquisition data.")
+            if not hasattr(val, "shape"):
+                log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
                 return
         self._additional_data.update(data)

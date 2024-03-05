@@ -5,7 +5,7 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.spcm_control.interface_acquisition_parameter import Dimensions
+from console.interfaces.interface_dimensions import Dimensions
 from console.utilities.sequences.system_settings import raster, system
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
@@ -166,7 +166,12 @@ def constructor(
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
             seq.add_block(grad_ro, adc)
-            
+
+            seq.add_block(
+                pp.make_trapezoid(channel=channel_pe1, area=pe_0, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
+                pp.make_trapezoid(channel=channel_pe2, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+            )
+
             seq.add_block(
                 pp.make_trapezoid(channel=channel_pe1, area=pe_0, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
                 pp.make_trapezoid(channel=channel_pe2, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)

@@ -22,7 +22,6 @@ RxCard: !RxCard
   # Enable the receive channels
   channel_enable: [1, 0, 0, 0, 0, 0, 0, 0]
   # Set the max. amplitude per channel in mV, list length must at least match the number of enabled channels
-  #max_amplitude: [200, 200, 200, 200, 1000, 1000, 1000, 1000]
   max_amplitude: [200, 200, 200, 200, 1000, 1000, 1000, 1000]
 
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels

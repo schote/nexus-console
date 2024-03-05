@@ -9,10 +9,11 @@ from datetime import datetime
 import numpy as np
 from scipy import signal
 
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+import console.spcm_control.globals as glob
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
@@ -87,6 +88,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
+        self.param_hash: int = glob.parameter.get_hash()
         self.unrolled_seq: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
@@ -128,7 +130,7 @@ class AcquisitionControl:
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
 
-    def set_sequence(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> None:
+    def set_sequence(self, sequence: str | Sequence) -> None:
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -166,13 +168,14 @@ class AcquisitionControl:
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
+        self.param_hash = glob.parameter.get_hash()
         self.unrolled_seq = self.seq_provider.unroll_sequence(
-            larmor_freq=parameter.larmor_frequency,
-            b1_scaling=parameter.b1_scaling,
-            fov_scaling=parameter.fov_scaling,
-            grad_offset=parameter.gradient_offset,
+            # larmor_freq=parameter.larmor_frequency,
+            # b1_scaling=parameter.b1_scaling,
+            # fov_scaling=parameter.fov_scaling,
+            # grad_offset=parameter.gradient_offset,
+            # parameter=parameter
         )
-        self.parameter = parameter
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
 
@@ -196,14 +199,28 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
+        if self.param_hash != glob.parameter.get_hash():
+            # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
+            self.unrolled_seq = None
+            self.log.info(
+                "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
+            )
+            # Update acquisition parameter hash value
+            self.param_hash = glob.parameter.get_hash()
+            self.unrolled_seq = self.seq_provider.unroll_sequence()
+            self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
+
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + self.unrolled_seq.duration
 
         self._unproc = []
         self._raw = []
 
-        for k in range(self.parameter.num_averages):
-            self.log.info("Acquisition %s/%s", k + 1, self.parameter.num_averages)
+        # Set gradient offset values
+        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance)
+
+        for k in range(glob.parameter.num_averages):
+            self.log.info("Acquisition %s/%s", k + 1, glob.parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -214,44 +231,42 @@ class AcquisitionControl:
             # Get start time of acquisition
             time_start = time.time()
 
-            while len(self.rx_card.rx_data) < self.unrolled_seq.adc_count:
+            while (num_gates := len(self.rx_card.rx_data)) < self.unrolled_seq.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 # time.sleep(0.01)
                 time.sleep(0.001)
 
 
-                if len(self.rx_card.rx_data) >= self.unrolled_seq.adc_count:
-                    break
-
-                if time.time() - time_start > timeout:
+                if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
                     self.log.warning(
                         "Acquisition Timeout: Only received %s/%s adc events",
-                        len(self.rx_card.rx_data),
-                        self.unrolled_seq.adc_count,
-                        stack_info=True,
+                        num_gates, self.unrolled_seq.adc_count
                     )
                     break
 
-            if len(self.rx_card.rx_data) > 0:
-                self.post_processing(self.parameter)
+                if num_gates >= self.unrolled_seq.adc_count and num_gates > 0:
+                    break
+
+            if num_gates > 0:
+                self.post_processing(glob.parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if self.parameter.averaging_delay > 0:
-                time.sleep(self.parameter.averaging_delay)
+            if glob.parameter.averaging_delay > 0:
+                time.sleep(glob.parameter.averaging_delay)
+
+        # Reset gradient offset values
+        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance)
 
         try:
-            # if not self._raw.size > 0:
-            if not len(self._raw) > 0:
-                raise ValueError("No raw data acquired...")
             # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == self.parameter.num_averages for gate in self._raw):
+            if not all(gate.shape[0] == glob.parameter.num_averages for gate in self._raw):
                 raise ValueError(
                     "Missing averages: %s/%s",
                     [gate.shape[0] for gate in self._raw],
-                    self.parameter.num_averages,
+                    glob.parameter.num_averages,
                 )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -259,7 +274,7 @@ class AcquisitionControl:
 
         return AcquisitionData(
             _raw=self._raw,
-            unprocessed_data=self._unproc if len(self._unproc) > 1 else self._unproc[0],
+            unprocessed_data=self._unproc,
             sequence=self.seq_provider,
             storage_path=self.session_path,
             meta={
@@ -267,8 +282,8 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=self.parameter.decimation / self.f_spcm,
-            acquisition_parameters=self.parameter,
+            dwell_time=glob.parameter.decimation / self.f_spcm,
+            acquisition_parameters=glob.parameter,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
@@ -322,6 +337,7 @@ class AcquisitionControl:
             else:
                 self._unproc.append(data[None, ...])
 
+            print("Demodulation at freq.:", parameter.larmor_frequency)
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
