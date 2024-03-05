@@ -329,7 +329,7 @@ class RxCard(SpectrumDevice):
                 gate_length = Decimal(str(timestamp_1)) - Decimal(str(timestamp_0))
 
                 # Calculate the number of adc gate sample points (per channel)
-                gate_sample = int(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6")))
+                gate_sample = int(round(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6"))))
 
                 self.log.info(
                     "Gate: (%s s, %s s); ADC duration: %s ms ; Gate Sample: % s",

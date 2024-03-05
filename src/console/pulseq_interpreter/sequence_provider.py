@@ -10,8 +10,9 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
-from console.spcm_control.interface_acquisition_parameter import Dimensions
+import console.spcm_control.globals as glob
+from console.interfaces.interface_dimensions import Dimensions
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 
 try:
     from line_profiler import profile
@@ -52,6 +53,7 @@ class SequenceProvider(Sequence):
         self,
         gradient_efficiency: list[float],
         gpa_gain: list[float],
+        high_impedance: list[bool],
         output_limits: list[int] | None = None,
         spcm_dwell_time: float = 1 / 20e6,
         rf_to_mvolt: float = 1,
@@ -87,12 +89,19 @@ class SequenceProvider(Sequence):
             if len(gpa_gain) != 3:
                 raise ValueError("Invalid number of GPA gain values, 3 values must be provided")
             if isinstance(output_limits, list) and len(output_limits) != 4:
-                raise ValueError("Invalid number of output limits, 4 valies must be provided.")
+                raise ValueError("Invalid number of output limits, 4 values must be provided.")
+            if len(high_impedance) != 4:
+                raise ValueError("Invalid number of output impedance indicators, 4 values must be provided.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
 
+        # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
+        # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
+        self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
+        self.high_impedance = high_impedance
+
         self.gpa_gain: list[float] = gpa_gain
-        self.gradient_efficiency: list[float] = gradient_efficiency
+        self.grad_eff: list[float] = gradient_efficiency
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
         self.larmor_freq: float = float("nan")
@@ -106,7 +115,7 @@ class SequenceProvider(Sequence):
             "spcm_freq": self.spcm_freq,
             "spcm_dwell_time": self.spcm_dwell_time,
             "gpa_gain": self.gpa_gain,
-            "gradient_efficiency": self.gradient_efficiency,
+            "gradient_efficiency": self.grad_eff,
             "output_limits": self.output_limits,
             "larmor_freq": self.larmor_freq,
             "sample_count": self.sample_count
@@ -207,7 +216,7 @@ class SequenceProvider(Sequence):
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_mvolt / self.output_limits[0]
+            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
             if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
                 raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
@@ -275,7 +284,7 @@ class SequenceProvider(Sequence):
         offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx+1]
         # Calculat waveform scaling
         # scaling = self.grad_to_volt[idx] * fov_scaling
-        scaling = fov_scaling / (42.58e3 * self.gpa_gain[idx] * self.gradient_efficiency[idx])
+        scaling = fov_scaling * self.imp_scaling[idx+1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
@@ -363,7 +372,7 @@ class SequenceProvider(Sequence):
         """
         delay = max(int(block.delay * self.spcm_freq), int(block.dead_time * self.spcm_freq))
         adc_dur = block.num_samples * block.dwell
-        adc_len = int(adc_dur * self.spcm_freq)
+        adc_len = round(adc_dur * self.spcm_freq)
         # Gate signal
         gate[delay : delay + adc_len] = 1
 
@@ -378,39 +387,42 @@ class SequenceProvider(Sequence):
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
 
-    def _check_offsets(self, grad_offset: Dimensions) -> None:
-        """Check if any of the provided gradient offsets exceeds output limit.
+    # def _check_offsets(self, grad_offset: Dimensions) -> None:
+    #     """Check if any of the provided gradient offsets exceeds output limit.
 
-        Parameters
-        ----------
-        grad_offset
-            Offset values to be checked
+    #     Parameters
+    #     ----------
+    #     grad_offset
+    #         Offset values to be checked
 
-        Raises
-        ------
-        ValueError
-            Output limit not provided or offset exceeds limit
-        """
-        # Check if output limits are defined
-        if not self.output_limits:
-            raise ValueError("Output limits not provided")
-        # Check gradient offsets
-        if np.abs(grad_offset.x) > self.output_limits[1]:
-            raise ValueError("X gradient (channel 1) offset exceeds output limit")
-        if np.abs(grad_offset.y) > self.output_limits[2]:
-            raise ValueError("Y gradient (channel 2) offset exceeds output limit")
-        if np.abs(grad_offset.z) > self.output_limits[3]:
-            raise ValueError("Z gradient (channel 3) offset exceeds output limit")
+    #     Raises
+    #     ------
+    #     ValueError
+    #         Output limit not provided or offset exceeds limit
+    #     """
+    #     # Check if output limits are defined
+    #     if not self.output_limits:
+    #         raise ValueError("Output limits not provided")
+    #     # Check gradient offsets
+    #     if np.abs(grad_offset.x) > self.output_limits[1]:
+    #         raise ValueError("X gradient (channel 1) offset exceeds output limit")
+    #     if np.abs(grad_offset.y) > self.output_limits[2]:
+    #         raise ValueError("Y gradient (channel 2) offset exceeds output limit")
+    #     if np.abs(grad_offset.z) > self.output_limits[3]:
+    #         raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
     @profile
     def unroll_sequence(
         self,
-        larmor_freq: float,
-        b1_scaling: float = 1.0,
-        fov_scaling: Dimensions = default_fov_scaling,
-        grad_offset: Dimensions = default_fov_offset,
+        # parameter: AcquisitionParameter
+        # larmor_freq: float,
+        # b1_scaling: float = 1.0,
+        # fov_scaling: Dimensions = default_fov_scaling,
+        # grad_offset: Dimensions = default_fov_offset,
     ) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
+
+        TODO: Update this docstring
 
         Parameters
         ----------
@@ -469,17 +481,18 @@ class SequenceProvider(Sequence):
 
         As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.
         """
+        # TODO: Larmor frequency not needed as class attribute
         if self._sqnc_cache:
             # Reset unrolled sequence cache to free memory
-            print("Resetting sequence cache...")
+            self.log.debug("Resetting sequence cache...")
             del self._sqnc_cache
             self._sqnc_cache = []
 
         try:
             # Check larmor frequency
-            if larmor_freq > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {larmor_freq*1e-6} MHz")
-            self.larmor_freq = larmor_freq
+            if glob.parameter.larmor_frequency > 10e6:
+                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency*1e-6} MHz")
+            self.larmor_freq = glob.parameter.larmor_frequency
 
             # Check if sequence has block events
             if not len(self.block_events) > 0:
@@ -490,7 +503,7 @@ class SequenceProvider(Sequence):
             if not check:
                 raise ValueError(f"Sequence timing check failed: {seq_err}")
 
-            self._check_offsets(grad_offset)
+            # self._check_offsets(grad_offset)
 
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -516,12 +529,12 @@ class SequenceProvider(Sequence):
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks, strict=True)):
             # Set gradient offsets
-            if grad_offset.x > 0:
-                _seq[k][1::4] += np.int16((grad_offset.x / self.output_limits[1]) * INT16_MAX)
-            if grad_offset.y > 0:
-                _seq[k][2::4] += np.int16((grad_offset.y / self.output_limits[2]) * INT16_MAX)
-            if grad_offset.z > 0:
-                _seq[k][3::4] += np.int16((grad_offset.z / self.output_limits[3]) * INT16_MAX)
+            # if grad_offset.x != 0:
+            #     _seq[k][1::4] += np.int16((grad_offset.x * self.imp_scaling[1] / self.output_limits[1]) * INT16_MAX)
+            # if grad_offset.y != 0:
+            #     _seq[k][2::4] += np.int16((grad_offset.y * self.imp_scaling[2] / self.output_limits[2]) * INT16_MAX)
+            # if grad_offset.z != 0:
+            #     _seq[k][3::4] += np.int16((grad_offset.z * self.imp_scaling[3] / self.output_limits[3]) * INT16_MAX)
 
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF
@@ -531,7 +544,7 @@ class SequenceProvider(Sequence):
                     block=block.rf,
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
-                    b1_scaling=b1_scaling,
+                    b1_scaling=glob.parameter.b1_scaling,
                     num_samples_rf_start=rf_start_sample_pos,
                 )
 
@@ -541,13 +554,19 @@ class SequenceProvider(Sequence):
 
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
-                self.calculate_gradient(block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=fov_scaling.x)
+                self.calculate_gradient(
+                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=glob.parameter.fov_scaling.x
+                )
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
-                self.calculate_gradient(block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=fov_scaling.y)
+                self.calculate_gradient(
+                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=glob.parameter.fov_scaling.y
+                )
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
-                self.calculate_gradient(block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=fov_scaling.z)
+                self.calculate_gradient(
+                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=glob.parameter.fov_scaling.z
+                )
 
             # Bitwise operations to merge gx with adc and gy with unblanking
             _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)
@@ -572,7 +591,7 @@ class SequenceProvider(Sequence):
             rf_unblanking=_unblanking,
             sample_count=self.sample_count,
             gpa_gain=self.gpa_gain,
-            gradient_efficiency=self.gradient_efficiency,
+            gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,

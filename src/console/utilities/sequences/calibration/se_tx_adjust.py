@@ -12,9 +12,11 @@ ADC_DURATION = 4e-3
 
 def constructor(
     n_steps: int = 10,
+    flip_angle_range=(pi/4, 3*pi/2),
     repetition_time: float = 1000,
     echo_time: float = 12e-3,
     rf_duration: float = 400e-6,
+    use_sinc: bool = False
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -46,22 +48,16 @@ def constructor(
     )
 
     # Define flip angles
-    flip_angles = np.linspace(start=(2 * pi) / n_steps, stop=2 * pi, num=n_steps, endpoint=True)
+    flip_angles = np.linspace(flip_angle_range[0], flip_angle_range[1], n_steps, endpoint=True)
 
     for angle in flip_angles:
-        rf_90 = pp.make_sinc_pulse(
-            flip_angle=angle,
-            system=system,
-            duration=rf_duration,
-            apodization=0.5,
-        )
 
-        rf_180 = pp.make_sinc_pulse(
-            flip_angle=angle * 2,  # twice the flip angle => 180°
-            system=system,
-            duration=rf_duration,
-            apodization=0.5,
-        )
+        if use_sinc:
+            rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration)
+            rf_180 = pp.make_sinc_pulse(system=system, flip_angle=angle*2, duration=rf_duration)
+        else:
+            rf_90 = pp.make_block_pulse(system=system, flip_angle=angle, duration=rf_duration)
+            rf_180 = pp.make_block_pulse(system=system, flip_angle=angle*2, duration=rf_duration)
 
         te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
         te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)

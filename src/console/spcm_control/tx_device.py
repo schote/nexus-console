@@ -7,7 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
-from console.pulseq_interpreter.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.interface_acquisition_parameter import Dimensions
+from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
@@ -200,6 +201,62 @@ class TxCard(SpectrumDevice):
 
         self.log.debug("Device setup completed")
         self.log_card_status()
+
+    def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool]) -> None:
+        """Set offset values of the gradient output channels.
+
+        Parameters
+        ----------
+        offsets
+            Offset values as Dimension datatype as defined in acquisition parameter
+
+        Returns
+        -------
+            List of integer values read from card for x, y and z offset values
+        """
+        # Check card connection
+        try:
+            if not self.card:
+                raise ConnectionError("No connection to TX card.")
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+        # Check offset values
+        if abs(offsets.x) > self.max_amplitude[1]:
+            self.log.error("Gradient offset of channel x exceeds maximum amplitude.")
+        if abs(offsets.y) > self.max_amplitude[2]:
+            self.log.error("Gradient offset of channel y exceeds maximum amplitude.")
+        if abs(offsets.z) > self.max_amplitude[3]:
+            self.log.error("Gradient offset of channel z exceeds maximum amplitude.")
+
+        # Extract per channel flag for high impedance termination
+        _, x_high_imp, y_high_imp, z_high_imp = high_impedance
+        # Set offset values, scale offset by 0.5 if channel is terminated into high impedance
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x/2) if x_high_imp else int(offsets.x))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y/2) if y_high_imp else int(offsets.y))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z/2) if z_high_imp else int(offsets.z))
+        # Write setup
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_WRITESETUP)
+
+        # Define variables to read offset values
+        offset_x = spcm.int32(0)
+        offset_y = spcm.int32(0)
+        offset_z = spcm.int32(0)
+
+        # Read offset values from card
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS1, ctypes.byref(offset_x))
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS2, ctypes.byref(offset_y))
+        spcm.spcm_dwGetParam_i64(self.card, spcm.SPC_OFFS3, ctypes.byref(offset_z))
+
+        set_offsets = [offset_x.value, offset_y.value, offset_z.value]
+        self.log.info("Set gradient values %s mV for x, y and z.", set_offsets)
+
+        # Check values read from card and log error if they are not correct
+        if not (set_offsets[0] == offsets.x and set_offsets[1] == offsets.y and set_offsets[2] == offsets.z):
+            self.log.error(
+                "Actual gradient offsets do not correspond to the values to be set (x=%s, y=%s, z=%s mV)",
+                offsets.x, offsets.y, offsets.z
+            )
 
     def start_operation(self, data: UnrolledSequence | None = None) -> None:
         """Start transmit (TX) card operation.

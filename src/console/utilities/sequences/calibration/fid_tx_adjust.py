@@ -1,20 +1,20 @@
 """Constructor for spin-echo-based frequency calibration sequence."""
 # %%
+from math import pi
+
 import numpy as np
 import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system
 
-# Definition of constants
-ADC_DURATION = 4e-3
-
 
 def constructor(
     n_steps: int = 10,
-    max_flip_angle: float = 5 * np.pi / 4,
+    flip_angle_range=(pi/4, 3*pi/2),
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,
+    adc_duration: float = 4e-3,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -38,15 +38,16 @@ def constructor(
     """
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "tx_adjust_fid")
+    seq.system.rf_ringdown_time = 2e-3
 
     adc = pp.make_adc(
         num_samples=1000,  # Is not taken into account atm
-        duration=ADC_DURATION,
+        duration=adc_duration,
         system=system,
     )
 
     # Define flip angles
-    flip_angles = np.linspace(start=0, stop=max_flip_angle, num=n_steps, endpoint=True)
+    flip_angles = np.linspace(flip_angle_range[0], flip_angle_range[1], n_steps, endpoint=True)
 
     for angle in flip_angles:
         if use_sinc:

@@ -148,3 +148,4 @@ dmypy.json
 /experiments/_evaluations
 tmp
 .ruff_cache
+*.pkl

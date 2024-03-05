@@ -13,12 +13,12 @@ system = Opts(
     adc_raster_time=1e-6,
 
     # Time delay at the beginning of an RF event
-    # rf_ringdown_time=100e-6,
+    rf_ringdown_time=2e-3,
     # Time delay at the beginning of ADC event
     # adc_dead_time=200e-6,
 
     # Set maximum slew rate
-    max_slew=5000,
+    max_slew=50,
     slew_unit="T/m/s",
 )
 
