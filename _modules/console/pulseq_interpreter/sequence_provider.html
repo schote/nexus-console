@@ -439,8 +439,9 @@ document.write(`
 <span class="kn">from</span> <span class="nn">pypulseq.Sequence.sequence</span> <span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">resample</span>
 
-<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">Dimensions</span>
+<span class="kn">import</span> <span class="nn">console.spcm_control.globals</span> <span class="k">as</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_dimensions</span> <span class="kn">import</span> <span class="n">Dimensions</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">from</span> <span class="nn">line_profiler</span> <span class="kn">import</span> <span class="n">profile</span>
@@ -486,6 +487,7 @@ document.write(`
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">gradient_efficiency</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+        <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
         <span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">spcm_dwell_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">20e6</span><span class="p">,</span>
         <span class="n">rf_to_mvolt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -521,12 +523,19 @@ document.write(`
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gpa_gain</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of GPA gain values, 3 values must be provided&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output_limits</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_limits</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of output limits, 4 valies must be provided.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of output limits, 4 values must be provided.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">high_impedance</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of output impedance indicators, 4 values must be provided.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+        <span class="c1"># Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms</span>
+        <span class="c1"># Halve RF scaling factor if impedance is high, because the card output doubles for high impedance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="k">if</span> <span class="n">z</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">high_impedance</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">high_impedance</span> <span class="o">=</span> <span class="n">high_impedance</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpa_gain</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gradient_efficiency</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">gradient_efficiency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">gradient_efficiency</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_limits</span> <span class="k">if</span> <span class="n">output_limits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
@@ -542,7 +551,7 @@ document.write(`
             <span class="s2">&quot;spcm_freq&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">,</span>
             <span class="s2">&quot;spcm_dwell_time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
             <span class="s2">&quot;gpa_gain&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
-            <span class="s2">&quot;gradient_efficiency&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_efficiency</span><span class="p">,</span>
+            <span class="s2">&quot;gradient_efficiency&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
             <span class="s2">&quot;output_limits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">,</span>
             <span class="s2">&quot;larmor_freq&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">,</span>
             <span class="s2">&quot;sample_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span>
@@ -649,7 +658,7 @@ document.write(`
         <span class="c1"># Perform this step here to save computation time, num. of envelope samples &lt;&lt; num. of resampled signal</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># RF scaling according to B1 calibration and &quot;device&quot; (translation from pulseq to output voltage)</span>
-            <span class="n">rf_scaling</span> <span class="o">=</span> <span class="n">b1_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">rf_scaling</span> <span class="o">=</span> <span class="n">b1_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">signal</span> <span class="o">*</span> <span class="n">phase_offset</span> <span class="o">*</span> <span class="n">rf_scaling</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;RF magnitude exceeds output limit.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
@@ -720,7 +729,7 @@ document.write(`
         <span class="n">offset</span> <span class="o">=</span> <span class="n">unroll_arr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">INT16_MAX</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
         <span class="c1"># Calculat waveform scaling</span>
         <span class="c1"># scaling = self.grad_to_volt[idx] * fov_scaling</span>
-        <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">/</span> <span class="p">(</span><span class="mf">42.58e3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_efficiency</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
+        <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">42.58e3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Calculate the gradient waveform relative to max output (within the interval [0, 1])</span>
@@ -811,7 +820,7 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">delay</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
         <span class="n">adc_dur</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">dwell</span>
-        <span class="n">adc_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">adc_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
+        <span class="n">adc_len</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">adc_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
         <span class="c1"># Gate signal</span>
         <span class="n">gate</span><span class="p">[</span><span class="n">delay</span> <span class="p">:</span> <span class="n">delay</span> <span class="o">+</span> <span class="n">adc_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
@@ -827,41 +836,44 @@ document.write(`
         <span class="n">clk_ref</span><span class="p">[</span><span class="n">ref_signal</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_check_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grad_offset</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any of the provided gradient offsets exceeds output limit.</span>
+    <span class="c1"># def _check_offsets(self, grad_offset: Dimensions) -&gt; None:</span>
+    <span class="c1">#     &quot;&quot;&quot;Check if any of the provided gradient offsets exceeds output limit.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        grad_offset</span>
-<span class="sd">            Offset values to be checked</span>
+    <span class="c1">#     Parameters</span>
+    <span class="c1">#     ----------</span>
+    <span class="c1">#     grad_offset</span>
+    <span class="c1">#         Offset values to be checked</span>
 
-<span class="sd">        Raises</span>
-<span class="sd">        ------</span>
-<span class="sd">        ValueError</span>
-<span class="sd">            Output limit not provided or offset exceeds limit</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Check if output limits are defined</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Output limits not provided&quot;</span><span class="p">)</span>
-        <span class="c1"># Check gradient offsets</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;X gradient (channel 1) offset exceeds output limit&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Y gradient (channel 2) offset exceeds output limit&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Z gradient (channel 3) offset exceeds output limit&quot;</span><span class="p">)</span>
+    <span class="c1">#     Raises</span>
+    <span class="c1">#     ------</span>
+    <span class="c1">#     ValueError</span>
+    <span class="c1">#         Output limit not provided or offset exceeds limit</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     # Check if output limits are defined</span>
+    <span class="c1">#     if not self.output_limits:</span>
+    <span class="c1">#         raise ValueError(&quot;Output limits not provided&quot;)</span>
+    <span class="c1">#     # Check gradient offsets</span>
+    <span class="c1">#     if np.abs(grad_offset.x) &gt; self.output_limits[1]:</span>
+    <span class="c1">#         raise ValueError(&quot;X gradient (channel 1) offset exceeds output limit&quot;)</span>
+    <span class="c1">#     if np.abs(grad_offset.y) &gt; self.output_limits[2]:</span>
+    <span class="c1">#         raise ValueError(&quot;Y gradient (channel 2) offset exceeds output limit&quot;)</span>
+    <span class="c1">#     if np.abs(grad_offset.z) &gt; self.output_limits[3]:</span>
+    <span class="c1">#         raise ValueError(&quot;Z gradient (channel 3) offset exceeds output limit&quot;)</span>
 
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
     <span class="nd">@profile</span>
     <span class="k">def</span> <span class="nf">unroll_sequence</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">larmor_freq</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">b1_scaling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
-        <span class="n">fov_scaling</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">default_fov_scaling</span><span class="p">,</span>
-        <span class="n">grad_offset</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">default_fov_offset</span><span class="p">,</span>
+        <span class="c1"># parameter: AcquisitionParameter</span>
+        <span class="c1"># larmor_freq: float,</span>
+        <span class="c1"># b1_scaling: float = 1.0,</span>
+        <span class="c1"># fov_scaling: Dimensions = default_fov_scaling,</span>
+        <span class="c1"># grad_offset: Dimensions = default_fov_offset,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnrolledSequence</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll the pypulseq sequence description.</span>
+
+<span class="sd">        TODO: Update this docstring</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -920,17 +932,18 @@ document.write(`
 
 <span class="sd">        As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Larmor frequency not needed as class attribute</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span>
             <span class="c1"># Reset unrolled sequence cache to free memory</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Resetting sequence cache...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Resetting sequence cache...&quot;</span><span class="p">)</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Check larmor frequency</span>
-            <span class="k">if</span> <span class="n">larmor_freq</span> <span class="o">&gt;</span> <span class="mf">10e6</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Larmor frequency is above 10 MHz: </span><span class="si">{</span><span class="n">larmor_freq</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">=</span> <span class="n">larmor_freq</span>
+            <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">&gt;</span> <span class="mf">10e6</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Larmor frequency is above 10 MHz: </span><span class="si">{</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="o">*</span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span>
 
             <span class="c1"># Check if sequence has block events</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -941,7 +954,7 @@ document.write(`
             <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sequence timing check failed: </span><span class="si">{</span><span class="n">seq_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">_check_offsets</span><span class="p">(</span><span class="n">grad_offset</span><span class="p">)</span>
+            <span class="c1"># self._check_offsets(grad_offset)</span>
 
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -967,12 +980,12 @@ document.write(`
 
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">samples_per_block</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
             <span class="c1"># Set gradient offsets</span>
-            <span class="k">if</span> <span class="n">grad_offset</span><span class="o">.</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">((</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">INT16_MAX</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">grad_offset</span><span class="o">.</span><span class="n">y</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">((</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">y</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">*</span> <span class="n">INT16_MAX</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">grad_offset</span><span class="o">.</span><span class="n">z</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">((</span><span class="n">grad_offset</span><span class="o">.</span><span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">*</span> <span class="n">INT16_MAX</span><span class="p">)</span>
+            <span class="c1"># if grad_offset.x != 0:</span>
+            <span class="c1">#     _seq[k][1::4] += np.int16((grad_offset.x * self.imp_scaling[1] / self.output_limits[1]) * INT16_MAX)</span>
+            <span class="c1"># if grad_offset.y != 0:</span>
+            <span class="c1">#     _seq[k][2::4] += np.int16((grad_offset.y * self.imp_scaling[2] / self.output_limits[2]) * INT16_MAX)</span>
+            <span class="c1"># if grad_offset.z != 0:</span>
+            <span class="c1">#     _seq[k][3::4] += np.int16((grad_offset.z * self.imp_scaling[3] / self.output_limits[3]) * INT16_MAX)</span>
 
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># Every 4th value in _seq starting at index 0 belongs to RF</span>
@@ -982,7 +995,7 @@ document.write(`
                     <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">,</span>
                     <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span>
                     <span class="n">unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
-                    <span class="n">b1_scaling</span><span class="o">=</span><span class="n">b1_scaling</span><span class="p">,</span>
+                    <span class="n">b1_scaling</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
                     <span class="n">num_samples_rf_start</span><span class="o">=</span><span class="n">rf_start_sample_pos</span><span class="p">,</span>
                 <span class="p">)</span>
 
@@ -992,13 +1005,19 @@ document.write(`
 
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Every 4th value in _seq starting at index 1 belongs to x gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gx</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gx</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">x</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Every 4th value in _seq starting at index 2 belongs to y gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">y</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">y</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="c1"># Every 4th value in _seq starting at index 3 belongs to z gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">z</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">z</span>
+                <span class="p">)</span>
 
             <span class="c1"># Bitwise operations to merge gx with adc and gy with unblanking</span>
             <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
@@ -1023,7 +1042,7 @@ document.write(`
             <span class="n">rf_unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">,</span>
             <span class="n">sample_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span><span class="p">,</span>
             <span class="n">gpa_gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
-            <span class="n">gradient_efficiency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_efficiency</span><span class="p">,</span>
+            <span class="n">gradient_efficiency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
             <span class="n">rf_to_mvolt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
             <span class="n">dwell_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
             <span class="n">larmor_frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">,</span>

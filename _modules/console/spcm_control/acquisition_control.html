@@ -436,14 +436,15 @@ document.write(`
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
 
-<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
+<span class="kn">import</span> <span class="nn">console.spcm_control.globals</span> <span class="k">as</span> <span class="nn">glob</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_acquisition_data</span> <span class="kn">import</span> <span class="n">AcquisitionData</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">Dimensions</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">SequenceProvider</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_data</span> <span class="kn">import</span> <span class="n">AcquisitionData</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.rx_device</span> <span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
-<span class="kn">from</span> <span class="nn">console.utilities</span> <span class="kn">import</span> <span class="n">ddc</span>
 <span class="kn">from</span> <span class="nn">console.utilities.load_config</span> <span class="kn">import</span> <span class="n">get_instances</span>
 
 <span class="n">LOG_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
@@ -518,6 +519,7 @@ document.write(`
         <span class="c1"># Set sequence provider max. amplitude per channel according to values from tx_card</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">max_amp_per_channel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">max_amplitude</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">get_hash</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="c1"># Attributes for data and dwell time of downsampled signal</span>
@@ -561,7 +563,7 @@ document.write(`
 
 <div class="viewcode-block" id="AcquisitionControl.set_sequence">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.set_sequence">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">set_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set sequence and acquisition parameter.</span>
 
 <span class="sd">        Parameters</span>
@@ -599,13 +601,15 @@ document.write(`
             <span class="s2">&quot;Unrolling sequence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">),</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">get_hash</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">(</span>
-            <span class="n">larmor_freq</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span>
-            <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
-            <span class="n">fov_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="p">,</span>
-            <span class="n">grad_offset</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span>
+            <span class="c1"># larmor_freq=parameter.larmor_frequency,</span>
+            <span class="c1"># b1_scaling=parameter.b1_scaling,</span>
+            <span class="c1"># fov_scaling=parameter.fov_scaling,</span>
+            <span class="c1"># grad_offset=parameter.gradient_offset,</span>
+            <span class="c1"># parameter=parameter</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span> <span class="o">=</span> <span class="n">parameter</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sequence duration: </span><span class="si">%s</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span></div>
 
 
 
@@ -631,15 +635,28 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span> <span class="o">!=</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">get_hash</span><span class="p">():</span>
+            <span class="c1"># Redo sequence unrolling in case acquisition parameters changed, i.e. different hash</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Unrolling sequence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="c1"># Update acquisition parameter hash value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_hash</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">get_hash</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sequence duration: </span><span class="si">%s</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
+
         <span class="c1"># Define timeout for acquisition process: 5 sec + sequence duration</span>
         <span class="n">timeout</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">duration</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sequence duration: </span><span class="si">%s</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquisition </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">)</span>
+        <span class="c1"># Set gradient offset values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">high_impedance</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquisition </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">)</span>
 
             <span class="c1"># Start masurement card operations</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">()</span>
@@ -649,42 +666,40 @@ document.write(`
             <span class="c1"># Get start time of acquisition</span>
             <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
-            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span><span class="p">:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">num_gates</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span> <span class="ow">or</span> <span class="n">num_gates</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># Delay poll by 10 ms</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span><span class="p">:</span>
-                    <span class="k">break</span>
-
-                <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_start</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
                     <span class="c1"># Could not receive all the data before timeout</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                         <span class="s2">&quot;Acquisition Timeout: Only received </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2"> adc events&quot;</span><span class="p">,</span>
-                        <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">),</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span><span class="p">,</span>
-                        <span class="n">stack_info</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">num_gates</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span>
                     <span class="p">)</span>
                     <span class="k">break</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">num_gates</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">adc_count</span> <span class="ow">and</span> <span class="n">num_gates</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">num_gates</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">averaging_delay</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">averaging_delay</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">averaging_delay</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">averaging_delay</span><span class="p">)</span>
+
+        <span class="c1"># Reset gradient offset values</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span><span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">high_impedance</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># if not self._raw.size &gt; 0:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No raw data acquired...&quot;</span><span class="p">)</span>
             <span class="c1"># if len(self._raw) != parameter.num_averages:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">gate</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span> <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">gate</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span> <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;Missing averages: </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="p">[</span><span class="n">gate</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">],</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
+                    <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -692,7 +707,7 @@ document.write(`
 
         <span class="k">return</span> <span class="n">AcquisitionData</span><span class="p">(</span>
             <span class="n">_raw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">,</span>
-            <span class="n">unprocessed_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">unprocessed_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">,</span>
             <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">,</span>
             <span class="n">storage_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">,</span>
             <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
@@ -700,8 +715,8 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">dict</span><span class="p">(),</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
             <span class="p">},</span>
-            <span class="n">dwell_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">,</span>
-            <span class="n">acquisition_parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span>
+            <span class="n">dwell_time</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">,</span>
+            <span class="n">acquisition_parameters</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
@@ -758,11 +773,13 @@ document.write(`
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
 
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Demodulation at freq.:&quot;</span><span class="p">,</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">)</span>
             <span class="c1"># Demodulation and decimation</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
 
             <span class="c1"># data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">ddc</span><span class="o">.</span><span class="n">filter_moving_average</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">decimation</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+            <span class="c1"># data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">decimate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">)</span>
 
             <span class="c1"># Apply phase correction</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]))</span>

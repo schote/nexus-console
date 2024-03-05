@@ -436,7 +436,8 @@ document.write(`
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">spcm</span>
-<span class="kn">from</span> <span class="nn">console.pulseq_interpreter.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">Dimensions</span>
+<span class="kn">from</span> <span class="nn">console.interfaces.interface_unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.abstract_device</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.spcm.tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
 
@@ -636,6 +637,65 @@ document.write(`
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Device setup completed&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_card_status</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="TxCard.set_gradient_offsets">
+<a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.set_gradient_offsets">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_gradient_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsets</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set offset values of the gradient output channels.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        offsets</span>
+<span class="sd">            Offset values as Dimension datatype as defined in acquisition parameter</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            List of integer values read from card for x, y and z offset values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check card connection</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No connection to TX card.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">err</span>
+        <span class="c1"># Check offset values</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel x exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel y exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel z exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Extract per channel flag for high impedance termination</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">x_high_imp</span><span class="p">,</span> <span class="n">y_high_imp</span><span class="p">,</span> <span class="n">z_high_imp</span> <span class="o">=</span> <span class="n">high_impedance</span>
+        <span class="c1"># Set offset values, scale offset by 0.5 if channel is terminated into high impedance</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">x_high_imp</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS2</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">y_high_imp</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS3</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">z_high_imp</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="p">))</span>
+        <span class="c1"># Write setup</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_WRITESETUP</span><span class="p">)</span>
+
+        <span class="c1"># Define variables to read offset values</span>
+        <span class="n">offset_x</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">offset_y</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">offset_z</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Read offset values from card</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS1</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">offset_x</span><span class="p">))</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS2</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">offset_y</span><span class="p">))</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS3</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">offset_z</span><span class="p">))</span>
+
+        <span class="n">set_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="n">offset_x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">offset_y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">offset_z</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Set gradient values </span><span class="si">%s</span><span class="s2"> mV for x, y and z.&quot;</span><span class="p">,</span> <span class="n">set_offsets</span><span class="p">)</span>
+
+        <span class="c1"># Check values read from card and log error if they are not correct</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">set_offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span> <span class="n">set_offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="n">set_offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;Actual gradient offsets do not correspond to the values to be set (x=</span><span class="si">%s</span><span class="s2">, y=</span><span class="si">%s</span><span class="s2">, z=</span><span class="si">%s</span><span class="s2"> mV)&quot;</span><span class="p">,</span>
+                <span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="o">.</span><span class="n">z</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TxCard.start_operation">
