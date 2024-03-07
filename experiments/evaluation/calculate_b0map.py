@@ -1,8 +1,9 @@
 # %%
-import numpy as np
-import os
 import json
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 # %%
 # 1st acquisition == TE1, 2nd acquisition == TE2

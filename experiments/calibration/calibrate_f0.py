@@ -5,9 +5,9 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+import console.spcm_control.globals as glob
+from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.utilities.sequences.spectrometry import se_spectrum
 from console.utilities.snr import signal_to_noise_ratio
 
@@ -23,29 +23,16 @@ seq = se_spectrum.constructor(
     rf_duration=200e-6,
     adc_duration=50e-3,
     use_fid=True
-    # adc_duration=8e-3,
-    # use_fid=False
 )
-
-# Optional:
-# acq.seq_provider.from_pypulseq(seq)
-# seq_unrolled = acq.seq_provider.unroll_sequence(larmor_freq=2e6)
-# fig, ax = acq.seq_provider.plot_unrolled()
 
 # %%
-# Larmor frequency:
-f_0 = 1964628.0
+#acquire data
+current_f0 = glob.parameter.larmor_frequency
 
-params = AcquisitionParameter(
-    larmor_frequency=f_0,
-    b1_scaling=3.56,
-    decimation=1000,
-    gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08),
-    # num_averages=100,
-    # averaging_delay=2,
-)
+#change larmor frequency if desired
+# glob.update_parameters(larmor_frequency=1964408.0)
 
-acq.set_sequence(parameter=params, sequence=seq)
+acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
 # FFT
@@ -56,18 +43,21 @@ fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
 max_spec = np.max(np.abs(data_fft))
 f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
+#update global larmor frequency to measured f0
+glob.update_parameters(larmor_frequency=current_f0-f_0_offset)
+
 snr = signal_to_noise_ratio(data_fft, dwell_time=acq_data.dwell_time)
 
 
 # Add information to acquisition data
 acq_data.add_info({
     "adc-indo": "FID of the spin-echo, 50 ms readout",
-    "true f0": f_0 - f_0_offset,
+    "true f0": current_f0 - f_0_offset,
     "magnitude spectrum max": max_spec,
     "snr dB": snr,
 })
 
-print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {f_0 - f_0_offset}")
+print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {current_f0 - f_0_offset}")
 print(f"Frequency spectrum max.: {max_spec}")
 print("Acquisition data shape: ", acq_data.raw.shape)
 print("SNR [dB]: ", snr)

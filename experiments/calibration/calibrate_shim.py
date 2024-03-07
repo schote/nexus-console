@@ -1,7 +1,6 @@
 """
 B0 shimming implemention based on itterative shim offsets.
 
-TODO:Implement global variables
 TODO:implement TR control, currently not needed since starting pulse sequence takes >1 second.
 TODO:With each new best set F0 to frequency of maximum.
 TODO:Clean code in while loop, single function to run the +/- range for all 3 gradients
@@ -12,16 +11,17 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+import console.spcm_control.globals as glob
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.utilities.sequences.spectrometry import fid
 from console.utilities.snr import signal_to_noise_ratio
 
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
-acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.DEBUG, file_log_level=logging.DEBUG)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.ERROR, file_log_level=logging.DEBUG)
 
 # %%
 # FID
@@ -44,27 +44,28 @@ def grad_mt_to_mv(grad_strength):
 
 def run_fid(f0, shims):
     """Call the FID sequence with the specified shims."""
-    params = AcquisitionParameter(
-        larmor_frequency=f0,
-        b1_scaling=3.4,
-        decimation=1000,
-        gradient_offset=Dimensions(x=shims[0], y=shims[1], z=shims[2]),)
-
-    acq.set_sequence(parameter=params, sequence=seq)
+    #store and update the acquisition parameters
+    initial_f0      = glob.parameter.larmor_frequency
+    initial_shim    = glob.parameter.gradient_offset
+    glob.update_parameters(larmor_frequency=f0)
+    glob.update_parameters(gradient_offset = Dimensions(x=shims[0], y=shims[1], z=shims[2]))
+    acq.set_sequence(sequence=seq)
     acq_data: AcquisitionData = acq.run()
+    #restore the acquistion parameters
+    glob.update_parameters(larmor_frequency=initial_f0)
+    glob.update_parameters(gradient_offset =initial_shim)
     return acq_data
 
-start_range  = 0.1  #initial step size in mT/m
-end_range   = 0.001 #final step size in mT/m
-num_dummies = 3     #Dummies to avoid saturation effects biasing the first FID measurements
+start_range     = 0.1  #initial step size in mT/m
+end_range       = 0.001 #final step size in mT/m
+num_dummies     = 3     #Dummies to avoid saturation effects biasing the first FID measurements
 
-
-shims_current =  [0.0,0.0,0.0] #temporary, with new offset implementation read the current global shims
-
+shims_current   = glob.parameter.gradient_offset
+shims_current   = np.array([shims_current.x, shims_current.y,shims_current.z])    #convert Dimensions to list 
+shims_current   *= np.multiply(acq.seq_provider.gpa_gain,acq.seq_provider.grad_eff)  #convert gradient offsets from mV to mT/m
+f_0             = glob.parameter.larmor_frequency
 # %%
-# Larmor frequency:
-f_0 = 1964648.0
-
+# Run shimming process
 shim_range = start_range
 shims_best = shims_current
 
@@ -73,10 +74,10 @@ shims_current_mv    = grad_mt_to_mv(shims_current)
 for idx in range(num_dummies): #run dummy scans
     dummy_data = run_fid(f_0, shims_current_mv)
 
-data                = run_fid(f_0, shims_current_mv)                        #acquire data with current shims
-acq_data            = np.mean(data.raw, axis=0)[0].squeeze()
-data_fft            = np.fft.fftshift(np.fft.fft(np.fft.fftshift(acq_data)))
-amp_best            = np.max(np.abs(data_fft))
+data        = run_fid(f_0, shims_current_mv)                        #acquire data with current shims
+acq_data    = np.mean(data.raw, axis=0)[0].squeeze()
+data_fft    = np.fft.fftshift(np.fft.fft(np.fft.fftshift(acq_data)))
+amp_best    = np.max(np.abs(data_fft))
 
 dwell_time  = data.dwell_time
 time_scale  = np.arange(np.size(acq_data))*dwell_time
@@ -156,7 +157,7 @@ while(shim_range > end_range):
 
 
 # FFT
-shims_current_mv    = grad_mt_to_mv((shims_best[0], shims_best[1],shims_best[2]-shim_range/2))
+shims_current_mv    = grad_mt_to_mv((shims_best[0], shims_best[1],shims_best[2]))
 acq_data            = np.mean(run_fid(f_0, shims_current_mv).raw, axis=0)[0].squeeze()
 data_fft            = np.fft.fftshift(np.fft.fft(np.fft.fftshift(acq_data)))
 amp_2               = np.max(np.abs(data_fft))
@@ -179,6 +180,9 @@ plt.ylabel("Peak amplitude")
 
 f_0_offset = fft_freq[np.argmax(np.abs(data_fft))]
 
+#Write current f0 and gradient offsets to globals
+glob.update_parameters(larmor_frequency=f_0-f_0_offset, gradient_offset=Dimensions(x=shims_current_mv[0], y=shims_current_mv[1], z=shims_current_mv[2]))
+
 snr = signal_to_noise_ratio(data_fft, dwell_time=dwell_time)
 
 # Add information to acquisition data
@@ -194,6 +198,8 @@ print("Shim offsets: ", grad_mt_to_mv(shims_best), " mV")
 print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {amp_best}")
 print("SNR [dB]: ", snr)
+
+
 
 
 # %%

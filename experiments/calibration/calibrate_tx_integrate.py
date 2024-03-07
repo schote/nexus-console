@@ -7,31 +7,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
-from console.utilities.sequences.calibration import se_tx_adjust, fid_tx_adjust
+from console.utilities.sequences.calibration import fid_tx_adjust, se_tx_adjust
 
 # %%
 configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
-# Spinecho
-# seq, flip_angles = se_tx_adjust.constructor(
-#     echo_time=15e-3,
-#     rf_duration=200e-6,
-#     repetition_time=2,
-#     n_steps=50,
-#     flip_angle_range=(np.deg2rad(10), np.deg2rad(270)),
-#     use_sinc=False
-# )
-
 # FID
 seq, flip_angles = fid_tx_adjust.constructor(
     rf_duration=200e-6,
     repetition_time=2,
-    n_steps=20,
+    n_steps=19,
     adc_duration = 25e-3,
     # flip_angle_range=(pi/4, 3*pi/2),
     flip_angle_range=(np.deg2rad(15), np.deg2rad(270)),
@@ -44,9 +34,6 @@ f_0 = 1964408.0
 
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    # b1_scaling=3.53,
-    # b1_scaling=3.054,
-    # b1_scaling=3.74,
     b1_scaling=3.25,
     decimation=200,
     gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08)
@@ -67,6 +54,7 @@ center_window = 100
 window_start = int(data.shape[-1]/2-center_window/2)
 peak_window = data[:, window_start:window_start+center_window]
 peaks = np.sum(data, axis = -1)
+
 
 
 def fa_model(samples: np.ndarray, amp: float, step_size: float, phase_offset: float, noise: float) -> np.ndarray:
