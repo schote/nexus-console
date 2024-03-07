@@ -27,8 +27,8 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # FID
 seq = fid.constructor(
     rf_duration=200e-6,
-    adc_duration=50e-3,
-    dead_time=2e-3,
+    adc_duration=100e-3,
+    dead_time=3e-3,
     flip_angle=np.pi/4 #running with 45 degree to avoid overtipping.
     )
 

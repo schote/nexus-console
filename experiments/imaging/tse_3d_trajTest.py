@@ -6,10 +6,11 @@ import logging
 import matplotlib.pyplot as plt
 import numpy as np
 
+import console.spcm_control.globals as glob
 import console.utilities.sequences as sequences
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 
 # %%
 # Create acquisition control instance
@@ -46,32 +47,14 @@ seq.set_definition("Name", "tse_3d")
 # adc_duration = dim.x / ro_bw; num_samples = adc_duration * spcm_sample_rate; decimation = num_samples / dim.x
 # => decimation = spcm_sample_rate / ro_bw
 decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
+glob.update_parameters(decimation = decimation)
+
 
 # %%
 #Unroll and run sequence
 
-# Larmor frequency:
-f_0 = 1964408.0
-
-# Define acquisition parameters
-params = AcquisitionParameter(
-    larmor_frequency=f_0,
-    b1_scaling=3.4,
-    fov_scaling=Dimensions(
-        # Compensation of high impedance
-        x=1/0.85,
-        y=1/0.85,
-        z=1/0.85,
-    ),
-    decimation=decimation,
-    gradient_offset=Dimensions(x=19.22, y=25.36, z=1.08)
-
-    # num_averages=10,
-    # averaging_delay=1,
-)
-
 # Perform acquisition
-acq.set_sequence(parameter=params, sequence=seq)
+acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
 # %%
@@ -124,16 +107,12 @@ acq_data.add_info({
 })
 
 acq_data.add_data({
-    "trajectory": traj,
+    "trajectory": np.array(traj),
     "kspace": ksp,
     "image": img
 })
 
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240307 - TSE test")
 
-
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240305 - TSE test")
-#acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
-# acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\b0-map")
-# acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
 # %%
 del acq

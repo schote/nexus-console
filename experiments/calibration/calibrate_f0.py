@@ -8,7 +8,7 @@ import numpy as np
 import console.spcm_control.globals as glob
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.utilities.sequences.spectrometry import se_spectrum
+from console.utilities.sequences.spectrometry import fid
 from console.utilities.snr import signal_to_noise_ratio
 
 # %%
@@ -17,13 +17,14 @@ configuration = "../../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
-# Spinecho
-seq = se_spectrum.constructor(
-    echo_time=14e-3,
+# Construct FID
+seq = fid.constructor(
     rf_duration=200e-6,
-    adc_duration=50e-3,
-    use_fid=True
-)
+    adc_duration=100e-3,
+    dead_time=3e-3,
+    flip_angle=np.pi/2,
+    )
+
 
 # %%
 #acquire data
