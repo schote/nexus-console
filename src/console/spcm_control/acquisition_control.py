@@ -90,7 +90,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.param_hash: int = glob.parameter.get_hash()
+        self.parameter_hash: int = glob.parameter.get_hash()
         self.unrolled_seq: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
@@ -164,20 +164,15 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Calculate sequence
+        # Reset unrolled sequence
         self.unrolled_seq = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
-        self.param_hash = glob.parameter.get_hash()
-        self.unrolled_seq = self.seq_provider.unroll_sequence(
-            # larmor_freq=parameter.larmor_frequency,
-            # b1_scaling=parameter.b1_scaling,
-            # fov_scaling=parameter.fov_scaling,
-            # grad_offset=parameter.gradient_offset,
-            # parameter=parameter
-        )
+        # Update sequence parameter hash and calculate sequence
+        self.parameter_hash = glob.parameter.get_hash()
+        self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
 
@@ -201,14 +196,14 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        if self.param_hash != glob.parameter.get_hash():
+        if self.parameter_hash != glob.parameter.get_hash():
             # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
             self.unrolled_seq = None
             self.log.info(
                 "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
             )
             # Update acquisition parameter hash value
-            self.param_hash = glob.parameter.get_hash()
+            self.parameter_hash = glob.parameter.get_hash()
             self.unrolled_seq = self.seq_provider.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -219,7 +214,7 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance)
+        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
 
         for k in range(glob.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, glob.parameter.num_averages)
@@ -257,7 +252,7 @@ class AcquisitionControl:
                 time.sleep(glob.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance)
+        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
