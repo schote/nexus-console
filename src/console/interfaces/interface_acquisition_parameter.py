@@ -3,12 +3,21 @@
 import copy
 import os
 import pickle
+from enum import Enum
 from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 from console.interfaces.interface_dimensions import Dimensions
 
 STATE_FILE: str = os.path.join(Path.home(), "spcm-console/acq-parameter-state.pkl")
+
+
+class DDCMethod(str, Enum):
+    """Enum for DDC methods."""
+
+    FIR = "finite-impulse-response-filter"
+    AVG = "moving-average-filter"
+    CIC = "cascaded-integrator-comb-filter"
 
 
 @dataclass(frozen=True)
@@ -35,6 +44,8 @@ class AcquisitionParameter:
 
     decimation: int = 200
     """Decimation rate for initial down-sampling step."""
+
+    ddc_method: DDCMethod = DDCMethod.FIR
 
     num_averages: int = 1
     """Number of acquisition averages."""

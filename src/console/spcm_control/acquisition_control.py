@@ -11,11 +11,13 @@ from scipy import signal
 
 import console.spcm_control.globals as glob
 from console.interfaces.interface_acquisition_data import AcquisitionData
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
+from console.interfaces.interface_dimensions import Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
+from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -338,9 +340,15 @@ class AcquisitionControl:
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
-            # data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-            # data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-            data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+            # Switch case for DDC function
+            match glob.parameter.ddc_method:
+                case DDCMethod.CIC:
+                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
+                case DDCMethod.AVG:
+                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
+                case _:
+                    # Default case is FIR decimation
+                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Apply phase correction
             data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
