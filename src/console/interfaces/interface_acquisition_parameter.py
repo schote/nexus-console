@@ -3,8 +3,8 @@
 import copy
 import os
 import pickle
-from enum import Enum
 from dataclasses import asdict, dataclass, replace
+from enum import Enum
 from pathlib import Path
 
 from console.interfaces.interface_dimensions import Dimensions
