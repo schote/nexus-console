@@ -64,7 +64,8 @@ class AcquisitionControl:
             Set the logging level for the terminal/console output.
         """
         # Create session path (contains all acquisitions of one day)
-        self.session_path = os.path.join(data_storage_path, "") + datetime.now().strftime("%Y-%m-%d") + "-session/"
+        session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
+        self.session_path = os.path.join(glob.parameter.data_storage_location, session_folder_name)
         os.makedirs(self.session_path, exist_ok=True)
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
@@ -270,7 +271,7 @@ class AcquisitionControl:
             _raw=self._raw,
             unprocessed_data=self._unproc,
             sequence=self.seq_provider,
-            storage_path=self.session_path,
+            session_path=self.session_path,
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
                 self.rx_card.__name__: self.rx_card.dict(),
