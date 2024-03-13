@@ -30,6 +30,10 @@ class AcquisitionData:
     dwell_time: float
     """Dwell time of down-sampled raw data in seconds."""
 
+    session_path: str
+    """Directory the acquisition data will be stored in.
+    Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
+
     meta: dict[str, Any] = field(default_factory=dict)
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
@@ -38,10 +42,6 @@ class AcquisitionData:
     """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
     The first entry of the coil dimension also contains the reference signal (16th bit).
     The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
-
-    storage_path: str = os.path.expanduser("~") + "/spcm-console"
-    """Directory the acquisition data will be stored in.
-    Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
     _additional_data: dict = field(default_factory=dict)
     """Dictionarz containing addition (numpy) data.
@@ -114,7 +114,7 @@ class AcquisitionData:
         """
         log = logging.getLogger("AcqData")
         # Add trailing slash and make dir
-        base_path = self.storage_path if user_path is None else os.path.join(user_path, "")
+        base_path = self.session_path if user_path is None else os.path.join(user_path, "")
         os.makedirs(base_path, exist_ok=True)
 
         acq_folder = self.meta["folder_name"]
@@ -148,15 +148,15 @@ class AcquisitionData:
 
         if len(self._additional_data) > 0:
             for key, value in self._additional_data.items():
-                np.save(f"{acq_folder_path}{key}.npy", value)
+                np.save(os.path.join(acq_folder_path, f"{key}.npy"), value)
 
         if save_unprocessed and self.unprocessed_data:
             # Save raw data as numpy array(s)
             if len(self.unprocessed_data) > 1:
                 for k, data in enumerate(self.unprocessed_data):
-                    np.save(f"{acq_folder_path}unprocessed_data_{k}.npy", data)
+                    np.save(os.path.join(acq_folder_path, f"unprocessed_data_{k}.npy"), data)
             elif len(self.unprocessed_data) == 1:
-                np.save(f"{acq_folder_path}unprocessed_data.npy", self.unprocessed_data[0])
+                np.save(os.path.join(acq_folder_path, "unprocessed_data.npy"), self.unprocessed_data[0])
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 

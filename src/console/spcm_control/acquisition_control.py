@@ -11,11 +11,13 @@ from scipy import signal
 
 import console.spcm_control.globals as glob
 from console.interfaces.interface_acquisition_data import AcquisitionData
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
+from console.interfaces.interface_dimensions import Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
+from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -62,7 +64,8 @@ class AcquisitionControl:
             Set the logging level for the terminal/console output.
         """
         # Create session path (contains all acquisitions of one day)
-        self.session_path = os.path.join(data_storage_path, "") + datetime.now().strftime("%Y-%m-%d") + "-session/"
+        session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
+        self.session_path = os.path.join(glob.parameter.data_storage_location, session_folder_name)
         os.makedirs(self.session_path, exist_ok=True)
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
@@ -88,7 +91,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.param_hash: int = glob.parameter.get_hash()
+        self.parameter_hash: int = glob.parameter.get_hash()
         self.unrolled_seq: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
@@ -162,20 +165,15 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Calculate sequence
+        # Reset unrolled sequence
         self.unrolled_seq = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
-        self.param_hash = glob.parameter.get_hash()
-        self.unrolled_seq = self.seq_provider.unroll_sequence(
-            # larmor_freq=parameter.larmor_frequency,
-            # b1_scaling=parameter.b1_scaling,
-            # fov_scaling=parameter.fov_scaling,
-            # grad_offset=parameter.gradient_offset,
-            # parameter=parameter
-        )
+        # Update sequence parameter hash and calculate sequence
+        self.parameter_hash = glob.parameter.get_hash()
+        self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
 
@@ -199,14 +197,14 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        if self.param_hash != glob.parameter.get_hash():
+        if self.parameter_hash != glob.parameter.get_hash():
             # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
             self.unrolled_seq = None
             self.log.info(
                 "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
             )
             # Update acquisition parameter hash value
-            self.param_hash = glob.parameter.get_hash()
+            self.parameter_hash = glob.parameter.get_hash()
             self.unrolled_seq = self.seq_provider.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -217,7 +215,7 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance)
+        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
 
         for k in range(glob.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, glob.parameter.num_averages)
@@ -255,7 +253,7 @@ class AcquisitionControl:
                 time.sleep(glob.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance)
+        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
@@ -273,7 +271,7 @@ class AcquisitionControl:
             _raw=self._raw,
             unprocessed_data=self._unproc,
             sequence=self.seq_provider,
-            storage_path=self.session_path,
+            session_path=self.session_path,
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
                 self.rx_card.__name__: self.rx_card.dict(),
@@ -338,9 +336,15 @@ class AcquisitionControl:
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
-            # data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-            # data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-            data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+            # Switch case for DDC function
+            match glob.parameter.ddc_method:
+                case DDCMethod.CIC:
+                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
+                case DDCMethod.AVG:
+                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
+                case _:
+                    # Default case is FIR decimation
+                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Apply phase correction
             data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
