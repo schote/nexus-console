@@ -13,7 +13,7 @@ import numpy as np
 
 import console.spcm_control.globals as glob
 from console.interfaces.interface_acquisition_data import AcquisitionData
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.interface_acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.sequences.spectrometry import fid
 from console.utilities.snr import signal_to_noise_ratio

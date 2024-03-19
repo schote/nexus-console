@@ -1,7 +1,6 @@
 """Transmit power calibration (flip angle)."""
 # %%
 import logging
-from math import pi
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,9 +8,8 @@ from scipy.optimize import curve_fit
 
 import console.spcm_control.globals as glob
 from console.interfaces.interface_acquisition_data import AcquisitionData
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.utilities.sequences.calibration import fid_tx_adjust, se_tx_adjust
+from console.utilities.sequences.calibration import fid_tx_adjust
 
 # %%
 configuration = "../../device_config.yaml"
@@ -23,8 +21,7 @@ seq, flip_angles = fid_tx_adjust.constructor(
     rf_duration=200e-6,
     repetition_time=5,
     n_steps=19,
-    adc_duration = 25e-3,
-    # flip_angle_range=(pi/4, 3*pi/2),
+    adc_duration = 50e-3,
     flip_angle_range=(np.deg2rad(0), np.deg2rad(270)),
     use_sinc=False
 )
@@ -78,6 +75,10 @@ print("B1-scaling factor (meas): ", factor_meas)
 print("B1-scaling factor (fit): ", factor_fit)
 print("New B1-scaling (meas): ", factor_meas*glob.parameter.b1_scaling)
 print("New B1-scaling (fit): ", factor_fit*glob.parameter.b1_scaling)
+
+#update global larmor frequency to measured f0
+glob.update_parameters(b1_scaling=factor_fit*glob.parameter.b1_scaling)
+
 # %%
 acq_data.add_info({
     "flip_angles": list(flip_angles),

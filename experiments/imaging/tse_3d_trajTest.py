@@ -22,7 +22,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 dim = Dimensions(x=5, y=120, z=100)
 
 ro_bw = 20e3
-te = 16e-3
+te = 18e-3
 # te = 25e-3
 
 seq, traj, kdims = sequences.tse.tse_3d_trajTest.constructor(
@@ -99,7 +99,7 @@ fig.set_facecolor("black")
 # %%
 
 acq_data.add_info({
-    "subject": "brain_slice, tse_tom - FOV:240,200,200, ETL = 7, herman_preamp_plus_miteq_noise",
+    "subject": "brain_slice, tse_tom - FOV:240,200,200, ETL = 7, TE=18",
     "echo_time": te,
     "dim": [dim.x, dim.y, dim.z],
     # "subject": "brain-slice",
@@ -112,7 +112,7 @@ acq_data.add_data({
     "image": img
 })
 
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240307 - TSE test")
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240312 - B0 mapping")
 
 # %%
 del acq

@@ -30,6 +30,7 @@ seq = fid.constructor(
 #acquire data
 current_f0 = glob.parameter.larmor_frequency
 
+
 #change larmor frequency if desired
 # glob.update_parameters(larmor_frequency=1964408.0)
 
@@ -82,5 +83,5 @@ plt.show()
 
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240312 - B0 mapping")
 # %%

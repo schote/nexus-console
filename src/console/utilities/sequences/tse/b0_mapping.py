@@ -24,6 +24,7 @@ def constructor(
     echo_time: float = 15e-3,
     repetition_time: float = 600e-3,
     etl: int = 7,
+    dummies: int = 3,
     rf_duration: float = 400e-6,
     ramp_duration:float = 200e-6,
     gradient_correction: float = 0.,
@@ -50,6 +51,8 @@ def constructor(
         Time constant between two subsequent 90 degree pulses (echo trains), by default 600e-3
     etl, optional
         Echo train length, by default 7
+    dummies, optional
+        Number of dummies to perform before starting aquisition, by default 3
     rf_duration, optional
         Duration of the RF pulses (90 and 180 degree), by default 400e-6
     gradient_correction, optional
@@ -221,36 +224,55 @@ def constructor(
     # Delay between echo trains
     tr_delay = repetition_time - echo_time*etl - adc_duration / 2 - rf_90.delay
 
-    for train in trains:
+
+    for idx in range(dummies):
+        delay_90_180    = echo_time/2 - rf_duration
+        delay_180_180   = echo_time - rf_duration
+        rep_delay       = repetition_time - delay_90_180 - delay_180_180
 
         seq.add_block(rf_90)
-        seq.add_block(grad_ro_pre)
-        seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
+        seq.add_block(pp.make_delay(raster(val=delay_90_180, precision=system.grad_raster_time)))
+        for shot in range(etl):
+                seq.add_block(rf_180)
+                seq.add_block(pp.make_delay(raster(val=delay_180_180, precision=system.grad_raster_time)))
+        seq.add_block(pp.make_delay(raster(val=rep_delay, precision=system.grad_raster_time)))
 
-        for echo in train:
-            pe_1, pe_2 = echo
+    #Acquire shifted data after unshifted data
+    for idx in range(2):
+        echo_shift_time = (idx%2)*echo_shift
+        # Delay duration between Gy, Gz prephaser and readout
+        tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2*gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration+echo_shift_time
+        # Delay duration between readout and Gy, Gz gradient rephaser
+        tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift_time    
+        for train in trains:
+            seq.add_block(rf_90)
+            seq.add_block(grad_ro_pre)
+            seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-            seq.add_block(rf_180)
+            for echo in train:
+                pe_1, pe_2 = echo
 
-            seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=-pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=-pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
-            )
+                seq.add_block(rf_180)
 
-            seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
+                seq.add_block(
+                    pp.make_trapezoid(channel=channel_pe1, area=-pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
+                    pp.make_trapezoid(channel=channel_pe2, area=-pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                )
 
-            seq.add_block(grad_ro, adc)
+                seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
-            seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
-            )
+                seq.add_block(grad_ro, adc)
 
-            seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
+                seq.add_block(
+                    pp.make_trapezoid(channel=channel_pe1, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
+                    pp.make_trapezoid(channel=channel_pe2, area=pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                )
 
-        #recalculate TR each train because train length is not guaranteed to be constant
-        tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
-        seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
+                seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
+
+            #recalculate TR each train because train length is not guaranteed to be constant
+            tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
+            seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0]) / len(trains)
@@ -278,9 +300,14 @@ def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np
         dimensions of kspace
     """
     n_avg, n_coil, _, n_ro = raw_data.shape
-    ksp = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
+    ksp_unshifted   = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
+    ksp_shifted     = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
+
+    num_points = len(trajectory)
     for idx, kpt in enumerate(trajectory):
-        ksp[...,kpt[1],kpt[0],:] = raw_data[:,:,idx,:]
-    return ksp
+        ksp_unshifted[...,kpt[1],kpt[0],:] = raw_data[:,:,idx,:]
+        ksp_shifted[...,kpt[1],kpt[0],:] = raw_data[:,:,idx + num_points,:]
+
+    return ksp_unshifted, ksp_shifted
 
 # %%
