@@ -20,7 +20,7 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities import ddc
 from console.utilities.load_config import get_instances
-import console.utilities.ddc as ddc 
+import console.utilities.ddc as ddc
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -41,10 +41,8 @@ class AcquisitionControl:
     def __init__(
         self,
         configuration_file: str = "../../../device_config.yaml",
-        data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
-        run_phase_correction: bool = True
     ):
         """Construct acquisition control class.
 
@@ -56,11 +54,6 @@ class AcquisitionControl:
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
-        data_storage_path
-            Directory of storage location.
-            Within the storage location the acquisition control will create a session folder
-            (currently the convention is used: one day equals one session).
-            All data written during one session will be stored in the session folder.
         file_log_level
             Set the logging level for log file. Logfile is written to the session folder.
         console_log_level
@@ -74,8 +67,6 @@ class AcquisitionControl:
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
-
-        self.run_phase_correction = run_phase_correction
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
@@ -338,8 +329,14 @@ class AcquisitionControl:
                 self._unproc.append(data[None, ...])
 
             print("Demodulation at freq.:", parameter.larmor_frequency)
+
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
+
+            # Always decimate the reference signal with moving average filter
+            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
+            # Extract the demodulated signal data
+            data = data[:-1, ...]
 
             # Switch case for DDC function
             match glob.parameter.ddc_method:
@@ -351,11 +348,9 @@ class AcquisitionControl:
                     # Default case is FIR decimation
                     data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
-            # Apply phase correction
-            if self.run_phase_correction:
-                data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
-            else:
-                data = data[:-1,...]* np.exp(-1j*np.mean(np.angle(data[-1,...]), axis = -1))[...,np.newaxis]
+            # Apply phase correction with mean value
+            # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
+            data = data * np.exp(-1j * np.angle(ref_dec))
 
             # Append to global raw data list
             if raw_size > 0:

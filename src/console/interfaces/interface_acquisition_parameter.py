@@ -55,7 +55,11 @@ class AcquisitionParameter:
     """Delay in seconds between acquisition averages."""
 
     data_storage_location: str = DEFAULT_DATA_STORAGE_LOCATION
-    """Location to store acquisition parameters, logs and acquisition data (per default)."""
+    """Location to store acquisition parameters, logs and acquisition data (per default).
+    Within the storage location the acquisition control will create a session folder
+    (currently the convention is used: one day equals one session).
+    All data written during one session will be stored in the session folder.
+    """
 
     def __post_init__(self) -> None:
         """Save state after initialization.
