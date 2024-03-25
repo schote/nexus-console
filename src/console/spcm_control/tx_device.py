@@ -221,6 +221,7 @@ class TxCard(SpectrumDevice):
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err
+
         # Check offset values
         if abs(offsets.x) > self.max_amplitude[1]:
             self.log.error("Gradient offset of channel x exceeds maximum amplitude.")
@@ -230,11 +231,18 @@ class TxCard(SpectrumDevice):
             self.log.error("Gradient offset of channel z exceeds maximum amplitude.")
 
         # Extract per channel flag for high impedance termination
-        _, x_high_imp, y_high_imp, z_high_imp = high_impedance
+        try:
+            x_high_imp, y_high_imp, z_high_imp = high_impedance
+        except ValueError as err:
+            # Raise error if list does not have 3 values to unpack
+            self.log.exception(err, exc_info=True)
+            raise err
+
         # Set offset values, scale offset by 0.5 if channel is terminated into high impedance
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x/2) if x_high_imp else int(offsets.x))
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y/2) if y_high_imp else int(offsets.y))
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z/2) if z_high_imp else int(offsets.z))
+
         # Write setup
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_WRITESETUP)
 

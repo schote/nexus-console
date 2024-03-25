@@ -17,7 +17,8 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
         _raw=[random_acquisition_data(1, 1, 1, 128)],
         acquisition_parameters=params,
         sequence=test_sequence,
-        dwell_time=1e-5
+        dwell_time=1e-5,
+        session_path=r"./tmp"
     )
 
     info = {"test": "test"}

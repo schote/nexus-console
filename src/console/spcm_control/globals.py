@@ -1,10 +1,10 @@
 """Global acquisition parameter."""
 import os
 
-from console.interfaces.interface_acquisition_parameter import STATE_FILE, AcquisitionParameter
+from console.interfaces.interface_acquisition_parameter import DEFAULT_STATE_FILE_PATH, AcquisitionParameter
 
 # Load state of acquisition parameters from file, if it exists
-if os.path.exists(STATE_FILE):
+if os.path.exists(DEFAULT_STATE_FILE_PATH):
     parameter = AcquisitionParameter.load()
 else:
     parameter = AcquisitionParameter()

@@ -280,10 +280,11 @@ class SequenceProvider(Sequence):
         # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
         idx = ["x", "y", "z"].index(block.channel)
 
-        # Calculate gradient offset in mV
-        offset = unroll_arr[0] / INT16_MAX * self.output_limits[idx+1]
-        # Calculat waveform scaling
-        # scaling = self.grad_to_volt[idx] * fov_scaling
+        # Calculate gradient offset int16 value from mV
+        # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
+        offset = getattr(glob.parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx+1]
+
+        # Calculat gradient waveform scaling
         scaling = fov_scaling * self.imp_scaling[idx+1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
 
         try:
@@ -296,7 +297,7 @@ class SequenceProvider(Sequence):
                         "Amplitude of %s (%s) gradient exceeded output limit (%s)"
                         % (
                             block.channel,
-                            np.amax(waveform) + offset,
+                            np.amax(waveform),
                             self.output_limits[idx+1],
                         )
                     )
@@ -351,7 +352,7 @@ class SequenceProvider(Sequence):
                 raise IndexError("Unrolled gradient event exceeds number of block samples")
 
             # Add gradient waveform (trapezoid or arbitrary) in place
-            unroll_arr[samples_delay:index_end] += gradient
+            unroll_arr[samples_delay:index_end] = gradient
 
         except (ValueError, IndexError) as err:
             self.log.exception(err, exc_info=True)
@@ -387,39 +388,9 @@ class SequenceProvider(Sequence):
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
 
-    # def _check_offsets(self, grad_offset: Dimensions) -> None:
-    #     """Check if any of the provided gradient offsets exceeds output limit.
-
-    #     Parameters
-    #     ----------
-    #     grad_offset
-    #         Offset values to be checked
-
-    #     Raises
-    #     ------
-    #     ValueError
-    #         Output limit not provided or offset exceeds limit
-    #     """
-    #     # Check if output limits are defined
-    #     if not self.output_limits:
-    #         raise ValueError("Output limits not provided")
-    #     # Check gradient offsets
-    #     if np.abs(grad_offset.x) > self.output_limits[1]:
-    #         raise ValueError("X gradient (channel 1) offset exceeds output limit")
-    #     if np.abs(grad_offset.y) > self.output_limits[2]:
-    #         raise ValueError("Y gradient (channel 2) offset exceeds output limit")
-    #     if np.abs(grad_offset.z) > self.output_limits[3]:
-    #         raise ValueError("Z gradient (channel 3) offset exceeds output limit")
 
     @profile
-    def unroll_sequence(
-        self,
-        # parameter: AcquisitionParameter
-        # larmor_freq: float,
-        # b1_scaling: float = 1.0,
-        # fov_scaling: Dimensions = default_fov_scaling,
-        # grad_offset: Dimensions = default_fov_offset,
-    ) -> UnrolledSequence:
+    def unroll_sequence(self) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -481,11 +452,7 @@ class SequenceProvider(Sequence):
 
         As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.
         """
-        # TODO: Larmor frequency not needed as class attribute
         if self._sqnc_cache:
-            # Reset unrolled sequence cache to free memory
-            self.log.debug("Resetting sequence cache...")
-            del self._sqnc_cache
             self._sqnc_cache = []
 
         try:
@@ -502,8 +469,6 @@ class SequenceProvider(Sequence):
             check, seq_err = self.check_timing()
             if not check:
                 raise ValueError(f"Sequence timing check failed: {seq_err}")
-
-            # self._check_offsets(grad_offset)
 
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -528,13 +493,6 @@ class SequenceProvider(Sequence):
         rf_start_sample_pos: int | None = None
 
         for k, (n_samples, block) in enumerate(zip(samples_per_block, blocks, strict=True)):
-            # Set gradient offsets
-            # if grad_offset.x != 0:
-            #     _seq[k][1::4] += np.int16((grad_offset.x * self.imp_scaling[1] / self.output_limits[1]) * INT16_MAX)
-            # if grad_offset.y != 0:
-            #     _seq[k][2::4] += np.int16((grad_offset.y * self.imp_scaling[2] / self.output_limits[2]) * INT16_MAX)
-            # if grad_offset.z != 0:
-            #     _seq[k][3::4] += np.int16((grad_offset.z * self.imp_scaling[3] / self.output_limits[3]) * INT16_MAX)
 
             if block.rf is not None and block.rf.signal.size > 0:
                 # Every 4th value in _seq starting at index 0 belongs to RF

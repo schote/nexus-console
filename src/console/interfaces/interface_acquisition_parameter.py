@@ -4,11 +4,21 @@ import copy
 import os
 import pickle
 from dataclasses import asdict, dataclass, replace
+from enum import Enum
 from pathlib import Path
 
 from console.interfaces.interface_dimensions import Dimensions
 
-STATE_FILE: str = os.path.join(Path.home(), "spcm-console/acq-parameter-state.pkl")
+DEFAULT_DATA_STORAGE_LOCATION: str = os.path.join(Path.home(), "spcm-console")
+DEFAULT_STATE_FILE_PATH: str = os.path.join(DEFAULT_DATA_STORAGE_LOCATION, "acq-parameter-state.pkl")
+
+
+class DDCMethod(str, Enum):
+    """Enum for DDC methods."""
+
+    FIR = "finite-impulse-response-filter"
+    AVG = "moving-average-filter"
+    CIC = "cascaded-integrator-comb-filter"
 
 
 @dataclass(frozen=True)
@@ -36,11 +46,16 @@ class AcquisitionParameter:
     decimation: int = 200
     """Decimation rate for initial down-sampling step."""
 
+    ddc_method: DDCMethod = DDCMethod.FIR
+
     num_averages: int = 1
     """Number of acquisition averages."""
 
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
+
+    data_storage_location: str = DEFAULT_DATA_STORAGE_LOCATION
+    """Location to store acquisition parameters, logs and acquisition data (per default)."""
 
     def __post_init__(self) -> None:
         """Save state after initialization.
@@ -66,7 +81,7 @@ class AcquisitionParameter:
             return {k: str(v) for k, v in asdict(self).items()}
         return asdict(self)
 
-    def save(self, file_path: str = STATE_FILE) -> None:
+    def save(self, file_path: str = DEFAULT_STATE_FILE_PATH) -> None:
         """Save current acquisition parameter state.
 
         Parameters
@@ -79,7 +94,7 @@ class AcquisitionParameter:
             pickle.dump(self.__dict__, file)
 
     @classmethod
-    def load(cls, file_path: str = STATE_FILE) -> "AcquisitionParameter":
+    def load(cls, file_path: str = DEFAULT_STATE_FILE_PATH) -> "AcquisitionParameter":
         """Load acquisition parameter state from state file and return AcquisitionParameter instance.
 
         Parameters
