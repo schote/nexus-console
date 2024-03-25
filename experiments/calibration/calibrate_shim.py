@@ -26,7 +26,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # FID
 seq = fid.constructor(
-    rf_duration=400e-6,
+    rf_duration=200e-6,
     adc_duration=100e-3,
     dead_time=3e-3,
     flip_angle=np.pi/4 #running with 45 degree to avoid overtipping.
@@ -198,9 +198,6 @@ print("Shim offsets: ", grad_mt_to_mv(shims_best), " mV")
 print(f"Frequency offset [Hz]: {f_0_offset}\nNew frequency f0 [Hz]: {f_0 - f_0_offset}")
 print(f"Frequency spectrum max.: {amp_best}")
 print("SNR [dB]: ", snr)
-
-
-
 
 # %%
 # Save acquisition data

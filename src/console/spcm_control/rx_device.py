@@ -335,7 +335,7 @@ class RxCard(SpectrumDevice):
                     "Gate: (%s s, %s s); ADC duration: %s ms ; Gate Sample: % s",
                     timestamp_0,
                     timestamp_1,
-                    gate_length,  # Can be trimmed.
+                    gate_length*1e3,  # Can be trimmed.
                     gate_sample,
                 )
 

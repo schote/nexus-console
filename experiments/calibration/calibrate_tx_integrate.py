@@ -18,7 +18,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # FID
 seq, flip_angles = fid_tx_adjust.constructor(
-    rf_duration=400e-6,
+    rf_duration=200e-6,
     repetition_time=1,
     n_steps=19,
     adc_duration = 50e-3,

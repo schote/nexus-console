@@ -1,8 +1,6 @@
 """Constructor for 3D TSE Imaging sequence.
 
-TODO: add different trajectories
 TODO: add sampling patterns (elliptical masks, partial fourier, CS)
-TODO: add dummy scans
 TODO: add optional inversion pulse
 TODO: add optional variable refocussing pulses (pass list rather than float)
 TODO: move trajectory calculation to seperate file to sharew with other imaging experiments (needed?)
@@ -32,11 +30,15 @@ def constructor(
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
     echo_shift: float = 0.0,
-    trajectrory: str = "in-out",
+    trajectory: str = "in-out",
     excitation_angle: float = pi/2,
     excitation_phase: float = 0.,
     refocussing_angle: float = pi,
     refocussing_phase: float = pi/2,
+    inversion_pulse: bool = False,
+    inversion_time: float = 50e-3,
+    inversion_angle: float = pi,
+    inversion_phase: float = 0.,
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
@@ -142,14 +144,46 @@ def constructor(
     pe0_pos = np.arange(n_enc_pe1)
     pe1_pos = np.arange(n_enc_pe2)
 
-    pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe1, pe2)], axis=-1)
-    pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
+    pe_points = np.stack([grid.flatten() for grid in np.meshgrid(pe1, pe2)], axis=-1)
+    pe_positions = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
 
-    pe_mag = np.sum(np.square(pe_traj), axis = -1) #calculate magnitude of all gradient combinations
+    pe_mag = np.sum(np.square(pe_points), axis = -1) #calculate magnitude of all gradient combinations
     pe_mag_sorted = np.argsort(pe_mag)
 
-    pe_traj = pe_traj[pe_mag_sorted,:] #sort the points based on magnitude
-    pe_order = pe_pos[pe_mag_sorted,:] #kspace position for each of the gradients
+    if trajectory.lower() == "out-in":
+        pe_mag_sorted = np.flip(pe_mag_sorted)
+
+    pe_traj = pe_points[pe_mag_sorted,:] #sort the points based on magnitude
+    pe_order = pe_positions[pe_mag_sorted,:] #kspace position for each of the gradients
+
+    if trajectory.lower() == 'linear':
+        center_pos = 1/2                                          #where the center of kspace should be in the echo train
+        num_points = np.size(pe_mag_sorted)
+        linear_pos = np.zeros(num_points, dtype = int) - 10
+        center_point = int(np.round(np.size(pe_mag)*center_pos))
+        odd_indices = 1
+        even_indices = 1
+        linear_pos[center_point] = pe_mag_sorted[0]
+        for idx in range(1,num_points):
+            #check if its in bounds first
+            if center_point - (idx+1)/2 >=0 and idx%2:
+                k_idx = center_point - odd_indices
+                odd_indices += 1
+            elif center_point+ idx/2 < num_points and idx%2 == 0:
+                k_idx = center_point + even_indices
+                even_indices += 1
+            elif center_point - (idx+1)/2 < 0 and idx%2:
+                k_idx = center_point + even_indices
+                even_indices += 1
+            elif center_point+ idx/2 >= num_points and idx%2 == 0:
+                k_idx = center_point - odd_indices
+                odd_indices += 1
+            else:
+                print("Sorting error")
+            linear_pos[k_idx] = pe_mag_sorted[idx]
+
+        pe_traj = pe_points[linear_pos,:] #sort the points based on magnitude
+        pe_order = pe_positions[linear_pos,:] #kspace position for each of the gradients
 
     #calculate the required gradient area for each k-point
     pe_traj[:, 0] /= fov_pe1
@@ -168,6 +202,8 @@ def constructor(
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(system=system, flip_angle=excitation_angle, phase_offset = excitation_phase, duration=rf_duration, use="excitation")
     rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle,phase_offset =refocussing_phase,duration=rf_duration, use="refocusing")
+    if inversion_pulse:
+        rf_inversion = pp.make_block_pulse(system=system, flip_angle=inversion_angle,phase_offset =refocussing_phase,duration=rf_duration, use="refocusing")
 
     # ADC duration
     adc_duration = n_enc_ro / ro_bandwidth
@@ -222,14 +258,23 @@ def constructor(
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift
 
     for dummy in range(dummies):
+        if inversion_pulse:
+            seq.add_block(rf_inversion)
+            seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
         seq.add_block(rf_90)
         seq.add_block(pp.make_delay(raster(val=echo_time/2 - rf_duration, precision=system.grad_raster_time)))
         for idx in range(etl):
             seq.add_block(rf_180)
             seq.add_block(pp.make_delay(raster(val=echo_time - rf_duration, precision=system.grad_raster_time)))
-        seq.add_block(pp.make_delay(raster(val=repetition_time - (etl+0.5)*echo_time - rf_duration, precision=system.grad_raster_time)))
+        if inversion_pulse:
+            seq.add_block(pp.make_delay(raster(val=repetition_time - (etl+0.5)*echo_time - rf_duration - inversion_time, precision=system.grad_raster_time)))
+        else:
+            seq.add_block(pp.make_delay(raster(val=repetition_time - (etl+0.5)*echo_time - rf_duration, precision=system.grad_raster_time)))
 
     for train in trains:
+        if inversion_pulse:
+            seq.add_block(rf_inversion)
+            seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))        
         seq.add_block(rf_90)
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
@@ -257,6 +302,8 @@ def constructor(
 
         #recalculate TR each train because train length is not guaranteed to be constant
         tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
+        if inversion_pulse:
+            tr_delay -= inversion_time
         seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures

@@ -19,23 +19,24 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Create sequence
-
-dim         = Dimensions(x=80, y=100, z=10)
+num_voxels  = Dimensions(x=1, y=120, z=100)
 ro_bw       = 20e3
-te          = 20e-3
+te          = 50e-3
 
 seq, traj, kdims = sequences.tse.tse_3d.constructor(
     echo_time           = te,
-    repetition_time     = 400e-3,
-    etl                 = 10,
+    repetition_time     = 2000e-3,
+    etl                 = 22,
+    dummies             = 3,
+    trajectory          = 'linear',
     gradient_correction = 160e-6,
-    rf_duration         = 400e-6,
-    fov                 = Dimensions(x=240e-3, y=150e-3, z=150e-3),
+    rf_duration         = 200e-6,
+    fov                 = Dimensions(x=200e-3, y=240e-3, z=200e-3),
     channel_ro          = "y",
     channel_pe1         = "z",
     channel_pe2         = "x",
     ro_bandwidth        = ro_bw,
-    n_enc               = dim
+    n_enc               = num_voxels
 )
 # Optional: overwrite sequence name (used to identify experiment data)
 seq.set_definition("Name", "tse_3d")
@@ -62,7 +63,6 @@ if len(np.shape(ksp)) == 4:
 else:
     img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
 
-
 idx = int(img.shape[0]/2)
 fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 if len(ksp.shape) == 3:
@@ -75,7 +75,6 @@ else:
     ax[0].imshow(np.abs(ksp), cmap="gray")
     ax[1].imshow(np.abs(img), cmap="gray")
 plt.show()
-
 
 
 # %%
@@ -95,13 +94,12 @@ fig.set_tight_layout(True)
 fig.set_facecolor("black")
 
 
-
 # %%
 
 acq_data.add_info({
-    "subject": "Birdcage - In-vivo",
+    "subject": "Brain phantom",
     "echo_time": te,
-    "dim": [dim.x, dim.y, dim.z],
+    "dim": [num_voxels.x, num_voxels.y, num_voxels.z],
     # "sequence_info": "etl = 7, optimized grad correction",
 })
 
@@ -111,7 +109,7 @@ acq_data.add_data({
     "image": img
 })
 
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240320 - Birdcage")
+acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240325 - Phantom")
 
 # %%
 del acq
