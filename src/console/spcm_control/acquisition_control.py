@@ -11,7 +11,6 @@ from scipy import signal
 
 import console.spcm_control.globals as glob
 import console.spcm_control.spcm.pyspcm as sp
-from ctypes import POINTER, addressof, byref, c_short, cast, sizeof, create_string_buffer
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
@@ -19,6 +18,7 @@ from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvi
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
+import console.utilities.ddc as ddc 
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -42,6 +42,7 @@ class AcquisitionControl:
         data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
+        run_phase_correction: bool = True
     ):
         """Construct acquisition control class.
 
@@ -70,6 +71,8 @@ class AcquisitionControl:
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
+
+        self.run_phase_correction = run_phase_correction
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
@@ -250,7 +253,6 @@ class AcquisitionControl:
             if num_gates > 0:
                 self.post_processing(glob.parameter)
 
-
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
@@ -343,10 +345,18 @@ class AcquisitionControl:
 
             # data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
             # data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-            data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+
+            data_ref= ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)            
+            data = signal.decimate(data[:-1, ...], q=parameter.decimation, ftype="fir")
+            print(np.shape(data_ref))
+            print(np.shape(data))
+            data = np.concatenate((data, data_ref[np.newaxis,...]), axis = 0)
 
             # Apply phase correction
-            data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
+            if self.run_phase_correction:
+                data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
+            else:
+                data = data[:-1,...]* np.exp(-1j*np.mean(np.angle(data[-1,...]), axis = -1))[...,np.newaxis]
 
             # Append to global raw data list
             if raw_size > 0:

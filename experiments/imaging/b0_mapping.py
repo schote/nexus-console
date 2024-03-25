@@ -16,7 +16,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
-acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG, use_star_hub=True)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG, run_phase_correction=True)
 
 # %%
 # Create sequence
@@ -25,7 +25,7 @@ dim     = Dimensions(x=5, y=120, z=100)
 ro_bw   = 20e3
 te      = 18e-3
 tr      = 600e-3
-etl     = 5
+etl     = 10
 echo_shift = 300e-6
 echo_shift = 200e-6
 
@@ -38,13 +38,13 @@ glob.update_parameters(decimation = decimation)
 # %%
 #Aquire unshifted data
 seq, traj, kdims = sequences.tse.b0_mapping.constructor(
-    echo_time=te,
-    repetition_time=tr,
-    etl=etl,
-    echo_shift = echo_shift,
-    dummies = 10,
-    gradient_correction=160e-6,
-    rf_duration=200e-6,
+    echo_time               =te,
+    repetition_time         =tr,
+    etl                     =etl,
+    echo_shift              = echo_shift,
+    dummies                 = 3,
+    gradient_correction     =160e-6,
+    rf_duration             =200e-6,
     fov=Dimensions(x=200e-3, y=240e-3, z=200e-3),
     channel_ro="y",
     channel_pe1="z",
@@ -58,19 +58,18 @@ seq.set_definition("Name", "b0_mapping")
 acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
-
 # %%
 #sort data in to kspace array
 ksp_unshifted, ksp_shifted  = sequences.tse.b0_mapping.sort_kspace(acq_data.raw, traj, kdims)
-
 
 # %%
 img_unshifted   = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp_unshifted.squeeze())))
 img_shifted     = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp_shifted.squeeze())))
 
-img_mask        = np.abs(img_unshifted)>(0.1*np.max(np.abs(img_shifted)))
-
-phase_corr      = np.mean(np.angle(img_unshifted*img_mask))*0
+img_mask        = np.abs(img_unshifted)>(0.15*np.max(np.abs(img_shifted)))
+if echo_shift == 0:
+    echo_shift = 1
+phase_corr      = np.mean(np.angle(img_unshifted[img_mask]))
 phase_diff      = np.angle(img_shifted*np.exp(-1j*phase_corr)) - np.angle(img_unshifted*np.exp(-1j*phase_corr))
 phase_diff      = unwrap_phase(phase_diff)
 b0_map          = phase_diff/(2*np.pi*echo_shift)
@@ -78,7 +77,7 @@ b0_map          = phase_diff/(2*np.pi*echo_shift)
 idx = int(img_unshifted.shape[0]/2)
 fig, ax = plt.subplots(2, 3, figsize=(8, 4))
 ax[0][0].imshow(np.abs(img_unshifted[idx, ...]), cmap="gray")
-ax[0][1].imshow(np.abs(img_shifted[idx, ...]), cmap="gray")
+ax[0][1].imshow(np.abs(img_shifted.squeeze()[idx, ...]), cmap="gray")
 ax[0][2].imshow((b0_map*img_mask)[idx,...],vmin = -1000, vmax = 500 )
 ax[1][0].imshow(np.angle(img_unshifted[idx, ...]*np.exp(-1j*phase_corr)), cmap="gray", vmin = -np.pi, vmax = np.pi)
 ax[1][1].imshow(np.angle(img_shifted[idx, ...]*np.exp(-1j*phase_corr)), cmap="gray", vmin = -np.pi, vmax = np.pi)
