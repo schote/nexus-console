@@ -26,7 +26,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # %%
 # FID
 seq = fid.constructor(
-    rf_duration=200e-6,
+    rf_duration=400e-6,
     adc_duration=100e-3,
     dead_time=3e-3,
     flip_angle=np.pi/4 #running with 45 degree to avoid overtipping.
@@ -57,7 +57,7 @@ def run_fid(f0, shims):
     return acq_data
 
 start_range     = 0.1  #initial step size in mT/m
-end_range       = 0.001 #final step size in mT/m
+end_range       = 0.01 #final step size in mT/m
 num_dummies     = 3     #Dummies to avoid saturation effects biasing the first FID measurements
 
 shims_current   = glob.parameter.gradient_offset

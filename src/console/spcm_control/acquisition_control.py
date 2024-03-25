@@ -10,6 +10,8 @@ import numpy as np
 from scipy import signal
 
 import console.spcm_control.globals as glob
+import console.spcm_control.spcm.pyspcm as sp
+from ctypes import POINTER, addressof, byref, c_short, cast, sizeof, create_string_buffer
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
@@ -224,8 +226,7 @@ class AcquisitionControl:
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            # time.sleep(0.5)
-            time.sleep(0.001)
+            time.sleep(0.01)
             self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
@@ -233,9 +234,7 @@ class AcquisitionControl:
 
             while (num_gates := len(self.rx_card.rx_data)) < self.unrolled_seq.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
-                # time.sleep(0.01)
-                time.sleep(0.001)
-
+                time.sleep(0.01)
 
                 if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
@@ -250,6 +249,7 @@ class AcquisitionControl:
 
             if num_gates > 0:
                 self.post_processing(glob.parameter)
+
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()

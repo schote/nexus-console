@@ -14,7 +14,7 @@ from console.utilities.snr import signal_to_noise_ratio
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
-acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG, use_star_hub=False)
 
 # %%
 # Construct FID
