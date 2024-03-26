@@ -19,7 +19,7 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 # FID
 seq, flip_angles = fid_tx_adjust.constructor(
     rf_duration=200e-6,
-    repetition_time=1,
+    repetition_time=3,
     n_steps=19,
     adc_duration = 50e-3,
     flip_angle_range=(np.deg2rad(0), np.deg2rad(270)),
@@ -86,7 +86,7 @@ acq_data.add_info({
 })
 
 # %%
-acq_data.save(user_path=r"C:\Users\Tom\Desktop\spcm-data\in-vivo", save_unprocessed=True)
+acq_data.save(user_path=r"c:\Users\Tom\Desktop\spcm-data\20240326 - Paper day", save_unprocessed=True)
 # %%
 del acq
 # %%

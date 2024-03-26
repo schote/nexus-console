@@ -16,7 +16,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # %%
 # Create acquisition control instance
 configuration = "../../device_config.yaml"
-acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG, run_phase_correction=True)
+acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # %%
 # Create sequence
@@ -57,6 +57,7 @@ seq.set_definition("Name", "b0_mapping")
 # Perform acquisition
 acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
+
 
 # %%
 #sort data in to kspace array
