@@ -19,9 +19,9 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 
 # %%
 # Create sequence
-num_voxels  = Dimensions(x=1, y=120, z=100)
+num_voxels  = Dimensions(x=42, y=120, z=100)
 ro_bw       = 20e3
-te          = 50e-3
+te          = 20e-3
 
 seq, traj, kdims = sequences.tse.tse_3d.constructor(
     echo_time           = te,
@@ -31,7 +31,7 @@ seq, traj, kdims = sequences.tse.tse_3d.constructor(
     trajectory          = 'linear',
     gradient_correction = 160e-6,
     rf_duration         = 200e-6,
-    fov                 = Dimensions(x=200e-3, y=240e-3, z=200e-3),
+    fov                 = Dimensions(x=210e-3, y=240e-3, z=200e-3),
     channel_ro          = "y",
     channel_pe1         = "z",
     channel_pe2         = "x",
@@ -46,13 +46,13 @@ decimation = int(acq.rx_card.sample_rate * 1e6 / ro_bw)
 glob.update_parameters(decimation = decimation)
 
 # %%
-#Unroll and run sequence
+#Unroll equence
 
 # Perform acquisition
 acq.set_sequence(sequence=seq)
-acq_data: AcquisitionData = acq.run()
 
 # %%
+acq_data: AcquisitionData = acq.run()
 #sort data in to kspace array
 ksp = sequences.tse.tse_3d.sort_kspace(acq_data.raw, traj, kdims).squeeze()
 
@@ -97,7 +97,7 @@ fig.set_facecolor("black")
 # %%
 
 acq_data.add_info({
-    "subject": "Brain phantom",
+    "subject": "Brain - 4 noise coils - no shield",
     "echo_time": te,
     "dim": [num_voxels.x, num_voxels.y, num_voxels.z],
     # "sequence_info": "etl = 7, optimized grad correction",
@@ -109,7 +109,9 @@ acq_data.add_data({
     "image": img
 })
 
-acq_data.save(save_unprocessed=False, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240325 - Phantom")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240326 - Paper day - T1T2")
 
 # %%
 del acq
+
+# %%
