@@ -145,7 +145,8 @@ class SequenceProvider(Sequence):
             for key, value in seq.__dict__.items():
                 # Check if attribute exists
                 if not hasattr(self, key):
-                    raise AttributeError("Attribute %s not found in SequenceProvider" % key)
+                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
+                    continue
                 # Set attribute
                 setattr(self, key, value)
         except (ValueError, AttributeError) as err:
