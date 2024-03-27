@@ -83,5 +83,5 @@ plt.show()
 
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\Jana")
 # acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\brain-slice")
-acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240326 - Paper day")
+acq_data.save(save_unprocessed=True, user_path=r"C:\Users\Tom\Desktop\spcm-data\20240326 - Paper day 2 - In-vivo")
 # %%

@@ -22,13 +22,17 @@ acq = AcquisitionControl(configuration_file=configuration, console_log_level=log
 num_voxels  = Dimensions(x=42, y=120, z=100)
 ro_bw       = 20e3
 te          = 20e-3
+tr          = 500e-3
+etl         = 6
+dummies     = 3
+trajectory  = 'in-out'
 
 seq, traj, kdims = sequences.tse.tse_3d.constructor(
     echo_time           = te,
-    repetition_time     = 2000e-3,
-    etl                 = 22,
-    dummies             = 3,
-    trajectory          = 'linear',
+    repetition_time     = tr,
+    etl                 = etl,
+    dummies             = dummies,
+    trajectory          = trajectory,
     gradient_correction = 160e-6,
     rf_duration         = 200e-6,
     fov                 = Dimensions(x=210e-3, y=240e-3, z=200e-3),
@@ -64,6 +68,7 @@ else:
     img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
 
 idx = int(img.shape[0]/2)
+idx = 8
 fig, ax = plt.subplots(1, 2, figsize=(8, 4))
 if len(ksp.shape) == 3:
     ax[0].imshow(np.abs(ksp[idx, ...]), cmap="gray")
@@ -97,10 +102,13 @@ fig.set_facecolor("black")
 # %%
 
 acq_data.add_info({
-    "subject": "Brain - 4 noise coils - no shield",
+    "subject": "Brain - T1w",
     "echo_time": te,
+    "repetition_time": tr,
+    "etl": etl,
+    "trajectory":trajectory,
+    "num_dummies":dummies,
     "dim": [num_voxels.x, num_voxels.y, num_voxels.z],
-    # "sequence_info": "etl = 7, optimized grad correction",
 })
 
 acq_data.add_data({
