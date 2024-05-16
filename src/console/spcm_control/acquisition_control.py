@@ -18,7 +18,6 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [

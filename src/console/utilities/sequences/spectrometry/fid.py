@@ -46,12 +46,12 @@ def constructor(
         system=system,
     )
 
-    ringDownDelay = pp.make_delay(
+    ring_down_delay = pp.make_delay(
         round((dead_time) / 1e-6) * 1e-6
     )
 
     seq.add_block(rf_90)
-    seq.add_block(ringDownDelay)
+    seq.add_block(ring_down_delay)
     seq.add_block(adc)
 
     return seq
