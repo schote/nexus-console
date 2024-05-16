@@ -1,4 +1,6 @@
-import dataclasses, json
+import dataclasses
+import json
+
 
 class JSONEncoder(json.JSONEncoder):
         def default(self, o):

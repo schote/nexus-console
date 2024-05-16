@@ -2,7 +2,7 @@
 from . import system_settings
 from .calibration import fid_tx_adjust, se_tx_adjust
 from .spectrometry import se_projection, se_spectrum, se_spectrum_dl, t2_relaxation
-from .tse import tse_2d, tse_3d, b0_mapping
+from .tse import b0_mapping, tse_2d, tse_3d
 from .tse.tse_3d import Dimensions
 
 __all__ = [

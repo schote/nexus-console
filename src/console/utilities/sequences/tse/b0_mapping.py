@@ -243,7 +243,7 @@ def constructor(
         # Delay duration between Gy, Gz prephaser and readout
         tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2*gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration+echo_shift_time
         # Delay duration between readout and Gy, Gz gradient rephaser
-        tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift_time    
+        tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift_time
         for train in trains:
             seq.add_block(rf_90)
             seq.add_block(grad_ro_pre)

@@ -10,7 +10,7 @@ import numpy as np
 from scipy import signal
 
 import console.spcm_control.globals as glob
-import console.spcm_control.spcm.pyspcm as sp
+import console.utilities.ddc as ddc
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.interface_dimensions import Dimensions
@@ -20,7 +20,6 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities import ddc
 from console.utilities.load_config import get_instances
-import console.utilities.ddc as ddc
 
 LOG_LEVELS = [
     logging.DEBUG,

@@ -274,7 +274,7 @@ def constructor(
     for train in trains:
         if inversion_pulse:
             seq.add_block(rf_inversion)
-            seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))        
+            seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
         seq.add_block(rf_90)
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
