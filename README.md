@@ -43,7 +43,7 @@ _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for i
 
 ## Usage
 
-Please follow the project [documentation](schote.github.io/spectrum-console/) which contains a quick-start guide, some examples and a user guide.
+Please follow the project [documentation](https://schote.github.io/spectrum-console/) which contains a quick-start guide, some examples and a user guide.
 
 
 ---
