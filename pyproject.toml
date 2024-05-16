@@ -44,6 +44,7 @@ dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipy
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = [".", "src"]
 
 
 [tool.mypy]

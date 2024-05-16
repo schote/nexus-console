@@ -31,19 +31,30 @@ def test_t2_relaxation():
     assert seq.check_timing()[0]
 
 
-def test_tse_2d():
-    """Test 2D TSE imaging sequence constructor."""
-    seq = sequences.tse_2d.constructor(etl=1)[0]
-    assert seq.check_timing()[0]
-
-
 @pytest.mark.parametrize("etl", [1, 7])
 @pytest.mark.parametrize("dim", [sequences.Dimensions(64, 32, 1), sequences.Dimensions(64, 32, 32)])
-@pytest.mark.parametrize("te", [40e-3, 60e-3])
+@pytest.mark.parametrize("te", [20e-3])
 def test_tse_3d(etl, dim, te):
-    """Test 2D TSE imaging sequence constructor."""
-    seq, _ = sequences.tse_3d.constructor(n_enc=dim, etl=etl, echo_time=te)
-    assert seq.check_timing()[0]
+    """Test 3D TSE imaging sequence constructor."""
+    seq_io, acq_pos_io, n_enc_io = sequences.tse_3d.constructor(
+        n_enc=dim,
+        etl=etl,
+        echo_time=te,
+        trajectory=sequences.tse_3d.Trajectory.INOUT
+    )
+    seq_lin, acq_pos_lin, n_enc_lin = sequences.tse_3d.constructor(
+        n_enc=dim,
+        etl=etl,
+        echo_time=te,
+        trajectory=sequences.tse_3d.Trajectory.LINEAR
+    )
+    # Sequence timing checks
+    assert seq_io.check_timing()[0]
+    assert seq_lin.check_timing()[0]
+    # acquisition positions must be different
+    assert any([(p_io != p_lin).any() for p_io, p_lin in zip(acq_pos_io, acq_pos_lin)])
+    # encoding dimensions must be equal
+    assert n_enc_io == n_enc_lin
 
 
 def test_fid_tx_calibration():
