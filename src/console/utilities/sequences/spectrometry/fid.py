@@ -12,7 +12,7 @@ def constructor(
     adc_duration: float = 4e-3,
     use_sinc: bool = False,
     time_bw_product: float = 4,
-    flip_angle: float = pi/2,
+    flip_angle: float = pi / 2,
     ) -> pp.Sequence:
     """Construct FID sequence.
 
@@ -41,7 +41,7 @@ def constructor(
         rf_90 = pp.make_block_pulse(system=system, flip_angle=flip_angle, duration=rf_duration)
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
         system=system,
     )

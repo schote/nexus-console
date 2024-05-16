@@ -10,7 +10,7 @@ from console.utilities.sequences.system_settings import system
 
 def constructor(
     n_steps: int = 10,
-    flip_angle_range=(pi/4, 3*pi/2),
+    flip_angle_range=(pi / 4, 3 * pi / 2),
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,

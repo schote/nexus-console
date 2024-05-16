@@ -103,7 +103,7 @@ def constructor(
     # Define adc event
     adc = pp.make_adc(
         system=system,
-        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
         delay=gradient_correction + grad_ro.rise_time,
     )

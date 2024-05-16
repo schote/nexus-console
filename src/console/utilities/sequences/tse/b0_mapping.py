@@ -26,17 +26,17 @@ def constructor(
     etl: int = 7,
     dummies: int = 3,
     rf_duration: float = 400e-6,
-    ramp_duration:float = 200e-6,
+    ramp_duration: float = 200e-6,
     gradient_correction: float = 0.,
     ro_bandwidth: float = 20e3,
     fov: Dimensions = default_fov,
     n_enc: Dimensions = default_encoding,
     echo_shift: float = 0.0,
     trajectrory: str = "in-out",
-    excitation_angle: float = pi/2,
+    excitation_angle: float = pi / 2,
     excitation_phase: float = 0.,
     refocussing_angle: float = pi,
-    refocussing_phase: float = pi/2,
+    refocussing_phase: float = pi / 2,
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
@@ -83,57 +83,75 @@ def constructor(
     """
     system.rf_ringdown_time = 0
     seq = pp.Sequence(system)
-    seq.set_definition("Name", "tse_3d")
+    seq.set_definition("Name", "tse_3d_b0")
 
-    #check if channel labels are valid
+    # check if channel labels are valid
     channel_valid = True
-    if len(channel_ro) >1 or len(channel_ro)==0:
+    if len(channel_ro) > 1 or len(channel_ro) == 0:
         channel_valid = False
-        print("Invalid readout channel: %s"%(channel_ro))
-    if len(channel_pe1) >1 or len(channel_pe1)==0:
+        print("Invalid readout channel: %s" % (channel_ro))
+    if len(channel_pe1) > 1 or len(channel_pe1) == 0:
         channel_valid = False
-        print("Invalid pe1 channel: %s"%(channel_pe1))
-    if len(channel_pe1) >1 or len(channel_pe2)==0:
+        print("Invalid pe1 channel: %s" % (channel_pe1))
+    if len(channel_pe1) > 1 or len(channel_pe2) == 0:
         channel_valid = False
-        print("Invalid pe2 channel: %s"%(channel_pe2))
+        print("Invalid pe2 channel: %s" % (channel_pe2))
 
-    channel_ro = channel_ro.lower(); channel_pe1 = channel_pe1.lower(); channel_pe2 = channel_pe2.lower() #set all channels to lower case
+    channel_ro = channel_ro.lower()
+    channel_pe1 = channel_pe1.lower()
+    channel_pe2 = channel_pe2.lower()  # set all channels to lower case
 
-    if channel_ro not in ("x","y","z") or channel_pe1 not in ("x","y","z") or channel_pe2 not in ("x","y","z"):
+    if channel_ro not in ("x", "y", "z") or channel_pe1 not in ("x", "y", "z") or channel_pe2 not in ("x", "y", "z"):
         channel_valid = False
         print("Invalid axis orientation")
     if channel_ro == channel_pe1 or channel_ro == channel_pe2 or channel_pe1 == channel_pe2:
         channel_valid = False
         print("Error, multiple channels have the same gradient")
-        print("Readout channel: %s, pe1 channel: %s, pe2 channel: %s"%(channel_ro, channel_pe1, channel_pe2))
+        print("Readout channel: %s, pe1 channel: %s, pe2 channel: %s" % (channel_ro, channel_pe1, channel_pe2))
     if not channel_valid:
         print("Defaulting to readout in y, pe1 in z, pe2 in x")
-        channel_ro = "y"; channel_pe1 = "z"; channel_pe2 = "x"
+        channel_ro = "y"
+        channel_pe1 = "z"
+        channel_pe2 = "x"
 
-    if(channel_ro == "x"):
-        n_enc_ro = n_enc.x; fov_ro = fov.x
+    if (channel_ro == "x"):
+        n_enc_ro = n_enc.x
+        fov_ro = fov.x
         if channel_pe1 == "y":
-            n_enc_pe1 = n_enc.y; fov_pe1 = fov.y
-            n_enc_pe2 = n_enc.z; fov_pe2 = fov.z
+            n_enc_pe1 = n_enc.y
+            fov_pe1 = fov.y
+            n_enc_pe2 = n_enc.z
+            fov_pe2 = fov.z
         else:
-            n_enc_pe1 = n_enc.z; fov_pe1 = fov.z
-            n_enc_pe2 = n_enc.y; fov_pe2 = fov.y
-    elif(channel_ro == "y"):
-        n_enc_ro = n_enc.y; fov_ro = fov.y
+            n_enc_pe1 = n_enc.z
+            fov_pe1 = fov.z
+            n_enc_pe2 = n_enc.y
+            fov_pe2 = fov.y
+    elif (channel_ro == "y"):
+        n_enc_ro = n_enc.y
+        fov_ro = fov.y
         if channel_pe1 == "x":
-            n_enc_pe1 = n_enc.x; fov_pe1 = fov.x
-            n_enc_pe2 = n_enc.z; fov_pe2 = fov.z
+            n_enc_pe1 = n_enc.x
+            fov_pe1 = fov.x
+            n_enc_pe2 = n_enc.z
+            fov_pe2 = fov.z
         else:
-            n_enc_pe1 = n_enc.z; fov_pe1 = fov.z
-            n_enc_pe2 = n_enc.x; fov_pe2 = fov.x
+            n_enc_pe1 = n_enc.z
+            fov_pe1 = fov.z
+            n_enc_pe2 = n_enc.x
+            fov_pe2 = fov.x
     else:
         n_enc_ro = n_enc.z; fov_ro = fov.z
         if channel_pe1 == "y":
-            n_enc_pe1 = n_enc.y; fov_pe1 = fov.y
-            n_enc_pe2 = n_enc.x; fov_pe2 = fov.x
+            n_enc_pe1 = n_enc.y
+            fov_pe1 = fov.y
+            n_enc_pe2 = n_enc.x
+            fov_pe2 = fov.x
         else:
-            n_enc_pe1 = n_enc.x; fov_pe1 = fov.x
-            n_enc_pe2 = n_enc.y; fov_pe2 = fov.y
+            n_enc_pe1 = n_enc.x
+            fov_pe1 = fov.x
+            n_enc_pe2 = n_enc.y
+            fov_pe2 = fov.y
 
     # Calculate center out trajectory
     pe1 = np.arange(n_enc_pe1) - (n_enc_pe1 - 1) / 2
@@ -145,29 +163,29 @@ def constructor(
     pe_traj = np.stack([grid.flatten() for grid in np.meshgrid(pe1, pe2)], axis=-1)
     pe_pos = np.stack([grid.flatten() for grid in np.meshgrid(pe0_pos, pe1_pos)], axis=-1)
 
-    pe_mag = np.sum(np.square(pe_traj), axis = -1) #calculate magnitude of all gradient combinations
+    pe_mag = np.sum(np.square(pe_traj), axis=-1)  # calculate magnitude of all gradient combinations
     pe_mag_sorted = np.argsort(pe_mag)
 
-    pe_traj = pe_traj[pe_mag_sorted,:] #sort the points based on magnitude
-    pe_order = pe_pos[pe_mag_sorted,:] #kspace position for each of the gradients
+    pe_traj = pe_traj[pe_mag_sorted, :]  # sort the points based on magnitude
+    pe_order = pe_pos[pe_mag_sorted, :]  # kspace position for each of the gradients
 
-    #calculate the required gradient area for each k-point
+    # calculate the required gradient area for each k-point
     pe_traj[:, 0] /= fov_pe1
     pe_traj[:, 1] /= fov_pe2
 
     # Divide all PE steps into echo trains
     num_trains = int(np.ceil(pe_traj.shape[0] / etl))
-    trains = [pe_traj[k::num_trains,:] for k in range(num_trains)]
+    trains = [pe_traj[k::num_trains, :] for k in range(num_trains)]
 
-    #Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
-    trains_pos = [pe_order[k::num_trains,:] for k in range(num_trains)]
+    # Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
+    trains_pos = [pe_order[k::num_trains, :] for k in range(num_trains)]
     acq_pos = []
     for train_pos in trains_pos:
         acq_pos.extend(train_pos)
 
     # Definition of RF pulses
-    rf_90 = pp.make_block_pulse(system=system, flip_angle=excitation_angle, phase_offset = excitation_phase, duration=rf_duration, use="excitation")
-    rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle,phase_offset =refocussing_phase,duration=rf_duration, use="refocusing")
+    rf_90 = pp.make_block_pulse(system=system, flip_angle=excitation_angle, phase_offset=excitation_phase, duration=rf_duration, use="excitation")
+    rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle, phase_offset=refocussing_phase, duration=rf_duration, use="refocusing")
 
     # ADC duration
     adc_duration = n_enc_ro / ro_bandwidth
@@ -183,14 +201,14 @@ def constructor(
         # Add gradient correction time and ADC correction time
         flat_time=raster(adc_duration, precision=system.grad_raster_time),
     )
-    grad_ro = pp.make_trapezoid(#using the previous calculation for the amplitde, hacky, should find a better way
+    grad_ro = pp.make_trapezoid(  # using the previous calculation for the amplitde, hacky, should find a better way
         channel=channel_ro,
         system=system,
         amplitude=grad_ro.amplitude,
         rise_time=ramp_duration,
         fall_time=ramp_duration,
         # Add gradient correction time
-        flat_time=raster(adc_duration + 2*gradient_correction, precision=system.grad_raster_time),
+        flat_time=raster(adc_duration + 2 * gradient_correction, precision=system.grad_raster_time),
     )
 
     # Calculate readout prephaser without correction times
@@ -207,10 +225,10 @@ def constructor(
 
     adc = pp.make_adc(
         system=system,
-        num_samples=int((adc_duration)/system.adc_raster_time),
+        num_samples=int((adc_duration) / system.adc_raster_time),
         duration=raster(val=adc_duration, precision=system.adc_raster_time),
         # Add gradient correction time and ADC correction time
-        delay=raster(val=2*gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
+        delay=raster(val=2 * gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
     )
 
     # Calculate delays
@@ -218,32 +236,32 @@ def constructor(
     # Delay duration between RO prephaser after initial 90 degree RF and 180 degree RF pulse
     tau_1 = echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay - ro_pre_duration
     # Delay duration between Gy, Gz prephaser and readout
-    tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2*gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration+echo_shift
+    tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2 * gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration + echo_shift
     # Delay duration between readout and Gy, Gz gradient rephaser
-    tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift
+    tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift
     # Delay between echo trains
-    tr_delay = repetition_time - echo_time*etl - adc_duration / 2 - rf_90.delay
+    tr_delay = repetition_time - echo_time * etl - adc_duration / 2 - rf_90.delay
 
 
     for idx in range(dummies):
-        delay_90_180    = echo_time/2 - rf_duration
-        delay_180_180   = echo_time - rf_duration
-        rep_delay       = repetition_time - delay_90_180 - delay_180_180
+        delay_90_180 = echo_time / 2 - rf_duration
+        delay_180_180 = echo_time - rf_duration
+        rep_delay = repetition_time - delay_90_180 - delay_180_180
 
         seq.add_block(rf_90)
         seq.add_block(pp.make_delay(raster(val=delay_90_180, precision=system.grad_raster_time)))
-        for shot in range(etl):
-                seq.add_block(rf_180)
-                seq.add_block(pp.make_delay(raster(val=delay_180_180, precision=system.grad_raster_time)))
+        for _ in range(etl):
+            seq.add_block(rf_180)
+            seq.add_block(pp.make_delay(raster(val=delay_180_180, precision=system.grad_raster_time)))
         seq.add_block(pp.make_delay(raster(val=rep_delay, precision=system.grad_raster_time)))
 
-    #Acquire shifted data after unshifted data
+    # Acquire shifted data after unshifted data
     for idx in range(2):
-        echo_shift_time = (idx%2)*echo_shift
+        echo_shift_time = (idx % 2) * echo_shift
         # Delay duration between Gy, Gz prephaser and readout
-        tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2*gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration+echo_shift_time
+        tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2 * gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration + echo_shift_time
         # Delay duration between readout and Gy, Gz gradient rephaser
-        tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration-echo_shift_time
+        tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift_time
         for train in trains:
             seq.add_block(rf_90)
             seq.add_block(grad_ro_pre)
@@ -270,8 +288,8 @@ def constructor(
 
                 seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
-            #recalculate TR each train because train length is not guaranteed to be constant
-            tr_delay = repetition_time - echo_time*len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration/2 - ramp_duration
+            # recalculate TR each train because train length is not guaranteed to be constant
+            tr_delay = repetition_time - echo_time * len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration / 2 - ramp_duration
             seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
 
     # Calculate some sequence measures
@@ -300,13 +318,13 @@ def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> tu
         dimensions of kspace
     """
     n_avg, n_coil, _, n_ro = raw_data.shape
-    ksp_unshifted   = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
-    ksp_shifted     = np.zeros((n_avg, n_coil, kdims[2], kdims[1] ,kdims[0]), dtype = complex)
+    ksp_unshifted = np.zeros((n_avg, n_coil, kdims[2], kdims[1], kdims[0]), dtype=complex)
+    ksp_shifted = np.zeros((n_avg, n_coil, kdims[2], kdims[1], kdims[0]), dtype=complex)
 
     num_points = len(trajectory)
     for idx, kpt in enumerate(trajectory):
-        ksp_unshifted[...,kpt[1],kpt[0],:] = raw_data[:,:,idx,:]
-        ksp_shifted[...,kpt[1],kpt[0],:] = raw_data[:,:,idx + num_points,:]
+        ksp_unshifted[..., kpt[1], kpt[0], :] = raw_data[:, :, idx, :]
+        ksp_shifted[..., kpt[1], kpt[0], :] = raw_data[:, :, idx + num_points, :]
 
     return ksp_unshifted, ksp_shifted
 

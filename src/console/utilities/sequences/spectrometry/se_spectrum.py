@@ -45,7 +45,7 @@ def constructor(
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
         system=system,
     )

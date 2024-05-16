@@ -70,7 +70,7 @@ extend-exclude = ["src/console/spcm_control/spcm", "docs"]
 [tool.ruff.lint]
 # Enable linters
 # W = pycodestyle, F = Pyflakes, S = flake8-bandit, I = isort, N = pep8-naming, D = pydocstyle
-select = ["W", "F", "S", "I", "N", "D"]
+select = ["E", "W", "F", "S", "I", "N", "D"]
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true

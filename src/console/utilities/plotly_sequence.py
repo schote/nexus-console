@@ -160,7 +160,7 @@ def generate_plotly_figure(traces: list[TraceData]):
                 x=trace.time_points,
                 y=trace.signal_values,
                 name=trace.name,
-                yaxis=f"y{len(traces)-k}",
+                yaxis=f"y{len(traces) - k}",
                 mode="lines",
             )
         )
