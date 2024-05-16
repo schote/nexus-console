@@ -42,7 +42,7 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-) -> tuple[pp.Sequence, list]:
+) -> tuple[pp.Sequence, list, list]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters

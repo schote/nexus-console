@@ -40,7 +40,7 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-) -> tuple[pp.Sequence, list]:
+) -> tuple[pp.Sequence, list, list]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters
@@ -286,7 +286,7 @@ def constructor(
 
     return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
 
-def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
+def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> tuple[np.ndarray, np.ndarray]:
     """
     Sort acquired k-space lines.
 
