@@ -419,10 +419,13 @@ class RxCard(SpectrumDevice):
                         gate_data = gate_data[pre_trigger_cut:]
                         self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
-                        # Most probably we have not filled the whole page. There should be some bytes in the buffer, which are not readable yet.
-                        bytes_leftover = (total_bytes + self.post_trigger_size * self.num_channels.value) % rx_notify.value
+                        # Most probably we have not filled the whole page.
+                        # There should be some bytes in the buffer, which are not readable yet.
+                        bytes_leftover = (total_bytes + self.post_trigger_size * self.num_channels.value) \
+                            % rx_notify.value
 
-                        # Calculate the accumulation of the leftover bytes. If it is bigger than the notify value read the page.
+                        # Calculate the accumulation of the leftover bytes.
+                        # If it is bigger than the notify value read the page.
                         total_leftover += bytes_leftover
                         if total_leftover >= rx_notify.value:
                             total_leftover = total_leftover - rx_notify.value

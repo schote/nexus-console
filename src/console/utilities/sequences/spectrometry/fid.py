@@ -36,9 +36,13 @@ def constructor(
     seq.set_definition("Name", "fid")
 
     if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=flip_angle, duration=rf_duration, time_bw_product=time_bw_product)
+        rf_90 = pp.make_sinc_pulse(
+            system=system, flip_angle=flip_angle, duration=rf_duration, time_bw_product=time_bw_product
+        )
     else:
-        rf_90 = pp.make_block_pulse(system=system, flip_angle=flip_angle, duration=rf_duration)
+        rf_90 = pp.make_block_pulse(
+            system=system, flip_angle=flip_angle, duration=rf_duration
+        )
 
     adc = pp.make_adc(
         num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm

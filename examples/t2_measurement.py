@@ -16,7 +16,11 @@ configuration = "../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # Construct and plot sequence
-seq, te_values = sequences.t2_relaxation.constructor(echo_time_range=(10e-3, 100e-3), num_steps=50, repetition_time=600e-3)
+seq, te_values = sequences.t2_relaxation.constructor(
+    echo_time_range=(10e-3, 100e-3),
+    num_steps=50,
+    repetition_time=600e-3
+)
 
 # Larmor frequency:
 f_0 = 2038550

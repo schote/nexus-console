@@ -4,7 +4,7 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import raster, system
 
 
 def constructor(
@@ -51,26 +51,25 @@ def constructor(
 
     for echo_time in te_values:
 
-        te_delay_1 = pp.make_delay(
-            round((echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time) / 1e-6) * 1e-6
+        te_delay_1 = raster(
+            echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time,
+            precision=1e-6
         )
-        te_delay_2 = pp.make_delay(
-            round((echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
+        te_delay_2 = raster(
+            echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time,
+            precision=1e-6
         )
-        tr_delay = pp.make_delay(
-            round((repetition_time - echo_time - adc_duration / 2 - rf_90.dead_time) / 1e-6) * 1e-6
+        tr_delay = raster(
+            repetition_time - echo_time - adc_duration / 2 - rf_90.dead_time,
+            precision=1e-6
         )
 
         seq.add_block(rf_90)
-        seq.add_block(te_delay_1)
+        seq.add_block(pp.make_delay(te_delay_1))
         seq.add_block(rf_180)
-        seq.add_block(te_delay_2)
+        seq.add_block(pp.make_delay(te_delay_2))
         seq.add_block(adc)
-        seq.add_block(tr_delay)
-
-        # check_passed, err = seq.check_timing()
-        # if not check_passed:
-        #     print("Check failed for echo time: ", echo_time)
+        seq.add_block(pp.make_delay(tr_delay))
 
     seq.set_definition(key="te_values", value=te_values)
 

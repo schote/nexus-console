@@ -82,7 +82,8 @@ def constructor(
     excitation_angle, excitation_phase, optional
         set the flip angle and phase of the excitation pulse in radians, defaults to 90 degree flip angle, 0 phase
     refocussing_angle, refocussing_phase, optional
-        Set the flip angle and phase of the refocussing pulse in radians, defaults to 180 degree flip angle, 90 degree phase
+        Set the flip angle and phase of the refocussing pulse in radians,
+        defaults to 180 degree flip angle, 90 degree phase
         TODO: allow this to be a list/array to vary flip angle along echo train.
     channel_ro, channel_pe1, channel_pe2, optional
         set the readout, phase1 and phase2 encoding directions, default to y, z and x.
@@ -184,7 +185,7 @@ def constructor(
     pe_order = pe_positions[pe_mag_sorted, :]  # kspace position for each of the gradients
 
     if trajectory is Trajectory.LINEAR:
-        center_pos = 1 / 2                                          # where the center of kspace should be in the echo train
+        center_pos = 1 / 2  # where the center of kspace should be in the echo train
         num_points = np.size(pe_mag_sorted)
         linear_pos = np.zeros(num_points, dtype=int) - 10
         center_point = int(np.round(np.size(pe_mag) * center_pos))
@@ -228,10 +229,28 @@ def constructor(
         acq_pos.extend(train_pos)
 
     # Definition of RF pulses
-    rf_90 = pp.make_block_pulse(system=system, flip_angle=excitation_angle, phase_offset=excitation_phase, duration=rf_duration, use="excitation")
-    rf_180 = pp.make_block_pulse(system=system, flip_angle=refocussing_angle, phase_offset=refocussing_phase, duration=rf_duration, use="refocusing")
+    rf_90 = pp.make_block_pulse(
+        system=system,
+        flip_angle=excitation_angle,
+        phase_offset=excitation_phase,
+        duration=rf_duration,
+        use="excitation"
+    )
+    rf_180 = pp.make_block_pulse(
+        system=system,
+        flip_angle=refocussing_angle,
+        phase_offset=refocussing_phase,
+        duration=rf_duration,
+        use="refocusing"
+    )
     if inversion_pulse:
-        rf_inversion = pp.make_block_pulse(system=system, flip_angle=inversion_angle, phase_offset=refocussing_phase, duration=rf_duration, use="refocusing")
+        rf_inversion = pp.make_block_pulse(
+            system=system,
+            flip_angle=inversion_angle,
+            phase_offset=refocussing_phase,
+            duration=rf_duration,
+            use="refocusing"
+        )
 
     # ADC duration
     adc_duration = n_enc_ro / ro_bandwidth
@@ -281,7 +300,8 @@ def constructor(
     # Delay duration between RO prephaser after initial 90 degree RF and 180 degree RF pulse
     tau_1 = echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay - ro_pre_duration
     # Delay duration between Gy, Gz prephaser and readout
-    tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2 * gradient_correction - ramp_duration - rf_180.ringdown_time - ro_pre_duration + echo_shift
+    tau_2 = (echo_time - rf_duration - adc_duration) / 2 - 2 * gradient_correction \
+        - ramp_duration - rf_180.ringdown_time - ro_pre_duration + echo_shift
     # Delay duration between readout and Gy, Gz gradient rephaser
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift
 
@@ -293,16 +313,28 @@ def constructor(
         seq.add_block(pp.make_delay(raster(val=echo_time / 2 - rf_duration, precision=system.grad_raster_time)))
         for idx in range(etl):
             seq.add_block(rf_180)
-            seq.add_block(pp.make_delay(raster(val=echo_time - rf_duration, precision=system.grad_raster_time)))
+            seq.add_block(pp.make_delay(raster(
+                val=echo_time - rf_duration,
+                precision=system.grad_raster_time
+            )))
         if inversion_pulse:
-            seq.add_block(pp.make_delay(raster(val=repetition_time - (etl + 0.5) * echo_time - rf_duration - inversion_time, precision=system.grad_raster_time)))
+            seq.add_block(pp.make_delay(raster(
+                val=repetition_time - (etl + 0.5) * echo_time - rf_duration - inversion_time,
+                precision=system.grad_raster_time
+            )))
         else:
-            seq.add_block(pp.make_delay(raster(val=repetition_time - (etl + 0.5) * echo_time - rf_duration, precision=system.grad_raster_time)))
+            seq.add_block(pp.make_delay(raster(
+                val=repetition_time - (etl + 0.5) * echo_time - rf_duration,
+                precision=system.grad_raster_time
+            )))
 
     for train in trains:
         if inversion_pulse:
             seq.add_block(rf_inversion)
-            seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
+            seq.add_block(pp.make_delay(raster(
+                val=inversion_time - rf_duration,
+                precision=system.grad_raster_time
+            )))
         seq.add_block(rf_90)
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
@@ -313,8 +345,22 @@ def constructor(
             seq.add_block(rf_180)
 
             seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=-pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=-pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                pp.make_trapezoid(
+                    channel=channel_pe1,
+                    area=-pe_1,
+                    duration=ro_pre_duration,
+                    system=system,
+                    rise_time=ramp_duration,
+                    fall_time=ramp_duration
+                ),
+                pp.make_trapezoid(
+                    channel=channel_pe2,
+                    area=-pe_2,
+                    duration=ro_pre_duration,
+                    system=system,
+                    rise_time=ramp_duration,
+                    fall_time=ramp_duration
+                )
             )
 
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
@@ -322,17 +368,37 @@ def constructor(
             seq.add_block(grad_ro, adc)
 
             seq.add_block(
-                pp.make_trapezoid(channel=channel_pe1, area=pe_1, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration),
-                pp.make_trapezoid(channel=channel_pe2, area=pe_2, duration=ro_pre_duration, system=system, rise_time=ramp_duration, fall_time=ramp_duration)
+                pp.make_trapezoid(
+                    channel=channel_pe1,
+                    area=pe_1,
+                    duration=ro_pre_duration,
+                    system=system,
+                    rise_time=ramp_duration,
+                    fall_time=ramp_duration
+                ),
+                pp.make_trapezoid(
+                    channel=channel_pe2,
+                    area=pe_2,
+                    duration=ro_pre_duration,
+                    system=system,
+                    rise_time=ramp_duration,
+                    fall_time=ramp_duration
+                )
             )
 
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
         # recalculate TR each train because train length is not guaranteed to be constant
-        tr_delay = repetition_time - echo_time * len(train) - adc_duration / 2 - ro_pre_duration - tau_3 - rf_90.delay - rf_duration / 2 - ramp_duration
+        tr_delay = repetition_time - echo_time * len(train) - adc_duration / 2 - ro_pre_duration \
+            - tau_3 - rf_90.delay - rf_duration / 2 - ramp_duration
+
         if inversion_pulse:
             tr_delay -= inversion_time
-        seq.add_block(pp.make_delay(raster(val=tr_delay, precision=system.block_duration_raster)))
+
+        seq.add_block(pp.make_delay(raster(
+            val=tr_delay,
+            precision=system.block_duration_raster
+        )))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0]) / len(trains)

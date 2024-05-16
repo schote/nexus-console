@@ -280,7 +280,8 @@ class AcquisitionControl:
 
         Data is sorted according to readout size which might vary between different reout windows.
         Unprocessed and raw data are stored in class attributes _raw and _unproc.
-        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.
+        Both attributes are list, which store numpy arrays of readout data with the same number
+        of readout sample points.
 
         Post processing contains the following steps (per readout sample size):
         (1) Extraction of reference signal and scaling to float values [mV]
@@ -299,7 +300,9 @@ class AcquisitionControl:
             Acquisition parameter
         """
         readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
+        grouped_gates: dict[int, list] = {
+            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
+        }
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 
