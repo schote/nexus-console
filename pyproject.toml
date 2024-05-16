@@ -58,6 +58,7 @@ exclude = ["docs"]
 
 
 [tool.ruff]
+# Use "ruff check --preview" to also show check for rules which are in preview (e.g. whitespaces)
 src = ["src"]
 line-length = 120
 indent-width = 4
@@ -69,8 +70,15 @@ extend-exclude = ["src/console/spcm_control/spcm", "docs"]
 
 [tool.ruff.lint]
 # Enable linters
-# W = pycodestyle, F = Pyflakes, S = flake8-bandit, I = isort, N = pep8-naming, D = pydocstyle
-select = ["E", "W", "F", "S", "I", "N", "D"]
+# E = pycodestyle (error)
+# W = pycodestyle (warning)
+# F = Pyflakes
+# S = flake8-bandit
+# I = isort
+# N = pep8-naming
+# D = pydocstyle
+# NPY = numpy specific rules
+select = ["E", "W", "F", "S", "I", "N", "D", "NPY"]
 
 [tool.ruff.lint.flake8-type-checking]
 strict = true
