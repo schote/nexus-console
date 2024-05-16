@@ -56,4 +56,3 @@ def test_se_tx_calibration():
     """Test spin echo (SE) transmit calibration sequence constructor."""
     seq, _ = sequences.se_tx_adjust.constructor()
     assert seq.check_timing()[0]
-

@@ -27,6 +27,7 @@ class Trajectory(Enum):
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
 default_encoding = Dimensions(x=70, y=70, z=49)
 
+
 def constructor(
     echo_time: float = 15e-3,
     repetition_time: float = 600e-3,
@@ -411,6 +412,7 @@ def constructor(
     seq.set_definition("tr_delay", tr_delay)
 
     return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
+
 
 def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
     """

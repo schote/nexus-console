@@ -389,7 +389,6 @@ class SequenceProvider(Sequence):
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
 
-
     @profile
     def unroll_sequence(self) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.

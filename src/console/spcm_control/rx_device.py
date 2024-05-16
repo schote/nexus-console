@@ -438,7 +438,6 @@ class RxCard(SpectrumDevice):
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
 
-
         self.log.debug("Card operation stopped")
 
     def get_status(self) -> int:

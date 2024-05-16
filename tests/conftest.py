@@ -20,6 +20,7 @@ def seq_provider():
         system=system
     )
 
+
 @pytest.fixture
 def random_acquisition_data():
     """Construct random acquisition data using factory function.
@@ -32,16 +33,19 @@ def random_acquisition_data():
         Random acquisition data array with dimensions: [averages, coils, phase encoding, readout]
     """
     rng = np.random.default_rng(seed=0)
+
     def _random_acquisition_data(num_averages: int, num_coils: int, num_pe: int, num_ro: int):
         re = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         im = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         return re + 1j * im
     return _random_acquisition_data
 
+
 @pytest.fixture
 def test_spectrum():
     """Sinusoidal test signal."""
     rng = np.random.default_rng(seed=0)
+
     def _test_signal(num_samples: int, noise_scale: float):
         x = np.linspace(-5, 5, num_samples)
         echo = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi) * 10

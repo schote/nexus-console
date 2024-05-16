@@ -170,7 +170,6 @@ class AcquisitionControl:
         self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
-
     def run(self) -> AcquisitionData:
         """Run an acquisition job.
 
