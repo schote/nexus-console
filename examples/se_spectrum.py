@@ -1,5 +1,5 @@
 """Experiment to acquire a spin echo spectrum."""
-
+import torch
 import logging
 
 import matplotlib.pyplot as plt
@@ -7,34 +7,40 @@ import numpy as np
 
 import console.utilities.sequences as sequences
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 
 # Create acquisition control instance
 acq = AcquisitionControl(
-    configuration_file="../device_config.yaml",
-    console_log_level=logging.INFO,
+    configuration_file="device_config.yaml",
+    console_log_level=logging.DEBUG,
     file_log_level=logging.DEBUG
 )
 
 # Construct a spin echo based spectrum sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=12e-3,        # 12 ms echo time
-    rf_duration=200e-6,     # 200 us RF pulseq duration
-    use_sinc=False          # Do not use sinc pulse, but block pulse
+    echo_time=6e-3,          # 12 ms echo time
+    rf_duration=300e-6,      # 200 us RF pulseq duration
+    time_bw_product=2,
+    use_sinc=False,           # Do not use sinc pulse, but block pulse
+    rf_amplitudes = [1.0,1.0,1.0,1.0],
+    rf_phases     = [0,45,90,135]
 )
 
 # Define acquisition parameters
 params = AcquisitionParameter(
-    larmor_frequency=2.0395e6,  # Set Larmor freqency in MHz
+    larmor_frequency=123e6,     # Set Larmor freqency in MHz
     decimation=200,             # Set decimation factor for down-sampling
 )
 
 # Run the acquisition
-acq.set_sequence(parameter=params, sequence=seq)
+acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
+
+
 # Get decimated data from acquisition data object
+'''
 data = acq_data.raw.squeeze()
 
 # Calculate FFT
@@ -54,6 +60,6 @@ acq_data.add_info({
 
 # Write acquisition data object
 acq_data.save()
-
+'''
 # Delete the acquisition control, which disconnects from the measurement cards
 del acq

@@ -5,13 +5,13 @@ import threading
 from dataclasses import dataclass
 
 import numpy as np
-
+import sys
 import console.spcm_control.spcm.pyspcm as spcm
 from console.interfaces.interface_acquisition_parameter import Dimensions
 from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
-
+from console.spcm_control.spcm.errors import *
 
 @dataclass
 class TxCard(SpectrumDevice):
@@ -87,7 +87,22 @@ class TxCard(SpectrumDevice):
             Dictionary containing class variables.
         """
         return super().dict()
-
+    
+    def setup_sync_card(self) -> None:
+        spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
+        try:
+            if ("M4i.6622-x8") not in (device_type := type_to_name(self.card_type.value)): ## Make it general to the cards
+                raise ConnectionError(
+                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
+                )
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+        
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_SYNC_ENABLEMASK, 0x0003)
+        
+        
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
 
@@ -107,7 +122,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
 
         try:
-            if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
+            if ("M4i.6622-x8") not in (device_type := type_to_name(self.card_type.value)): ## Make it general to the cards
                 raise ConnectionError(
                     "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
                 )
@@ -116,17 +131,24 @@ class TxCard(SpectrumDevice):
             raise err
 
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
-
+        sync_enable = False # To be implemented. 
         # Set trigger
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
-
+        if (not sync_enable):
+            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
+        else:
+            # Sync card will trigger the cards
+            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TM_NONE)
+            
+            # Setup X2 for TRIGOUT to trigger the RX device. This is different than low-field implementation
+            spcm.spcm_dwSetParam_i32 (self.card,  spcm.SPCM_X2_MODE, spcm.SPCM_XMODE_TRIGOUT)
+        
         # Set clock mode, internal PLL and clock output enable
         # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
         # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
         # Configure external clock, TX master clock
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500)
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL)
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1)
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500)
 
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
@@ -173,32 +195,68 @@ class TxCard(SpectrumDevice):
 
         # Setup the card in FIFO mode
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
+        
 
+        
         # >> Setup digital output channels
         # Channel X1: dig. ADC gate (15th bit from analog channel 1)
-        spcm.spcm_dwSetParam_i32(
+        
+        '''
+        error = spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X1_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = spcm.uint32(0)
+        self.err_val  = spcm.int32(0)
+        spcm.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("X1")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
         # Channel X2: dig. reference signal (15th bit from analog channel 2)
-        spcm.spcm_dwSetParam_i32(
+        error = spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X2_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = spcm.uint32(0)
+        self.err_val  = spcm.int32(0)
+        spcm.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("X2")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
         # Channel X3, X12: dig. unblanking signal (15th bit of analog channel 3)
-        spcm.spcm_dwSetParam_i32(
+        error = spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X3_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
-        spcm.spcm_dwSetParam_i32(
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = spcm.uint32(0)
+        self.err_val  = spcm.int32(0)
+        spcm.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("X3")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
+        error = spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X12_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
-
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = spcm.uint32(0)
+        self.err_val  = spcm.int32(0)
+        spcm.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("X12")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
+        '''
         self.log.debug("Device setup completed")
         self.log_card_status()
 
@@ -318,7 +376,8 @@ class TxCard(SpectrumDevice):
         if sqnc_sample_rate := 1 / (data.dwell_time * 1e6) != self.sample_rate:
             self.log.warning(
                 "Sequence sample rate (%s MHz) differs from device sample rate (%s MHz).",
-                sqnc_sample_rate,
+                #sqnc_sample_rate,
+                1 / (data.dwell_time * 1e6),
                 self.sample_rate,
             )
 
@@ -398,15 +457,18 @@ class TxCard(SpectrumDevice):
             spcm.uint64(0),
             self.ring_buffer_size,
         )
-        spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
-
+        error =  spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
+        
+        
+        
         self.log.debug("Starting card memory transfer")
         error = spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPC_M2CMD,
             spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
         )
-        self.handle_error(error)
+
+
 
         # Start card
         self.log.debug("Starting card operation")

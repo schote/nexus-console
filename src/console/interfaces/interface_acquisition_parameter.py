@@ -31,7 +31,7 @@ class AcquisitionParameter:
     Can be updated using `dataclasses.replace(instance, larmor_frequency=2.1e6)`.
     """
 
-    larmor_frequency: float = 2e6
+    larmor_frequency: float = 123e6
     """Larmor frequency in MHz."""
 
     b1_scaling: float = 1.0

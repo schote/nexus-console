@@ -7,12 +7,14 @@ from console.utilities.sequences.system_settings import system
 
 
 def constructor(
-    echo_time: float = 12e-3,
-    rf_duration: float = 400e-6,
-    adc_duration: float = 4e-3,
-    use_sinc: bool = False,
-    time_bw_product: float = 4,
-    use_fid: bool = True,
+    echo_time       : float = 12e-3,
+    rf_duration     : float = 600e-6,
+    adc_duration    : float = 4e-3,
+    use_sinc        : bool = False,
+    time_bw_product : float = 4,
+    rf_amplitudes   : list = [1.0, 1.0, 1.0, 1.0],
+    rf_phases       : list = [0,0,0,0],
+    use_fid         : bool = True
     ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 

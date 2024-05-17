@@ -75,14 +75,15 @@ class AcquisitionControl:
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
         self.seq_provider: SequenceProvider = ctx[0]
-        self.tx_card: TxCard = ctx[1]
-        self.rx_card: RxCard = ctx[2]
+        self.tx_card:  TxCard = ctx[1]
+        self.tx_card2: TxCard = ctx[2]
+        self.rx_card:  RxCard = ctx[3]
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
 
         # Setup the cards
         self.is_setup: bool = False
-        if self.tx_card.connect() and self.rx_card.connect():
+        if self.tx_card.connect() and self.tx_card2.connect() and self.rx_card.connect():
             self.log.info("Setup of measurement cards successful.")
             self.is_setup = True
 
@@ -102,6 +103,8 @@ class AcquisitionControl:
         """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()
+        if self.tx_card2:
+            self.tx_card2.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
         self.log.info("Measurement cards disconnected")
@@ -215,16 +218,17 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
+        # Not available in m4i
+        # self.tx_card.set_gradient_offsets(glob.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
 
         for k in range(glob.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, glob.parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            time.sleep(0.5)
+            time.sleep(0.1)
             self.tx_card.start_operation(self.unrolled_seq)
-
+            self.tx_card2.start_operation(self.unrolled_seq)
             # Get start time of acquisition
             time_start = time.time()
 
@@ -247,13 +251,15 @@ class AcquisitionControl:
                 self.post_processing(glob.parameter)
 
             self.tx_card.stop_operation()
+            self.tx_card2.stop_operation()
             self.rx_card.stop_operation()
 
             if glob.parameter.averaging_delay > 0:
                 time.sleep(glob.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
+        # Non m4i
+        # self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
@@ -274,6 +280,7 @@ class AcquisitionControl:
             session_path=self.session_path,
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
+                self.tx_card2.__name__: self.tx_card2.dict(),
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },

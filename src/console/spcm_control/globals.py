@@ -5,6 +5,7 @@ from console.interfaces.interface_acquisition_parameter import DEFAULT_STATE_FIL
 
 # Load state of acquisition parameters from file, if it exists
 if os.path.exists(DEFAULT_STATE_FILE_PATH):
+    print("Default file path: ", DEFAULT_STATE_FILE_PATH)
     parameter = AcquisitionParameter.load()
 else:
     parameter = AcquisitionParameter()

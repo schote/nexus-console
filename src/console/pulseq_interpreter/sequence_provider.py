@@ -55,7 +55,7 @@ class SequenceProvider(Sequence):
         gpa_gain: list[float],
         high_impedance: list[bool],
         output_limits: list[int] | None = None,
-        spcm_dwell_time: float = 1 / 20e6,
+        spcm_dwell_time: float = 1 / 625e6,
         rf_to_mvolt: float = 1,
         system: Opts = default_opts,
     ):
@@ -159,6 +159,7 @@ class SequenceProvider(Sequence):
         unroll_arr: np.ndarray,
         b1_scaling: float,
         unblanking: np.ndarray,
+        rf_phase  : float,
         num_samples_rf_start: int = 0,
     ) -> None:
         """Calculate RF sample points to be played by TX card.
@@ -209,8 +210,8 @@ class SequenceProvider(Sequence):
         unblanking_end = num_samples_delay + num_samples
         unblanking[unblanking_start:unblanking_end] = 1
 
-        # Calculate the static phase offset, defined by RF pulse
-        phase_offset = np.exp(1j * block.phase_offset)
+        # Calculate the static phase offset, defined by RF pulse also add pTx phases
+        phase_offset = np.exp(1j * (block.phase_offset+(np.pi*(rf_phase/180.))))
 
         # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
@@ -457,8 +458,8 @@ class SequenceProvider(Sequence):
 
         try:
             # Check larmor frequency
-            if glob.parameter.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency*1e-6} MHz")
+            if glob.parameter.larmor_frequency > 310e6:
+                raise ValueError(f"Larmor frequency is above 7T frequency: {glob.parameter.larmor_frequency*1e-6} MHz")
             self.larmor_freq = glob.parameter.larmor_frequency
 
             # Check if sequence has block events
@@ -503,9 +504,34 @@ class SequenceProvider(Sequence):
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
                     b1_scaling=glob.parameter.b1_scaling,
+                    rf_phase = 0.,
                     num_samples_rf_start=rf_start_sample_pos,
                 )
-
+                self.calculate_rf(
+                    block=block.rf,
+                    unroll_arr=_seq[k][1::4],
+                    unblanking=_unblanking[k],
+                    b1_scaling=glob.parameter.b1_scaling,
+                    rf_phase = 60.,
+                    num_samples_rf_start=rf_start_sample_pos,
+                )
+                self.calculate_rf(
+                    block=block.rf,
+                    unroll_arr=_seq[k][2::4],
+                    unblanking=_unblanking[k],
+                    b1_scaling=glob.parameter.b1_scaling,
+                    rf_phase=90.,
+                    num_samples_rf_start=rf_start_sample_pos,
+                )
+                self.calculate_rf(
+                    block=block.rf,
+                    unroll_arr=_seq[k][3::4],
+                    unblanking=_unblanking[k],
+                    b1_scaling=glob.parameter.b1_scaling,
+                    rf_phase=135.,
+                    num_samples_rf_start=rf_start_sample_pos,
+                )
+            '''
             if block.adc is not None:
                 self.add_adc_gate(block.adc, _adc[k], _ref[k])
                 adc_count += 1
@@ -525,12 +551,12 @@ class SequenceProvider(Sequence):
                 self.calculate_gradient(
                     block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=glob.parameter.fov_scaling.z
                 )
-
+            
             # Bitwise operations to merge gx with adc and gy with unblanking
             _seq[k][1::4] = _seq[k][1::4].view(np.uint16) >> 1 | (_adc[k] << 15)
             _seq[k][2::4] = _seq[k][2::4].view(np.uint16) >> 1 | (_ref[k] << 15)
             _seq[k][3::4] = _seq[k][3::4].view(np.uint16) >> 1 | (_unblanking[k] << 15)
-
+            '''
             # Count the total amount of samples (for one channel) to keep track of the phase
             self.sample_count += n_samples
 

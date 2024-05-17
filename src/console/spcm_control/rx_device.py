@@ -7,10 +7,13 @@ from decimal import Decimal, getcontext
 from itertools import compress
 
 import numpy as np
-
+import sys
+from console.spcm_control.spcm.errors import *
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
+
+import ctypes
 
 # Define registers lists
 CH_SELECT = [
@@ -73,7 +76,7 @@ class RxCard(SpectrumDevice):
 
         # Define pre and post trigger time.
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
-        self.pre_trigger = 8
+        self.pre_trigger = 32
         self.post_trigger = 4096
         self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
@@ -107,7 +110,7 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i64(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_RESET)  # Needed?
 
         try:
-            if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
+            if "M4i.4451-x8" not in (device_type := type_to_name(self.card_type.value)): #Generalize the name check
                 raise ConnectionError("Device with path %s is of type %s, no receive card" % (self.path, device_type))
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
@@ -115,7 +118,7 @@ class RxCard(SpectrumDevice):
 
         # Setup the internal clockmode, clock output enable (use RX clock output to enable anti-alias filter)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_INTPLL)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKOUT, 1)
+        #sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKOUT, 1)
 
         # Use external clock: Terminate to 50 Ohms, set threshold to 1.5V, suitable for 3.3V clock
         # sp.spcm_dwSetParam_i32(self.card, sp.SPC_CLOCKMODE, sp.SPC_CM_EXTERNAL)
@@ -127,16 +130,17 @@ class RxCard(SpectrumDevice):
         sample_rate = sp.int64(0)
         sp.spcm_dwGetParam_i64(self.card, sp.SPC_SAMPLERATE, byref(sample_rate))
         self.log.info("Device sampling rate: %s MHz", sample_rate.value * 1e-6)
-
-        if sample_rate.value != sp.MEGA(self.sample_rate):
-            self.log.warning(
-                "Actual device sample rate %s MHz does not match set sample rate of %s MHz; Updating class attribute",
-                sample_rate.value * 1e-6,
-                self.sample_rate,
-            )
-            self.sample_rate = int(sample_rate.value * 1e-6)
+#
+#        if sample_rate.value != sp.MEGA(self.sample_rate):
+#            self.log.warning(
+#                "Actual device sample rate %s MHz does not match set sample rate of %s MHz; Updating class attribute",
+#                sample_rate.value * 1e-6,
+#                self.sample_rate,
+#            )
+#            self.sample_rate = int(sample_rate.value * 1e-6)
 
         # Check channel enable, max. amplitude per channel and impedance values
+        '''
         try:
             # if (num_enable := len(self.channel_enable)) < 1 or num_enable > 8:
             if (num_enable := len(self.channel_enable)) != 8:
@@ -151,13 +155,15 @@ class RxCard(SpectrumDevice):
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
-
+        '''
         # Enable receive channels, compress list of channel select registers to obtain list of channels to be enabled
         # Sum of the compressed list equals logical or operator
         # e.g. sp.CHANNEL0 | sp.CHANNEL1 | sp.CHANNEL5 = sum([sp.CHANNEL0, sp.CHANNEL1, sp.CHANNEL5]) = 35
         channel_selection = sum(list(compress(CH_SELECT, map(bool, self.channel_enable))))
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CHENABLE, channel_selection)
 
+        
+        
         # Set impedance and amplitude limits for each channel according to device configuration
         for k, enable in enumerate(map(bool, self.channel_enable)):
             if enable:
@@ -168,7 +174,10 @@ class RxCard(SpectrumDevice):
                     self.max_amplitude[k],
                 )
                 sp.spcm_dwSetParam_i32(self.card, IMP_SELECT[k], self.impedance_50_ohms[k])
+                        
+
                 sp.spcm_dwSetParam_i32(self.card, AMP_SELECT[k], self.max_amplitude[k])
+
 
         # Get the number of actual active channels and compare against provided channel enable list
         sp.spcm_dwGetParam_i32(self.card, sp.SPC_CHCOUNT, byref(self.num_channels))
@@ -184,15 +193,27 @@ class RxCard(SpectrumDevice):
             raise err
 
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
+        #sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
         # Setup digital input channels for reference signal
-        sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
+        '''
+        error = sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
+
+        sp.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("CARD-1")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
+        '''
+        #error = sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
+
+
+        
+        
         # TODO: Double check, why is the post trigger divided by number of channels and multiplied by 2?
-        self.post_trigger = 4096 // self.num_channels.value
-        self.post_trigger_size = self.post_trigger * 2
+        self.post_trigger       = 4096 // self.num_channels.value
+        self.post_trigger_size  = self.post_trigger * 2
         # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
@@ -206,7 +227,16 @@ class RxCard(SpectrumDevice):
         )
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_EXT1_MODE, sp.SPC_TM_POS)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_ORMASK, sp.SPC_TMASK_EXT1)
-
+        '''        
+        #error
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = sp.uint32(0)
+        self.err_val  = sp.int32(0)
+        sp.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
+        '''
         # Setup gated fifo mode
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CARDMODE, sp.SPC_REC_FIFO_GATE)
 
