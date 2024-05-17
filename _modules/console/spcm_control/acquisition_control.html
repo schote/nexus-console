@@ -38,7 +38,7 @@
   <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
 
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/design-tabs.js?v=36754332"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/spcm_control/acquisition_control';</script>
@@ -439,6 +439,7 @@ document.write(`
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">signal</span>
 
 <span class="kn">import</span> <span class="nn">console.spcm_control.globals</span> <span class="k">as</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">console.utilities.ddc</span> <span class="k">as</span> <span class="nn">ddc</span>
 <span class="kn">from</span> <span class="nn">console.interfaces.interface_acquisition_data</span> <span class="kn">import</span> <span class="n">AcquisitionData</span>
 <span class="kn">from</span> <span class="nn">console.interfaces.interface_acquisition_parameter</span> <span class="kn">import</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">DDCMethod</span>
 <span class="kn">from</span> <span class="nn">console.interfaces.interface_dimensions</span> <span class="kn">import</span> <span class="n">Dimensions</span>
@@ -446,7 +447,6 @@ document.write(`
 <span class="kn">from</span> <span class="nn">console.pulseq_interpreter.sequence_provider</span> <span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">SequenceProvider</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.rx_device</span> <span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span> <span class="nn">console.spcm_control.tx_device</span> <span class="kn">import</span> <span class="n">TxCard</span>
-<span class="kn">from</span> <span class="nn">console.utilities</span> <span class="kn">import</span> <span class="n">ddc</span>
 <span class="kn">from</span> <span class="nn">console.utilities.load_config</span> <span class="kn">import</span> <span class="n">get_instances</span>
 
 <span class="n">LOG_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
@@ -470,7 +470,6 @@ document.write(`
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">configuration_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;../../../device_config.yaml&quot;</span><span class="p">,</span>
-        <span class="n">data_storage_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s2">&quot;~&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;/spcm-console&quot;</span><span class="p">,</span>
         <span class="n">file_log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
         <span class="n">console_log_level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">,</span>
     <span class="p">):</span>
@@ -484,11 +483,6 @@ document.write(`
 <span class="sd">        configuration_file</span>
 <span class="sd">            Path to configuration yaml file which is used to create measurement card and sequence</span>
 <span class="sd">            provider instances.</span>
-<span class="sd">        data_storage_path</span>
-<span class="sd">            Directory of storage location.</span>
-<span class="sd">            Within the storage location the acquisition control will create a session folder</span>
-<span class="sd">            (currently the convention is used: one day equals one session).</span>
-<span class="sd">            All data written during one session will be stored in the session folder.</span>
 <span class="sd">        file_log_level</span>
 <span class="sd">            Set the logging level for log file. Logfile is written to the session folder.</span>
 <span class="sd">        console_log_level</span>
@@ -610,7 +604,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sequence duration: </span><span class="si">%s</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span></div>
 
 
-
 <div class="viewcode-block" id="AcquisitionControl.run">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.run">[docs]</a>
     <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AcquisitionData</span><span class="p">:</span>
@@ -658,7 +651,7 @@ document.write(`
 
             <span class="c1"># Start masurement card operations</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">()</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unrolled_seq</span><span class="p">)</span>
 
             <span class="c1"># Get start time of acquisition</span>
@@ -725,7 +718,8 @@ document.write(`
 
 <span class="sd">        Data is sorted according to readout size which might vary between different reout windows.</span>
 <span class="sd">        Unprocessed and raw data are stored in class attributes _raw and _unproc.</span>
-<span class="sd">        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.</span>
+<span class="sd">        Both attributes are list, which store numpy arrays of readout data with the same number</span>
+<span class="sd">        of readout sample points.</span>
 
 <span class="sd">        Post processing contains the following steps (per readout sample size):</span>
 <span class="sd">        (1) Extraction of reference signal and scaling to float values [mV]</span>
@@ -744,7 +738,9 @@ document.write(`
 <span class="sd">            Acquisition parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">readout_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">]</span>
-        <span class="n">grouped_gates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">readout_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">readout_sizes</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])}</span>
+        <span class="n">grouped_gates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">readout_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">readout_sizes</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">}</span>
         <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">:</span>
             <span class="n">grouped_gates</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
@@ -772,8 +768,14 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
 
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Demodulation at freq.:&quot;</span><span class="p">,</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">)</span>
+
             <span class="c1"># Demodulation and decimation</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
+
+            <span class="c1"># Always decimate the reference signal with moving average filter</span>
+            <span class="n">ref_dec</span> <span class="o">=</span> <span class="n">ddc</span><span class="o">.</span><span class="n">filter_moving_average</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">decimation</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="c1"># Extract the demodulated signal data</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 
             <span class="c1"># Switch case for DDC function</span>
             <span class="k">match</span> <span class="n">glob</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">:</span>
@@ -785,8 +787,9 @@ document.write(`
                     <span class="c1"># Default case is FIR decimation</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">decimate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Apply phase correction</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]))</span>
+            <span class="c1"># Apply phase correction with mean value</span>
+            <span class="c1"># data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">ref_dec</span><span class="p">))</span>
 
             <span class="c1"># Append to global raw data list</span>
             <span class="k">if</span> <span class="n">raw_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>

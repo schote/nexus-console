@@ -39,7 +39,7 @@
   <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/design-tabs.js?v=36754332"></script>
     <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -463,7 +463,8 @@ The calculated waveforms are stored in a list, where each entry is a <em>numpy</
 The waveforms within each array are in column-major (Fortran-style) order.
 Within the unrolling process, which is shown in <a class="reference internal" href="#seq-provider-flow"><span class="std std-numref">Fig. 1</span></a>, all the physical values are translated to <code class="docutils literal notranslate"><span class="pre">int16</span></code> values, as explained below.</p>
 <figure class="align-center" id="seq-provider-flow">
-<a class="reference internal image-reference" href="../_images/sequence_provider.png"><img alt="../_images/sequence_provider.png" src="../_images/sequence_provider.png" style="width: 100%;" /></a>
+<a class="reference internal image-reference" href="../_images/sequence_provider.png"><img alt="../_images/sequence_provider.png" src="../_images/sequence_provider.png" style="width: 100%;" />
+</a>
 <figcaption>
 <p><span class="caption-number">Fig. 1 </span><span class="caption-text">Overview flow chart of the sequence unrolling in the sequence provider class.</span><a class="headerlink" href="#seq-provider-flow" title="Link to this image">#</a></p>
 </figcaption>
@@ -550,7 +551,8 @@ In the following, we break down the sequence calculation into RF, gradients and 
 <h3>RF Pulses<a class="headerlink" href="#rf-pulses" title="Link to this heading">#</a></h3>
 <p>As shown in <a class="reference internal" href="#rf-waveform"><span class="std std-numref">Fig. 2</span></a> an RF event (here a block pulse) is defined by different sections in time, namely delay, deadtime, RF pulse and ringdown time.</p>
 <figure class="align-center" id="rf-waveform">
-<a class="reference internal image-reference" href="../_images/rf_waveform.png"><img alt="../_images/rf_waveform.png" src="../_images/rf_waveform.png" style="width: 80%;" /></a>
+<a class="reference internal image-reference" href="../_images/rf_waveform.png"><img alt="../_images/rf_waveform.png" src="../_images/rf_waveform.png" style="width: 80%;" />
+</a>
 <figcaption>
 <p><span class="caption-number">Fig. 2 </span><span class="caption-text">Example of an RF block pulse which is defined by delay, dead time, RF pulse and ring-down time.</span><a class="headerlink" href="#rf-waveform" title="Link to this image">#</a></p>
 </figcaption>
@@ -575,7 +577,8 @@ Thus the starting point of the RF unblanking signal in the array is defined by d
 A gradient event can either be defined as a trapezoid or as an arbitrary gradient.
 <a class="reference internal" href="#trap-gradient"><span class="std std-numref">Fig. 3</span></a> shows the definition of a trapezoid gradient and its translation to the sampled waveform.</p>
 <figure class="align-center" id="trap-gradient">
-<a class="reference internal image-reference" href="../_images/trapezoid_gradient_waveform.png"><img alt="../_images/trapezoid_gradient_waveform.png" src="../_images/trapezoid_gradient_waveform.png" style="width: 90%;" /></a>
+<a class="reference internal image-reference" href="../_images/trapezoid_gradient_waveform.png"><img alt="../_images/trapezoid_gradient_waveform.png" src="../_images/trapezoid_gradient_waveform.png" style="width: 90%;" />
+</a>
 <figcaption>
 <p><span class="caption-number">Fig. 3 </span><span class="caption-text">Definition and conversion of a trapezoidal gradient waveform.</span><a class="headerlink" href="#trap-gradient" title="Link to this image">#</a></p>
 </figcaption>
@@ -595,7 +598,8 @@ This conversion is defined by the hardware parameters in the device configuratio
 The final waveform is obtained by concatenating all the sections.</p>
 <p><a class="reference internal" href="#arbitrary-gradient"><span class="std std-numref">Fig. 4</span></a> shows an arbitrary gradient event which is defined similar to an RF event.</p>
 <figure class="align-center" id="arbitrary-gradient">
-<a class="reference internal image-reference" href="../_images/arbitrary_gradient_waveform.png"><img alt="../_images/arbitrary_gradient_waveform.png" src="../_images/arbitrary_gradient_waveform.png" style="width: 90%;" /></a>
+<a class="reference internal image-reference" href="../_images/arbitrary_gradient_waveform.png"><img alt="../_images/arbitrary_gradient_waveform.png" src="../_images/arbitrary_gradient_waveform.png" style="width: 90%;" />
+</a>
 <figcaption>
 <p><span class="caption-number">Fig. 4 </span><span class="caption-text">Definition and conversion of an arbitrary gradient waveform.</span><a class="headerlink" href="#arbitrary-gradient" title="Link to this image">#</a></p>
 </figcaption>

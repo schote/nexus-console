@@ -38,7 +38,7 @@
   <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
 
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/design-tabs.js?v=36754332"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/spcm_control/rx_device';</script>
@@ -775,10 +775,10 @@ document.write(`
                 <span class="n">gate_sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span> <span class="o">*</span> <span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1e6&quot;</span><span class="p">))))</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;Gate: (</span><span class="si">%s</span><span class="s2"> s, </span><span class="si">%s</span><span class="s2"> s); ADC duration: </span><span class="si">%s</span><span class="s2"> ms ; Gate Sample: </span><span class="si">% s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Gate: (</span><span class="si">%s</span><span class="s2"> s, </span><span class="si">%s</span><span class="s2"> s); ADC duration: </span><span class="si">%s</span><span class="s2"> ms ; Samples/gate/channel: </span><span class="si">% s</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">timestamp_0</span><span class="p">,</span>
                     <span class="n">timestamp_1</span><span class="p">,</span>
-                    <span class="n">gate_length</span><span class="p">,</span>  <span class="c1"># Can be trimmed.</span>
+                    <span class="nb">float</span><span class="p">(</span><span class="n">gate_length</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span>  <span class="c1"># Can be trimmed.</span>
                     <span class="n">gate_sample</span><span class="p">,</span>
                 <span class="p">)</span>
 
@@ -862,10 +862,13 @@ document.write(`
                         <span class="n">gate_data</span> <span class="o">=</span> <span class="n">gate_data</span><span class="p">[</span><span class="n">pre_trigger_cut</span><span class="p">:]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gate_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gate_sample</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">))</span>
 
-                        <span class="c1"># Most probably we have not filled the whole page. There should be some bytes in the buffer, which are not readable yet.</span>
-                        <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_bytes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span><span class="p">)</span> <span class="o">%</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
+                        <span class="c1"># Most probably we have not filled the whole page.</span>
+                        <span class="c1"># There should be some bytes in the buffer, which are not readable yet.</span>
+                        <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_bytes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> \
+                            <span class="o">%</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
 
-                        <span class="c1"># Calculate the accumulation of the leftover bytes. If it is bigger than the notify value read the page.</span>
+                        <span class="c1"># Calculate the accumulation of the leftover bytes.</span>
+                        <span class="c1"># If it is bigger than the notify value read the page.</span>
                         <span class="n">total_leftover</span> <span class="o">+=</span> <span class="n">bytes_leftover</span>
                         <span class="k">if</span> <span class="n">total_leftover</span> <span class="o">&gt;=</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
                             <span class="n">total_leftover</span> <span class="o">=</span> <span class="n">total_leftover</span> <span class="o">-</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
@@ -877,7 +880,6 @@ document.write(`
                         <span class="c1"># It is better for tracking if the card length is in the order of notify (page) size.</span>
                         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">available_card_len</span><span class="p">)</span>
                         <span class="k">break</span>
-
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Card operation stopped&quot;</span><span class="p">)</span>
 

@@ -38,7 +38,7 @@
   <script src="../../../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
 
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/design-tabs.js?v=36754332"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/utilities/ddc';</script>
@@ -461,7 +461,7 @@ document.write(`
     <span class="c1"># Exponential function for resampling</span>
     <span class="c1"># To prevent division by zero for [-1, 1, 0], noise at the scale of 1e-20 is added</span>
     <span class="c1"># kernel_noise = np.random.choice(list(range(-9, 0)) + list(range(1, 10)), kernel_size) * 1e-3</span>
-    <span class="n">kernel_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="o">+</span><span class="mf">1e-10</span><span class="p">,</span> <span class="mi">1</span><span class="o">-</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">)</span>
+    <span class="n">kernel_space</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-10</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">)</span>
     <span class="n">kernel_space</span><span class="p">[</span><span class="n">kernel_space</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-10</span>
     <span class="c1"># Define kernel</span>
     <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">kernel_space</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">kernel_space</span> <span class="o">*</span> <span class="mf">2.073</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="n">kernel_space</span>
