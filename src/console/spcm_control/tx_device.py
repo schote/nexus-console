@@ -239,9 +239,9 @@ class TxCard(SpectrumDevice):
             raise err
 
         # Set offset values, scale offset by 0.5 if channel is terminated into high impedance
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x/2) if x_high_imp else int(offsets.x))
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y/2) if y_high_imp else int(offsets.y))
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z/2) if z_high_imp else int(offsets.z))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x / 2) if x_high_imp else int(offsets.x))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS2, int(offsets.y / 2) if y_high_imp else int(offsets.y))
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS3, int(offsets.z / 2) if z_high_imp else int(offsets.z))
 
         # Write setup
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_WRITESETUP)

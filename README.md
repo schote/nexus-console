@@ -16,7 +16,7 @@ Further documentation on setting up miniconda can be found [here](https://conda.
 The package was developed under [Python 3.10](https://www.python.org/downloads/release/python-3100/) so it is recommended to use `python==3.10`.
 
 To install the console application, clone the repository an ensure that you are in the repository directory, which is `*/spectrum-console/`. 
-The package can be installed with differen dependencies depending on the specific requirements:
+The package can be installed with different dependencies depending on the specific requirements:
 
     `pip install -e .`
 
@@ -43,7 +43,7 @@ _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for i
 
 ## Usage
 
-Please follow the project [documentation](schote.github.io/spectrum-console/) which contains a quick-start guide, some examples and a user guide.
+Please follow the project [documentation](https://schote.github.io/spectrum-console/) which contains a quick-start guide, some examples and a user guide.
 
 
 ---

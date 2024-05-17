@@ -11,6 +11,7 @@ import numpy as np
 
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.utilities.json_encoder import JSONEncoder
 
 
 @dataclass(slots=True, frozen=True)
@@ -131,7 +132,7 @@ class AcquisitionData:
 
         # Save meta data
         with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
-            json.dump(self.meta, outfile, indent=4)
+            json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
 
         try:
             # Write sequence .seq file
@@ -170,7 +171,7 @@ class AcquisitionData:
         """
         log = logging.getLogger("AcqData")
         try:
-            json.dumps(info)
+            json.dumps(info, cls=JSONEncoder)
         except TypeError as exc:
             log.error("Could not append info to meta data.", exc)
         self.meta["info"].update(info)

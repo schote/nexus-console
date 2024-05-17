@@ -332,10 +332,10 @@ class RxCard(SpectrumDevice):
                 gate_sample = int(round(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6"))))
 
                 self.log.info(
-                    "Gate: (%s s, %s s); ADC duration: %s ms ; Gate Sample: % s",
+                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: % s",
                     timestamp_0,
                     timestamp_1,
-                    gate_length,  # Can be trimmed.
+                    float(gate_length) * 1e3,  # Can be trimmed.
                     gate_sample,
                 )
 
@@ -419,10 +419,13 @@ class RxCard(SpectrumDevice):
                         gate_data = gate_data[pre_trigger_cut:]
                         self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
-                        # Most probably we have not filled the whole page. There should be some bytes in the buffer, which are not readable yet.
-                        bytes_leftover = (total_bytes + self.post_trigger_size) % rx_notify.value
+                        # Most probably we have not filled the whole page.
+                        # There should be some bytes in the buffer, which are not readable yet.
+                        bytes_leftover = (total_bytes + self.post_trigger_size * self.num_channels.value) \
+                            % rx_notify.value
 
-                        # Calculate the accumulation of the leftover bytes. If it is bigger than the notify value read the page.
+                        # Calculate the accumulation of the leftover bytes.
+                        # If it is bigger than the notify value read the page.
                         total_leftover += bytes_leftover
                         if total_leftover >= rx_notify.value:
                             total_leftover = total_leftover - rx_notify.value
@@ -434,7 +437,6 @@ class RxCard(SpectrumDevice):
                         # It is better for tracking if the card length is in the order of notify (page) size.
                         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
-
 
         self.log.debug("Card operation stopped")
 

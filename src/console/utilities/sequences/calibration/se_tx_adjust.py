@@ -12,7 +12,7 @@ ADC_DURATION = 4e-3
 
 def constructor(
     n_steps: int = 10,
-    flip_angle_range=(pi/4, 3*pi/2),
+    flip_angle_range=(pi / 4, 3 * pi / 2),
     repetition_time: float = 1000,
     echo_time: float = 12e-3,
     rf_duration: float = 400e-6,
@@ -54,10 +54,10 @@ def constructor(
 
         if use_sinc:
             rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration)
-            rf_180 = pp.make_sinc_pulse(system=system, flip_angle=angle*2, duration=rf_duration)
+            rf_180 = pp.make_sinc_pulse(system=system, flip_angle=angle * 2, duration=rf_duration)
         else:
             rf_90 = pp.make_block_pulse(system=system, flip_angle=angle, duration=rf_duration)
-            rf_180 = pp.make_block_pulse(system=system, flip_angle=angle*2, duration=rf_duration)
+            rf_180 = pp.make_block_pulse(system=system, flip_angle=angle * 2, duration=rf_duration)
 
         te_delay_1 = pp.make_delay(echo_time / 2 - rf_duration)
         te_delay_2 = pp.make_delay(echo_time / 2 - rf_duration / 2 - ADC_DURATION / 2)

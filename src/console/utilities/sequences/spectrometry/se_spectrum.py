@@ -3,7 +3,7 @@ from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import raster, system
 
 
 def constructor(
@@ -38,34 +38,34 @@ def constructor(
     seq.set_definition("Name", "se_spectrum")
 
     if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, time_bw_product=time_bw_product)
-        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, time_bw_product=time_bw_product)
+        rf_90 = pp.make_sinc_pulse(
+            system=system, flip_angle=pi / 2, duration=rf_duration, time_bw_product=time_bw_product
+        )
+        rf_180 = pp.make_sinc_pulse(
+            system=system, flip_angle=pi, duration=rf_duration, time_bw_product=time_bw_product
+        )
     else:
         rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
         system=system,
     )
 
-    te_delay_1 = pp.make_delay(
-        round((echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time) / 1e-6) * 1e-6
-    )
+    te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time, 1e-6)
     if use_fid:
-        te_delay_2 = pp.make_delay(
-            round((echo_time / 2 - rf_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
-        )
+        te_delay_2 = raster(echo_time / 2 - rf_duration / 2 - rf_180.ringdown_time - adc.dead_time, 1e-6)
     else:
-        te_delay_2 = pp.make_delay(
-            round((echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time) / 1e-6) * 1e-6
+        te_delay_2 = raster(
+            echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time, 1e-6
         )
 
     seq.add_block(rf_90)
-    seq.add_block(te_delay_1)
+    seq.add_block(pp.make_delay(te_delay_1))
     seq.add_block(rf_180)
-    seq.add_block(te_delay_2)
+    seq.add_block(pp.make_delay(te_delay_2))
     seq.add_block(adc)
 
     return seq

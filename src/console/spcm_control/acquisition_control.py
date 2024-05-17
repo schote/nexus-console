@@ -10,6 +10,7 @@ import numpy as np
 from scipy import signal
 
 import console.spcm_control.globals as glob
+import console.utilities.ddc as ddc
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.interface_dimensions import Dimensions
@@ -17,7 +18,6 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -39,7 +39,6 @@ class AcquisitionControl:
     def __init__(
         self,
         configuration_file: str = "../../../device_config.yaml",
-        data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
     ):
@@ -53,11 +52,6 @@ class AcquisitionControl:
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
-        data_storage_path
-            Directory of storage location.
-            Within the storage location the acquisition control will create a session folder
-            (currently the convention is used: one day equals one session).
-            All data written during one session will be stored in the session folder.
         file_log_level
             Set the logging level for log file. Logfile is written to the session folder.
         console_log_level
@@ -176,7 +170,6 @@ class AcquisitionControl:
         self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
-
     def run(self) -> AcquisitionData:
         """Run an acquisition job.
 
@@ -222,7 +215,7 @@ class AcquisitionControl:
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            time.sleep(0.5)
+            time.sleep(0.01)
             self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
@@ -286,7 +279,8 @@ class AcquisitionControl:
 
         Data is sorted according to readout size which might vary between different reout windows.
         Unprocessed and raw data are stored in class attributes _raw and _unproc.
-        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.
+        Both attributes are list, which store numpy arrays of readout data with the same number
+        of readout sample points.
 
         Post processing contains the following steps (per readout sample size):
         (1) Extraction of reference signal and scaling to float values [mV]
@@ -305,7 +299,9 @@ class AcquisitionControl:
             Acquisition parameter
         """
         readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
+        grouped_gates: dict[int, list] = {
+            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
+        }
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 
@@ -333,8 +329,14 @@ class AcquisitionControl:
                 self._unproc.append(data[None, ...])
 
             print("Demodulation at freq.:", parameter.larmor_frequency)
+
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
+
+            # Always decimate the reference signal with moving average filter
+            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
+            # Extract the demodulated signal data
+            data = data[:-1, ...]
 
             # Switch case for DDC function
             match glob.parameter.ddc_method:
@@ -346,8 +348,9 @@ class AcquisitionControl:
                     # Default case is FIR decimation
                     data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
-            # Apply phase correction
-            data = data[:-1, ...] * np.exp(-1j * np.angle(data[-1, ...]))
+            # Apply phase correction with mean value
+            # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
+            data = data * np.exp(-1j * np.angle(ref_dec))
 
             # Append to global raw data list
             if raw_size > 0:

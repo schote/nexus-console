@@ -69,7 +69,7 @@ def constructor(
     )
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration/system.adc_raster_time),
+        num_samples=int(adc_duration / system.adc_raster_time),
         duration=adc_duration,
         system=system,
         delay=gradient_correction + gradient.rise_time,

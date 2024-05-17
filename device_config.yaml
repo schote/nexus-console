@@ -20,13 +20,14 @@ TxCard: !TxCard
 RxCard: !RxCard
   path: "/dev/spcm0"
   # Enable the receive channels
-  channel_enable: [1, 0, 0, 0, 0, 0, 0, 0]
+  channel_enable: [1, 1, 0, 0, 0, 0, 0, 0]
   # Set the max. amplitude per channel in mV, list length must at least match the number of enabled channels
   max_amplitude: [200, 200, 200, 200, 1000, 1000, 1000, 1000]
+
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
   # ATTENTION: At the moment only 1 or 2 channels are possible.
   # > Driver complains if more than 2 channels are enabled.
-  impedance_50_ohms: [1, 0, 0, 0, 0, 0, 0, 0]
+  impedance_50_ohms: [1, 1, 1, 1, 0, 0, 0, 0]
   # Device sampling rate in MHz
   sample_rate: 20
 
