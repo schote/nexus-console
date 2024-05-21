@@ -17,6 +17,7 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
+from console.spcm_control.sync_device import SyncCard
 from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
@@ -78,15 +79,19 @@ class AcquisitionControl:
         self.tx_card:  TxCard = ctx[1]
         self.tx_card2: TxCard = ctx[2]
         self.rx_card:  RxCard = ctx[3]
+        self.sync_card: SyncCard= ctx[4]
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
-
+        self.sync_enabled               = self.tx_card.sync_card_en
         # Setup the cards
         self.is_setup: bool = False
+        if self.sync_enabled:
+           if self.sync_card.connect():
+              self.log.info("Setup of measurement cards successful.")
         if self.tx_card.connect() and self.tx_card2.connect() and self.rx_card.connect():
-            self.log.info("Setup of measurement cards successful.")
-            self.is_setup = True
-
+           self.log.info("Setup of measurement cards successful.")
+           self.is_setup = True
+            
         # Get the rx sampling rate for DDC
         self.f_spcm = self.rx_card.sample_rate * 1e6
         # Set sequence provider max. amplitude per channel according to values from tx_card
@@ -107,6 +112,8 @@ class AcquisitionControl:
             self.tx_card2.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
+        if self.sync_card:
+            self.sync_card.disconnect()
         self.log.info("Measurement cards disconnected")
         self.log.info("\n--- Acquisition control terminated\n\n")
 
@@ -227,8 +234,9 @@ class AcquisitionControl:
             # Start masurement card operations
             self.rx_card.start_operation()
             time.sleep(0.1)
-            self.tx_card.start_operation(self.unrolled_seq)
-            self.tx_card2.start_operation(self.unrolled_seq)
+            self.tx_card.start_operation(self.unrolled_seq,self.sync_enabled)
+            self.tx_card2.start_operation(self.unrolled_seq,self.sync_enabled)
+            self.sync_card.start_operation()
             # Get start time of acquisition
             time_start = time.time()
 
@@ -249,7 +257,7 @@ class AcquisitionControl:
 
             if num_gates > 0:
                 self.post_processing(glob.parameter)
-
+            self.sync_card.start_operation()
             self.tx_card.stop_operation()
             self.tx_card2.stop_operation()
             self.rx_card.stop_operation()
@@ -279,6 +287,7 @@ class AcquisitionControl:
             sequence=self.seq_provider,
             session_path=self.session_path,
             meta={
+                self.sync_card.__name__:self.sync_card.dict(),
                 self.tx_card.__name__: self.tx_card.dict(),
                 self.tx_card2.__name__: self.tx_card2.dict(),
                 self.rx_card.__name__: self.rx_card.dict(),

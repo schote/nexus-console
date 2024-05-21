@@ -15,6 +15,8 @@ TxCards:
       sample_rate: 625
       # Notify size is defined by as fraction of total buffer size (optional)
       notify_rate: 16
+      # If transmit card synchronization is enabled by Star-hub module 
+      sync_card_en: True
 
     - !TxCard
       path: "/dev/spcm2"
@@ -26,7 +28,13 @@ TxCards:
       sample_rate: 625
       # Notify size is defined by as fraction of total buffer size (optional)
       notify_rate: 16
+      # If transmit card synchronization is enabled by Star-hub module
+      sync_card_en: True
 
+# >> SYNC DEVICE: STAR-HUB -> sync0 (Synchronization) 
+SyncCard:
+    - !SyncCard
+       path: "sync0"
 
 # >> RX DEVICE: M2p.5933-x4 -> /dev/spcm0 (Digitizer)
 # Total number of receive channels: 8

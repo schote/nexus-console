@@ -36,6 +36,7 @@ class TxCard(SpectrumDevice):
     filter_type: list[int]
     sample_rate: int
     notify_rate: int = 16
+    sync_card_en: bool = False
 
     __name__: str = "TxCard"
 
@@ -131,16 +132,17 @@ class TxCard(SpectrumDevice):
             raise err
 
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
-        sync_enable = False # To be implemented. 
-        # Set trigger
-        if (not sync_enable):
+        
+        # Set cards depending on synchronization module
+        if (not self.sync_card_en):
             spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
+            
         else:
             # Sync card will trigger the cards
             spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TM_NONE)
-            
+            spcm.spcm_dwSetParam_i32(self.card, spcm.SPCM_X2_MODE, spcm.SPCM_XMODE_TRIGOUT)
             # Setup X2 for TRIGOUT to trigger the RX device. This is different than low-field implementation
-            spcm.spcm_dwSetParam_i32 (self.card,  spcm.SPCM_X2_MODE, spcm.SPCM_XMODE_TRIGOUT)
+            
         
         # Set clock mode, internal PLL and clock output enable
         # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
@@ -324,7 +326,7 @@ class TxCard(SpectrumDevice):
                 offsets.x, offsets.y, offsets.z
             )
 
-    def start_operation(self, data: UnrolledSequence | None = None) -> None:
+    def start_operation(self, data: UnrolledSequence | None = None,sync_enabled=False) -> None:
         """Start transmit (TX) card operation.
 
         Steps:
@@ -383,7 +385,7 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
+        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,sync_enabled,))
         self.worker.start()
 
     def stop_operation(self) -> None:
@@ -403,7 +405,7 @@ class TxCard(SpectrumDevice):
         else:
             print("No active replay thread found...")
 
-    def _fifo_stream_worker(self, data: np.ndarray) -> None:
+    def _fifo_stream_worker(self, data: np.ndarray, sync_enabled: bool) -> None:
         """Continuous FIFO mode examples.
 
         Parameters
@@ -471,13 +473,14 @@ class TxCard(SpectrumDevice):
 
 
         # Start card
-        self.log.debug("Starting card operation")
-        error = spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPC_M2CMD,
-            spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
-        )
-        self.handle_error(error)
+        self.log.debug("Starting card operation || Star-hub function: %s",self.sync_card_en)
+        if (not self.sync_card_en):
+            error = spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPC_M2CMD,
+                spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
+            )
+            self.handle_error(error)
 
         avail_bytes = spcm.int32(0)
         usr_position = spcm.int32(0)

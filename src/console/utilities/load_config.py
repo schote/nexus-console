@@ -7,7 +7,7 @@ from pypulseq.opts import Opts
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-
+from console.spcm_control.sync_device import SyncCard
 
 def tx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> TxCard:
     """Construct a transmit card object.
@@ -26,7 +26,7 @@ def tx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -
     # Ignore type checking here since mypy requires keywords to be strings
     return TxCard(**loader.construct_mapping(node, deep=True))  # type: ignore
 
-def tx_card_additional_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> TxCard:
+def sync_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> SyncCard:
     """Construct a transmit card object.
 
     Parameters
@@ -41,10 +41,7 @@ def tx_card_additional_constructor(loader: yaml.SafeLoader, node: yaml.nodes.Map
         TxCard object
     """
     # Ignore type checking here since mypy requires keywords to be strings
-    return TxCardAdditional(**loader.construct_mapping(node, deep=True))  # type: ignore
-
-
-
+    return SyncCard(**loader.construct_mapping(node, deep=True))  # type: ignore
 
 def rx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> RxCard:
     """Construct a receive card object.
@@ -100,7 +97,7 @@ def opts_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> O
 
 
 # >> Helper function to read configuration file
-def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, TxCard , RxCard]:
+def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, TxCard , RxCard, SyncCard]:
     """Construct object instances from yaml configuration file.
 
     Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.
@@ -125,7 +122,7 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, TxCard
     # Set output limits of sequence provider to the maximum amplitudes from transmit card
     config["SequenceProvider"].output_limits = config["TxCards"][0].max_amplitude
     config["SequenceProvider"].output_limits = config["TxCards"][1].max_amplitude
-    return (config["SequenceProvider"], config["TxCards"][0],config["TxCards"][1], config["RxCard"])
+    return (config["SequenceProvider"], config["TxCards"][0],config["TxCards"][1], config["RxCard"],config["SyncCard"])
 
 
 # >> Create yaml loader object
@@ -134,6 +131,6 @@ Loader = yaml.SafeLoader
 # >> Add constructors to PyYAML loader
 Loader.add_constructor("!RxCard", rx_card_constructor)
 Loader.add_constructor("!TxCard", tx_card_constructor)
-#Loader.add_constructor("!TxCardAdditional", tx_card_constructor)
+Loader.add_constructor("!SyncCard", sync_card_constructor)
 Loader.add_constructor("!SequenceProvider", sequence_provider_constructor)
 Loader.add_constructor("!Opts", opts_constructor)
