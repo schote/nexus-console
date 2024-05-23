@@ -12,7 +12,7 @@ from console.utilities.snr import signal_to_noise_ratio
 def test_snr_calculation(noise_snr, test_spectrum):
     """Test snr calculation."""
     num_samples = 400
-    dwell_time = 4e-3/num_samples
+    dwell_time = 4e-3 / num_samples
     noise_scale, snr_result = noise_snr
     spectrum_data = test_spectrum(num_samples, noise_scale)
 

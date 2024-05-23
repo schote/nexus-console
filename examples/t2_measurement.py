@@ -16,7 +16,11 @@ configuration = "../device_config.yaml"
 acq = AcquisitionControl(configuration_file=configuration, console_log_level=logging.INFO, file_log_level=logging.DEBUG)
 
 # Construct and plot sequence
-seq, te_values = sequences.t2_relaxation.constructor(echo_time_range=(10e-3, 100e-3), num_steps=50, repetition_time=600e-3)
+seq, te_values = sequences.t2_relaxation.constructor(
+    echo_time_range=(10e-3, 100e-3),
+    num_steps=50,
+    repetition_time=600e-3
+)
 
 # Larmor frequency:
 f_0 = 2038550
@@ -24,7 +28,7 @@ f_0 = 2038550
 # Define acquisition parameters
 params = AcquisitionParameter(
     larmor_frequency=f_0,
-    b1_scaling=2.43, # 8 cm phantom
+    b1_scaling=2.43,  # 8 cm phantom
     decimation=200,
 
     # Optional: averaging with a delay in between of 2 s
@@ -43,7 +47,7 @@ peaks = np.max(data, axis=-1)
 # T2 model to fit the acquired data
 def t2_model(te_values, a, b, c):
     """Model for T2 relaxation."""
-    return a + b * np.exp(-te_values/c)
+    return a + b * np.exp(-te_values / c)
 
 
 # Fit parameters to measured data
@@ -58,10 +62,10 @@ t2_fit = t2_model(te_values_fit, *params)
 
 # Plot measurement and fit
 fig, ax = plt.subplots(1, 1, figsize=(10, 6))
-ax.scatter(te_values*1e3, np.abs(peaks), marker="x", c="b", label="Measurement")
+ax.scatter(te_values * 1e3, np.abs(peaks), marker="x", c="b", label="Measurement")
 ax.set_xlabel("TE [ms]")
 ax.set_ylabel("Abs. signal ampliude [mV]")
-ax.plot(te_values_fit*1e3, t2_fit, linestyle="--", c="r", label=f"Fit, T2 = {round(t2*1e3, 4)} ms")
+ax.plot(te_values_fit * 1e3, t2_fit, linestyle="--", c="r", label=f"Fit, T2 = {round(t2 * 1e3, 4)} ms")
 ax.legend()
 
 # Save

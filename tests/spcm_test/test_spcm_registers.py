@@ -11,6 +11,7 @@ def test_reg_values():
             continue
         assert isinstance(var[1], int)
 
+
 def test_conversions():
     """Test value conversions."""
     assert reg.KILO(1) == 1000

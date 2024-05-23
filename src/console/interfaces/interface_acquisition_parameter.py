@@ -2,7 +2,7 @@
 
 import copy
 import os
-import pickle
+import pickle  # noqa: S403
 from dataclasses import asdict, dataclass, replace
 from enum import Enum
 from pathlib import Path

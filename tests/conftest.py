@@ -20,6 +20,7 @@ def seq_provider():
         system=system
     )
 
+
 @pytest.fixture
 def random_acquisition_data():
     """Construct random acquisition data using factory function.
@@ -31,21 +32,24 @@ def random_acquisition_data():
     -------
         Random acquisition data array with dimensions: [averages, coils, phase encoding, readout]
     """
-    np.random.seed(seed=0)
+    rng = np.random.default_rng(seed=0)
+
     def _random_acquisition_data(num_averages: int, num_coils: int, num_pe: int, num_ro: int):
-        re = np.random.rand(num_averages, num_coils, num_pe, num_ro)
-        im = np.random.rand(num_averages, num_coils, num_pe, num_ro)
+        re = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
+        im = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         return re + 1j * im
     return _random_acquisition_data
+
 
 @pytest.fixture
 def test_spectrum():
     """Sinusoidal test signal."""
-    np.random.seed(seed=0)
+    rng = np.random.default_rng(seed=0)
+
     def _test_signal(num_samples: int, noise_scale: float):
         x = np.linspace(-5, 5, num_samples)
-        echo = np.exp(-x**2/2) / np.sqrt(2*np.pi) * 10
-        noise = np.random.normal(loc=0, scale=noise_scale, size=num_samples)
+        echo = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi) * 10
+        noise = rng.normal(loc=0, scale=noise_scale, size=num_samples)
 
         spcm = np.fft.fftshift(np.fft.fft(np.fft.fftshift(echo + noise)))
 
@@ -58,7 +62,7 @@ def test_sequence():
     """Construct a test sequence."""
     seq = pp.Sequence()
     seq.set_definition("Name", "test_sequence")
-    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi/2))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2))
     seq.add_block(pp.make_delay(10e-6))
     seq.add_block(pp.make_trapezoid(channel="x", area=5e-3))
     seq.add_block(

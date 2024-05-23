@@ -10,7 +10,7 @@ import numpy as np
 from scipy import signal
 
 import console.spcm_control.globals as glob
-import console.spcm_control.spcm.pyspcm as sp
+import console.utilities.ddc as ddc
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.interface_dimensions import Dimensions
@@ -18,9 +18,7 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
-import console.utilities.ddc as ddc
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -172,7 +170,6 @@ class AcquisitionControl:
         self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
-
     def run(self) -> AcquisitionData:
         """Run an acquisition job.
 
@@ -282,7 +279,8 @@ class AcquisitionControl:
 
         Data is sorted according to readout size which might vary between different reout windows.
         Unprocessed and raw data are stored in class attributes _raw and _unproc.
-        Both attributes are list, which store numpy arrays of readout data with the same number of readout sample points.
+        Both attributes are list, which store numpy arrays of readout data with the same number
+        of readout sample points.
 
         Post processing contains the following steps (per readout sample size):
         (1) Extraction of reference signal and scaling to float values [mV]
@@ -301,7 +299,9 @@ class AcquisitionControl:
             Acquisition parameter
         """
         readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])}
+        grouped_gates: dict[int, list] = {
+            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
+        }
         for data in self.rx_card.rx_data:
             grouped_gates[data.shape[-1]].append(data)
 

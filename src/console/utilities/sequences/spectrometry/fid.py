@@ -12,7 +12,7 @@ def constructor(
     adc_duration: float = 4e-3,
     use_sinc: bool = False,
     time_bw_product: float = 4,
-    flip_angle: float = pi/2,
+    flip_angle: float = pi / 2,
     ) -> pp.Sequence:
     """Construct FID sequence.
 
@@ -36,22 +36,26 @@ def constructor(
     seq.set_definition("Name", "fid")
 
     if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=flip_angle, duration=rf_duration, time_bw_product=time_bw_product)
+        rf_90 = pp.make_sinc_pulse(
+            system=system, flip_angle=flip_angle, duration=rf_duration, time_bw_product=time_bw_product
+        )
     else:
-        rf_90 = pp.make_block_pulse(system=system, flip_angle=flip_angle, duration=rf_duration)
+        rf_90 = pp.make_block_pulse(
+            system=system, flip_angle=flip_angle, duration=rf_duration
+        )
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
         duration=adc_duration,
         system=system,
     )
 
-    ringDownDelay = pp.make_delay(
+    ring_down_delay = pp.make_delay(
         round((dead_time) / 1e-6) * 1e-6
     )
 
     seq.add_block(rf_90)
-    seq.add_block(ringDownDelay)
+    seq.add_block(ring_down_delay)
     seq.add_block(adc)
 
     return seq

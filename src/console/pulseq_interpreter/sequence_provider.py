@@ -283,27 +283,27 @@ class SequenceProvider(Sequence):
 
         # Calculate gradient offset int16 value from mV
         # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
-        offset = getattr(glob.parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx+1]
+        offset = getattr(glob.parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx + 1]
 
         # Calculat gradient waveform scaling
-        scaling = fov_scaling * self.imp_scaling[idx+1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
+        scaling = fov_scaling * self.imp_scaling[idx + 1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
 
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
-                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx+1]:
+                if np.amax(waveform := block.waveform * scaling) + offset > self.output_limits[idx + 1]:
                     raise ValueError(
                         "Amplitude of %s (%s) gradient exceeded output limit (%s)"
                         % (
                             block.channel,
                             np.amax(waveform),
-                            self.output_limits[idx+1],
+                            self.output_limits[idx + 1],
                         )
                     )
                 # Trasnfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx+1]
+                waveform *= INT16_MAX / self.output_limits[idx + 1]
 
                 gradient = np.interp(
                     x=np.linspace(
@@ -317,13 +317,13 @@ class SequenceProvider(Sequence):
 
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx+1]:
+                if np.amax(flat_amp := block.amplitude * scaling) + offset > self.output_limits[idx + 1]:
                     raise ValueError(
-                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx+1]}."
+                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx + 1]}."
                     )
 
                 # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx+1])
+                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx + 1])
 
                 rise = np.linspace(
                     0,
@@ -388,7 +388,6 @@ class SequenceProvider(Sequence):
         ref_signal = np.exp(2j * np.pi * (self.larmor_freq * ref_time + offset))
         # Digital reference signal, sin > 0 is high, 16th bit set to 1 (high)
         clk_ref[ref_signal > 0] = 1
-
 
     @profile
     def unroll_sequence(self) -> UnrolledSequence:
@@ -459,7 +458,7 @@ class SequenceProvider(Sequence):
         try:
             # Check larmor frequency
             if glob.parameter.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency*1e-6} MHz")
+                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency * 1e-6} MHz")
             self.larmor_freq = glob.parameter.larmor_frequency
 
             # Check if sequence has block events

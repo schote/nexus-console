@@ -39,13 +39,13 @@ def constructor(
     rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
 
     adc_ro = pp.make_adc(
-        num_samples=int(adc_ro_duration/system.adc_raster_time),
+        num_samples=int(adc_ro_duration / system.adc_raster_time),
         duration=adc_ro_duration,
         system=system,
     )
 
     adc_noise = pp.make_adc(
-        num_samples=int(adc_noise_duration/system.adc_raster_time),
+        num_samples=int(adc_noise_duration / system.adc_raster_time),
         duration=adc_noise_duration,
         system=system,
     )
