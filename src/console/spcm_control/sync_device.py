@@ -12,7 +12,7 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 from console.spcm_control.spcm.errors import *
-
+import time
 
 @dataclass
 class SyncCard(SpectrumDevice):
@@ -50,17 +50,42 @@ class SyncCard(SpectrumDevice):
         ------
         To be implemented
         """
-        spcm_dwSetParam_i32 (self.card,  SPC_SYNC_ENABLEMASK, 0x0003)
+        error = spcm.spcm_dwSetParam_i32 (self.card,  spcm.SPC_SYNC_ENABLEMASK, 0x0003)
         self.log.debug("Sync device setup completed")
-        self.log_card_status()
+        self.handle_error(error)
+    def reset_card(self) -> None:
+        """Sync does not need reset"""
         
     def start_operation(self) -> None:
+        #self.is_running.clear()
+        #spcm.spcm_dwSetParam_i32 (self.card, spcm.SPC_TIMEOUT, 1000);
+        #time.sleep(3)
         error = spcm.spcm_dwSetParam_i32(
                 self.card,
                 spcm.SPC_M2CMD,
-                spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
+                #spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER         # #spcm.M2CMD_CARD_FORCETRIGGER
+                spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER  ,        # # | spcm.M2CMD_CARD_WAITREADY
             )
+        #error = spcm.spcm_dwSetParam_i32 (self.card, spcm.SPC_M2CMD| spcm.M2CMD_CARD_WAITREADY )
+        #if (error == spcm.ERR_TIMEOUT):
+        #    print ("Timeout occured - no trigger received within time")
+        #else:
+        #    print("Cards started")
+        #time.sleep(2)
         self.handle_error(error)
+        #self.log_card_status()
+        '''
+        self.szErrorTextBuffer = create_dma_buffer (ERR_BUFFERSIZE)
+        self.err_reg  = spcm.uint32(0)
+        self.err_val  = spcm.int32(0)
+        spcm.spcm_dwGetErrorInfo_i32 (self.card, ctypes.byref(self.err_reg), ctypes.byref(self.err_val), self.szErrorTextBuffer)
+        print("Sync Error")
+        sys.stdout.write("{0}\n".format(self.szErrorTextBuffer.value))
+        sys.stdout.write("{0}\n".format(self.err_reg.value))
+        sys.stdout.write("{0}\n".format(self.err_val.value))
+            #spcm_dwSetParam_i32 (self.hSync,  SPC_M2CMD, M2CMD_CARD_START    | M2CMD_CARD_FORCETRIGGER | M2CMD_CARD_WAITREADY)
+        
+        '''
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:

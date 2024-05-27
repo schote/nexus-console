@@ -19,12 +19,11 @@ acq = AcquisitionControl(
 
 # Construct a spin echo based spectrum sequence
 seq = sequences.se_spectrum.constructor(
-    echo_time=6e-3,          # 12 ms echo time
-    rf_duration=300e-6,      # 200 us RF pulseq duration
-    time_bw_product=2,
-    use_sinc=False,           # Do not use sinc pulse, but block pulse
-    rf_amplitudes = [1.0,1.0,1.0,1.0],
-    rf_phases     = [0,45,90,135]
+    echo_time=1e-6,          # 12 ms echo time
+    rf_duration=3e-3,      # 200 us RF pulseq duration
+    adc_duration= 1e-6,
+    time_bw_product=1,
+    use_sinc=False           # Do not use sinc pulse, but block pulse
 )
 
 # Define acquisition parameters
@@ -34,7 +33,7 @@ params = AcquisitionParameter(
 )
 
 # Run the acquisition
-acq.set_sequence(sequence=seq)
+acq.set_sequence(sequence=seq,rf_phases=[0.,45.,90.,135.],rf_amps=[0.25,0.5,0.75,1.0]) #make it between 0 to 1
 acq_data: AcquisitionData = acq.run()
 
 

@@ -33,7 +33,7 @@ TxCards:
 
 # >> SYNC DEVICE: STAR-HUB -> sync0 (Synchronization) 
 SyncCard:
-    - !SyncCard
+    !SyncCard
        path: "sync0"
 
 # >> RX DEVICE: M2p.5933-x4 -> /dev/spcm0 (Digitizer)
@@ -43,7 +43,7 @@ RxCard: !RxCard
   # Enable the receive channels
   channel_enable: [1, 0, 0, 0]
   # Set the max. amplitude per channel in mV, list length must at least match the number of enabled channels
-  max_amplitude: [1000, 200, 200, 200]
+  max_amplitude: [1000, 1000, 1000, 1000]
   # Set the impedance to 50 ohms (1) or 1 Mohm (0), list length must at least match the number of enabled channels
   # ATTENTION: At the moment only 1 or 2 channels are possible.
   # > Driver complains if more than 2 channels are enabled.
@@ -73,13 +73,13 @@ SequenceProvider: !SequenceProvider
   # gradient_correction_time: 0 # 570 
 
   # Scales RF in Hz (pulseq) to mV
-  rf_to_mvolt: 500.e-3 #5.e-3
+  rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
 
   system: !Opts
     max_grad: 250.e+3
     max_slew: 250.e+3
-    rise_time: 100.e-6
-    rf_dead_time: 20.e-6
+    rise_time: 1.e-6     #100.e-6 default
+    rf_dead_time: 2.e-6 # 20.e-6 default
     rf_ringdown_time: 0.
     adc_dead_time: 0.
     block_duration_raster: 1.6e-9

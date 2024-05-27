@@ -27,7 +27,7 @@ def tx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -
     return TxCard(**loader.construct_mapping(node, deep=True))  # type: ignore
 
 def sync_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> SyncCard:
-    """Construct a transmit card object.
+    """Construct a synchronization card object.
 
     Parameters
     ----------

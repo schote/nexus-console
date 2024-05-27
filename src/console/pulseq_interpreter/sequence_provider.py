@@ -159,7 +159,8 @@ class SequenceProvider(Sequence):
         unroll_arr: np.ndarray,
         b1_scaling: float,
         unblanking: np.ndarray,
-        rf_phase  : float,
+        rf_amps_ch: float=1.0,
+        rf_phase_ch: float=0.,
         num_samples_rf_start: int = 0,
     ) -> None:
         """Calculate RF sample points to be played by TX card.
@@ -211,13 +212,13 @@ class SequenceProvider(Sequence):
         unblanking[unblanking_start:unblanking_end] = 1
 
         # Calculate the static phase offset, defined by RF pulse also add pTx phases
-        phase_offset = np.exp(1j * (block.phase_offset+(np.pi*(rf_phase/180.))))
+        phase_offset = np.exp(1j * (block.phase_offset+(np.pi*(rf_phase_ch/180.))))
 
         # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
+            rf_scaling = rf_amps_ch * b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
             if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
                 raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
@@ -391,7 +392,7 @@ class SequenceProvider(Sequence):
 
 
     @profile
-    def unroll_sequence(self) -> UnrolledSequence:
+    def unroll_sequence(self,rf_phase: list= [0.,0.,0.,0.],rf_amps: list= [1.0,1.0,1.0,1.0]) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -504,7 +505,8 @@ class SequenceProvider(Sequence):
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
                     b1_scaling=glob.parameter.b1_scaling,
-                    rf_phase = 0.,
+                    rf_amps_ch = rf_amps[0],
+                    rf_phase_ch = rf_phase[0],
                     num_samples_rf_start=rf_start_sample_pos,
                 )
                 self.calculate_rf(
@@ -512,7 +514,8 @@ class SequenceProvider(Sequence):
                     unroll_arr=_seq[k][1::4],
                     unblanking=_unblanking[k],
                     b1_scaling=glob.parameter.b1_scaling,
-                    rf_phase = 60.,
+                    rf_amps_ch = rf_amps[1],
+                    rf_phase_ch = rf_phase[1],
                     num_samples_rf_start=rf_start_sample_pos,
                 )
                 self.calculate_rf(
@@ -520,7 +523,8 @@ class SequenceProvider(Sequence):
                     unroll_arr=_seq[k][2::4],
                     unblanking=_unblanking[k],
                     b1_scaling=glob.parameter.b1_scaling,
-                    rf_phase=90.,
+                    rf_amps_ch = rf_amps[2],
+                    rf_phase_ch=rf_phase[2],
                     num_samples_rf_start=rf_start_sample_pos,
                 )
                 self.calculate_rf(
@@ -528,7 +532,8 @@ class SequenceProvider(Sequence):
                     unroll_arr=_seq[k][3::4],
                     unblanking=_unblanking[k],
                     b1_scaling=glob.parameter.b1_scaling,
-                    rf_phase=135.,
+                    rf_amps_ch = rf_amps[3],
+                    rf_phase_ch=rf_phase[3],
                     num_samples_rf_start=rf_start_sample_pos,
                 )
             '''

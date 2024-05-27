@@ -12,6 +12,8 @@ from console.interfaces.interface_unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 from console.spcm_control.spcm.errors import *
+from ctypes import _SimpleCData, byref, c_char_p, create_string_buffer
+import time
 
 @dataclass
 class TxCard(SpectrumDevice):
@@ -50,6 +52,8 @@ class TxCard(SpectrumDevice):
         # Size of the current sequence
         self.data_buffer_size = int(0)
         # Define ring buffer and notify size, 512 MSamples * 2 Bytes = 1024 MB
+        # Check the kernel version, FW version and the speed. At some cards it may not be possible to use this much of memory buffer.
+        # continious memory allocation is another option that may speed up the transfers. 
         self.ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)
         self.card_type = spcm.int32(0)
 
@@ -89,69 +93,25 @@ class TxCard(SpectrumDevice):
         """
         return super().dict()
     
-    def setup_sync_card(self) -> None:
-        spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
-        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
-        try:
-            if ("M4i.6622-x8") not in (device_type := type_to_name(self.card_type.value)): ## Make it general to the cards
-                raise ConnectionError(
-                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
-                )
-        except ConnectionError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-        
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_SYNC_ENABLEMASK, 0x0003)
-        
-        
-    def setup_card(self) -> None:
-        """Set up spectrum card in transmit (TX) mode.
-
-        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
-        defined by the class attribute.
-        All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
-        Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.
-
-        Raises
-        ------
-        Warning
-            The actual set sample rate deviates from the corresponding class attribute to be set,
-            class attribute is overwritten.
-        """
+    def reset_card(self) -> None:
         # Reset card
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_M2CMD, spcm.M2CMD_CARD_RESET)
-        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
-
-        try:
-            if ("M4i.6622-x8") not in (device_type := type_to_name(self.card_type.value)): ## Make it general to the cards
-                raise ConnectionError(
-                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
-                )
-        except ConnectionError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-        # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
+    def card_mode(self) -> None:
+        # Setup the card in FIFO mode
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
+    
+    # Sync card option is seperately implemented here. 
+    def open_sync_card (self) -> None:
+        self.hSync             = spcm.spcm_hOpen (create_string_buffer(b'sync0'))
+    
+    def enable_sync(self) -> None :
+        spcm.spcm_dwSetParam_i32 (self.hSync,  spcm.SPC_SYNC_ENABLEMASK, 0x0003)
+        spcm.spcm_dwSetParam_i32 (self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
         
-        # Set cards depending on synchronization module
-        if (not self.sync_card_en):
-            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
-            
-        else:
-            # Sync card will trigger the cards
-            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TM_NONE)
-            spcm.spcm_dwSetParam_i32(self.card, spcm.SPCM_X2_MODE, spcm.SPCM_XMODE_TRIGOUT)
-            # Setup X2 for TRIGOUT to trigger the RX device. This is different than low-field implementation
-            
         
-        # Set clock mode, internal PLL and clock output enable
-        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
-        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
-        # Configure external clock, TX master clock
-        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL)
-        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1)
-        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500)
-
+    def setup_clock(self) -> None:
         # set card sampling rate in MHz
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_SAMPLERATE, spcm.MEGA(self.sample_rate))
 
@@ -167,6 +127,58 @@ class TxCard(SpectrumDevice):
             )
             self.sample_rate = int(sample_rate.value * 1e-6)
 
+    
+    def setup_card(self) -> None:
+        """Set up spectrum card in transmit (TX) mode.
+
+        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
+        defined by the class attribute.
+        All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
+        Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.
+
+        Raises
+        ------
+        Warning
+            The actual set sample rate deviates from the corresponding class attribute to be set,
+            class attribute is overwritten.
+        """
+        '''
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
+        try:
+            if ("M4i.6622-x8") not in (device_type := type_to_name(self.card_type.value)): ## Make it general to the cards
+                raise ConnectionError(
+                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
+                )
+        except ConnectionError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+        '''
+        # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
+
+            
+        
+        # Set cards depending on synchronization module
+        if (not self.sync_card_en):
+            #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
+            """None"""
+        else:
+            # Sync card will trigger the cards
+            #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_NONE)
+            #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
+            #spcm.spcm_dwSetParam_i32 (self.card, spcm.SPC_TRIG_EXT0_MODE, spcm.SPC_TM_POS)
+            """None"""
+            # Setup X2 for TRIGOUT to trigger the RX device. This is different than low-field implementation
+        spcm.spcm_dwSetParam_i32(self.card, 47202, spcm.SPCM_XMODE_TRIGOUT) # in m4i 66xx SPCM_X2_MODE register is different than m2p
+        
+        # Set clock mode, internal PLL and clock output enable
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
+        # spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+        # Configure external clock, TX master clock
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL)
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1)
+        #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500)
+
+        
         # Enable and setup channels
         spcm.spcm_dwSetParam_i32(
             self.card,
@@ -195,8 +207,7 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP3, self.max_amplitude[3])
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER3, self.filter_type[3])
 
-        # Setup the card in FIFO mode
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CARDMODE, spcm.SPC_REP_FIFO_SINGLE)
+
         
 
         
@@ -260,7 +271,7 @@ class TxCard(SpectrumDevice):
         sys.stdout.write("{0}\n".format(self.err_val.value))
         '''
         self.log.debug("Device setup completed")
-        self.log_card_status()
+        #self.log_card_status()
 
     def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool]) -> None:
         """Set offset values of the gradient output channels.
@@ -385,9 +396,11 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,sync_enabled,))
-        self.worker.start()
-
+        #self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,sync_enabled,))
+        #self.worker.start()
+        #self._fifo_stream_worker(sqnc,sync_enabled)
+        self._data_init(sqnc)
+        
     def stop_operation(self) -> None:
         """Stop card operation by thread event and stop card."""
         if self.worker is not None:
@@ -405,6 +418,177 @@ class TxCard(SpectrumDevice):
         else:
             print("No active replay thread found...")
 
+    # Make the initial DMA transfer for both cards and wait them to be finished.
+    def _start_dma(self) -> None:
+        self.log.debug("Starting card memory transfer")
+        error = spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPC_M2CMD,
+            spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
+        )
+        
+    def _buffer_handler(self) -> None:
+        # This is the part that handles the buffer
+        avail_bytes = spcm.int32(0)
+        usr_position = spcm.int32(0)
+        transfer_count = 0
+        
+        while (self.transferred_bytes < self.data_buffer_size) and not self.is_running.is_set():
+            # Read available bytes and user position
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
+
+            # Calculate new data for the transfer, when notify_size is available on continous buffer
+            if avail_bytes.value >= self.notify_size.value:
+                transfer_count += 1
+                print("Transfer bytes")
+                # Get new buffer positions
+                if ring_buffer_position := ctypes.cast(
+                    (ctypes.c_char * (self.ring_buffer_size.value - usr_position.value)).from_buffer(
+                        self.ring_buffer, usr_position.value
+                    ),
+                    ctypes.c_void_p,
+                ).value:
+                    if current_data_buffer := ctypes.cast(self.data_buffer, ctypes.c_void_p).value:
+                        data_buffer_position = current_data_buffer + self.transferred_bytes
+
+                        # Move memory: Current ring buffer position,
+                        # position in sequence data and amount to transfer (=> notify size)
+                        ctypes.memmove(
+                            ring_buffer_position,
+                            data_buffer_position,
+                            self.notify_size.value,
+                        )
+                
+                spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.notify_size)
+                self.transferred_bytes += self.notify_size.value
+
+                error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
+                self.handle_error(error)
+                
+    # Start operation with synchrozination card. 
+    def sync_start(self,master) -> None:
+        if master:
+            error = spcm.spcm_dwSetParam_i32(
+                self.hSync,
+                spcm.SPC_M2CMD,
+                spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER         # #spcm.M2CMD_CARD_FORCETRIGGER
+                #spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_FORCETRIGGER  ,        # # | spcm.M2CMD_CARD_WAITREADY
+            )
+            self.handle_error(error)
+        self.worker = threading.Thread(target=self._buffer_handler) #, args=(sqnc,sync_enabled,))
+        self.worker.start()
+        self._buffer_handler()
+
+    def card_start(self) -> None:
+        # This part can be used when no synchronization is required. 
+        error = spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPC_M2CMD,
+            spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
+        )
+        self.handle_error(error)
+        
+        avail_bytes = spcm.int32(0)
+        usr_position = spcm.int32(0)
+        transfer_count = 0
+        
+        while (self.transferred_bytes < self.data_buffer_size) and not self.is_running.is_set():
+            # Read available bytes and user position
+           
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
+            spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
+
+            # Calculate new data for the transfer, when notify_size is available on continous buffer
+            if avail_bytes.value >= self.notify_size.value:
+                transfer_count += 1
+
+                # Get new buffer positions
+                if ring_buffer_position := ctypes.cast(
+                    (ctypes.c_char * (self.ring_buffer_size.value - usr_position.value)).from_buffer(
+                        self.ring_buffer, usr_position.value
+                    ),
+                    ctypes.c_void_p,
+                ).value:
+                    if current_data_buffer := ctypes.cast(self.data_buffer, ctypes.c_void_p).value:
+                        data_buffer_position = current_data_buffer + self.transferred_bytes
+
+                        # Move memory: Current ring buffer position,
+                        # position in sequence data and amount to transfer (=> notify size)
+                        ctypes.memmove(
+                            ring_buffer_position,
+                            data_buffer_position,
+                            self.notify_size.value,
+                        )
+
+                spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.notify_size)
+                self.transferred_bytes += self.notify_size.value
+
+                error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
+                self.handle_error(error)
+        
+    def _data_init(self, data: np.ndarray) -> None: 
+        """Continuous FIFO mode examples.
+
+        Parameters
+        ----------
+        data
+            Numpy array of data to be replayed by card.
+            Replay data should be in the format:
+            >>> [c0_0, c1_0, c2_0, c3_0, c0_1, c1_1, c2_1, c3_1, ..., cX_N]
+            Here, X denotes the channel and the subsequent index N the sample index.
+        """
+        try:
+            # Get total size of data buffer to be played out
+            self.data_buffer_size = int(data.nbytes)
+            if self.data_buffer_size % (self.num_ch * 2) != 0:
+                raise MemoryError(
+                    "Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
+                )
+        except MemoryError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
+
+        # >> Define software buffer
+        # Setup replay data buffer
+        self.data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+        # Allocate continuous ring buffer as defined by class attribute
+        self.ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
+
+        try:
+            # Perform initial memory transfer: Fill the whole ring buffer
+            if _ring_buffer_pos := ctypes.cast(self.ring_buffer, ctypes.c_void_p).value:
+                if _data_buffer_pos := ctypes.cast(self.data_buffer, ctypes.c_void_p).value:
+                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.ring_buffer_size.value)
+                    self.transferred_bytes = self.ring_buffer_size.value
+                else:
+                    raise RuntimeError("Could not get data buffer position")
+            else:
+                raise RuntimeError("Could not get ring buffer position")
+        except RuntimeError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        # Perform initial data transfer to completely fill continuous buffer
+        error = spcm.spcm_dwDefTransfer_i64(
+            self.card,
+            spcm.SPCM_BUF_DATA,
+            spcm.SPCM_DIR_PCTOCARD,
+            self.notify_size,
+            self.ring_buffer,
+            spcm.uint64(0),
+            self.ring_buffer_size,
+        )
+        self.handle_error(error)
+        
+        error =  spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
+        self.handle_error(error)
+        
+        self.log.debug("Data initialization is finished.")
+        
+    # @deprecated 
     def _fifo_stream_worker(self, data: np.ndarray, sync_enabled: bool) -> None:
         """Continuous FIFO mode examples.
 
@@ -470,8 +654,6 @@ class TxCard(SpectrumDevice):
             spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
         )
 
-
-
         # Start card
         self.log.debug("Starting card operation || Star-hub function: %s",self.sync_card_en)
         if (not self.sync_card_en):
@@ -481,7 +663,7 @@ class TxCard(SpectrumDevice):
                 spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
             )
             self.handle_error(error)
-
+        
         avail_bytes = spcm.int32(0)
         usr_position = spcm.int32(0)
         transfer_count = 0

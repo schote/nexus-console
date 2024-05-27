@@ -57,7 +57,7 @@ class SpectrumDevice(ABC):
             self.card = None
             self.name = None
 
-    def connect(self) -> bool:
+    def connect(self, is_sync:bool) -> bool:
         """Establish card connection.
 
         Raises
@@ -76,16 +76,23 @@ class SpectrumDevice(ABC):
         self.card = sp.spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
             # Read card information
-            card_type = sp.int32(0)
-            sp.spcm_dwGetParam_i32(self.card, sp.SPC_PCITYP, byref(card_type))
-            self.name = type_to_name(card_type.value)
-            self.log.debug(f"Connection to card {self.name} established!")
-            self.setup_card()
+            if (not is_sync):
+                card_type = sp.int32(0)
+                sp.spcm_dwGetParam_i32(self.card, sp.SPC_PCITYP, byref(card_type))
+                self.name = type_to_name(card_type.value)
+                self.log.debug(f"Connection to card {self.name} established!")
+            else: 
+                self.name = "Star-hub"
+                self.log.debug(f"Connection to card (with sync card) established!")
+                
         else:
             self.log.critical("Could not connect to card")
             raise ConnectionError("Could not connect to card")
         return True
-
+    
+    def reset_card(self):
+        """Abstract method to reset the card."""
+        
     def handle_error(self, error: int):
         """General error handling function."""
         if error:
