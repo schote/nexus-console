@@ -1,4 +1,4 @@
-# Spectrum-Pulseq MRI Console
+# Spectrum-Pulseq MRI Console (pTx extension)
 
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 [![License](https://img.shields.io/github/license/schote/spectrum-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
