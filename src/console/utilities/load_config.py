@@ -97,7 +97,7 @@ def opts_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> O
 
 
 # >> Helper function to read configuration file
-def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, TxCard , RxCard, SyncCard]:
+def get_instances(path_to_config: str) -> tuple[SequenceProvider,SequenceProvider, TxCard, TxCard , RxCard, SyncCard]:
     """Construct object instances from yaml configuration file.
 
     Uses custom yaml loader which contains constructors for sequence provider, transmit and receive cards.
@@ -120,9 +120,9 @@ def get_instances(path_to_config: str) -> tuple[SequenceProvider, TxCard, TxCard
         config = yaml.load(file, Loader=Loader)  # noqa: S506
 
     # Set output limits of sequence provider to the maximum amplitudes from transmit card
-    config["SequenceProvider"].output_limits = config["TxCards"][0].max_amplitude
-    config["SequenceProvider"].output_limits = config["TxCards"][1].max_amplitude
-    return (config["SequenceProvider"], config["TxCards"][0],config["TxCards"][1], config["RxCard"],config["SyncCard"])
+    config["SequenceProviders"][0].output_limits = config["TxCards"][0].max_amplitude
+    config["SequenceProviders"][1].output_limits = config["TxCards"][1].max_amplitude
+    return (config["SequenceProviders"][0],config["SequenceProviders"][1], config["TxCards"][0],config["TxCards"][1], config["RxCard"],config["SyncCard"])
 
 
 # >> Create yaml loader object

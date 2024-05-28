@@ -30,7 +30,6 @@ TxCards:
       notify_rate: 16
       # If transmit card synchronization is enabled by Star-hub module
       sync_card_en: True
-
 # >> SYNC DEVICE: STAR-HUB -> sync0 (Synchronization) 
 SyncCard:
     !SyncCard
@@ -52,38 +51,75 @@ RxCard: !RxCard
   sample_rate: 200
 
 # >> Sequence provider configuration
-SequenceProvider: !SequenceProvider
+SequenceProviders: 
+  - !SequenceProvider
   # Set the transmit card sampling rate, 5e-8 => 20 MHz
-  spcm_dwell_time: 1.6e-9
+      spcm_dwell_time: 1.6e-9
 
-  # Calculate grad_to_volt per gradient channel:
-  # Gradient efficiency in T/m/A
-  gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]  # Leiden values
-  # gradient_efficiency: [0.74e-3, 0.92e-3, 0.8e-3]
-  # Gradient power amplifier in V/A
-  gpa_gain: [8.35, 8.35, 8.35]
+      # Calculate grad_to_volt per gradient channel:
+      # Gradient efficiency in T/m/A
+      gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]  # Leiden values
+      # gradient_efficiency: [0.74e-3, 0.92e-3, 0.8e-3]
+      # Gradient power amplifier in V/A
+      gpa_gain: [8.35, 8.35, 8.35]
 
-  # Per channel specification of the transmit RF and gradient impedances
-  # (!) If an analog output is terminated into high impedance load, the output is doubled
-  high_impedance: [False, False, False, False]
+      # Per channel specification of the transmit RF and gradient impedances
+      # (!) If an analog output is terminated into high impedance load, the output is doubled
+      high_impedance: [False, False, False, False]
 
-  # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
-  # How to correct this properly, independent of the pulseq sequence?
-  # Or should this be done in pulseq? to be discussed.
-  # gradient_correction_time: 0 # 570 
+      # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
+      # How to correct this properly, independent of the pulseq sequence?
+      # Or should this be done in pulseq? to be discussed.
+      # gradient_correction_time: 0 # 570 
 
-  # Scales RF in Hz (pulseq) to mV
-  rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
+      # Scales RF in Hz (pulseq) to mV
+      rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
 
-  system: !Opts
-    max_grad: 250.e+3
-    max_slew: 250.e+3
-    rise_time: 1.e-6     #100.e-6 default
-    rf_dead_time: 2.e-6 # 20.e-6 default
-    rf_ringdown_time: 0.
-    adc_dead_time: 0.
-    block_duration_raster: 1.6e-9
-    rf_raster_time: 1.6e-9
-    grad_raster_time: 1.6e-9
-    adc_raster_time: 1.6e-9
-    B0: 3
+      system: !Opts
+        max_grad: 250.e+3
+        max_slew: 250.e+3
+        rise_time: 1.e-6     #100.e-6 default
+        rf_dead_time: 2.e-6 # 20.e-6 default
+        rf_ringdown_time: 0.
+        adc_dead_time: 0.
+        block_duration_raster: 1.6e-9
+        rf_raster_time: 1.6e-9
+        grad_raster_time: 1.6e-9
+        adc_raster_time: 1.6e-9
+        B0: 3
+ 
+  - !SequenceProvider
+  # Set the transmit card sampling rate, 5e-8 => 20 MHz
+      spcm_dwell_time: 1.6e-9
+
+      # Calculate grad_to_volt per gradient channel:
+      # Gradient efficiency in T/m/A
+      gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]  # Leiden values
+      # gradient_efficiency: [0.74e-3, 0.92e-3, 0.8e-3]
+      # Gradient power amplifier in V/A
+      gpa_gain: [8.35, 8.35, 8.35]
+
+      # Per channel specification of the transmit RF and gradient impedances
+      # (!) If an analog output is terminated into high impedance load, the output is doubled
+      high_impedance: [False, False, False, False]
+
+      # Gradient correction time in us, adds to trapezoidal gradients flat time and shifts ADC
+      # How to correct this properly, independent of the pulseq sequence?
+      # Or should this be done in pulseq? to be discussed.
+      # gradient_correction_time: 0 # 570 
+
+      # Scales RF in Hz (pulseq) to mV
+      rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
+
+      system: !Opts
+        max_grad: 250.e+3
+        max_slew: 250.e+3
+        rise_time: 1.e-6     #100.e-6 default
+        rf_dead_time: 2.e-6 # 20.e-6 default
+        rf_ringdown_time: 0.
+        adc_dead_time: 0.
+        block_duration_raster: 1.6e-9
+        rf_raster_time: 1.6e-9
+        grad_raster_time: 1.6e-9
+        adc_raster_time: 1.6e-9
+        B0: 3

@@ -43,6 +43,8 @@ class AcquisitionControl:
         data_storage_path: str = os.path.expanduser("~") + "/spcm-console",
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
+        rf_amps: list = [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
+        rf_phases: list = [0.,0.,0.,0.,0.,0.,0.,0.],
         rx_enable: bool = False
     ):
         """Construct acquisition control class.
@@ -74,13 +76,19 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
+        #Set amplitude and phases of the pTx system
+        self.rf_amps = rf_amps
+        self.rf_phases = rf_phases
+
         # Get instances from configuration file
+        
         ctx = get_instances(configuration_file)
         self.seq_provider: SequenceProvider = ctx[0]
-        self.tx_card: TxCard = ctx[1]
-        self.tx_card2: TxCard = ctx[2]
-        self.rx_card: RxCard = ctx[3]
-        self.sync_card: SyncCard= ctx[4]
+        self.seq_provider2: SequenceProvider = ctx[1]
+        self.tx_card: TxCard = ctx[2]
+        self.tx_card2: TxCard = ctx[3]
+        self.rx_card: RxCard = ctx[4]
+        self.sync_card: SyncCard= ctx[5]
 
         self.seq_provider.output_limits = self.tx_card.max_amplitude
         self.sync_enabled               = self.tx_card.sync_card_en
@@ -160,7 +168,7 @@ class AcquisitionControl:
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
 
-    def set_sequence(self, sequence: str | Sequence, rf_phases: list, rf_amps: list) -> None:
+    def set_sequence(self, sequence: str | Sequence) -> None: #rf_phases: list, rf_amps: list
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -181,10 +189,12 @@ class AcquisitionControl:
             # Check sequence
             if isinstance(sequence, Sequence):
                 self.seq_provider.from_pypulseq(sequence)
+                self.seq_provider2.from_pypulseq(sequence)
             elif isinstance(sequence, str):
                 if not sequence.endswith(".seq"):
                     raise FileNotFoundError("Invalid sequence file.")
                 self.seq_provider.read(sequence)
+                self.seq_provider2.read(sequence)
             else:
                 raise AttributeError("Invalid sequence, must be either string to .seq file or Sequence instance")
 
@@ -194,15 +204,16 @@ class AcquisitionControl:
 
         # Reset unrolled sequence
         self.unrolled_seq = None
+        self.unrolled_seq2 = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
         # Update sequence parameter hash and calculate sequence
         self.parameter_hash = glob.parameter.get_hash()
-        self.unrolled_seq = self.seq_provider.unroll_sequence(rf_phases,rf_amps)
+        self.unrolled_seq   = self.seq_provider.unroll_sequence(self.rf_phases[0:4],self.rf_amps[0:4])
+        self.unrolled_seq2  = self.seq_provider2.unroll_sequence(self.rf_phases[4:8],self.rf_amps[4:8])
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
-
 
     def run(self) -> AcquisitionData:
         """Run an acquisition job.
@@ -227,12 +238,17 @@ class AcquisitionControl:
         if self.parameter_hash != glob.parameter.get_hash():
             # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
             self.unrolled_seq = None
+            self.unrolled_seq2 = None
             self.log.info(
-                "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
+                "Unrolling first card sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
+            )
+            self.log.info(
+                "Unrolling second card sequence: %s", self.seq_provider2.definitions["Name"].replace(" ", "_")
             )
             # Update acquisition parameter hash value
             self.parameter_hash = glob.parameter.get_hash()
             self.unrolled_seq = self.seq_provider.unroll_sequence()
+            self.unrolled_seq2 = self.seq_provider2.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
         # Define timeout for acquisition process: 5 sec + sequence duration
@@ -254,7 +270,7 @@ class AcquisitionControl:
             
             
             self.tx_card.start_operation(self.unrolled_seq,self.sync_enabled)
-            self.tx_card2.start_operation(self.unrolled_seq,self.sync_enabled)
+            self.tx_card2.start_operation(self.unrolled_seq2,self.sync_enabled)
             self.tx_card._start_dma()
             self.tx_card2._start_dma()
             time.sleep(1)

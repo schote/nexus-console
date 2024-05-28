@@ -14,7 +14,10 @@ from console.interfaces.interface_acquisition_parameter import AcquisitionParame
 acq = AcquisitionControl(
     configuration_file="device_config.yaml",
     console_log_level=logging.DEBUG,
-    file_log_level=logging.DEBUG
+    file_log_level=logging.DEBUG,
+    rf_amps=[1.0,0.75,0.5,0.25,0.5,0.75,0.5,0.25],
+    rf_phases=[0.,45.,90.,135.,0.,45.,90.,135.]
+    
 )
 
 # Construct a spin echo based spectrum sequence
@@ -33,7 +36,7 @@ params = AcquisitionParameter(
 )
 
 # Run the acquisition
-acq.set_sequence(sequence=seq,rf_phases=[0.,45.,90.,135.],rf_amps=[0.25,0.5,0.75,1.0]) #make it between 0 to 1
+acq.set_sequence(sequence=seq) #make it between 0 to 1
 acq_data: AcquisitionData = acq.run()
 
 
