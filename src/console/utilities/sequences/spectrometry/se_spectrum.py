@@ -43,6 +43,8 @@ def constructor(
     else:
         rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
+    
+    delay = pp.make_delay(1 * 1e-6)
     '''
     adc = pp.make_adc(
         num_samples=int(adc_duration/system.adc_raster_time),  # Is not taken into account atm
@@ -65,6 +67,11 @@ def constructor(
     '''
     
     seq.add_block(rf_90)
+    seq.add_block(delay)
+    seq.add_block(rf_90)
+    seq.add_block(delay)
+    seq.add_block(rf_90)
+    #seq.add_block(rf_90)
     #seq.add_block(te_delay_1)
     #seq.add_block(rf_180)
     #seq.add_block(te_delay_2)

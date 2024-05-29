@@ -73,7 +73,7 @@ SequenceProviders:
       # gradient_correction_time: 0 # 570 
 
       # Scales RF in Hz (pulseq) to mV
-      rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
+      rf_to_mvolt: 500.e-6 #2000.e-3 #5.e-3 # 500.e-3 for long pulses
 
       system: !Opts
         max_grad: 250.e+3
@@ -109,7 +109,7 @@ SequenceProviders:
       # gradient_correction_time: 0 # 570 
 
       # Scales RF in Hz (pulseq) to mV
-      rf_to_mvolt: 2000.e-3 #5.e-3 # 500.e-3 for long pulses
+      rf_to_mvolt: 500.e-6 #2000.e-3 #5.e-3 # 500.e-3 for long pulses
 
       system: !Opts
         max_grad: 250.e+3

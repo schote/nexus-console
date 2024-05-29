@@ -104,12 +104,15 @@ class TxCard(SpectrumDevice):
     def open_sync_card (self) -> None:
         self.hSync             = spcm.spcm_hOpen (create_string_buffer(b'sync0'))
     
-    def enable_sync(self) -> None :
-        spcm.spcm_dwSetParam_i32 (self.hSync,  spcm.SPC_SYNC_ENABLEMASK, 0x0003)
-        spcm.spcm_dwSetParam_i32 (self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
-        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
+    def enable_sync(self,master:bool) -> None :
+        # Enable sync card on the master 
+        if (master):
+            spcm.spcm_dwSetParam_i32(self.hSync, spcm.SPC_SYNC_ENABLEMASK, 0x0003)
+            spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_INTPLL)
         
+        # Enable trigger 
+
+            
         
     def setup_clock(self) -> None:
         # set card sampling rate in MHz
@@ -155,8 +158,11 @@ class TxCard(SpectrumDevice):
         '''
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
 
-            
-        
+        # Trigger the transmit cards externally. //TODO the triggering option can also be set at yaml-loader. 
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_EXT1)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_EXT1_MODE, spcm.SPC_TM_POS)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_EXT1_LEVEL0, 200)
+        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKOUT, 1)
         # Set cards depending on synchronization module
         if (not self.sync_card_en):
             #spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
@@ -469,12 +475,15 @@ class TxCard(SpectrumDevice):
     # Start operation with synchrozination card. 
     def sync_start(self,master) -> None:
         if master:
+            spcm.spcm_dwSetParam_i32(self.hSync,spcm.SPC_TIMEOUT,10000) #10 seconds trigger timeout
             error = spcm.spcm_dwSetParam_i32(
                 self.hSync,
                 spcm.SPC_M2CMD,
                 spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER         # #spcm.M2CMD_CARD_FORCETRIGGER
                 #spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_FORCETRIGGER  ,        # # | spcm.M2CMD_CARD_WAITREADY
             )
+            if(spcm.spcm_dwSetParam_i32( self.hSync,  spcm.SPC_M2CMD, spcm.M2CMD_CARD_WAITREADY) == spcm.ERR_TIMEOUT):
+                print("NO Trigger ERROR")
             self.handle_error(error)
         self.worker = threading.Thread(target=self._buffer_handler) #, args=(sqnc,sync_enabled,))
         self.worker.start()

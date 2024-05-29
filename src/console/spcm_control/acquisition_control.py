@@ -107,7 +107,8 @@ class AcquisitionControl:
             self.tx_card2.reset_card()
         if self.sync_enabled:
             #self.sync_card.setup_card()
-            self.tx_card.enable_sync()
+            self.tx_card.enable_sync(True)
+            self.tx_card2.enable_sync(False)
         self.tx_card.setup_clock()
         self.tx_card2.setup_clock()
         self.tx_card.setup_card()
@@ -282,7 +283,7 @@ class AcquisitionControl:
             else:
                 self.tx_card.card_start()
                 self.tx_card2.card_start()
-                #time.sleep(1)
+            #time.sleep(1)
             # Get start time of acquisition
             time_start = time.time()
 

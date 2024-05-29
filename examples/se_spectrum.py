@@ -23,7 +23,7 @@ acq = AcquisitionControl(
 # Construct a spin echo based spectrum sequence
 seq = sequences.se_spectrum.constructor(
     echo_time=1e-6,          # 12 ms echo time
-    rf_duration=3e-3,      # 200 us RF pulseq duration
+    rf_duration=1e-6,      # 200 us RF pulseq duration
     adc_duration= 1e-6,
     time_bw_product=1,
     use_sinc=False           # Do not use sinc pulse, but block pulse
