@@ -38,10 +38,9 @@ SequenceProvider: !SequenceProvider
 
   # Calculate grad_to_volt per gradient channel:
   # Gradient efficiency in T/m/A
-  gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]  # Leiden values
-  # gradient_efficiency: [0.74e-3, 0.92e-3, 0.8e-3]
+  gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]
   # Gradient power amplifier in V/A
-  gpa_gain: [8.35, 8.35, 8.35]
+  gpa_gain: [7.10, 7.10, 7.10]
 
   # Per channel specification of the transmit RF and gradient impedances
   # (!) If an analog output is terminated into high impedance load, the output is doubled

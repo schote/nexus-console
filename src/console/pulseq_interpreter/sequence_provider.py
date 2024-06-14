@@ -594,9 +594,9 @@ class SequenceProvider(Sequence):
 
         # Get gradient waveforms
         rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
-        gx_signal = (np.uint16(gx_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
-        gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
-        gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+        gx_signal = (np.uint16(gx_signal) << 1).astype(np.int16) / 2**15
+        gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / 2**15
+        gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / 2**15
 
         axis[0].plot(samples, self.output_limits[0] * rf_signal)
         axis[1].plot(samples, self.output_limits[1] * gx_signal)
