@@ -1,22 +1,10 @@
-"""Test functions for interface classes."""
-import pytest
-
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter, DDCMethod
+"""Test functions for acquisition parameter."""
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 
 
-params = dict(
-    larmor_frequency=2.123e6,
-    b1_scaling=5.432,
-    gradien_offset=[0, 100, 500],
-    fov_scaling=[0.5, 0.0, 0.9],
-    num_averafes=2,
-    averaging_delay=1.01,
-)
-
-
-# @pytest.mark.parametrize("")
-# def test_acquisition_parameter_constructor():
-#     global parameter
-#     parameter = AcquisitionParameter(
-        
-#     )
+def test_save_load(acquisition_parameter):
+    """Check if saved acquisition parameter correspond to loaded acquisition parameter."""
+    acquisition_parameter.save()
+    params_check = AcquisitionParameter.load(".")
+    assert isinstance(params_check, AcquisitionParameter)
+    assert params_check == acquisition_parameter

@@ -1,23 +1,25 @@
 """Test configuration file."""
+
 import numpy as np
 import pypulseq as pp
 import pytest
 
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
+from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
 
 
 @pytest.fixture
 def seq_provider():
     """Construct default sequence provider as fixture for testing."""
     return SequenceProvider(
-        gradient_efficiency=[.4, .4, .4],
+        gradient_efficiency=[0.4, 0.4, 0.4],
         gpa_gain=[1.0, 1.0, 1.0],
         output_limits=[200, 6000, 6000, 6000],
         spcm_dwell_time=5e-8,
         rf_to_mvolt=5e-3,
         high_impedance=[False, True, True, True],
-        system=system
+        system=system,
     )
 
 
@@ -38,6 +40,7 @@ def random_acquisition_data():
         re = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         im = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         return re + 1j * im
+
     return _random_acquisition_data
 
 
@@ -48,12 +51,13 @@ def test_spectrum():
 
     def _test_signal(num_samples: int, noise_scale: float):
         x = np.linspace(-5, 5, num_samples)
-        echo = np.exp(-x**2 / 2) / np.sqrt(2 * np.pi) * 10
+        echo = np.exp(-(x**2) / 2) / np.sqrt(2 * np.pi) * 10
         noise = rng.normal(loc=0, scale=noise_scale, size=num_samples)
 
         spcm = np.fft.fftshift(np.fft.fft(np.fft.fftshift(echo + noise)))
 
         return spcm
+
     return _test_signal
 
 
@@ -70,3 +74,16 @@ def test_sequence():
     )
     seq.add_block(pp.make_adc(num_samples=200, dwell=1e-5))
     return seq
+
+
+@pytest.fixture
+def acquisition_parameter():
+    """Construct acquisition parameter object for testing."""
+    return AcquisitionParameter(
+        larmor_frequency=2.123e6,
+        b1_scaling=5.432,
+        gradient_offset=[0, 100, 500],
+        fov_scaling=[0.5, 0.0, 0.9],
+        averaging_delay=1.01,
+        data_storage_location=".",
+    )
