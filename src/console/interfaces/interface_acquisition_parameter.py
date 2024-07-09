@@ -9,8 +9,7 @@ from pathlib import Path
 
 from console.interfaces.interface_dimensions import Dimensions
 
-DEFAULT_DATA_STORAGE_LOCATION: str = os.path.join(Path.home(), "spcm-console")
-DEFAULT_STATE_FILE_PATH: str = os.path.join(DEFAULT_DATA_STORAGE_LOCATION, "acq-parameter-state.pkl")
+DEFAULT_PATH: str = os.path.join(Path.home(), "spcm-console")
 
 
 class DDCMethod(str, Enum):
@@ -54,7 +53,7 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    data_storage_location: str = DEFAULT_DATA_STORAGE_LOCATION
+    data_storage_location: str = DEFAULT_PATH
     """Location to store acquisition parameters, logs and acquisition data (per default).
     Within the storage location the acquisition control will create a session folder
     (currently the convention is used: one day equals one session).
@@ -85,7 +84,7 @@ class AcquisitionParameter:
             return {k: str(v) for k, v in asdict(self).items()}
         return asdict(self)
 
-    def save(self, file_path: str = DEFAULT_STATE_FILE_PATH) -> None:
+    def save(self) -> None:
         """Save current acquisition parameter state.
 
         Parameters
@@ -93,12 +92,13 @@ class AcquisitionParameter:
         file_path, optional
             Path to the pickle state file, by default "acq-param-state.pkl"
         """
+        file_path = os.path.join(self.data_storage_location, "acq-parameter-state.pkl")
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as file:
             pickle.dump(self.__dict__, file)
 
     @classmethod
-    def load(cls, file_path: str = DEFAULT_STATE_FILE_PATH) -> "AcquisitionParameter":
+    def load(cls, file_path: str = DEFAULT_PATH) -> "AcquisitionParameter":
         """Load acquisition parameter state from state file and return AcquisitionParameter instance.
 
         Parameters
@@ -106,9 +106,9 @@ class AcquisitionParameter:
         file_path, optional
             Path to the pickle state file, by default "acq-param-state.pkl"
         """
+        file_path = os.path.join(file_path, "acq-parameter-state.pkl")
         with open(file_path, "rb") as file:
             state = pickle.load(file)  # noqa: S301
-        # self.__dict__.update(state)
         return cls(**state)
 
     def copy(self) -> "AcquisitionParameter":
