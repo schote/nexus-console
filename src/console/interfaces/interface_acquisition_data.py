@@ -7,6 +7,7 @@ from datetime import datetime
 from importlib.metadata import version
 from typing import Any
 
+import ismrmrd
 import numpy as np
 
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
@@ -190,3 +191,72 @@ class AcquisitionData:
                 log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
                 return
         self._additional_data.update(data)
+
+    def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader, user_path: str | None = None):
+        """Store acquisition data in (ISMR)MRD format."""
+        # TODO: Checks for header and sequence/data
+        # Get and check sequence labels (required to create acquisition headers)
+        labels = self.sequence.evaluate_labels(evolution="adc")
+        if not labels:
+            raise ValueError("Labels not found. A labeled sequence is required to export ismrmrd.")
+
+        # Get dimensions of raw data
+        _, num_coils, num_pe, num_ro = self.raw.shape
+
+        # Calculate k-space trajectory
+        traj_adc, _, _, _, _ = self.sequence.calculate_kspace()
+        if traj_adc.shape[-1] != num_pe*num_ro:
+            raise ValueError("Number of acquired sample points does not match number of calculated\
+                k-space trajectory points. Sequence does not match acquisition data.")
+
+        # Update larmor frequency with exact frequency
+        header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency*1e6)
+
+        # Get folder path and create (ismr)mrd header
+        base_path = os.path.join(user_path, "") if user_path else self.session_path
+        base_path = os.path.join(base_path, self.meta["folder_name"])
+        os.makedirs(base_path, exist_ok=True)
+        dataset = ismrmrd.Dataset(os.path.join(base_path, "ismrmrd.h5"), 'w')
+        dataset.write_xml_header(header.toXML('utf-8'))
+
+        # Create acquisition
+        acq = ismrmrd.Acquisition()
+        acq.version = int(version("ismrmrd")[0])
+        acq.resize(number_of_samples=num_ro, active_channels=num_coils, trajectory_dimensions=traj_adc.shape[0])
+        acq.center_sample = round(num_ro / 2)
+        acq.read_dir[0] = 1.0
+        acq.phase_dir[1] = 1.0
+        acq.slice_dir[2] = 1.0
+
+        for k in range(num_pe):
+
+            acq.scan_counter = k
+
+            # Get k-space encoding from sequence labels and set acquisition indices
+            if (key := "LIN") in labels.keys():
+                acq.idx.kspace_encode_step_1 = labels[key][k]
+            if (key := "PAR") in labels.keys():
+                acq.idx.kspace_encode_step_2 = labels[key][k]
+            if (key := "SLC") in labels.keys():
+                acq.idx.slice = labels[key][k]
+            # TODO: Handle any other label
+
+            # Set trajectory
+            acq.traj[:] = traj_adc.T[k*num_ro:k*num_ro+num_ro]
+
+            # Set the data and append
+            acq.data[:] = self.raw[0, :, k, :]
+
+            dataset.append_acquisition(acq)
+
+            # Set flags
+            # TODO: Check if flags are required for gadgetron reconstruction
+            # acq.clear_all_flags()
+            # if acq.idx.kspace_encode_step_1 == 0:
+            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP1)
+            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_SLICE)
+            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_REPETITION)
+            # elif k == num_pe:
+            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
+            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
+            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
