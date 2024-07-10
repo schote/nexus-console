@@ -1,6 +1,6 @@
 """Test sequence constructors contained in the package."""
 import pytest
-
+import numpy as np
 from console.utilities import sequences
 
 
@@ -55,6 +55,12 @@ def test_tse_3d(etl, dim, te):
     assert any([(p_io != p_lin).any() for p_io, p_lin in zip(acq_pos_io, acq_pos_lin)])
     # encoding dimensions must be equal
     assert n_enc_io == n_enc_lin
+
+    # Check labels
+    labels = seq_io.evaluate_labels(evolution="adc")
+    acq_pos_array = np.stack(acq_pos_io)
+    assert any(x == y for x, y in zip(labels["LIN"], acq_pos_array[:, 0]))
+    assert any(x == y for x, y in zip(labels["PAR"], acq_pos_array[:, 1]))
 
 
 def test_fid_tx_calibration():

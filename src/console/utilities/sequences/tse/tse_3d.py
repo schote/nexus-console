@@ -166,6 +166,11 @@ def constructor(
             n_enc_pe2 = n_enc.y
             fov_pe2 = fov.y
 
+    seq.set_definition("ksp_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("ksp_fov", [fov_ro, fov_pe1, fov_pe2])
+    seq.set_definition("img_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("img_fov", [fov_ro, fov_pe1, fov_pe2])
+
     # Calculate center out trajectory
     pe1 = np.arange(n_enc_pe1) - (n_enc_pe1 - 1) / 2
     pe2 = np.arange(n_enc_pe2) - (n_enc_pe2 - 1) / 2
@@ -290,7 +295,7 @@ def constructor(
 
     adc = pp.make_adc(
         system=system,
-        num_samples=int((adc_duration) / system.adc_raster_time),
+        num_samples=n_enc_ro,
         duration=raster(val=adc_duration, precision=system.adc_raster_time),
         # Add gradient correction time and ADC correction time
         delay=raster(val=2 * gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
@@ -306,7 +311,11 @@ def constructor(
     # Delay duration between readout and Gy, Gz gradient rephaser
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift
 
-    for dummy in range(dummies):
+    # Set labels to zero at the beginning?
+    # label_pe1 = pp.make_label(type="SET", label="LIN", value=0)
+    # label_pe2 = pp.make_label(type="SET", label="PAR", value=0)
+
+    for _ in range(dummies):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
@@ -329,7 +338,7 @@ def constructor(
                 precision=system.grad_raster_time
             )))
 
-    for train in trains:
+    for train, position in zip(trains, trains_pos):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(
@@ -340,7 +349,7 @@ def constructor(
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-        for echo in train:
+        for echo, pe_indices in zip(train, position):
             pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
@@ -366,7 +375,10 @@ def constructor(
 
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
-            seq.add_block(grad_ro, adc)
+            # Cast index values from int32 to int, otherwise make_label function complains
+            label_pe1 = pp.make_label(type="SET", label="LIN", value=int(pe_indices[0]))
+            label_pe2 = pp.make_label(type="SET", label="PAR", value=int(pe_indices[1]))
+            seq.add_block(grad_ro, adc, label_pe1, label_pe2)
 
             seq.add_block(
                 pp.make_trapezoid(
