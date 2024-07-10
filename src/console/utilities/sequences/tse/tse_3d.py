@@ -9,6 +9,7 @@ TODO: move trajectory calculation to seperate file to sharew with other imaging 
 # %%
 from enum import Enum
 from math import pi
+import ismrmrd
 
 import numpy as np
 import pypulseq as pp
@@ -51,7 +52,8 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-) -> tuple[pp.Sequence, list, list]:
+# ) -> tuple[pp.Sequence, list, list]:
+) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters
@@ -166,11 +168,6 @@ def constructor(
             n_enc_pe2 = n_enc.y
             fov_pe2 = fov.y
 
-    seq.set_definition("ksp_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
-    seq.set_definition("ksp_fov", [fov_ro, fov_pe1, fov_pe2])
-    seq.set_definition("img_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
-    seq.set_definition("img_fov", [fov_ro, fov_pe1, fov_pe2])
-
     # Calculate center out trajectory
     pe1 = np.arange(n_enc_pe1) - (n_enc_pe1 - 1) / 2
     pe2 = np.arange(n_enc_pe2) - (n_enc_pe2 - 1) / 2
@@ -230,9 +227,11 @@ def constructor(
 
     # Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
     trains_pos = [pe_order[k::num_trains, :] for k in range(num_trains)]
-    acq_pos = []
-    for train_pos in trains_pos:
-        acq_pos.extend(train_pos)
+    
+    # TODO: acq_pos is redundant with the labels implemented
+    # acq_pos = []
+    # for train_pos in trains_pos:
+    #     acq_pos.extend(train_pos)
 
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(
@@ -310,10 +309,6 @@ def constructor(
         - ramp_duration - rf_180.ringdown_time - ro_pre_duration + echo_shift
     # Delay duration between readout and Gy, Gz gradient rephaser
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift
-
-    # Set labels to zero at the beginning?
-    # label_pe1 = pp.make_label(type="SET", label="LIN", value=0)
-    # label_pe2 = pp.make_label(type="SET", label="PAR", value=0)
 
     for _ in range(dummies):
         if inversion_pulse:
@@ -417,13 +412,84 @@ def constructor(
     train_duration_tr = (seq.duration()[0]) / len(trains)
     train_duration = train_duration_tr - tr_delay
 
-    # Add measures to sequence definition
+    # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))
     seq.set_definition("train_duration", train_duration)
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
+    seq.set_definition("enc_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("enc_fov", [fov_ro, fov_pe1, fov_pe2])
+    seq.set_definition("img_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("img_fov", [fov_ro, fov_pe1, fov_pe2])
 
-    return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    # Create ISMRMRD header
+    header = ismrmrd.xsd.ismrmrdHeader()
+
+    # experimental conditions
+    exp = ismrmrd.xsd.experimentalConditionsType()
+    exp.H1resonanceFrequency_Hz = system.B0 * system.gamma / (2 * pi)
+    header.experimentalConditions = exp
+
+    # user parameters
+    dtime = ismrmrd.xsd.userParameterDoubleType()
+    dtime.name = 'dwellTime_us'
+    dtime.value_ = 1e6/adc_duration
+    header.userParameters = ismrmrd.xsd.userParametersType()
+    header.userParameters.userParameterDouble.append(dtime)
+
+    # set fov and matrix size
+    efov = ismrmrd.xsd.fieldOfViewMm() # kspace fov in mm
+    efov.x = fov_ro * 1e3
+    efov.y = fov_pe1 * 1e3
+    efov.z = fov_pe2 * 1e3
+
+    rfov = ismrmrd.xsd.fieldOfViewMm() # image fov in mm
+    rfov.x = fov_ro * 1e3
+    rfov.y = fov_pe1 * 1e3
+    rfov.z = fov_pe2 * 1e3
+
+    ematrix = ismrmrd.xsd.matrixSizeType() # encoding dimensions
+    ematrix.x = n_enc_ro
+    ematrix.y = n_enc_pe1
+    ematrix.z = n_enc_pe2
+
+    rmatrix = ismrmrd.xsd.matrixSizeType() # image dimensions
+    rmatrix.x = n_enc_ro
+    rmatrix.y = n_enc_pe1
+    rmatrix.z = n_enc_pe2
+
+    # set encoded and recon spaces
+    escape = ismrmrd.xsd.encodingSpaceType()
+    escape.matrixSize = ematrix
+    escape.fieldOfView_mm = efov
+
+    rspace = ismrmrd.xsd.encodingSpaceType()
+    rspace.matrixSize = rmatrix
+    rspace.fieldOfView_mm = rfov
+
+    # encoding
+    encoding = ismrmrd.xsd.encodingType()
+    encoding.encodedSpace = escape
+    encoding.reconSpace = rspace
+    header.encoding.append(encoding)
+
+    # encoding limits
+    limits = ismrmrd.xsd.encodingLimitsType()
+
+    limits.kspace_encoding_step_1 = ismrmrd.xsd.limitType()
+    limits.kspace_encoding_step_1.minimum = 0
+    limits.kspace_encoding_step_1.maximum = n_enc_pe1-1
+    limits.kspace_encoding_step_1.center = int(n_enc_pe1 / 2)
+
+    limits.kspace_encoding_step_2 = ismrmrd.xsd.limitType()
+    limits.kspace_encoding_step_2.minimum = 0
+    limits.kspace_encoding_step_2.maximum = n_enc_pe2
+    limits.kspace_encoding_step_2.center = int(n_enc_pe2 / 2)
+
+    encoding.encodingLimits = limits
+
+    # return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    return (seq, header)
 
 
 def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
@@ -443,6 +509,31 @@ def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np
     ksp = np.zeros((n_avg, n_coil, kdims[2], kdims[1], kdims[0]), dtype=complex)
     for idx, kpt in enumerate(trajectory):
         ksp[..., kpt[1], kpt[0], :] = raw_data[:, :, idx, :]
+    return ksp
+
+def sort_kspace2(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
+    """
+    Sort acquired k-space lines.
+
+    Parameters
+    ----------
+    kspace
+        Acquired k-space data in the format (averages, coils, pe, ro)
+    trajectory
+        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
+    dim
+        dimensions of kspace
+    """
+    n_avg, n_coil, _, _ = raw_data.shape
+    enc_dim = seq.get_definition("enc_dim")
+    ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
+
+    # Get k-space sorting from sequence labels
+    labels = seq.evaluate_labels(evolution="adc")
+
+    for idx, (pe_1, pe_2) in enumerate(zip(labels["LIN"], labels["PAR"])):
+        ksp[..., pe_1, pe_2, :] = raw_data[:, :, idx, :]
+
     return ksp
 
 # %%

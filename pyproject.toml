@@ -31,7 +31,8 @@ dependencies = [
     "plotly",
     "PyYAML",
     "matplotlib",
-    "pandas"
+    "pandas",
+    "ismrmrd"
 ]
 
 # Dependency groupds (optional)

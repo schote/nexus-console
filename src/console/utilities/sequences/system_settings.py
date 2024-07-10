@@ -20,6 +20,9 @@ system = Opts(
     # Set maximum slew rate
     max_slew=50,
     slew_unit="T/m/s",
+
+    B0=50e-3,
+    gamma=42.576e6
 )
 
 
