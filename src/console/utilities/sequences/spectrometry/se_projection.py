@@ -1,18 +1,19 @@
 """Constructor for spin-echo spectrum sequence with projection gradient."""
+
 # %%
 from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import system, raster
 
 
 def constructor(
-    fov: float = 0.25,
+    fov: float = 0.24,
     readout_bandwidth: float = 20e3,
     echo_time: float = 12e-3,
-    gradient_correction: float = 600e-6,
-    num_samples: int = 110,
+    gradient_correction: float = 0.0,
+    num_samples: int = 120,
     rf_duration: float = 400e-6,
     channel: str = "x",
     use_sinc: bool = False,
@@ -41,6 +42,11 @@ def constructor(
     """
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "se_projection")
+    seq.set_definition("readout_bandwidth_in_Hz", readout_bandwidth)
+    seq.set_definition("fov_in_m", fov)
+    seq.set_definition("te_in_s", echo_time)
+    seq.set_definition("gradient_correction_in_s", gradient_correction)
+    seq.set_definition("projection_channel", channel)
 
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5)
@@ -54,12 +60,7 @@ def constructor(
     k_width = num_samples / fov
 
     # Readout gradient
-    gradient = pp.make_trapezoid(
-        system=system,
-        channel=channel,
-        flat_area=k_width,
-        flat_time=gradient_duration
-    )
+    gradient = pp.make_trapezoid(system=system, channel=channel, flat_area=k_width, flat_time=gradient_duration)
 
     prephaser = pp.make_trapezoid(
         system=system,
@@ -77,9 +78,9 @@ def constructor(
 
     # Calculate delays
     te_delay_1_val = echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
-    te_delay_1 = pp.make_delay(round(te_delay_1_val / 1e-6) * 1e-6)
+    te_delay_1 = pp.make_delay(raster(te_delay_1_val, precision=1e-6))
     te_delay_2_val = echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time
-    te_delay_2 = pp.make_delay(round((te_delay_2_val - gradient_correction) / 1e-6) * 1e-6)
+    te_delay_2 = pp.make_delay(raster(te_delay_2_val - gradient_correction, precision=1e-6))
 
     # construct sequence
     seq.add_block(rf_90)
