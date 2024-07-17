@@ -558,7 +558,7 @@ class SequenceProvider(Sequence):
         )
 
     def plot_unrolled(
-            self, time_range: tuple[int, int] = (0, -1)
+            self, time_range: tuple[float, float] = (0, -1)
         ) -> tuple[matplotlib.figure.Figure, np.ndarray]:
         """Plot unrolled waveforms for replay.
 
@@ -598,10 +598,10 @@ class SequenceProvider(Sequence):
         gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / 2**15
         gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / 2**15
 
-        axis[0].plot(samples, self.output_limits[0] * rf_signal)
-        axis[1].plot(samples, self.output_limits[1] * gx_signal)
-        axis[2].plot(samples, self.output_limits[2] * gy_signal)
-        axis[3].plot(samples, self.output_limits[3] * gz_signal)
+        axis[0].plot(samples, self.output_limits[0] * rf_signal / self.imp_scaling[0])
+        axis[1].plot(samples, self.output_limits[1] * gx_signal / self.imp_scaling[1])
+        axis[2].plot(samples, self.output_limits[2] * gy_signal / self.imp_scaling[2])
+        axis[3].plot(samples, self.output_limits[3] * gz_signal / self.imp_scaling[3])
         axis[4].plot(samples, adc_gate, label="ADC gate")
         axis[4].plot(samples, unblanking, label="RF unblanking")
 
