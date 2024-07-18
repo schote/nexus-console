@@ -209,14 +209,28 @@ class AcquisitionData:
             raise ValueError("Number of acquired sample points does not match number of calculated\
                 k-space trajectory points. Sequence does not match acquisition data.")
 
+        # Resort and scale the trajectory
+        # TODO: How can this be done without switching any axis?
+        channel_order = [self.sequence.get_definition("channel_assignment").index(ch) for ch in ["x", "y", "z"]]
+        enc_dim = [self.sequence.get_definition("enc_dim")[x] for x in channel_order]
+        for k in range(traj_adc.shape[0]):
+            traj_range = np.max(traj_adc[k, :]) - np.min(traj_adc[k, :])
+            traj_adc[k, :] = enc_dim[k]*traj_adc[k, :]/traj_range
+
         # Update larmor frequency with exact frequency
         header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency*1e6)
+
+        # Set receive channels, required by gadgetron
+        system_info = ismrmrd.xsd.acquisitionSystemInformationType()
+        system_info.receiverChannels = num_coils
+        header.acquisitionSystemInformation = system_info
 
         # Get folder path and create (ismr)mrd header
         base_path = os.path.join(user_path, "") if user_path else self.session_path
         base_path = os.path.join(base_path, self.meta["folder_name"])
         os.makedirs(base_path, exist_ok=True)
-        dataset = ismrmrd.Dataset(os.path.join(base_path, "ismrmrd.h5"), 'w')
+        dataset_path = os.path.join(base_path, "ismrmrd.h5")
+        dataset = ismrmrd.Dataset(dataset_path)
         dataset.write_xml_header(header.toXML('utf-8'))
 
         # Create acquisition
@@ -239,24 +253,15 @@ class AcquisitionData:
                 acq.idx.kspace_encode_step_2 = labels[key][k]
             if (key := "SLC") in labels.keys():
                 acq.idx.slice = labels[key][k]
-            # TODO: Handle any other label
 
             # Set trajectory
-            acq.traj[:] = traj_adc.T[k*num_ro:k*num_ro+num_ro]
+            acq.traj[:] = traj_adc.T[k*num_ro:k*num_ro+num_ro, :]
 
             # Set the data and append
             acq.data[:] = self.raw[0, :, k, :]
 
             dataset.append_acquisition(acq)
 
-            # Set flags
-            # TODO: Check if flags are required for gadgetron reconstruction
-            # acq.clear_all_flags()
-            # if acq.idx.kspace_encode_step_1 == 0:
-            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP1)
-            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_SLICE)
-            #     acq.setFlag(ismrmrd.ACQ_FIRST_IN_REPETITION)
-            # elif k == num_pe:
-            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
-            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
-            #     acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
+        dataset.close()
+        log = logging.getLogger("AcqData")
+        log.info("ISMRMRD exported: %s", dataset_path)
