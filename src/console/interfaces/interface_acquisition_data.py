@@ -194,28 +194,18 @@ class AcquisitionData:
 
     def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader, user_path: str | None = None):
         """Store acquisition data in (ISMR)MRD format."""
-        # TODO: Checks for header and sequence/data
         # Get and check sequence labels (required to create acquisition headers)
-        labels = self.sequence.evaluate_labels(evolution="adc")
-        if not labels:
+        if not (labels := self.sequence.evaluate_labels(evolution="adc")):
             raise ValueError("Labels not found. A labeled sequence is required to export ismrmrd.")
 
         # Get dimensions of raw data
         _, num_coils, num_pe, num_ro = self.raw.shape
-
-        # Calculate k-space trajectory
-        traj_adc, _, _, _, _ = self.sequence.calculate_kspace()
-        if traj_adc.shape[-1] != num_pe*num_ro:
-            raise ValueError("Number of acquired sample points does not match number of calculated\
-                k-space trajectory points. Sequence does not match acquisition data.")
-
-        # Resort and scale the trajectory
-        # TODO: How can this be done without switching any axis?
-        channel_order = [self.sequence.get_definition("channel_assignment").index(ch) for ch in ["x", "y", "z"]]
-        enc_dim = [self.sequence.get_definition("enc_dim")[x] for x in channel_order]
-        for k in range(traj_adc.shape[0]):
-            traj_range = np.max(traj_adc[k, :]) - np.min(traj_adc[k, :])
-            traj_adc[k, :] = enc_dim[k]*traj_adc[k, :]/traj_range
+        enc_dim = [
+            header.encoding[0].encodedSpace.matrixSize.x,
+            header.encoding[0].encodedSpace.matrixSize.y,
+            header.encoding[0].encodedSpace.matrixSize.z
+        ]
+        n_dims = sum([int(d > 0) for d in enc_dim])
 
         # Update larmor frequency with exact frequency
         header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency*1e6)
@@ -236,7 +226,7 @@ class AcquisitionData:
         # Create acquisition
         acq = ismrmrd.Acquisition()
         acq.version = int(version("ismrmrd")[0])
-        acq.resize(number_of_samples=num_ro, active_channels=num_coils, trajectory_dimensions=traj_adc.shape[0])
+        acq.resize(number_of_samples=num_ro, active_channels=num_coils, trajectory_dimensions=n_dims)
         acq.center_sample = round(num_ro / 2)
         acq.read_dir[0] = 1.0
         acq.phase_dir[1] = 1.0
@@ -253,9 +243,6 @@ class AcquisitionData:
                 acq.idx.kspace_encode_step_2 = labels[key][k]
             if (key := "SLC") in labels.keys():
                 acq.idx.slice = labels[key][k]
-
-            # Set trajectory
-            acq.traj[:] = traj_adc.T[k*num_ro:k*num_ro+num_ro, :]
 
             # Set the data and append
             acq.data[:] = self.raw[0, :, k, :]
