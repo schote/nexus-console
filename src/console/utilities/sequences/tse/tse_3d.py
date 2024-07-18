@@ -54,8 +54,7 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-) -> tuple[pp.Sequence, list, list, ismrmrd.xsd.ismrmrdHeader]:
-# ) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
+) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters
@@ -232,9 +231,6 @@ def constructor(
 
     # Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
     trains_pos = [pe_order[k::num_trains, :] for k in range(num_trains)]
-    acq_pos = []
-    for train_pos in trains_pos:
-        acq_pos.extend(train_pos)
 
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(
@@ -417,23 +413,22 @@ def constructor(
     train_duration = train_duration_tr - tr_delay
 
     # Check labels
-    # labels = seq.evaluate_labels(evolution="adc")
-    # acq_pos = np.concatenate(trains_pos).T
-    # if not np.array_equal(labels["LIN"], acq_pos[0, :]):
-    #     raise ValueError("LIN labels don't match actual acquisition positions.")
-    # if not np.array_equal(labels["PAR"], acq_pos[1, :]):
-    #     raise ValueError("PAR labels don't match actual acquisition positions.")
+    labels = seq.evaluate_labels(evolution="adc")
+    acq_pos = np.concatenate(trains_pos).T
+    if not np.array_equal(labels["LIN"], acq_pos[0, :]):
+        raise ValueError("LIN labels don't match actual acquisition positions.")
+    if not np.array_equal(labels["PAR"], acq_pos[1, :]):
+        raise ValueError("PAR labels don't match actual acquisition positions.")
 
     # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))
     seq.set_definition("train_duration", train_duration)
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
-    seq.set_definition("enc_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
-    seq.set_definition("enc_fov", [fov_ro, fov_pe1, fov_pe2])
-    seq.set_definition("img_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
-    seq.set_definition("img_fov", [fov_ro, fov_pe1, fov_pe2])
-    seq.set_definition("channel_assignment", [channel_ro, channel_pe1, channel_pe2])
+
+    seq.set_definition("encoding_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("encoding_fov", [fov_ro, fov_pe1, fov_pe2])
+    seq.set_definition("channel_order", [channel_ro, channel_pe1, channel_pe2])
 
     # Create ISMRMRD header
     header = ismrmrd.xsd.ismrmrdHeader()
@@ -496,30 +491,9 @@ def constructor(
 
     encoding.encodingLimits = limits
 
-    return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2], header)
-    # return (seq, header)
+    return (seq, header)
 
-
-def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
-    """
-    Sort acquired k-space lines.
-
-    Parameters
-    ----------
-    kspace
-        Acquired k-space data in the format (averages, coils, pe, ro)
-    trajectory
-        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
-    dim
-        dimensions of kspace
-    """
-    n_avg, n_coil, _, _ = raw_data.shape
-    ksp = np.zeros((n_avg, n_coil, kdims[2], kdims[1], kdims[0]), dtype=complex)
-    for idx, kpt in enumerate(trajectory):
-        ksp[..., kpt[1], kpt[0], :] = raw_data[:, :, idx, :]
-    return ksp
-
-def sort_kspace2(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
+def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
