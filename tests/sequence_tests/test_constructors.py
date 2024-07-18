@@ -1,6 +1,6 @@
 """Test sequence constructors contained in the package."""
 import pytest
-import numpy as np
+
 from console.utilities import sequences
 
 

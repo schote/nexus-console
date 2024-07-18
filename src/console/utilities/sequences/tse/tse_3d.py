@@ -9,9 +9,8 @@ TODO: move trajectory calculation to seperate file to sharew with other imaging 
 # %%
 from enum import Enum
 from math import pi
-import ismrmrd
-import numpy as np
 
+import ismrmrd
 import numpy as np
 import pypulseq as pp
 
@@ -403,7 +402,7 @@ def constructor(
 
         if inversion_pulse:
             tr_delay -= inversion_time
-        
+
         if noise_scan:
             noise_adc_dead_time = 50e-3
             noise_adc_dur = min(tr_delay-noise_adc_dead_time, 100e-3)
@@ -417,7 +416,7 @@ def constructor(
             post_noise_adc_delay = raster(tr_delay-noise_adc_dead_time-noise_adc_dur, system.block_duration_raster)
             if post_noise_adc_delay > 0:
                 seq.add_block(pp.make_delay(post_noise_adc_delay))
-        
+
         else:
             seq.add_block(pp.make_delay(raster(
                 val=tr_delay,

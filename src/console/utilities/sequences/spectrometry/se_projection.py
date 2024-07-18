@@ -5,7 +5,7 @@ from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system, raster
+from console.utilities.sequences.system_settings import raster, system
 
 
 def constructor(

@@ -1,13 +1,13 @@
 """Test (ISMR)MRD export."""
-import pytest
 import os
-import numpy as np
-from console.utilities import sequences
+
+import pytest
 
 from console.interfaces.interface_acquisition_data import AcquisitionData
 from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.utilities import sequences
 
- 
+
 @pytest.mark.parametrize("dim", [sequences.Dimensions(16, 64, 64)])
 @pytest.mark.parametrize("fov", [sequences.Dimensions(100, 100, 50)])
 def test_tse_3d(fov, dim, random_acquisition_data):
