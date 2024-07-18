@@ -10,6 +10,7 @@ TODO: move trajectory calculation to seperate file to sharew with other imaging 
 from enum import Enum
 from math import pi
 import ismrmrd
+import numpy as np
 
 import numpy as np
 import pypulseq as pp
@@ -52,8 +53,8 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-# ) -> tuple[pp.Sequence, list, list]:
-) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
+) -> tuple[pp.Sequence, list, list, ismrmrd.xsd.ismrmrdHeader]:
+# ) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters
@@ -227,11 +228,9 @@ def constructor(
 
     # Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
     trains_pos = [pe_order[k::num_trains, :] for k in range(num_trains)]
-    
-    # TODO: acq_pos is redundant with the labels implemented
-    # acq_pos = []
-    # for train_pos in trains_pos:
-    #     acq_pos.extend(train_pos)
+    acq_pos = []
+    for train_pos in trains_pos:
+        acq_pos.extend(train_pos)
 
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(
@@ -270,7 +269,8 @@ def constructor(
         # Add gradient correction time and ADC correction time
         flat_time=raster(adc_duration, precision=system.grad_raster_time),
     )
-    grad_ro = pp.make_trapezoid(  # using the previous calculation for the amplitde, hacky, should find a better way
+    # using the previous calculation for the amplitde, hacky, should find a better way
+    grad_ro = pp.make_trapezoid(
         channel=channel_ro,
         system=system,
         amplitude=grad_ro.amplitude,
@@ -412,6 +412,14 @@ def constructor(
     train_duration_tr = (seq.duration()[0]) / len(trains)
     train_duration = train_duration_tr - tr_delay
 
+    # Check labels
+    # labels = seq.evaluate_labels(evolution="adc")
+    # acq_pos = np.concatenate(trains_pos).T
+    # if not np.array_equal(labels["LIN"], acq_pos[0, :]):
+    #     raise ValueError("LIN labels don't match actual acquisition positions.")
+    # if not np.array_equal(labels["PAR"], acq_pos[1, :]):
+    #     raise ValueError("PAR labels don't match actual acquisition positions.")
+
     # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))
     seq.set_definition("train_duration", train_duration)
@@ -421,6 +429,7 @@ def constructor(
     seq.set_definition("enc_fov", [fov_ro, fov_pe1, fov_pe2])
     seq.set_definition("img_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
     seq.set_definition("img_fov", [fov_ro, fov_pe1, fov_pe2])
+    seq.set_definition("channel_assignment", [channel_ro, channel_pe1, channel_pe2])
 
     # Create ISMRMRD header
     header = ismrmrd.xsd.ismrmrdHeader()
@@ -429,13 +438,6 @@ def constructor(
     exp = ismrmrd.xsd.experimentalConditionsType()
     exp.H1resonanceFrequency_Hz = system.B0 * system.gamma / (2 * pi)
     header.experimentalConditions = exp
-
-    # user parameters
-    dtime = ismrmrd.xsd.userParameterDoubleType()
-    dtime.name = 'dwellTime_us'
-    dtime.value_ = 1e6/adc_duration
-    header.userParameters = ismrmrd.xsd.userParametersType()
-    header.userParameters.userParameterDouble.append(dtime)
 
     # set fov and matrix size
     efov = ismrmrd.xsd.fieldOfViewMm() # kspace fov in mm
@@ -471,6 +473,8 @@ def constructor(
     encoding = ismrmrd.xsd.encodingType()
     encoding.encodedSpace = escape
     encoding.reconSpace = rspace
+    # Trajectory type required by gadgetron (not by mrpro)
+    encoding.trajectory = ismrmrd.xsd.trajectoryType("cartesian")
     header.encoding.append(encoding)
 
     # encoding limits
@@ -483,13 +487,13 @@ def constructor(
 
     limits.kspace_encoding_step_2 = ismrmrd.xsd.limitType()
     limits.kspace_encoding_step_2.minimum = 0
-    limits.kspace_encoding_step_2.maximum = n_enc_pe2
+    limits.kspace_encoding_step_2.maximum = n_enc_pe2-1
     limits.kspace_encoding_step_2.center = int(n_enc_pe2 / 2)
 
     encoding.encodingLimits = limits
 
-    # return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
-    return (seq, header)
+    return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2], header)
+    # return (seq, header)
 
 
 def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
@@ -532,7 +536,7 @@ def sort_kspace2(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     labels = seq.evaluate_labels(evolution="adc")
 
     for idx, (pe_1, pe_2) in enumerate(zip(labels["LIN"], labels["PAR"])):
-        ksp[..., pe_1, pe_2, :] = raw_data[:, :, idx, :]
+        ksp[..., pe_2, pe_1, :] = raw_data[:, :, idx, :]
 
     return ksp
 
