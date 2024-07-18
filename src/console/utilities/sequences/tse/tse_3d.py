@@ -523,7 +523,7 @@ def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
         dimensions of kspace
     """
     n_avg, n_coil, _, _ = raw_data.shape
-    enc_dim = seq.get_definition("enc_dim")
+    enc_dim = seq.get_definition("encoding_dim")
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
     # Get k-space sorting from sequence labels

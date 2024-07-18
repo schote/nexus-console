@@ -49,10 +49,10 @@ pythonpath = [".", "src"]
 
 
 [tool.mypy]
-warn_return_any = "False"
-check_untyped_defs = "True"
-warn_no_return = "True"
-warn_unreachable = "True"
+warn_return_any = false
+check_untyped_defs = true
+warn_no_return = true
+warn_unreachable = true
 python_version = "3.10"
 ignore_missing_imports = true
 mypy_path = "console"
