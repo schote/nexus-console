@@ -54,6 +54,7 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
+    noise_scan: bool = False
 ) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
@@ -402,11 +403,26 @@ def constructor(
 
         if inversion_pulse:
             tr_delay -= inversion_time
-
-        seq.add_block(pp.make_delay(raster(
-            val=tr_delay,
-            precision=system.block_duration_raster
-        )))
+        
+        if noise_scan:
+            noise_adc_dead_time = 50e-3
+            noise_adc_dur = min(tr_delay-noise_adc_dead_time, 100e-3)
+            noise_adc = pp.make_adc(
+                system=system,
+                num_samples=int((noise_adc_dur) / system.adc_raster_time),
+                duration=raster(val=noise_adc_dur, precision=system.adc_raster_time),
+                delay=noise_adc_dead_time
+            )
+            seq.add_block(noise_adc)
+            post_noise_adc_delay = raster(tr_delay-noise_adc_dead_time-noise_adc_dur, system.block_duration_raster)
+            if post_noise_adc_delay > 0:
+                seq.add_block(pp.make_delay(post_noise_adc_delay))
+        
+        else:
+            seq.add_block(pp.make_delay(raster(
+                val=tr_delay,
+                precision=system.block_duration_raster
+            )))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0]) / len(trains)
