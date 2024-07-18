@@ -405,7 +405,7 @@ def constructor(
 
         if noise_scan:
             noise_adc_dead_time = 50e-3
-            noise_adc_dur = min(tr_delay-noise_adc_dead_time, 100e-3)
+            noise_adc_dur = min(tr_delay - noise_adc_dead_time, 100e-3)
             noise_adc = pp.make_adc(
                 system=system,
                 num_samples=int((noise_adc_dur) / system.adc_raster_time),
@@ -413,7 +413,7 @@ def constructor(
                 delay=noise_adc_dead_time
             )
             seq.add_block(noise_adc)
-            post_noise_adc_delay = raster(tr_delay-noise_adc_dead_time-noise_adc_dur, system.block_duration_raster)
+            post_noise_adc_delay = raster(tr_delay - noise_adc_dead_time - noise_adc_dur, system.block_duration_raster)
             if post_noise_adc_delay > 0:
                 seq.add_block(pp.make_delay(post_noise_adc_delay))
 
@@ -454,22 +454,22 @@ def constructor(
     header.experimentalConditions = exp
 
     # set fov and matrix size
-    efov = ismrmrd.xsd.fieldOfViewMm() # kspace fov in mm
+    efov = ismrmrd.xsd.fieldOfViewMm()  # kspace fov in mm
     efov.x = fov_ro * 1e3
     efov.y = fov_pe1 * 1e3
     efov.z = fov_pe2 * 1e3
 
-    rfov = ismrmrd.xsd.fieldOfViewMm() # image fov in mm
+    rfov = ismrmrd.xsd.fieldOfViewMm()  # image fov in mm
     rfov.x = fov_ro * 1e3
     rfov.y = fov_pe1 * 1e3
     rfov.z = fov_pe2 * 1e3
 
-    ematrix = ismrmrd.xsd.matrixSizeType() # encoding dimensions
+    ematrix = ismrmrd.xsd.matrixSizeType()  # encoding dimensions
     ematrix.x = n_enc_ro
     ematrix.y = n_enc_pe1
     ematrix.z = n_enc_pe2
 
-    rmatrix = ismrmrd.xsd.matrixSizeType() # image dimensions
+    rmatrix = ismrmrd.xsd.matrixSizeType()  # image dimensions
     rmatrix.x = n_enc_ro
     rmatrix.y = n_enc_pe1
     rmatrix.z = n_enc_pe2
@@ -496,17 +496,18 @@ def constructor(
 
     limits.kspace_encoding_step_1 = ismrmrd.xsd.limitType()
     limits.kspace_encoding_step_1.minimum = 0
-    limits.kspace_encoding_step_1.maximum = n_enc_pe1-1
+    limits.kspace_encoding_step_1.maximum = n_enc_pe1 - 1
     limits.kspace_encoding_step_1.center = int(n_enc_pe1 / 2)
 
     limits.kspace_encoding_step_2 = ismrmrd.xsd.limitType()
     limits.kspace_encoding_step_2.minimum = 0
-    limits.kspace_encoding_step_2.maximum = n_enc_pe2-1
+    limits.kspace_encoding_step_2.maximum = n_enc_pe2 - 1
     limits.kspace_encoding_step_2.center = int(n_enc_pe2 / 2)
 
     encoding.encodingLimits = limits
 
     return (seq, header)
+
 
 def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     """

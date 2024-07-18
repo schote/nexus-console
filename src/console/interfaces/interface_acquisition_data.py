@@ -208,7 +208,7 @@ class AcquisitionData:
         n_dims = sum([int(d > 0) for d in enc_dim])
 
         # Update larmor frequency with exact frequency
-        header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency*1e6)
+        header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency * 1e6)
 
         # Set receive channels, required by gadgetron
         system_info = ismrmrd.xsd.acquisitionSystemInformationType()

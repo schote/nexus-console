@@ -21,7 +21,7 @@ def test_tse_3d(fov, dim, random_acquisition_data):
     f0 = 2.0123e6
 
     acq_data = AcquisitionData(
-        _raw=[random_acquisition_data(1, 1, dim.x*dim.z, dim.y)],
+        _raw=[random_acquisition_data(1, 1, dim.x * dim.z, dim.y)],
         acquisition_parameters=AcquisitionParameter(larmor_frequency=f0),
         sequence=seq,
         dwell_time=1e-5,
