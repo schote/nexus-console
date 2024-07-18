@@ -23,7 +23,8 @@ class Trajectory(Enum):
     """Trajectory type enum."""
 
     INOUT = 1
-    LINEAR = 2
+    OUTIN = 2
+    LINEAR = 3
 
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
@@ -182,13 +183,14 @@ def constructor(
     pe_mag = np.sum(np.square(pe_points), axis=-1)  # calculate magnitude of all gradient combinations
     pe_mag_sorted = np.argsort(pe_mag)
 
-    if trajectory is Trajectory.INOUT:
-        pe_mag_sorted = np.flip(pe_mag_sorted)
+    if trajectory is (Trajectory.INOUT or Trajectory.OUTIN):
+        if trajectory is Trajectory.OUTIN:
+            pe_mag_sorted = np.flip(pe_mag_sorted)
 
-    pe_traj = pe_points[pe_mag_sorted, :]  # sort the points based on magnitude
-    pe_order = pe_positions[pe_mag_sorted, :]  # kspace position for each of the gradients
+        pe_traj = pe_points[pe_mag_sorted, :]  # sort the points based on magnitude
+        pe_order = pe_positions[pe_mag_sorted, :]  # kspace position for each of the gradients
 
-    if trajectory is Trajectory.LINEAR:
+    elif trajectory is Trajectory.LINEAR:
         center_pos = 1 / 2  # where the center of kspace should be in the echo train
         num_points = np.size(pe_mag_sorted)
         linear_pos = np.zeros(num_points, dtype=int) - 10
@@ -217,6 +219,8 @@ def constructor(
 
         pe_traj = pe_points[linear_pos, :]  # sort the points based on magnitude
         pe_order = pe_positions[linear_pos, :]  # kspace position for each of the gradients
+    else:
+        raise ValueError("Invalid trajectory: ", trajectory)
 
     # calculate the required gradient area for each k-point
     pe_traj[:, 0] /= fov_pe1
