@@ -149,3 +149,4 @@ dmypy.json
 tmp
 .ruff_cache
 *.pkl
+*.png
