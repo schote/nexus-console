@@ -10,7 +10,7 @@ from typing import Any
 import ismrmrd
 import numpy as np
 
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.utilities.json_encoder import JSONEncoder
 

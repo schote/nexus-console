@@ -11,8 +11,8 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 import console.spcm_control.globals as glob
-from console.interfaces.interface_dimensions import Dimensions
-from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.dimensions import Dimensions
+from console.interfaces.unrolled_sequence import UnrolledSequence
 
 try:
     from line_profiler import profile

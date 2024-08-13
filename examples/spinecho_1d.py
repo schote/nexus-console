@@ -5,7 +5,7 @@ import numpy as np
 
 import console.spcm_control.globals as glob
 import console.utilities.sequences as sequences
-from console.interfaces.interface_acquisition_data import AcquisitionData
+from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
 
 # Create acquisition control instance

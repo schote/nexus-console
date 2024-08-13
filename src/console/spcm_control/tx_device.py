@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
-from console.interfaces.interface_acquisition_parameter import Dimensions
-from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.acquisition_parameter import Dimensions
+from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
