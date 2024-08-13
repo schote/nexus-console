@@ -1,5 +1,5 @@
 """Test functions for acquisition parameter."""
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
 def test_save_load(acquisition_parameter):

@@ -4,7 +4,7 @@ import numpy as np
 import pypulseq as pp
 import pytest
 
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
 
