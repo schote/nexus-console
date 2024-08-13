@@ -30,6 +30,7 @@ LOG_LEVELS = [
 
 acquisition_parameter: AcquisitionParameter
 
+
 class AcquisitionControl:
     """Acquisition control class.
 
