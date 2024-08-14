@@ -1,12 +1,13 @@
 """Implementation of custom JSON encoder."""
 import dataclasses
 import json
+from typing import Any
 
 
 class JSONEncoder(json.JSONEncoder):
     """JSON Encoder class."""
 
-    def default(self, o):
+    def default(self, obj) -> dict[str, Any]:
         """Encode object default method.
 
         Parameters
@@ -18,6 +19,6 @@ class JSONEncoder(json.JSONEncoder):
         -------
             JSON encoded object
         """
-        if dataclasses.is_dataclass(o):
-            return dataclasses.asdict(o)
-        return super().default(o)
+        if bool(dataclasses.is_dataclass(obj)) and not isinstance(obj, type):
+            return dataclasses.asdict(obj)
+        return super().default(obj)
