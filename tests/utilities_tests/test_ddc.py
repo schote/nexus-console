@@ -20,7 +20,7 @@ def test_moving_average_filter(coils, phase_encoding, num_samples, decimation, o
     assert proc_avg == 1
     assert proc_coils == coils
     assert proc_pe == phase_encoding
-    assert proc_samples == num_samples // decimation
+    assert proc_samples == round(num_samples / decimation)
     assert np.iscomplex(processed).all()
 
 
