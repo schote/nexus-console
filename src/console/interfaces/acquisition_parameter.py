@@ -4,11 +4,17 @@ import json
 import os
 import pickle  # noqa: S403
 from dataclasses import asdict, dataclass
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.enums import DDCMethod
+
+
+DEFAULT_STATE_FILE_PATH = os.path.join(Path.home(), "nexus-console", "acquisition-parameter.state")
+DEFAULT_FOV_SCALING = Dimensions(x=1., y=1., z=1.)
+DEFAULT_GRADIENT_OFFSET = Dimensions(x=0., y=0., z=0.)
+FILENAME_STATE = "acquisition-parameter.state"
 
 
 @dataclass(unsafe_hash=True)
@@ -16,21 +22,22 @@ class AcquisitionParameter:
     """
     Parameters to define an acquisition.
 
-    The acquisition parameters are defined as a frozen dataclass, i.e. they are immutable.
-    This makes acquisition parameters hashable, which makes it easier to recognize any changes.
-    Can be updated using `dataclasses.replace(instance, larmor_frequency=2.1e6)`.
+    The acquisition parameters are defined in a dataclass which is hashable but still mutable.
+    This allows to easily change parameters and detect updates by comparing the hash.
+
+    Once a new instance of an acquisition parameter object has been created, it is 
     """
 
-    larmor_frequency: float = 2e6
+    larmor_frequency: float = 2.e6
     """Larmor frequency in MHz."""
 
     b1_scaling: float = 1.0
     """Scaling of the B1 field (RF transmit power)."""
 
-    gradient_offset: Dimensions = Dimensions(0, 0, 0)
+    gradient_offset: Dimensions = DEFAULT_GRADIENT_OFFSET
     """Gradient offset values in mV."""
 
-    fov_scaling: Dimensions = Dimensions(1, 1, 1)
+    fov_scaling: Dimensions = DEFAULT_FOV_SCALING
     """Field of view scaling for Gx, Gy and Gz."""
 
     decimation: int = 200
@@ -44,8 +51,8 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    __state_file_dir: str = os.path.join(Path.home(), "nexus-console")
-    """Storage location of the acquisition parameter state."""
+    default_state_file_path: str = DEFAULT_STATE_FILE_PATH
+    """Default file path for acquisition parameter state."""
 
     __save_on_mutation: bool = False
     """Flag which indicates if state is saved on mutation."""
@@ -58,16 +65,7 @@ class AcquisitionParameter:
         _hash = hash(self)
         super().__setattr__(__name, __value)
         if self.__save_on_mutation and hash(self) != _hash:
-            print("Saving... ", self.__state_file_dir)
             self.save()
-
-    def __post_init__(self) -> None:
-        """Save state after initialization.
-
-        Class is immutable, that means a new object is created for any update of the values.
-        By calling the save method after initialization, updates are automatically saved as latest state.
-        """
-        self.__save_on_mutation = True
 
     def __repr__(self) -> str:
         """Representation of acquisition parameter as string."""
@@ -89,15 +87,20 @@ class AcquisitionParameter:
             return {k: str(v) for k, v in asdict(self).items() if not k.startswith("_")}
         return {k: v for k, v in asdict(self).items() if not k.startswith("_")}
 
-    def save(self) -> None:
+    def save(self, file_path: str | None = None) -> None:
         """Save current acquisition parameter state.
 
         Parameters
         ----------
         file_path, optional
-            Path to the pickle state file, by default "acquisition-parameter-state.pkl"
+            Path to the pickle state file, by default None.
+            If None, the default state file path is taken which is <home>/nexus-console/acquisition-parameter.state
+            Default state file path can be changed using the set_default_path method.
         """
-        file_path = os.path.join(self.__state_file_dir, "acquisition-parameter.state")
+        if not file_path:
+            file_path = self.default_state_file_path
+        if not file_path.endswith(".state"):
+            file_path = os.path.join(file_path, FILENAME_STATE)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "wb") as file:
             pickle.dump(self.__dict__, file)
@@ -106,9 +109,13 @@ class AcquisitionParameter:
         """Return acquisition parameter integer hash."""
         return self.__hash__()
 
-    def directory(self) -> str:
-        """Return directory of acquisition parameter state file."""
-        return self.__state_file_dir
+    def activate_autosave(self) -> None:
+        """Set private flag which causes to save the parameter state on any mutation."""
+        self.__save_on_mutation = True
+
+    def deactivate_autosave(self) -> None:
+        """Set private flag which deactivates automatic saving of the parameter state."""
+        self.__save_on_mutation = False
 
     @classmethod
     def load(cls, file_path: str) -> "AcquisitionParameter":
@@ -131,11 +138,9 @@ class AcquisitionParameter:
             Provided file_path is not a pickle file or does not exist.
         """
         if not file_path.endswith(".state"):
-            file_path = os.path.join(file_path, "acquisition-parameter.state")
+            file_path = os.path.join(file_path, FILENAME_STATE)
         if os.path.exists(file_path):
             with open(file_path, "rb") as state_file:
                 state = pickle.load(state_file)  # noqa: S301
-
             return cls(**state)
-        else:
-            raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)
+        raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)

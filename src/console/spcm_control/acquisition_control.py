@@ -10,14 +10,14 @@ from pathlib import Path
 import numpy as np
 from scipy import signal
 
-import console.utilities.ddc as ddc
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider, params
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
+from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -27,8 +27,6 @@ LOG_LEVELS = [
     logging.ERROR,
     logging.CRITICAL,
 ]
-
-acquisition_parameter: AcquisitionParameter
 
 
 class AcquisitionControl:
@@ -40,8 +38,8 @@ class AcquisitionControl:
 
     def __init__(
         self,
-        configuration_file: str = "../../../device_config.yaml",
-        nexus_data_dir: str | None = None,
+        configuration_file: str,
+        nexus_data_dir: str = os.path.join(Path.home(), "nexus-console"),
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
     ):
@@ -63,9 +61,6 @@ class AcquisitionControl:
         console_log_level
             Set the logging level for the terminal/console output.
         """
-        # Create default nexus data directory if not provided
-        if not nexus_data_dir:
-            nexus_data_dir = os.path.join(Path.home(), "nexus-console")
         # Create session path (contains all acquisitions of one day)
         session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
         self.session_path = os.path.join(nexus_data_dir, session_folder_name)
@@ -76,15 +71,15 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Define global acquisition parameter object
-        global acquisition_parameter
+
         try:
-            acquisition_parameter = AcquisitionParameter.load(nexus_data_dir)
+            params = AcquisitionParameter.load(nexus_data_dir)
         except FileNotFoundError as exc:
             self.log.warning("Acquisition parameter state could not be loaded from dir: %s.\
                 Creating new acquisition parameter object.", exc)
-            acquisition_parameter = AcquisitionParameter(__state_file_dir=nexus_data_dir)
+            params = AcquisitionParameter()
         # Store parameter hash to detect when a sequence needs to be recalculated
-        self._current_parameter_hash: int = hash(acquisition_parameter)
+        self._current_parameter_hash: int = hash(params)
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
@@ -183,7 +178,7 @@ class AcquisitionControl:
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
         # Update sequence parameter hash and calculate sequence
-        self._current_parameter_hash = hash(acquisition_parameter)
+        self._current_parameter_hash = hash(params)
         self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -207,14 +202,14 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        if self._current_parameter_hash != hash(acquisition_parameter):
+        if self._current_parameter_hash != hash(params):
             # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
             self.unrolled_seq = None
             self.log.info(
                 "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
             )
             # Update acquisition parameter hash value
-            self._current_parameter_hash = hash(acquisition_parameter)
+            self._current_parameter_hash = hash(params)
             self.unrolled_seq = self.seq_provider.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -225,10 +220,10 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(acquisition_parameter.gradient_offset, self.seq_provider.high_impedance[1:])
+        self.tx_card.set_gradient_offsets(params.gradient_offset, self.seq_provider.high_impedance[1:])
 
-        for k in range(acquisition_parameter.num_averages):
-            self.log.info("Acquisition %s/%s", k + 1, acquisition_parameter.num_averages)
+        for k in range(params.num_averages):
+            self.log.info("Acquisition %s/%s", k + 1, params.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -254,24 +249,24 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(acquisition_parameter)
+                self.post_processing(params)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if acquisition_parameter.averaging_delay > 0:
-                time.sleep(acquisition_parameter.averaging_delay)
+            if params.averaging_delay > 0:
+                time.sleep(params.averaging_delay)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == acquisition_parameter.num_averages for gate in self._raw):
+            if not all(gate.shape[0] == params.num_averages for gate in self._raw):
                 raise ValueError(
                     "Missing averages: %s/%s",
                     [gate.shape[0] for gate in self._raw],
-                    acquisition_parameter.num_averages,
+                    params.num_averages,
                 )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -287,8 +282,8 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=acquisition_parameter.decimation / self.f_spcm,
-            acquisition_parameters=acquisition_parameter,
+            dwell_time=params.decimation / self.f_spcm,
+            acquisition_parameters=params,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
@@ -356,7 +351,7 @@ class AcquisitionControl:
             data = data[:-1, ...]
 
             # Switch case for DDC function
-            match acquisition_parameter.ddc_method:
+            match params.ddc_method:
                 case DDCMethod.CIC:
                     data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
                 case DDCMethod.AVG:
