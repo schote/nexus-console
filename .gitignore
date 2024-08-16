@@ -150,3 +150,6 @@ tmp
 .ruff_cache
 *.pkl
 *.png
+
+# Acquisition parameter state file
+*.state
