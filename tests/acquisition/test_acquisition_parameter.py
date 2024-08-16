@@ -1,7 +1,7 @@
 """Test functions for acquisition parameter."""
-from console.interfaces.acquisition_parameter import AcquisitionParameter
 import copy
-import random
+
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
 def test_save_load(acquisition_parameter: AcquisitionParameter) -> None:
@@ -10,6 +10,7 @@ def test_save_load(acquisition_parameter: AcquisitionParameter) -> None:
     params_check = AcquisitionParameter.load(".")
     assert isinstance(params_check, AcquisitionParameter)
     assert params_check == acquisition_parameter
+
 
 def test_autosave(acquisition_parameter: AcquisitionParameter) -> None:
     """Check auto-save methods."""

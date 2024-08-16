@@ -4,12 +4,11 @@ import json
 import os
 import pickle  # noqa: S403
 from dataclasses import asdict, dataclass
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.enums import DDCMethod
-
 
 DEFAULT_STATE_FILE_PATH = os.path.join(Path.home(), "nexus-console", "acquisition-parameter.state")
 DEFAULT_FOV_SCALING = Dimensions(x=1., y=1., z=1.)
@@ -25,7 +24,13 @@ class AcquisitionParameter:
     The acquisition parameters are defined in a dataclass which is hashable but still mutable.
     This allows to easily change parameters and detect updates by comparing the hash.
 
-    Once a new instance of an acquisition parameter object has been created, it is 
+    New instances of acquisition parameters are not saved automatically.
+    Once the autosave flag is set by calling `activate_autosave`, the parameter state is
+    written to a pickle file acquisition-parameter.state in the default_state_file_path on any
+    mutation of the acquisition parameter instance.
+    The autosave option can be deactivated calling `deactivate_autosave`.
+    Manually storing the acquisition parameters to a specific directory can be achieved
+    using the `save` method and providing the desired path.
     """
 
     larmor_frequency: float = 2.e6
