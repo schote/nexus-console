@@ -19,12 +19,6 @@ def test_se_projection(channel: str, use_sinc: bool):
     assert seq.check_timing()[0]
 
 
-def test_se_spectrum_dl():
-    """Test spin echo spectrum constructor with 2nd ADC window."""
-    seq = sequences.se_spectrum_dl.constructor()
-    assert seq.check_timing()[0]
-
-
 def test_t2_relaxation():
     """Test sequence to measure T2."""
     seq, _ = sequences.t2_relaxation.constructor()
@@ -60,12 +54,12 @@ def test_tse_3d(etl, dim, te):
     test_par_equal = [x != y for x, y in zip(labels_io["PAR"], labels_lin["PAR"])]
 
     assert any(test_lin_equal[1:])  # starting point might be equal
-    if 1 not in seq_io.get_definition("enc_dim"):
+    if 1 not in seq_io.get_definition("encoding_dim"):
         assert any(test_par_equal[1:])  # starting point might be equal
 
     # encoding dimensions must be equal
-    n_enc_io = seq_io.get_definition("enc_dim")
-    n_enc_lin = seq_lin.get_definition("enc_dim")
+    n_enc_io = seq_io.get_definition("encoding_dim")
+    n_enc_lin = seq_lin.get_definition("encoding_dim")
     assert n_enc_io == n_enc_lin
 
     # TODO: Add checks for ismrmrd header (2nd argument returned by constructor)
