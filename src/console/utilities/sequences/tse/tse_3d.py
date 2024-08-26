@@ -14,7 +14,7 @@ import ismrmrd
 import numpy as np
 import pypulseq as pp
 
-from console.interfaces.interface_acquisition_parameter import Dimensions
+from console.interfaces.acquisition_parameter import Dimensions
 from console.utilities.sequences.system_settings import raster, system
 
 

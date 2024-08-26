@@ -10,7 +10,7 @@ from typing import Any
 import ismrmrd
 import numpy as np
 
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.utilities.json_encoder import JSONEncoder
 
@@ -221,7 +221,7 @@ class AcquisitionData:
         os.makedirs(base_path, exist_ok=True)
         dataset_path = os.path.join(base_path, "ismrmrd.h5")
         dataset = ismrmrd.Dataset(dataset_path)
-        dataset.write_xml_header(header.toXML('utf-8'))
+        dataset.write_xml_header(header.toXML("utf-8"))
 
         # Create acquisition
         acq = ismrmrd.Acquisition()
@@ -237,11 +237,11 @@ class AcquisitionData:
             acq.scan_counter = k
 
             # Get k-space encoding from sequence labels and set acquisition indices
-            if (key := "LIN") in labels.keys():
+            if (key := "LIN") in labels:
                 acq.idx.kspace_encode_step_1 = labels[key][k]
-            if (key := "PAR") in labels.keys():
+            if (key := "PAR") in labels:
                 acq.idx.kspace_encode_step_2 = labels[key][k]
-            if (key := "SLC") in labels.keys():
+            if (key := "SLC") in labels:
                 acq.idx.slice = labels[key][k]
 
             # Set the data and append

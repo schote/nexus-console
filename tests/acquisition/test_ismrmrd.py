@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from console.interfaces.interface_acquisition_data import AcquisitionData
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_data import AcquisitionData
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.utilities import sequences
 
 

@@ -1,16 +1,18 @@
 """Test configuration file."""
 
+from typing import Callable
+
 import numpy as np
 import pypulseq as pp
 import pytest
 
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimensions
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
 
 
-@pytest.fixture
-def seq_provider():
+@pytest.fixture()
+def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
     return SequenceProvider(
         gradient_efficiency=[0.4, 0.4, 0.4],
@@ -23,8 +25,8 @@ def seq_provider():
     )
 
 
-@pytest.fixture
-def random_acquisition_data():
+@pytest.fixture()
+def random_acquisition_data() -> Callable:
     """Construct random acquisition data using factory function.
 
     Arguments:
@@ -36,7 +38,7 @@ def random_acquisition_data():
     """
     rng = np.random.default_rng(seed=0)
 
-    def _random_acquisition_data(num_averages: int, num_coils: int, num_pe: int, num_ro: int):
+    def _random_acquisition_data(num_averages: int, num_coils: int, num_pe: int, num_ro: int) -> np.ndarray:
         re = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         im = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
         return re + 1j * im
@@ -44,25 +46,23 @@ def random_acquisition_data():
     return _random_acquisition_data
 
 
-@pytest.fixture
-def test_spectrum():
+@pytest.fixture()
+def test_spectrum() -> Callable:
     """Sinusoidal test signal."""
     rng = np.random.default_rng(seed=0)
 
-    def _test_signal(num_samples: int, noise_scale: float):
+    def _test_signal(num_samples: int, noise_scale: float) -> np.ndarray:
         x = np.linspace(-5, 5, num_samples)
         echo = np.exp(-(x**2) / 2) / np.sqrt(2 * np.pi) * 10
         noise = rng.normal(loc=0, scale=noise_scale, size=num_samples)
 
-        spcm = np.fft.fftshift(np.fft.fft(np.fft.fftshift(echo + noise)))
-
-        return spcm
+        return np.fft.fftshift(np.fft.fft(np.fft.fftshift(echo + noise)))
 
     return _test_signal
 
 
-@pytest.fixture
-def test_sequence():
+@pytest.fixture()
+def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
     seq = pp.Sequence()
     seq.set_definition("Name", "test_sequence")
@@ -76,14 +76,14 @@ def test_sequence():
     return seq
 
 
-@pytest.fixture
-def acquisition_parameter():
+@pytest.fixture()
+def acquisition_parameter() -> AcquisitionParameter:
     """Construct acquisition parameter object for testing."""
     return AcquisitionParameter(
         larmor_frequency=2.123e6,
         b1_scaling=5.432,
-        gradient_offset=[0, 100, 500],
-        fov_scaling=[0.5, 0.0, 0.9],
+        gradient_offset=Dimensions(0, 100, 500),
+        fov_scaling=Dimensions(0.5, 0.0, 0.9),
         averaging_delay=1.01,
-        data_storage_location=".",
+        default_state_file_path=".",
     )
