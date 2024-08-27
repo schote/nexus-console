@@ -59,7 +59,7 @@ class AcquisitionParameter:
     default_state_file_path: str = DEFAULT_STATE_FILE_PATH
     """Default file path for acquisition parameter state."""
 
-    __save_on_mutation: bool = False
+    save_on_mutation: bool = False
     """Flag which indicates if state is saved on mutation."""
 
     def __setattr__(self, __name: str, __value: Any) -> None:
@@ -69,7 +69,7 @@ class AcquisitionParameter:
         """
         _hash = hash(self)
         super().__setattr__(__name, __value)
-        if self.__save_on_mutation and hash(self) != _hash:
+        if self.save_on_mutation and hash(self) != _hash:
             self.save()
 
     def __repr__(self) -> str:
@@ -113,14 +113,6 @@ class AcquisitionParameter:
     def hash(self) -> int:
         """Return acquisition parameter integer hash."""
         return self.__hash__()
-
-    def activate_autosave(self) -> None:
-        """Set private flag which causes to save the parameter state on any mutation."""
-        self.__save_on_mutation = True
-
-    def deactivate_autosave(self) -> None:
-        """Set private flag which deactivates automatic saving of the parameter state."""
-        self.__save_on_mutation = False
 
     @classmethod
     def load(cls, file_path: str) -> "AcquisitionParameter":
