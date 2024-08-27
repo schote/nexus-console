@@ -3,21 +3,24 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import console.spcm_control.globals as glob
-import console.utilities.sequences as sequences
+import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
+from console.utilities import sequences
 
 # Create acquisition control instance
 acq = AcquisitionControl(configuration_file="example_device_config.yaml")
 
 # Construct a spin echo based spectrum sequence
-seq = sequences.se_spectrum.constructor(
-    echo_time=12e-3, rf_duration=200e-6, use_sinc=False
-)
+params = {
+    "echo_time": 12e-3,
+    "rf_duration": 200e-6,
+    "use_sinc": False,
+}
+seq = sequences.se_spectrum.constructor(**params)
 
 # Update global acquisition parameters
-glob.update_parameters(larmor_frequency=2.0395e6)
+console.acq_parameter.larmor_frequency = 2.0395e6
 
 # Run the acquisition
 acq.set_sequence(sequence=seq)
@@ -38,7 +41,7 @@ ax.set_xlabel("Frequency [Hz]")
 
 # Add information to the acquisition data
 acq_data.add_info({
-    "note": "Example spin echo spectrum experiment"
+    "note": "Example spin echo spectrum experiment",
 })
 
 # Write acquisition data object
