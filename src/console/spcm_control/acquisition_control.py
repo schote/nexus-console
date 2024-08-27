@@ -10,11 +10,12 @@ from pathlib import Path
 import numpy as np
 from scipy import signal
 
+import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider, params
+from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities import ddc
@@ -71,15 +72,11 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Define global acquisition parameter object
-
-        try:
-            params = AcquisitionParameter.load(nexus_data_dir)
-        except FileNotFoundError as exc:
-            self.log.warning("Acquisition parameter state could not be loaded from dir: %s.\
-                Creating new acquisition parameter object.", exc)
-            params = AcquisitionParameter()
+        console.load_state(nexus_data_dir)
+        console.acq_parameter.activate_autosave()
+        
         # Store parameter hash to detect when a sequence needs to be recalculated
-        self._current_parameter_hash: int = hash(params)
+        self._current_parameter_hash: int = hash(console.acq_parameter)
 
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
@@ -178,7 +175,7 @@ class AcquisitionControl:
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
         # Update sequence parameter hash and calculate sequence
-        self._current_parameter_hash = hash(params)
+        self._current_parameter_hash = hash(console.acq_parameter)
         self.unrolled_seq = self.seq_provider.unroll_sequence()
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -202,14 +199,14 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        if self._current_parameter_hash != hash(params):
+        if self._current_parameter_hash != hash(console.acq_parameter):
             # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
             self.unrolled_seq = None
             self.log.info(
                 "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
             )
             # Update acquisition parameter hash value
-            self._current_parameter_hash = hash(params)
+            self._current_parameter_hash = hash(console.acq_parameter)
             self.unrolled_seq = self.seq_provider.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
@@ -220,10 +217,10 @@ class AcquisitionControl:
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(params.gradient_offset, self.seq_provider.high_impedance[1:])
+        self.tx_card.set_gradient_offsets(console.acq_parameter.gradient_offset, self.seq_provider.high_impedance[1:])
 
-        for k in range(params.num_averages):
-            self.log.info("Acquisition %s/%s", k + 1, params.num_averages)
+        for k in range(console.acq_parameter.num_averages):
+            self.log.info("Acquisition %s/%s", k + 1, console.acq_parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
@@ -249,24 +246,24 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(params)
+                self.post_processing(console.acq_parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if params.averaging_delay > 0:
-                time.sleep(params.averaging_delay)
+            if console.acq_parameter.averaging_delay > 0:
+                time.sleep(console.acq_parameter.averaging_delay)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == params.num_averages for gate in self._raw):
+            if not all(gate.shape[0] == console.acq_parameter.num_averages for gate in self._raw):
                 raise ValueError(
                     "Missing averages: %s/%s",
                     [gate.shape[0] for gate in self._raw],
-                    params.num_averages,
+                    console.acq_parameter.num_averages,
                 )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -282,8 +279,8 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=params.decimation / self.f_spcm,
-            acquisition_parameters=params,
+            dwell_time=console.acq_parameter.decimation / self.f_spcm,
+            acquisition_parameters=console.acq_parameter,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
@@ -351,7 +348,7 @@ class AcquisitionControl:
             data = data[:-1, ...]
 
             # Switch case for DDC function
-            match params.ddc_method:
+            match console.acq_parameter.ddc_method:
                 case DDCMethod.CIC:
                     data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
                 case DDCMethod.AVG:

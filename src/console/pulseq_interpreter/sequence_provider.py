@@ -11,7 +11,7 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
-from console import acq_parameter as params
+import console
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
@@ -284,7 +284,7 @@ class SequenceProvider(Sequence):
 
         # Calculate gradient offset int16 value from mV
         # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
-        offset = getattr(params.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx + 1]
+        offset = getattr(console.acq_parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx + 1]
 
         # Calculat gradient waveform scaling
         scaling = fov_scaling * self.imp_scaling[idx + 1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
@@ -458,9 +458,9 @@ class SequenceProvider(Sequence):
 
         try:
             # Check larmor frequency
-            if params.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {params.larmor_frequency * 1e-6} MHz")
-            self.larmor_freq = params.larmor_frequency
+            if console.acq_parameter.larmor_frequency > 10e6:
+                raise ValueError(f"Larmor frequency is above 10 MHz: {console.acq_parameter.larmor_frequency * 1e-6} MHz")
+            self.larmor_freq = console.acq_parameter.larmor_frequency
 
             # Check if sequence has block events
             if not len(self.block_events) > 0:
@@ -503,7 +503,7 @@ class SequenceProvider(Sequence):
                     block=block.rf,
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
-                    b1_scaling=params.b1_scaling,
+                    b1_scaling=console.acq_parameter.b1_scaling,
                     num_samples_rf_start=rf_start_sample_pos,
                 )
 
@@ -514,17 +514,17 @@ class SequenceProvider(Sequence):
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
                 self.calculate_gradient(
-                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=params.fov_scaling.x
+                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=console.acq_parameter.fov_scaling.x
                 )
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
                 self.calculate_gradient(
-                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=params.fov_scaling.y
+                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=console.acq_parameter.fov_scaling.y
                 )
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
                 self.calculate_gradient(
-                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=params.fov_scaling.z
+                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=console.acq_parameter.fov_scaling.z
                 )
 
             # Bitwise operations to merge gx with adc and gy with unblanking

@@ -18,12 +18,12 @@ from console.interfaces.acquisition_parameter import Dimensions
 from console.utilities.sequences.system_settings import raster, system
 
 
-class Trajectory(Enum):
+class Trajectory(str, Enum):
     """Trajectory type enum."""
 
-    INOUT = 1
-    OUTIN = 2
-    LINEAR = 3
+    INOUT = "in-out"
+    OUTIN = "out-in"
+    LINEAR = "linear"
 
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
@@ -98,7 +98,10 @@ def constructor(
     """
     system.rf_ringdown_time = 0
     seq = pp.Sequence(system)
-    seq.set_definition("Name", "tse_3d")
+    # Get the dimension and type of the sequence and set the name accordingly
+    n_dim = int(n_enc.x > 1) + int(n_enc.y > 1) + int(n_enc.z > 1)
+    seq_type = "tse" if etl > 1 else "se"
+    seq.set_definition("Name", f"{seq_type}_{n_dim}d")
 
     # check if channel labels are valid
     channel_valid = True
@@ -412,7 +415,8 @@ def constructor(
                 duration=raster(val=noise_adc_dur, precision=system.adc_raster_time),
                 delay=noise_adc_dead_time
             )
-            seq.add_block(noise_adc)
+            noise_label = pp.make_label(type="INC", label="NAV", value=1)
+            seq.add_block(noise_adc, noise_label)
             post_noise_adc_delay = raster(tr_delay - noise_adc_dead_time - noise_adc_dur, system.block_duration_raster)
             if post_noise_adc_delay > 0:
                 seq.add_block(pp.make_delay(post_noise_adc_delay))
@@ -430,6 +434,8 @@ def constructor(
     # Check labels
     labels = seq.evaluate_labels(evolution="adc")
     acq_pos = np.concatenate(trains_pos).T
+    # TODO: When noise scans are done, the last LIN/PAR label is duplicated
+    # Could be fixed by using a different label which marks the noise scan?
     if not np.array_equal(labels["LIN"], acq_pos[0, :]):
         raise ValueError("LIN labels don't match actual acquisition positions.")
     if not np.array_equal(labels["PAR"], acq_pos[1, :]):

@@ -107,6 +107,7 @@ class AcquisitionParameter:
         if not file_path.endswith(".state"):
             file_path = os.path.join(file_path, FILENAME_STATE)
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        print("Saving acquisition parameter to: ", file_path)
         with open(file_path, "wb") as file:
             pickle.dump(self.__dict__, file)
 
@@ -139,5 +140,7 @@ class AcquisitionParameter:
         if os.path.exists(file_path):
             with open(file_path, "rb") as state_file:
                 state = pickle.load(state_file)  # noqa: S301
+            print("Loaded acquisition parameter state from file: ", file_path)
+            print("Acquisition parameter:\n", state)
             return cls(**state)
         raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)
