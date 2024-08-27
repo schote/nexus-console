@@ -20,10 +20,10 @@ sys.path.insert(0, os.path.abspath('../../src/'))  # Source code dir relative to
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Spectrum-Pypulseq MRI Console'
+project = 'Nexus-Console'
 author = author
 version = version
-copyright = '2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
+copyright = '2024, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -72,7 +72,7 @@ html_sidebars = {
 
 numfig = True   # use numbered figures
 html_theme_options = {
-    "logo": {"text": "Spectrum-Console"},
+    "logo": {"text": "Nexus-Console"},
     "pygment_light_style": "default",
     "pygment_dark_style": "github-dark",
     "show_toc_level": 2,
@@ -88,21 +88,13 @@ html_theme_options = {
         },
         {
             # Label for this link
-            "name": "GitLab",
+            "name": "Open Source Imaging",
             # URL where the link will redirect
-            "url": "https://gitlab1.ptb.de/mri-lab/spectrum-console",  # required
+            "url": "https://www.opensourceimaging.org/project/nexus-console/",  # required
             # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-            "icon": "fab fa-gitlab",
+            "icon": "http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif",
+            # The type of image to be used (see below for details)
+            "type": "url",
         },
-        # {
-        #     # Label for this link
-        #     "name": "Open Source Imaging",
-        #     # URL where the link will redirect
-        #     "url": "https://www.opensourceimaging.org/",  # required
-        #     # Icon class (if "type": "fontawesome"), or path to local image (if "type": "local")
-        #     "icon": "http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif",
-        #     # The type of image to be used (see below for details)
-        #     "type": "url",
-        # },
     ]
 }

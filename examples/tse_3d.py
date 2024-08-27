@@ -20,7 +20,7 @@ params = {
     "trajectory": "in-out",
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
-    "fov": Dimensions(x=140e-3, y=140e-3, z=140e-3),
+    "fov": Dimensions(x=180-3, y=180e-3, z=180e-3),
     "channel_ro": "z",
     "channel_pe1": "y",
     "channel_pe2": "x",
@@ -36,9 +36,9 @@ console.acq_parameter.decimation = decimation
 
 # Calculate sequence and perform acquisition
 acq.set_sequence(sequence=seq)
-acq_data: AcquisitionData = acq.run()
 
-# sort data in to kspace array
+# Execute the sequence and sort kspace array
+acq_data: AcquisitionData = acq.run()
 ksp = sequences.tse.tse_3d.sort_kspace(acq_data.raw, seq).squeeze()
 
 # Image reconstruction with FFT
@@ -57,7 +57,7 @@ for k, x in enumerate(img[:, ...]):
     ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray")
     ax[k].axis("off")
 _ = [a.remove() for a in ax[k + 1:]]
-fig.set_tight_layout(True)
+fig.tight_layout(pad=0.01)
 fig.set_facecolor("black")
 
 
