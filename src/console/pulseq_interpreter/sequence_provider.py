@@ -459,7 +459,8 @@ class SequenceProvider(Sequence):
         try:
             # Check larmor frequency
             if console.acq_parameter.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {console.acq_parameter.larmor_frequency * 1e-6} MHz")
+                raise ValueError("Larmor frequency is above 10 MHz: %s MHz",
+                                 console.acq_parameter.larmor_frequency * 1e-6)
             self.larmor_freq = console.acq_parameter.larmor_frequency
 
             # Check if sequence has block events

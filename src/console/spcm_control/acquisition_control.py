@@ -72,9 +72,14 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Define global acquisition parameter object
-        console.load_state(nexus_data_dir)
-        console.acq_parameter.activate_autosave()
-        
+        try:
+            console.acq_parameter = AcquisitionParameter.load(nexus_data_dir)
+        except FileNotFoundError as exc:
+            self.log.warning("Acquisition parameter state could not be loaded from dir: %s.\
+                Creating new acquisition parameter object.", exc)
+            console.acq_parameter = AcquisitionParameter()
+        console.acq_parameter.save_on_mutation = True
+
         # Store parameter hash to detect when a sequence needs to be recalculated
         self._current_parameter_hash: int = hash(console.acq_parameter)
 
