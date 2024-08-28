@@ -56,7 +56,7 @@ class AcquisitionData:
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
-                "version": version("console"),
+                "version": version("nexus-console"),
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
                 "dimensions": [r.shape for r in self._raw],
