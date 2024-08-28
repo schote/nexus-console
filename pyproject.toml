@@ -7,9 +7,9 @@ packages = ["console"]
 package-dir = {"" = "src"}
 
 [project]
-name = "console"
+name = "nexus-console"
 version = "0.0.1"
-description = "MRI console application for pulseq sequences build on Spectrum-Instrumentation measurement cards."
+description = "MRI Nexus console application to run pulseq sequences on Spectrum-Instrumentation measurement cards."
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},
     {name="Berk Silemek", email="berk.silemek@ptb.de"}
