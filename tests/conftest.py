@@ -1,6 +1,6 @@
 """Test configuration file."""
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import pypulseq as pp
