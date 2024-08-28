@@ -20,7 +20,7 @@ params = {
     "trajectory": "in-out",
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
-    "fov": Dimensions(x=180-3, y=180e-3, z=180e-3),
+    "fov": Dimensions(x=180 - 3, y=180e-3, z=180e-3),
     "channel_ro": "z",
     "channel_pe1": "y",
     "channel_pe2": "x",
