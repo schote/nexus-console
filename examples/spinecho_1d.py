@@ -20,7 +20,7 @@ params = {
 seq = sequences.se_spectrum.constructor(**params)
 
 # Update global acquisition parameters
-console.acq_parameter.larmor_frequency = 2.0395e6
+console.parameter.larmor_frequency = 2.0395e6
 
 # Run the acquisition
 acq.set_sequence(sequence=seq)

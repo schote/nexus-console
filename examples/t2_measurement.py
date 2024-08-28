@@ -21,8 +21,8 @@ params = {
 seq, te_values = sequences.t2_relaxation.constructor(**params)
 
 # Set larmor frequency and b1 scaling factor
-console.acq_parameter.larmor_frequency = 2038550.0
-console.acq_parameter.b1_scaling = 2.43
+console.parameter.larmor_frequency = 2038550.0
+console.parameter.b1_scaling = 2.43
 
 # Perform acquisition
 acq.set_sequence(sequence=seq)

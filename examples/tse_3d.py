@@ -31,7 +31,7 @@ seq, header = sequences.tse.tse_3d.constructor(**params)
 
 # Calculate decimation:
 decimation = int(acq.rx_card.sample_rate * 1e6 / params["ro_bandwidth"])
-console.acq_parameter.decimation = decimation
+console.parameter.decimation = decimation
 
 
 # Calculate sequence and perform acquisition
