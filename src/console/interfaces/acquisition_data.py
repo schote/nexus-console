@@ -7,9 +7,10 @@ from datetime import datetime
 from importlib.metadata import version
 from typing import Any
 
+import ismrmrd
 import numpy as np
 
-from console.interfaces.interface_acquisition_parameter import AcquisitionParameter
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.utilities.json_encoder import JSONEncoder
 
@@ -55,7 +56,7 @@ class AcquisitionData:
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         self.meta.update(
             {
-                "version": version("console"),
+                "version": version("nexus-console"),
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
                 "dimensions": [r.shape for r in self._raw],
@@ -190,3 +191,64 @@ class AcquisitionData:
                 log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
                 return
         self._additional_data.update(data)
+
+    def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader, user_path: str | None = None):
+        """Store acquisition data in (ISMR)MRD format."""
+        # Get and check sequence labels (required to create acquisition headers)
+        if not (labels := self.sequence.evaluate_labels(evolution="adc")):
+            raise ValueError("Labels not found. A labeled sequence is required to export ismrmrd.")
+
+        # Get dimensions of raw data
+        _, num_coils, num_pe, num_ro = self.raw.shape
+        enc_dim = [
+            header.encoding[0].encodedSpace.matrixSize.x,
+            header.encoding[0].encodedSpace.matrixSize.y,
+            header.encoding[0].encodedSpace.matrixSize.z
+        ]
+        n_dims = sum([int(d > 0) for d in enc_dim])
+
+        # Update larmor frequency with exact frequency
+        header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency * 1e6)
+
+        # Set receive channels, required by gadgetron
+        system_info = ismrmrd.xsd.acquisitionSystemInformationType()
+        system_info.receiverChannels = num_coils
+        header.acquisitionSystemInformation = system_info
+
+        # Get folder path and create (ismr)mrd header
+        base_path = os.path.join(user_path, "") if user_path else self.session_path
+        base_path = os.path.join(base_path, self.meta["folder_name"])
+        os.makedirs(base_path, exist_ok=True)
+        dataset_path = os.path.join(base_path, "ismrmrd.h5")
+        dataset = ismrmrd.Dataset(dataset_path)
+        dataset.write_xml_header(header.toXML("utf-8"))
+
+        # Create acquisition
+        acq = ismrmrd.Acquisition()
+        acq.version = int(version("ismrmrd")[0])
+        acq.resize(number_of_samples=num_ro, active_channels=num_coils, trajectory_dimensions=n_dims)
+        acq.center_sample = round(num_ro / 2)
+        acq.read_dir[0] = 1.0
+        acq.phase_dir[1] = 1.0
+        acq.slice_dir[2] = 1.0
+
+        for k in range(num_pe):
+
+            acq.scan_counter = k
+
+            # Get k-space encoding from sequence labels and set acquisition indices
+            if (key := "LIN") in labels:
+                acq.idx.kspace_encode_step_1 = labels[key][k]
+            if (key := "PAR") in labels:
+                acq.idx.kspace_encode_step_2 = labels[key][k]
+            if (key := "SLC") in labels:
+                acq.idx.slice = labels[key][k]
+
+            # Set the data and append
+            acq.data[:] = self.raw[0, :, k, :]
+
+            dataset.append_acquisition(acq)
+
+        dataset.close()
+        log = logging.getLogger("AcqData")
+        log.info("ISMRMRD exported: %s", dataset_path)

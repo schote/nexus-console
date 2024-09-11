@@ -1,16 +1,13 @@
-Spectrum-Console
+Nexus Console
 ================
-Fully Digital Open-Source Console for MRI Acquisitions Written in Python
-------------------------------------------------------------------------
+Open-Source Python Framework for a Versatile Low-Field MRI Console
+------------------------------------------------------------------
 
-Welcome to the documentation for the Spectrum Console—an open-source MRI console 
-designed for low-field magnetic resonance imaging (MRI). 
-This console, driven by Spectrum-Instrumentation measurement cards and Python-based software, 
-offers a cost-effective and portable solution for exploring sophisticated low-field imaging techniques. 
-Successfully implemented and tested on a low-field MRI scanner, 
-the Spectrum-Console demonstrates real-time computed Pulseq sequences 
-with high fidelity compared to measured waveforms. 
-The console's design holds the potential to enhance the capabilities of low-field MRI systems, fostering opportunities for advanced techniques in the field.
+Welcome to the documentation for the Nexus console—an open-source software framework for an advanced low-field MRI console. 
+This console is driven by measurement cards from Spectrum-Instrumentation and is controlled by open-source software written in Python. 
+It offers a cost-effective solution for advanced low-field imaging techniques involving additional sensor information, e.g. for EMI mitigation or B0-field tracking.
+Also it serves as a reconstruction system with enough power for deep-learning-based image optimization or model-based reconstruction.
+Successfully implemented and tested on a low-field MRI scanner, Nexus demonstrates real-time computed Pulseq sequences with high fidelity compared to measured waveforms. 
 Explore the documentation to delve into the technical details and possibilities offered by the Spectrum-Console.
 The documentation provides insights, including quick-start guide, user guide, hands-on examples and the API reference.
 
@@ -64,6 +61,12 @@ The documentation provides insights, including quick-start guide, user guide, ha
          :click-parent:
 
          To the reference
+
+The console has been presented at ISMRM 2024 in Singapore:
+
+   Schote D, Silemek B, Seifert F, et al. Beyond Boundaries – A versatile Console ­for Advanced Low-Field MRI. In: Proc. Intl. Soc. Mag. Reson. Med. Vol 33. Singapore; 2024.
+
+The project can also be found on `opensourceimaging.org <https://www.opensourceimaging.org/project/nexus-console/>`_.
 
 
 Content Overview

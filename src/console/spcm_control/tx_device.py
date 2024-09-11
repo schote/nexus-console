@@ -7,8 +7,8 @@ from dataclasses import dataclass
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
-from console.interfaces.interface_acquisition_parameter import Dimensions
-from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.acquisition_parameter import Dimensions
+from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 
@@ -181,6 +181,12 @@ class TxCard(SpectrumDevice):
             spcm.SPCM_X1_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        # Replicate ADC gate on extension port X12
+        spcm.spcm_dwSetParam_i32(
+            self.card,
+            spcm.SPCM_X12_MODE,
+            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+        )
         # Channel X2: dig. reference signal (15th bit from analog channel 2)
         spcm.spcm_dwSetParam_i32(
             self.card,
@@ -193,16 +199,17 @@ class TxCard(SpectrumDevice):
             spcm.SPCM_X3_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
+        # Replicate unblanking signal at extension port X13
         spcm.spcm_dwSetParam_i32(
             self.card,
-            spcm.SPCM_X12_MODE,
+            spcm.SPCM_X13_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
 
         self.log.debug("Device setup completed")
         self.log_card_status()
 
-    def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool]) -> None:
+    def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool] = [True, True, True]) -> None:
         """Set offset values of the gradient output channels.
 
         Parameters

@@ -7,9 +7,9 @@ packages = ["console"]
 package-dir = {"" = "src"}
 
 [project]
-name = "console"
+name = "nexus-console"
 version = "0.0.1"
-description = "MRI console application for pulseq sequences build on Spectrum-Instrumentation measurement cards."
+description = "MRI Nexus console application to run pulseq sequences on Spectrum-Instrumentation measurement cards."
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},
     {name="Berk Silemek", email="berk.silemek@ptb.de"}
@@ -26,12 +26,14 @@ classifiers = [
 ]
 
 dependencies = [
-    "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
+    "pypulseq",
+    # "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
     "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
     "plotly",
     "PyYAML",
     "matplotlib",
-    "pandas"
+    "pandas",
+    "ismrmrd"
 ]
 
 # Dependency groupds (optional)
@@ -48,10 +50,10 @@ pythonpath = [".", "src"]
 
 
 [tool.mypy]
-warn_return_any = "False"
-check_untyped_defs = "True"
-warn_no_return = "True"
-warn_unreachable = "True"
+warn_return_any = false
+check_untyped_defs = true
+warn_no_return = true
+warn_unreachable = true
 python_version = "3.10"
 ignore_missing_imports = true
 mypy_path = "console"

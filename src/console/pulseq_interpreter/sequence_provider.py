@@ -1,18 +1,19 @@
 """Sequence provider class."""
 import logging
+from collections.abc import Callable
 from types import SimpleNamespace
-from typing import Any, Callable
+from typing import Any
 
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
-import console.spcm_control.globals as glob
-from console.interfaces.interface_dimensions import Dimensions
-from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+import console
+from console.interfaces.dimensions import Dimensions
+from console.interfaces.unrolled_sequence import UnrolledSequence
 
 try:
     from line_profiler import profile
@@ -283,7 +284,7 @@ class SequenceProvider(Sequence):
 
         # Calculate gradient offset int16 value from mV
         # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
-        offset = getattr(glob.parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx + 1]
+        offset = getattr(console.parameter.gradient_offset, block.channel) / INT16_MAX * self.output_limits[idx + 1]
 
         # Calculat gradient waveform scaling
         scaling = fov_scaling * self.imp_scaling[idx + 1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
@@ -457,9 +458,10 @@ class SequenceProvider(Sequence):
 
         try:
             # Check larmor frequency
-            if glob.parameter.larmor_frequency > 10e6:
-                raise ValueError(f"Larmor frequency is above 10 MHz: {glob.parameter.larmor_frequency * 1e-6} MHz")
-            self.larmor_freq = glob.parameter.larmor_frequency
+            if console.parameter.larmor_frequency > 10e6:
+                raise ValueError("Larmor frequency is above 10 MHz: %s MHz",
+                                 console.parameter.larmor_frequency * 1e-6)
+            self.larmor_freq = console.parameter.larmor_frequency
 
             # Check if sequence has block events
             if not len(self.block_events) > 0:
@@ -502,7 +504,7 @@ class SequenceProvider(Sequence):
                     block=block.rf,
                     unroll_arr=_seq[k][0::4],
                     unblanking=_unblanking[k],
-                    b1_scaling=glob.parameter.b1_scaling,
+                    b1_scaling=console.parameter.b1_scaling,
                     num_samples_rf_start=rf_start_sample_pos,
                 )
 
@@ -513,17 +515,17 @@ class SequenceProvider(Sequence):
             if block.gx is not None:
                 # Every 4th value in _seq starting at index 1 belongs to x gradient
                 self.calculate_gradient(
-                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=glob.parameter.fov_scaling.x
+                    block=block.gx, unroll_arr=_seq[k][1::4], fov_scaling=console.parameter.fov_scaling.x
                 )
             if block.gy is not None:
                 # Every 4th value in _seq starting at index 2 belongs to y gradient
                 self.calculate_gradient(
-                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=glob.parameter.fov_scaling.y
+                    block=block.gy, unroll_arr=_seq[k][2::4], fov_scaling=console.parameter.fov_scaling.y
                 )
             if block.gz is not None:
                 # Every 4th value in _seq starting at index 3 belongs to z gradient
                 self.calculate_gradient(
-                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=glob.parameter.fov_scaling.z
+                    block=block.gz, unroll_arr=_seq[k][3::4], fov_scaling=console.parameter.fov_scaling.z
                 )
 
             # Bitwise operations to merge gx with adc and gy with unblanking
@@ -558,8 +560,8 @@ class SequenceProvider(Sequence):
         )
 
     def plot_unrolled(
-            self, time_range: tuple[int, int] = (0, -1)
-        ) -> tuple[matplotlib.figure.Figure, np.ndarray]:
+            self, time_range: tuple[float, float] = (0, -1)
+        ) -> tuple[mpl.figure.Figure, np.ndarray]:
         """Plot unrolled waveforms for replay.
 
         Parameters
@@ -594,14 +596,14 @@ class SequenceProvider(Sequence):
 
         # Get gradient waveforms
         rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
-        gx_signal = (np.uint16(gx_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
-        gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
-        gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / np.abs(np.iinfo(np.int16).min)
+        gx_signal = (np.uint16(gx_signal) << 1).astype(np.int16) / 2**15
+        gy_signal = (np.uint16(gy_signal) << 1).astype(np.int16) / 2**15
+        gz_signal = (np.uint16(gz_signal) << 1).astype(np.int16) / 2**15
 
-        axis[0].plot(samples, self.output_limits[0] * rf_signal)
-        axis[1].plot(samples, self.output_limits[1] * gx_signal)
-        axis[2].plot(samples, self.output_limits[2] * gy_signal)
-        axis[3].plot(samples, self.output_limits[3] * gz_signal)
+        axis[0].plot(samples, self.output_limits[0] * rf_signal / self.imp_scaling[0])
+        axis[1].plot(samples, self.output_limits[1] * gx_signal / self.imp_scaling[1])
+        axis[2].plot(samples, self.output_limits[2] * gy_signal / self.imp_scaling[2])
+        axis[3].plot(samples, self.output_limits[3] * gz_signal / self.imp_scaling[3])
         axis[4].plot(samples, adc_gate, label="ADC gate")
         axis[4].plot(samples, unblanking, label="RF unblanking")
 

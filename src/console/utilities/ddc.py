@@ -38,7 +38,8 @@ def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
     norm = np.sum(kernel)
 
     # Calculate size of down-sampled signal
-    num_ddc_samples = signal.shape[-1] // decimation
+    # num_ddc_samples = signal.shape[-1] // decimation
+    num_ddc_samples = round(signal.shape[-1] / decimation)
     signal_filtered = np.zeros(signal.shape[:-1] + (num_ddc_samples,), dtype=complex)
 
     # Zero-padding of signal to center down-sampled signal

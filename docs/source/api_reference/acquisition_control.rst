@@ -15,12 +15,31 @@ Acquisition Control
    :show-inheritance:
 
 
-.. _acquisition-parameter:
+
 
 Acquisition Parameter
 ---------------------
 
-.. automodule:: console.spcm_control.interface_acquisition_parameter
+.. _acquisition-parameter:
+
+.. automodule:: console.interfaces.acquisition_parameter
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+The decimation method can be specified by the following enum definition and dimensions are defined by the subsequent dataclass.
+
+.. _enums:
+
+.. automodule:: console.interfaces.enums
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+.. _dimensions:
+
+.. automodule:: console.interfaces.dimensions
    :members:
    :undoc-members:
    :show-inheritance:
@@ -31,7 +50,7 @@ Acquisition Parameter
 Acquisition Data
 ----------------
 
-.. automodule:: console.spcm_control.interface_acquisition_data
+.. automodule:: console.interfaces.acquisition_data
    :members:
    :undoc-members:
    :show-inheritance:
