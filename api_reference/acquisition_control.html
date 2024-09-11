@@ -8,40 +8,40 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Acquisition &#8212; Spectrum-Pypulseq MRI Console  documentation</title>
+    <title>Acquisition &#8212; Nexus-Console  documentation</title>
   
   
   
   <script data-cfasync="false">
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
-    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
 
   
-  <link href="../_static/vendor/fontawesome/6.5.1/css/all.min.css?digest=8d27b9dea8ad943066ae" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.1/webfonts/fa-regular-400.woff2" />
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../_static/design-style.1e8bd061cd6da7fc9cf755528e8ffc24.min.css?v=0a3b3ea7" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=4cc05613" />
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae" />
-  <script src="../_static/vendor/fontawesome/6.5.1/js/all.min.js?digest=8d27b9dea8ad943066ae"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
     <script src="../_static/documentation_options.js?v=5929fcd5"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../_static/design-tabs.js?v=36754332"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api_reference/acquisition_control';</script>
     <link rel="icon" href="../_static/favicon.ico"/>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -57,27 +57,23 @@
 
   
   
-  <a id="pst-skip-link" class="skip-link" href="#main-content">Skip to main content</a>
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>
-    Back to top
-  </button>
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
   <input type="checkbox"
           class="sidebar-toggle"
-          name="__primary"
-          id="__primary"/>
-  <label class="overlay overlay-primary" for="__primary"></label>
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
   
   <input type="checkbox"
           class="sidebar-toggle"
-          name="__secondary"
-          id="__secondary"/>
-  <label class="overlay overlay-secondary" for="__secondary"></label>
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
   
   <div class="search-button__wrapper">
     <div class="search-button__overlay"></div>
@@ -99,18 +95,25 @@
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
 </form></div>
   </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar">
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <label class="sidebar-toggle primary-toggle" for="__primary">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
-  </label>
+  </button>
   
   
   <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
 
+  
+    
   
 
 <a class="navbar-brand logo" href="../index.html">
@@ -128,7 +131,7 @@
     <script>document.write(`<img src="../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
   
   
-    <p class="title logo__title">Spectrum-Console</p>
+    <p class="title logo__title">Nexus-Console</p>
   
 </a></div>
     
@@ -139,36 +142,36 @@
     <div class="me-auto navbar-header-items__center">
       
         <div class="navbar-item">
-<nav class="navbar-nav">
+<nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start.html">
-                        Quick-Start Guide
-                      </a>
-                    </li>
-                
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../quick_start.html">
+    Quick-Start Guide
+  </a>
+</li>
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
-                        User Guide
-                      </a>
-                    </li>
-                
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Example Experiments
-                      </a>
-                    </li>
-                
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="index.html">
-                        API Documentation
-                      </a>
-                    </li>
-                
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../code_examples/index.html">
+    Example Experiments
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    API Documentation
+  </a>
+</li>
+
   </ul>
 </nav></div>
       
@@ -182,7 +185,7 @@
 
  <script>
  document.write(`
-   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
     <span class="search-button__default-text">Search</span>
     <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -196,15 +199,15 @@
 
 <script>
 document.write(`
-  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
   </button>
 `);
 </script></div>
       
-        <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+        <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
         <li class="nav-item">
           
@@ -215,7 +218,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/schote/spectrum-console" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/schote/spectrum-console" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
             <span class="sr-only">GitHub</span></a>
         </li>
         <li class="nav-item">
@@ -227,8 +230,7 @@ document.write(`
           
           
           
-          <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
-            <span class="sr-only">GitLab</span></a>
+          <a href="https://www.opensourceimaging.org/project/nexus-console/" title="Open Source Imaging" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
         </li>
 </ul></div>
       
@@ -241,7 +243,7 @@ document.write(`
 
  <script>
  document.write(`
-   <button class="btn navbar-btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass"></i>
     <span class="search-button__default-text">Search</span>
     <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
@@ -252,9 +254,9 @@ document.write(`
   
 
   
-    <label class="sidebar-toggle secondary-toggle" for="__secondary" tabindex="0">
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
       <span class="fa-solid fa-outdent"></span>
-    </label>
+    </button>
   
 </div>
 
@@ -275,39 +277,42 @@ document.write(`
     
       <div class="sidebar-header-items__center">
         
-          <div class="navbar-item">
-<nav class="navbar-nav">
+          
+          
+            <div class="navbar-item">
+<nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../quick_start.html">
-                        Quick-Start Guide
-                      </a>
-                    </li>
-                
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../quick_start.html">
+    Quick-Start Guide
+  </a>
+</li>
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../user_guide/index.html">
-                        User Guide
-                      </a>
-                    </li>
-                
 
-                    <li class="nav-item">
-                      <a class="nav-link nav-internal" href="../code_examples/index.html">
-                        Example Experiments
-                      </a>
-                    </li>
-                
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
 
-                    <li class="nav-item current active">
-                      <a class="nav-link nav-internal" href="index.html">
-                        API Documentation
-                      </a>
-                    </li>
-                
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../code_examples/index.html">
+    Example Experiments
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    API Documentation
+  </a>
+</li>
+
   </ul>
 </nav></div>
+          
         
       </div>
     
@@ -319,15 +324,15 @@ document.write(`
 
 <script>
 document.write(`
-  <button class="btn btn-sm navbar-btn theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="theme-switch nav-link" data-mode="light"><i class="fa-solid fa-sun fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="dark"><i class="fa-solid fa-moon fa-lg"></i></span>
-    <span class="theme-switch nav-link" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg"></i></span>
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
   </button>
 `);
 </script></div>
         
-          <div class="navbar-item"><ul class="navbar-icon-links navbar-nav"
+          <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
         <li class="nav-item">
           
@@ -338,7 +343,7 @@ document.write(`
           
           
           
-          <a href="https://github.com/schote/spectrum-console" title="GitHub" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i></span>
+          <a href="https://github.com/schote/spectrum-console" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-github fa-lg" aria-hidden="true"></i>
             <span class="sr-only">GitHub</span></a>
         </li>
         <li class="nav-item">
@@ -350,8 +355,7 @@ document.write(`
           
           
           
-          <a href="https://gitlab1.ptb.de/mri-lab/spectrum-console" title="GitLab" class="nav-link" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><span><i class="fab fa-gitlab fa-lg" aria-hidden="true"></i></span>
-            <span class="sr-only">GitLab</span></a>
+          <a href="https://www.opensourceimaging.org/project/nexus-console/" title="Open Source Imaging" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><img src="http://www.opensourceimaging.org/wp-content/uploads/logos/OSI_logo_3.gif" class="icon-link-image" alt="Open Source Imaging"/></a>
         </li>
 </ul></div>
         
@@ -401,13 +405,13 @@ document.write(`
 
       </div>
       
-      <main id="main-content" class="bd-main">
+      <main id="main-content" class="bd-main" role="main">
         
         
           <div class="bd-content">
             <div class="bd-article-container">
               
-              <div class="bd-header-article">
+              <div class="bd-header-article d-print-none">
 <div class="header-article-items header-article__inner">
   
     <div class="header-article-items__start">
@@ -416,7 +420,7 @@ document.write(`
 
 
 
-<nav aria-label="Breadcrumb">
+<nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
     <li class="breadcrumb-item breadcrumb-home">
@@ -455,14 +459,14 @@ document.write(`
 <p>Acquisition Control Class.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquisitionControl">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquisitionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'../../../device_config.yaml'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">console_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.spcm_control.acquisition_control.</span></span><span class="sig-name descname"><span class="pre">AcquisitionControl</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">configuration_file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nexus_data_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/home/runner/nexus-console'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">console_log_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Acquisition control class.</p>
 <p>The main functionality of the acquisition control is to orchestrate transmit and receive cards using
 <code class="docutils literal notranslate"><span class="pre">TxCard</span></code> and <code class="docutils literal notranslate"><span class="pre">RxCard</span></code> instances.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquisitionControl.post_processing">
-<span class="sig-name descname"><span class="pre">post_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">AcquisitionParameter</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.post_processing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.post_processing" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">post_processing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parameter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.interfaces.acquisition_parameter.AcquisitionParameter" title="console.interfaces.acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.post_processing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.post_processing" title="Link to this definition">#</a></dt>
 <dd><p>Proces acquired NMR data.</p>
 <p>Data is sorted according to readout size which might vary between different reout windows.
 Unprocessed and raw data are stored in class attributes _raw and _unproc.
@@ -485,7 +489,7 @@ of readout sample points.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.acquisition_control.AcquisitionControl.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">AcquisitionData</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.run" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.interfaces.acquisition_data.AcquisitionData" title="console.interfaces.acquisition_data.AcquisitionData"><span class="pre">AcquisitionData</span></a></span></span><a class="reference internal" href="../_modules/console/spcm_control/acquisition_control.html#AcquisitionControl.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.acquisition_control.AcquisitionControl.run" title="Link to this definition">#</a></dt>
 <dd><p>Run an acquisition job.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -521,10 +525,328 @@ of readout sample points.</p>
 
 </section>
 <section id="acquisition-parameter">
-<span id="id2"></span><h2>Acquisition Parameter<a class="headerlink" href="#acquisition-parameter" title="Link to this heading">#</a></h2>
+<h2>Acquisition Parameter<a class="headerlink" href="#acquisition-parameter" title="Link to this heading">#</a></h2>
+<p id="module-console.interfaces.acquisition_parameter"><span id="id2"></span>Interface class for acquisition parameters.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.interfaces.acquisition_parameter.</span></span><span class="sig-name descname"><span class="pre">AcquisitionParameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">larmor_frequency</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b1_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.interfaces.dimensions.Dimensions" title="console.interfaces.dimensions.Dimensions"><span class="pre">Dimensions</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Dimensions(x=0.0,</span> <span class="pre">y=0.0,</span> <span class="pre">z=0.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fov_scaling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.interfaces.dimensions.Dimensions" title="console.interfaces.dimensions.Dimensions"><span class="pre">Dimensions</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Dimensions(x=1.0,</span> <span class="pre">y=1.0,</span> <span class="pre">z=1.0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decimation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ddc_method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#console.interfaces.enums.DDCMethod" title="console.interfaces.enums.DDCMethod"><span class="pre">DDCMethod</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">DDCMethod.FIR</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_averages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">averaging_delay</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_state_file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'/home/runner/nexus-console/acquisition-parameter.state'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_on_mutation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/interfaces/acquisition_parameter.html#AcquisitionParameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parameters to define an acquisition.</p>
+<p>The acquisition parameters are defined in a dataclass which is hashable but still mutable.
+This allows to easily change parameters and detect updates by comparing the hash.</p>
+<p>New instances of acquisition parameters are not saved automatically.
+Once the autosave flag is set by calling <cite>activate_autosave</cite>, the parameter state is
+written to a pickle file acquisition-parameter.state in the default_state_file_path on any
+mutation of the acquisition parameter instance.
+The autosave option can be deactivated calling <cite>deactivate_autosave</cite>.
+Manually storing the acquisition parameters to a specific directory can be achieved
+using the <cite>save</cite> method and providing the desired path.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.averaging_delay">
+<span class="sig-name descname"><span class="pre">averaging_delay</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.averaging_delay" title="Link to this definition">#</a></dt>
+<dd><p>Delay in seconds between acquisition averages.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.b1_scaling">
+<span class="sig-name descname"><span class="pre">b1_scaling</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.b1_scaling" title="Link to this definition">#</a></dt>
+<dd><p>Scaling of the B1 field (RF transmit power).</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.ddc_method">
+<span class="sig-name descname"><span class="pre">ddc_method</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.interfaces.enums.DDCMethod" title="console.interfaces.enums.DDCMethod"><span class="pre">DDCMethod</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'finite-impulse-response-filter'</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.ddc_method" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.decimation">
+<span class="sig-name descname"><span class="pre">decimation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.decimation" title="Link to this definition">#</a></dt>
+<dd><p>Decimation rate for initial down-sampling step.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.default_state_file_path">
+<span class="sig-name descname"><span class="pre">default_state_file_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/runner/nexus-console/acquisition-parameter.state'</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.default_state_file_path" title="Link to this definition">#</a></dt>
+<dd><p>Default file path for acquisition parameter state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.dict">
+<span class="sig-name descname"><span class="pre">dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_strings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_parameter.html#AcquisitionParameter.dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.dict" title="Link to this definition">#</a></dt>
+<dd><p>Return acquisition parameters as dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>use_strings</strong> – boolean flag indicating if values of dictionary should be represented as strings, by default False</p></li>
+<li><p><strong>optional</strong> – boolean flag indicating if values of dictionary should be represented as strings, by default False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Acquisition parameter dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.fov_scaling">
+<span class="sig-name descname"><span class="pre">fov_scaling</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.interfaces.dimensions.Dimensions" title="console.interfaces.dimensions.Dimensions"><span class="pre">Dimensions</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Dimensions(x=1.0,</span> <span class="pre">y=1.0,</span> <span class="pre">z=1.0)</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.fov_scaling" title="Link to this definition">#</a></dt>
+<dd><p>Field of view scaling for Gx, Gy and Gz.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.gradient_offset">
+<span class="sig-name descname"><span class="pre">gradient_offset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.interfaces.dimensions.Dimensions" title="console.interfaces.dimensions.Dimensions"><span class="pre">Dimensions</span></a></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">Dimensions(x=0.0,</span> <span class="pre">y=0.0,</span> <span class="pre">z=0.0)</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.gradient_offset" title="Link to this definition">#</a></dt>
+<dd><p>Gradient offset values in mV.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.hash">
+<span class="sig-name descname"><span class="pre">hash</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_parameter.html#AcquisitionParameter.hash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.hash" title="Link to this definition">#</a></dt>
+<dd><p>Return acquisition parameter integer hash.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.larmor_frequency">
+<span class="sig-name descname"><span class="pre">larmor_frequency</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2000000.0</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.larmor_frequency" title="Link to this definition">#</a></dt>
+<dd><p>Larmor frequency in MHz.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.load">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#console.interfaces.acquisition_parameter.AcquisitionParameter" title="console.interfaces.acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_parameter.html#AcquisitionParameter.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.load" title="Link to this definition">#</a></dt>
+<dd><p>Load acquisition parameter state from state file in-place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – Path to acquisition parameter state file.
+If file_path is not a pickle file, i.e. ends with .pkl,
+the default state file designation acquisition-parameter.state is added.</p></li>
+<li><p><strong>optional</strong> – Path to acquisition parameter state file.
+If file_path is not a pickle file, i.e. ends with .pkl,
+the default state file designation acquisition-parameter.state is added.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Instance of acquisition parameters with state loaded from provided file_path.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>FileNotFoundError</strong> – Provided file_path is not a pickle file or does not exist.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.num_averages">
+<span class="sig-name descname"><span class="pre">num_averages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.num_averages" title="Link to this definition">#</a></dt>
+<dd><p>Number of acquisition averages.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_parameter.html#AcquisitionParameter.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.save" title="Link to this definition">#</a></dt>
+<dd><p>Save current acquisition parameter state.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>file_path</strong> – Path to the pickle state file, by default None.
+If None, the default state file path is taken which is &lt;home&gt;/nexus-console/acquisition-parameter.state
+Default state file path can be changed using the set_default_path method.</p></li>
+<li><p><strong>optional</strong> – Path to the pickle state file, by default None.
+If None, the default state file path is taken which is &lt;home&gt;/nexus-console/acquisition-parameter.state
+Default state file path can be changed using the set_default_path method.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_parameter.AcquisitionParameter.save_on_mutation">
+<span class="sig-name descname"><span class="pre">save_on_mutation</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.save_on_mutation" title="Link to this definition">#</a></dt>
+<dd><p>Flag which indicates if state is saved on mutation.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>The decimation method can be specified by the following enum definition and dimensions are defined by the subsequent dataclass.</p>
+<p id="module-console.interfaces.enums"><span id="enums"></span>Definition of enums.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.interfaces.enums.DDCMethod">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.interfaces.enums.</span></span><span class="sig-name descname"><span class="pre">DDCMethod</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/interfaces/enums.html#DDCMethod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.enums.DDCMethod" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>Enum for DDC methods.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.enums.DDCMethod.AVG">
+<span class="sig-name descname"><span class="pre">AVG</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'moving-average-filter'</span></em><a class="headerlink" href="#console.interfaces.enums.DDCMethod.AVG" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.enums.DDCMethod.CIC">
+<span class="sig-name descname"><span class="pre">CIC</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cascaded-integrator-comb-filter'</span></em><a class="headerlink" href="#console.interfaces.enums.DDCMethod.CIC" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.enums.DDCMethod.FIR">
+<span class="sig-name descname"><span class="pre">FIR</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'finite-impulse-response-filter'</span></em><a class="headerlink" href="#console.interfaces.enums.DDCMethod.FIR" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<p id="module-console.interfaces.dimensions"><span id="dimensions"></span>Interface class for dimensions.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.interfaces.dimensions.Dimensions">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.interfaces.dimensions.</span></span><span class="sig-name descname"><span class="pre">Dimensions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/interfaces/dimensions.html#Dimensions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.dimensions.Dimensions" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Dataclass for definition of dimensional parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.dimensions.Dimensions.x">
+<span class="sig-name descname"><span class="pre">x</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.interfaces.dimensions.Dimensions.x" title="Link to this definition">#</a></dt>
+<dd><p>X dimension.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.dimensions.Dimensions.y">
+<span class="sig-name descname"><span class="pre">y</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.interfaces.dimensions.Dimensions.y" title="Link to this definition">#</a></dt>
+<dd><p>Y dimension.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.dimensions.Dimensions.z">
+<span class="sig-name descname"><span class="pre">z</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#console.interfaces.dimensions.Dimensions.z" title="Link to this definition">#</a></dt>
+<dd><p>Z dimension.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="acquisition-data">
-<span id="id3"></span><h2>Acquisition Data<a class="headerlink" href="#acquisition-data" title="Link to this heading">#</a></h2>
+<section id="module-console.interfaces.acquisition_data">
+<span id="id3"></span><span id="acquisition-data"></span><h2>Acquisition Data<a class="headerlink" href="#module-console.interfaces.acquisition_data" title="Link to this heading">#</a></h2>
+<p>Interface class for acquisition data.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">console.interfaces.acquisition_data.</span></span><span class="sig-name descname"><span class="pre">AcquisitionData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">_raw:</span> <span class="pre">list[~numpy.ndarray],</span> <span class="pre">acquisition_parameters:</span> <span class="pre">~console.interfaces.acquisition_parameter.AcquisitionParameter,</span> <span class="pre">sequence:</span> <span class="pre">~console.pulseq_interpreter.sequence_provider.SequenceProvider</span> <span class="pre">|</span> <span class="pre">~pypulseq.Sequence.sequence.Sequence,</span> <span class="pre">dwell_time:</span> <span class="pre">float,</span> <span class="pre">session_path:</span> <span class="pre">str,</span> <span class="pre">meta:</span> <span class="pre">dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">unprocessed_data:</span> <span class="pre">list[~numpy.ndarray]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">_additional_data:</span> <span class="pre">dict</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Parameters which define an acquisition.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.acquisition_parameters">
+<span class="sig-name descname"><span class="pre">acquisition_parameters</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#console.interfaces.acquisition_parameter.AcquisitionParameter" title="console.interfaces.acquisition_parameter.AcquisitionParameter"><span class="pre">AcquisitionParameter</span></a></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.acquisition_parameters" title="Link to this definition">#</a></dt>
+<dd><p>Acquisition parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.add_data">
+<span class="sig-name descname"><span class="pre">add_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData.add_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.add_data" title="Link to this definition">#</a></dt>
+<dd><p>Add data to additional_data dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – Data which is to be added to acquisition data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.add_info">
+<span class="sig-name descname"><span class="pre">add_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData.add_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.add_info" title="Link to this definition">#</a></dt>
+<dd><p>Add entries to meta data dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>info</strong> – Information as dictionary to be added.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.dwell_time">
+<span class="sig-name descname"><span class="pre">dwell_time</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.dwell_time" title="Link to this definition">#</a></dt>
+<dd><p>Dwell time of down-sampled raw data in seconds.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gate_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData.get_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.get_data" title="Link to this definition">#</a></dt>
+<dd><p>Get a single raw data array from raw data list.</p>
+<p>During the acquisition, ADC gate events with different durations might occure.
+The data from the different ADC gate sizes is stored in separate arrays which
+are gathered in a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gate_size_index</strong> – Index of the raw data array to be returned.
+Raw data from different ADC gate length are stored in separate arrays.</p></li>
+<li><p><strong>optional</strong> – Index of the raw data array to be returned.
+Raw data from different ADC gate length are stored in separate arrays.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Raw data array.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.meta" title="Link to this definition">#</a></dt>
+<dd><p>Meta data dictionary for additional acquisition info.
+Dictionary is updated (extended) by post-init method with some general information.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.raw">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">raw</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ndarray</span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.raw" title="Link to this definition">#</a></dt>
+<dd><p>Get the default raw data array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Returns the first entry in raw data list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_unprocessed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.save" title="Link to this definition">#</a></dt>
+<dd><p>Save all the acquisition data to a given data path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>user_path</strong> – Optional user path, default is None.
+If provided, it is taken to store the acquisition data.
+Other wise a datetime-based folder is created.</p></li>
+<li><p><strong>save_unprocessed</strong> – Flag which indicates if unprocessed data is to be written or not, default is False.</p></li>
+<li><p><strong>overwrite</strong> – Flag which indicates whether the acquisition data should be overwritten
+in case it already exists from a previous call to this function, default is False.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.save_ismrmrd">
+<span class="sig-name descname"><span class="pre">save_ismrmrd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ismrmrdHeader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/console/interfaces/acquisition_data.html#AcquisitionData.save_ismrmrd"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.save_ismrmrd" title="Link to this definition">#</a></dt>
+<dd><p>Store acquisition data in (ISMR)MRD format.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.sequence">
+<span class="sig-name descname"><span class="pre">sequence</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider" title="console.pulseq_interpreter.sequence_provider.SequenceProvider"><span class="pre">SequenceProvider</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Sequence</span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.sequence" title="Link to this definition">#</a></dt>
+<dd><p>Sequence object used for the acquisition acquisition.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.session_path">
+<span class="sig-name descname"><span class="pre">session_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.session_path" title="Link to this definition">#</a></dt>
+<dd><p>Directory the acquisition data will be stored in.
+Within the given <cite>storage_path</cite> a new directory with time stamp and sequence name will be created.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="console.interfaces.acquisition_data.AcquisitionData.unprocessed_data">
+<span class="sig-name descname"><span class="pre">unprocessed_data</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#console.interfaces.acquisition_data.AcquisitionData.unprocessed_data" title="Link to this definition">#</a></dt>
+<dd><p>Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
+The first entry of the coil dimension also contains the reference signal (16th bit).
+The data array has the following dimensions: [averages, coils, phase encoding, readout]</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 </section>
 
@@ -535,7 +857,7 @@ of readout sample points.</p>
               
               
               
-                <footer class="prev-next-footer">
+                <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
     <a class="left-prev"
@@ -583,8 +905,56 @@ of readout sample points.</p>
 </li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-parameter">Acquisition Parameter</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-data">Acquisition Data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#acquisition-parameter">Acquisition Parameter</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.averaging_delay"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.averaging_delay</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.b1_scaling"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.b1_scaling</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.ddc_method"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.ddc_method</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.decimation"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.decimation</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.default_state_file_path"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.default_state_file_path</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.dict"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.dict()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.fov_scaling"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.fov_scaling</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.gradient_offset"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.gradient_offset</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.hash"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.hash()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.larmor_frequency"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.larmor_frequency</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.load"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.load()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.num_averages"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.num_averages</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.save"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.save()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_parameter.AcquisitionParameter.save_on_mutation"><code class="docutils literal notranslate"><span class="pre">AcquisitionParameter.save_on_mutation</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.enums.DDCMethod"><code class="docutils literal notranslate"><span class="pre">DDCMethod</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.enums.DDCMethod.AVG"><code class="docutils literal notranslate"><span class="pre">DDCMethod.AVG</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.enums.DDCMethod.CIC"><code class="docutils literal notranslate"><span class="pre">DDCMethod.CIC</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.enums.DDCMethod.FIR"><code class="docutils literal notranslate"><span class="pre">DDCMethod.FIR</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.dimensions.Dimensions"><code class="docutils literal notranslate"><span class="pre">Dimensions</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.dimensions.Dimensions.x"><code class="docutils literal notranslate"><span class="pre">Dimensions.x</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.dimensions.Dimensions.y"><code class="docutils literal notranslate"><span class="pre">Dimensions.y</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.dimensions.Dimensions.z"><code class="docutils literal notranslate"><span class="pre">Dimensions.z</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-console.interfaces.acquisition_data">Acquisition Data</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData"><code class="docutils literal notranslate"><span class="pre">AcquisitionData</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.acquisition_parameters"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.acquisition_parameters</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.add_data"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.add_data()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.add_info"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.add_info()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.dwell_time"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.dwell_time</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.get_data"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.get_data()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.meta"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.meta</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.raw"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.raw</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.save"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.save()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.save_ismrmrd"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.save_ismrmrd()</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.sequence"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.sequence</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.session_path"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.session_path</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.interfaces.acquisition_data.AcquisitionData.unprocessed_data"><code class="docutils literal notranslate"><span class="pre">AcquisitionData.unprocessed_data</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
   </nav></div>
 
@@ -610,8 +980,8 @@ of readout sample points.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=8d27b9dea8ad943066ae"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=8d27b9dea8ad943066ae"></script>
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -622,7 +992,7 @@ of readout sample points.</p>
 
   <p class="copyright">
     
-      © Copyright 2023, Physikalisch-Technische Bundesanstalt (PTB) Berlin.
+      © Copyright 2024, Physikalisch-Technische Bundesanstalt (PTB) Berlin.
       <br/>
     
   </p>
@@ -636,7 +1006,7 @@ of readout sample points.</p>
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.2.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
 </p></div>
       
     </div>

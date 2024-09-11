@@ -15,3 +15,4 @@ All the examples can be found in the *examples/* folder of the repository.
    
    spectrum
    t2_measurement
+   tse_3d

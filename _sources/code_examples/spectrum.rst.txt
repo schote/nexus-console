@@ -8,7 +8,9 @@ The example can essentially be broken down as follows:
    Here we can also set the log level for the log-file and the console log-output.
 #. Construct the spin echo based spectrum sequence. 
    Here we use 20 ms echo time and 200 us RF block pulse duration.
-#. Define the most basic ``AcquisitionParameter``, namely the Larmor frequency :math:`f_0` and the decimation factor for DDC.
+#. Define the most basic ``AcquisitionParameter``, namely the Larmor frequency :math:`f_0` and the decimation factor for DDC. 
+   Note that acquisition parameters are defined globally. 
+   They are saved on mutation and the latest state is loaded at ``AcquisitionControl`` instantiation using the provided path or the default.
 #. Execute the experiment.
 #. Extract the down-sampled raw data.
 #. Apply FFT to obtain the spectrum and calculate the associated frequency axis.
@@ -17,4 +19,4 @@ The example can essentially be broken down as follows:
 #. Delete the acquisition control. This is an important step, as the destructor ``__del__`` of the ``AcquisitionControl`` class disconnects from the measurement cards.
 
 
-.. literalinclude:: ../../../examples/se_spectrum.py
+.. literalinclude:: ../../../examples/spinecho_1d.py
