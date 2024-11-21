@@ -42,6 +42,10 @@ docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 
+[project.scripts]
+dashboard = "console.utilities.plotly_dashboard:main"
+
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "src"]
