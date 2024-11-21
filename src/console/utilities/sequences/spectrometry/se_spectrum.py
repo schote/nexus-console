@@ -35,7 +35,11 @@ def constructor(
         Sequence timing check failed
     """
     seq = pp.Sequence(system=system)
-    seq.set_definition("Name", "se_spectrum")
+
+    if use_fid:
+        seq.set_definition("Name", "se_decay_spectrum")
+    else:
+        seq.set_definition("Name", "se_spectrum")
 
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(

@@ -2,7 +2,7 @@
 import matplotlib
 import numpy as np
 
-from console.interfaces.interface_unrolled_sequence import UnrolledSequence
+from console.interfaces.unrolled_sequence import UnrolledSequence
 
 
 def test_sequence_provider(seq_provider, test_sequence):

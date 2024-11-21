@@ -22,7 +22,7 @@ Sequence Provider
 Unrolled Sequence
 -----------------
 
-.. automodule:: console.pulseq_interpreter.interface_unrolled_sequence
+.. automodule:: console.interfaces.unrolled_sequence
    :members:
    :undoc-members:
    :show-inheritance:

@@ -10,18 +10,20 @@ TODO: move trajectory calculation to seperate file to sharew with other imaging 
 from enum import Enum
 from math import pi
 
+import ismrmrd
 import numpy as np
 import pypulseq as pp
 
-from console.interfaces.interface_acquisition_parameter import Dimensions
+from console.interfaces.acquisition_parameter import Dimensions
 from console.utilities.sequences.system_settings import raster, system
 
 
-class Trajectory(Enum):
+class Trajectory(str, Enum):
     """Trajectory type enum."""
 
-    INOUT = 1
-    LINEAR = 2
+    INOUT = "in-out"
+    OUTIN = "out-in"
+    LINEAR = "linear"
 
 
 default_fov = Dimensions(x=220e-3, y=220e-3, z=225e-3)
@@ -51,7 +53,8 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-) -> tuple[pp.Sequence, list, list]:
+    noise_scan: bool = False
+) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
     Parameters
@@ -95,7 +98,10 @@ def constructor(
     """
     system.rf_ringdown_time = 0
     seq = pp.Sequence(system)
-    seq.set_definition("Name", "tse_3d")
+    # Get the dimension and type of the sequence and set the name accordingly
+    n_dim = int(n_enc.x > 1) + int(n_enc.y > 1) + int(n_enc.z > 1)
+    seq_type = "tse" if etl > 1 else "se"
+    seq.set_definition("Name", f"{seq_type}_{n_dim}d")
 
     # check if channel labels are valid
     channel_valid = True
@@ -179,13 +185,14 @@ def constructor(
     pe_mag = np.sum(np.square(pe_points), axis=-1)  # calculate magnitude of all gradient combinations
     pe_mag_sorted = np.argsort(pe_mag)
 
-    if trajectory is Trajectory.INOUT:
-        pe_mag_sorted = np.flip(pe_mag_sorted)
+    if trajectory is (Trajectory.INOUT or Trajectory.OUTIN):
+        if trajectory is Trajectory.OUTIN:
+            pe_mag_sorted = np.flip(pe_mag_sorted)
 
-    pe_traj = pe_points[pe_mag_sorted, :]  # sort the points based on magnitude
-    pe_order = pe_positions[pe_mag_sorted, :]  # kspace position for each of the gradients
+        pe_traj = pe_points[pe_mag_sorted, :]  # sort the points based on magnitude
+        pe_order = pe_positions[pe_mag_sorted, :]  # kspace position for each of the gradients
 
-    if trajectory is Trajectory.LINEAR:
+    elif trajectory is Trajectory.LINEAR:
         center_pos = 1 / 2  # where the center of kspace should be in the echo train
         num_points = np.size(pe_mag_sorted)
         linear_pos = np.zeros(num_points, dtype=int) - 10
@@ -214,6 +221,8 @@ def constructor(
 
         pe_traj = pe_points[linear_pos, :]  # sort the points based on magnitude
         pe_order = pe_positions[linear_pos, :]  # kspace position for each of the gradients
+    else:
+        raise ValueError("Invalid trajectory: ", trajectory)
 
     # calculate the required gradient area for each k-point
     pe_traj[:, 0] /= fov_pe1
@@ -225,9 +234,6 @@ def constructor(
 
     # Create a list with the kspace location of every line of kspace acquired, in the order it is acquired
     trains_pos = [pe_order[k::num_trains, :] for k in range(num_trains)]
-    acq_pos = []
-    for train_pos in trains_pos:
-        acq_pos.extend(train_pos)
 
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(
@@ -266,7 +272,8 @@ def constructor(
         # Add gradient correction time and ADC correction time
         flat_time=raster(adc_duration, precision=system.grad_raster_time),
     )
-    grad_ro = pp.make_trapezoid(  # using the previous calculation for the amplitde, hacky, should find a better way
+    # using the previous calculation for the amplitde, hacky, should find a better way
+    grad_ro = pp.make_trapezoid(
         channel=channel_ro,
         system=system,
         amplitude=grad_ro.amplitude,
@@ -290,7 +297,7 @@ def constructor(
 
     adc = pp.make_adc(
         system=system,
-        num_samples=int((adc_duration) / system.adc_raster_time),
+        num_samples=n_enc_ro,
         duration=raster(val=adc_duration, precision=system.adc_raster_time),
         # Add gradient correction time and ADC correction time
         delay=raster(val=2 * gradient_correction + grad_ro.rise_time, precision=system.adc_raster_time)
@@ -306,7 +313,7 @@ def constructor(
     # Delay duration between readout and Gy, Gz gradient rephaser
     tau_3 = (echo_time - rf_duration - adc_duration) / 2 - ramp_duration - rf_180.delay - ro_pre_duration - echo_shift
 
-    for dummy in range(dummies):
+    for _ in range(dummies):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
@@ -329,7 +336,7 @@ def constructor(
                 precision=system.grad_raster_time
             )))
 
-    for train in trains:
+    for train, position in zip(trains, trains_pos):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(
@@ -340,7 +347,7 @@ def constructor(
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-        for echo in train:
+        for echo, pe_indices in zip(train, position):
             pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
@@ -366,7 +373,10 @@ def constructor(
 
             seq.add_block(pp.make_delay(raster(val=tau_2, precision=system.grad_raster_time)))
 
-            seq.add_block(grad_ro, adc)
+            # Cast index values from int32 to int, otherwise make_label function complains
+            label_pe1 = pp.make_label(type="SET", label="LIN", value=int(pe_indices[0]))
+            label_pe2 = pp.make_label(type="SET", label="PAR", value=int(pe_indices[1]))
+            seq.add_block(grad_ro, adc, label_pe1, label_pe2)
 
             seq.add_block(
                 pp.make_trapezoid(
@@ -396,25 +406,116 @@ def constructor(
         if inversion_pulse:
             tr_delay -= inversion_time
 
-        seq.add_block(pp.make_delay(raster(
-            val=tr_delay,
-            precision=system.block_duration_raster
-        )))
+        if noise_scan:
+            noise_adc_dead_time = 50e-3
+            noise_adc_dur = min(tr_delay - noise_adc_dead_time, 100e-3)
+            noise_adc = pp.make_adc(
+                system=system,
+                num_samples=int((noise_adc_dur) / system.adc_raster_time),
+                duration=raster(val=noise_adc_dur, precision=system.adc_raster_time),
+                delay=noise_adc_dead_time
+            )
+            noise_label = pp.make_label(type="INC", label="NAV", value=1)
+            seq.add_block(noise_adc, noise_label)
+            post_noise_adc_delay = raster(tr_delay - noise_adc_dead_time - noise_adc_dur, system.block_duration_raster)
+            if post_noise_adc_delay > 0:
+                seq.add_block(pp.make_delay(post_noise_adc_delay))
+
+        else:
+            seq.add_block(pp.make_delay(raster(
+                val=tr_delay,
+                precision=system.block_duration_raster
+            )))
 
     # Calculate some sequence measures
     train_duration_tr = (seq.duration()[0]) / len(trains)
     train_duration = train_duration_tr - tr_delay
 
-    # Add measures to sequence definition
+    # Check labels
+    labels = seq.evaluate_labels(evolution="adc")
+    acq_pos = np.concatenate(trains_pos).T
+    # TODO: When noise scans are done, the last LIN/PAR label is duplicated
+    # Could be fixed by using a different label which marks the noise scan?
+    if not np.array_equal(labels["LIN"], acq_pos[0, :]):
+        raise ValueError("LIN labels don't match actual acquisition positions.")
+    if not np.array_equal(labels["PAR"], acq_pos[1, :]):
+        raise ValueError("PAR labels don't match actual acquisition positions.")
+
+    # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))
     seq.set_definition("train_duration", train_duration)
     seq.set_definition("train_duration_tr", train_duration_tr)
     seq.set_definition("tr_delay", tr_delay)
 
-    return (seq, acq_pos, [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("encoding_dim", [n_enc_ro, n_enc_pe1, n_enc_pe2])
+    seq.set_definition("encoding_fov", [fov_ro, fov_pe1, fov_pe2])
+    seq.set_definition("channel_order", [channel_ro, channel_pe1, channel_pe2])
+
+    # Create ISMRMRD header
+    header = ismrmrd.xsd.ismrmrdHeader()
+
+    # experimental conditions
+    exp = ismrmrd.xsd.experimentalConditionsType()
+    exp.H1resonanceFrequency_Hz = system.B0 * system.gamma / (2 * pi)
+    header.experimentalConditions = exp
+
+    # set fov and matrix size
+    efov = ismrmrd.xsd.fieldOfViewMm()  # kspace fov in mm
+    efov.x = fov_ro * 1e3
+    efov.y = fov_pe1 * 1e3
+    efov.z = fov_pe2 * 1e3
+
+    rfov = ismrmrd.xsd.fieldOfViewMm()  # image fov in mm
+    rfov.x = fov_ro * 1e3
+    rfov.y = fov_pe1 * 1e3
+    rfov.z = fov_pe2 * 1e3
+
+    ematrix = ismrmrd.xsd.matrixSizeType()  # encoding dimensions
+    ematrix.x = n_enc_ro
+    ematrix.y = n_enc_pe1
+    ematrix.z = n_enc_pe2
+
+    rmatrix = ismrmrd.xsd.matrixSizeType()  # image dimensions
+    rmatrix.x = n_enc_ro
+    rmatrix.y = n_enc_pe1
+    rmatrix.z = n_enc_pe2
+
+    # set encoded and recon spaces
+    escape = ismrmrd.xsd.encodingSpaceType()
+    escape.matrixSize = ematrix
+    escape.fieldOfView_mm = efov
+
+    rspace = ismrmrd.xsd.encodingSpaceType()
+    rspace.matrixSize = rmatrix
+    rspace.fieldOfView_mm = rfov
+
+    # encoding
+    encoding = ismrmrd.xsd.encodingType()
+    encoding.encodedSpace = escape
+    encoding.reconSpace = rspace
+    # Trajectory type required by gadgetron (not by mrpro)
+    encoding.trajectory = ismrmrd.xsd.trajectoryType("cartesian")
+    header.encoding.append(encoding)
+
+    # encoding limits
+    limits = ismrmrd.xsd.encodingLimitsType()
+
+    limits.kspace_encoding_step_1 = ismrmrd.xsd.limitType()
+    limits.kspace_encoding_step_1.minimum = 0
+    limits.kspace_encoding_step_1.maximum = n_enc_pe1 - 1
+    limits.kspace_encoding_step_1.center = int(n_enc_pe1 / 2)
+
+    limits.kspace_encoding_step_2 = ismrmrd.xsd.limitType()
+    limits.kspace_encoding_step_2.minimum = 0
+    limits.kspace_encoding_step_2.maximum = n_enc_pe2 - 1
+    limits.kspace_encoding_step_2.center = int(n_enc_pe2 / 2)
+
+    encoding.encodingLimits = limits
+
+    return (seq, header)
 
 
-def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np.ndarray:
+def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
@@ -428,9 +529,15 @@ def sort_kspace(raw_data: np.ndarray, trajectory: np.ndarray, kdims: list) -> np
         dimensions of kspace
     """
     n_avg, n_coil, _, _ = raw_data.shape
-    ksp = np.zeros((n_avg, n_coil, kdims[2], kdims[1], kdims[0]), dtype=complex)
-    for idx, kpt in enumerate(trajectory):
-        ksp[..., kpt[1], kpt[0], :] = raw_data[:, :, idx, :]
+    enc_dim = seq.get_definition("encoding_dim")
+    ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
+
+    # Get k-space sorting from sequence labels
+    labels = seq.evaluate_labels(evolution="adc")
+
+    for idx, (pe_1, pe_2) in enumerate(zip(labels["LIN"], labels["PAR"])):
+        ksp[..., pe_2, pe_1, :] = raw_data[:, :, idx, :]
+
     return ksp
 
 # %%

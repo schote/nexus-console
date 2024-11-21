@@ -1,37 +1,29 @@
 """Experiment to acquire a spin echo spectrum."""
 
-import logging
-
 import matplotlib.pyplot as plt
 import numpy as np
 
-import console.utilities.sequences as sequences
+import console
+from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.spcm_control.interface_acquisition_data import AcquisitionData
-from console.spcm_control.interface_acquisition_parameter import AcquisitionParameter
+from console.utilities import sequences
 
 # Create acquisition control instance
-acq = AcquisitionControl(
-    configuration_file="../device_config.yaml",
-    console_log_level=logging.INFO,
-    file_log_level=logging.DEBUG
-)
+acq = AcquisitionControl(configuration_file="example_device_config.yaml")
 
 # Construct a spin echo based spectrum sequence
-seq = sequences.se_spectrum.constructor(
-    echo_time=12e-3,        # 12 ms echo time
-    rf_duration=200e-6,     # 200 us RF pulseq duration
-    use_sinc=False          # Do not use sinc pulse, but block pulse
-)
+params = {
+    "echo_time": 12e-3,
+    "rf_duration": 200e-6,
+    "use_sinc": False,
+}
+seq = sequences.se_spectrum.constructor(**params)
 
-# Define acquisition parameters
-params = AcquisitionParameter(
-    larmor_frequency=2.0395e6,  # Set Larmor freqency in MHz
-    decimation=200,             # Set decimation factor for down-sampling
-)
+# Update global acquisition parameters
+console.parameter.larmor_frequency = 2.0395e6
 
 # Run the acquisition
-acq.set_sequence(parameter=params, sequence=seq)
+acq.set_sequence(sequence=seq)
 acq_data: AcquisitionData = acq.run()
 
 # Get decimated data from acquisition data object
@@ -49,7 +41,7 @@ ax.set_xlabel("Frequency [Hz]")
 
 # Add information to the acquisition data
 acq_data.add_info({
-    "note": "Example spin echo spectrum experiment"
+    "note": "Example spin echo spectrum experiment",
 })
 
 # Write acquisition data object

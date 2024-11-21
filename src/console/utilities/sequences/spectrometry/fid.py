@@ -45,7 +45,7 @@ def constructor(
         )
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
+        num_samples=int(adc_duration / system.adc_raster_time),
         duration=adc_duration,
         system=system,
     )

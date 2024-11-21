@@ -19,12 +19,6 @@ def test_se_projection(channel: str, use_sinc: bool):
     assert seq.check_timing()[0]
 
 
-def test_se_spectrum_dl():
-    """Test spin echo spectrum constructor with 2nd ADC window."""
-    seq = sequences.se_spectrum_dl.constructor()
-    assert seq.check_timing()[0]
-
-
 def test_t2_relaxation():
     """Test sequence to measure T2."""
     seq, _ = sequences.t2_relaxation.constructor()
@@ -32,29 +26,43 @@ def test_t2_relaxation():
 
 
 @pytest.mark.parametrize("etl", [1, 7])
-@pytest.mark.parametrize("dim", [sequences.Dimensions(64, 32, 1), sequences.Dimensions(64, 32, 32)])
+@pytest.mark.parametrize("dim", [sequences.Dimensions(1, 50, 40), sequences.Dimensions(16, 32, 32)])
 @pytest.mark.parametrize("te", [20e-3])
 def test_tse_3d(etl, dim, te):
     """Test 3D TSE imaging sequence constructor."""
-    seq_io, acq_pos_io, n_enc_io = sequences.tse_3d.constructor(
+    seq_io, _ = sequences.tse_3d.constructor(
         n_enc=dim,
         etl=etl,
         echo_time=te,
         trajectory=sequences.tse_3d.Trajectory.INOUT
     )
-    seq_lin, acq_pos_lin, n_enc_lin = sequences.tse_3d.constructor(
+    seq_lin, _ = sequences.tse_3d.constructor(
         n_enc=dim,
         etl=etl,
         echo_time=te,
         trajectory=sequences.tse_3d.Trajectory.LINEAR
     )
+
     # Sequence timing checks
     assert seq_io.check_timing()[0]
     assert seq_lin.check_timing()[0]
-    # acquisition positions must be different
-    assert any([(p_io != p_lin).any() for p_io, p_lin in zip(acq_pos_io, acq_pos_lin)])
+
+    # acquisition positions must be different, check sequence labels
+    labels_io = seq_io.evaluate_labels(evolution="adc")
+    labels_lin = seq_lin.evaluate_labels(evolution="adc")
+    test_lin_equal = [x != y for x, y in zip(labels_io["LIN"], labels_lin["LIN"])]
+    test_par_equal = [x != y for x, y in zip(labels_io["PAR"], labels_lin["PAR"])]
+
+    assert any(test_lin_equal[1:])  # starting point might be equal
+    if 1 not in seq_io.get_definition("encoding_dim"):
+        assert any(test_par_equal[1:])  # starting point might be equal
+
     # encoding dimensions must be equal
+    n_enc_io = seq_io.get_definition("encoding_dim")
+    n_enc_lin = seq_lin.get_definition("encoding_dim")
     assert n_enc_io == n_enc_lin
+
+    # TODO: Add checks for ismrmrd header (2nd argument returned by constructor)
 
 
 def test_fid_tx_calibration():
