@@ -46,7 +46,7 @@ dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipy
 
 [project.scripts]
 dashboard = "console.utilities.plotly_dashboard:main"
-
+report = "console.utilities.session_report:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
