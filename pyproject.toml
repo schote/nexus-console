@@ -29,7 +29,6 @@ dependencies = [
     "pypulseq",
     # "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
     "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
-    "plotly",
     "PyYAML",
     "matplotlib",
     "pandas",
@@ -39,6 +38,7 @@ dependencies = [
 # Dependency groupds (optional)
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
+plot = ["plotly", "dash-bootstrap-components", "dash-extensions", "dash", "reportlab"]
 lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
