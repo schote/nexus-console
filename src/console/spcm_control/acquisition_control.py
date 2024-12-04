@@ -251,12 +251,12 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(console.parameter)
+                self.post_processing()
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if console.parameter.averaging_delay > 0:
+            if console.parameter.num_averages > 1 and console.parameter.averaging_delay > 0:
                 time.sleep(console.parameter.averaging_delay)
 
         # Reset gradient offset values
@@ -288,7 +288,7 @@ class AcquisitionControl:
             acquisition_parameters=console.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
+    def post_processing(self) -> None:
         """Proces acquired NMR data.
 
         Data is sorted according to readout size which might vary between different reout windows.
@@ -306,12 +306,8 @@ class AcquisitionControl:
         Dimensions: [averages, coils, phase encoding, readout]
 
         Reference signal is stored in the last entry of the coil dimension.
-
-        Parameters
-        ----------
-        parameter
-            Acquisition parameter
         """
+        print("Processing parameters: ", console.parameter)
         readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
         grouped_gates: dict[int, list] = {
             readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
@@ -342,28 +338,31 @@ class AcquisitionControl:
             else:
                 self._unproc.append(data[None, ...])
 
-            print("Demodulation at freq.:", parameter.larmor_frequency)
+            print("Demodulation at freq.:", console.parameter.larmor_frequency)
 
             # Demodulation and decimation
-            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
+            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * console.parameter.larmor_frequency / self.f_spcm)
 
             # Always decimate the reference signal with moving average filter
-            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
+            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=console.parameter.decimation, overlap=8)[None, ...]
             # Extract the demodulated signal data
             data = data[:-1, ...]
 
             # Switch case for DDC function
             match console.parameter.ddc_method:
                 case DDCMethod.CIC:
-                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
+                    data = ddc.filter_cic_fir_comp(data, decimation=console.parameter.decimation, number_of_stages=5)
                 case DDCMethod.AVG:
-                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
+                    data = ddc.filter_moving_average(data, decimation=console.parameter.decimation, overlap=8)
                 case _:
                     # Default case is FIR decimation
-                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+                    data = signal.decimate(data, q=console.parameter.decimation, ftype="fir")
 
             # Apply phase correction with mean value
             # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
+            
+            
+            
             data = data * np.exp(-1j * np.angle(ref_dec))
 
             # Append to global raw data list
