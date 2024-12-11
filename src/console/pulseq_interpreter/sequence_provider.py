@@ -264,8 +264,6 @@ class SequenceProvider(Sequence):
         ValueError
             Invalid block type (must be either ``grad`` or ``trap``),
             gradient amplitude exceeds channel maximum output level
-        IndexError
-            Unrolled gradient waveform does not fit in unrolled array shape
         """
         # Both gradient types have a delay, calculate delay in number of samples
         #samples_delay = int(block.delay * self.spcm_freq)
@@ -294,7 +292,7 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
-                # Trasnfer mV floating point waveform values to int16 if amplitude check passed
+                # Transfer mV floating point waveform values to int16 if amplitude check passed
                 waveform *= INT16_MAX / self.output_limits[idx + 1]
 
                 gradient = np.interp(
@@ -305,7 +303,7 @@ class SequenceProvider(Sequence):
                     ),
                     xp=block.tt,
                     fp=waveform,
-                ).astype(np.int16)
+                )
 
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
@@ -313,32 +311,39 @@ class SequenceProvider(Sequence):
                     raise ValueError(
                         f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx + 1]}."
                     )
-
-                # Trasnfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = np.int16(flat_amp * INT16_MAX / self.output_limits[idx + 1])
+                # Transfer mV floating point flat amplitude to int16 if amplitude check passed
+                flat_amp = flat_amp * INT16_MAX / self.output_limits[idx + 1]
 
                 rise = np.linspace(
                     0,
                     flat_amp,
-                    round(block.rise_time / self.spcm_dwell_time),
-                    dtype=np.int16,
+                    round(block.rise_time / self.spcm_dwell_time)
                 )
                 flat = np.full(
                     round(block.flat_time / self.spcm_dwell_time),
-                    fill_value=flat_amp,
-                    dtype=np.int16,
+                    fill_value=flat_amp
                 )
                 fall = np.linspace(
                     flat_amp,
                     0,
-                    round(block.fall_time / self.spcm_dwell_time),
-                    dtype=np.int16,
+                    round(block.fall_time / self.spcm_dwell_time)
                 )
 
                 gradient = np.concatenate((rise, flat, fall))
 
             else:
                 raise ValueError("Block is not a valid gradient block")
+            # Add the shim offset to the gradient waveform
+
+            gradient += offset
+
+            if np.amax(gradient) > INT16_MAX:
+                max_strength = gradient[np.argmax(np.abs(gradient))]
+                raise ValueError(
+                    f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude")
+            else:
+                gradient = gradient.astype(np.int16)
+
 
             # Add gradient waveform (trapezoid or arbitrary) in place
             return gradient.view(np.uint16) >> 1 #shifting to 15 bits already for adding the gate signals later
@@ -500,12 +505,17 @@ class SequenceProvider(Sequence):
         # Count the total number of sample points and gate signals
         adc_count: int = 0
 
+        # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
+        offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x") / (INT16_MAX) * self.output_limits[1])).view(np.uint16) << 1
+        offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y") / (INT16_MAX) * self.output_limits[2])).view(np.uint16) << 1
+        offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z") / (INT16_MAX) * self.output_limits[3])).view(np.uint16) << 1
+
+        _seq[1::4] = offset_gx
+        _seq[2::4] = offset_gy
+        _seq[3::4] = offset_gz
+
         for idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
-            if block.rf is not None: #rf event
-                _seq[block_positions[idx]*4:block_positions[idx+1]*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
-                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = rf_pulses[event[1]][1] # Add deblanking
-
             if block.gx is not None: #gx event
                 _seq[block_positions[idx]*4+1:block_positions[idx+1]*4+1:4] = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
@@ -515,10 +525,13 @@ class SequenceProvider(Sequence):
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
             if block.gz is not None: #gz event
-                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = \
-                    _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | self.calculate_gradient(
+                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 ) # Add gradient waveform for Z and add RF unblanking
+            if block.rf is not None: #rf event
+                _seq[block_positions[idx]*4:block_positions[idx+1]*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
+                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = \
+                    _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | rf_pulses[event[1]][1] # Add deblanking
             if block.adc is not None: #adc event
                 adc_count       += 1
                 adc_waveform    = adc_events[event[5]-1][1].waveform
@@ -533,16 +546,6 @@ class SequenceProvider(Sequence):
                 ref_waveform = (ref_signal.real > 0)*(2**15)
                 _seq[block_positions[idx]*4+2:(block_positions[idx]+np.size(adc_waveform))*4+2:4] = \
                     _seq[block_positions[idx]*4+2:(block_positions[idx]+np.size(adc_waveform))*4+2:4] | ref_waveform
-
-
-        # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
-        offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x") / (INT16_MAX) * self.output_limits[1])).view(np.uint16) << 1
-        offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y") / (INT16_MAX) * self.output_limits[2])).view(np.uint16) << 1
-        offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z") / (INT16_MAX) * self.output_limits[3])).view(np.uint16) << 1
-
-        _seq[1::4] += offset_gx
-        _seq[2::4] += offset_gy
-        _seq[3::4] += offset_gz
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
