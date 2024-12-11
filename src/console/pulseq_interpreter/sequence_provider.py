@@ -496,6 +496,11 @@ class SequenceProvider(Sequence):
         block_positions = np.cumsum(block_durations, dtype = np.int64)
         block_positions = np.concatenate(([0],  block_positions))
 
+        if seq_samples != block_positions[-1]:
+            raise IndexError(
+                "Number of sequence samples does not match total number of block samples"
+            )
+
         #setup output arrays
         _seq        = np.zeros(4*seq_samples, dtype = np.int16)
         _adc        = np.zeros(seq_samples, dtype = np.uint16)
@@ -506,9 +511,12 @@ class SequenceProvider(Sequence):
         adc_count: int = 0
 
         # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
-        offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x") / (INT16_MAX) * self.output_limits[1])).view(np.uint16) << 1
-        offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y") / (INT16_MAX) * self.output_limits[2])).view(np.uint16) << 1
-        offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z") / (INT16_MAX) * self.output_limits[3])).view(np.uint16) << 1
+        offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x")\
+            / (INT16_MAX) * self.output_limits[1])).view(np.uint16) << 1
+        offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y")\
+            / (INT16_MAX) * self.output_limits[2])).view(np.uint16) << 1
+        offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z")\
+            / (INT16_MAX) * self.output_limits[3])).view(np.uint16) << 1
 
         _seq[1::4] = offset_gx
         _seq[2::4] = offset_gy
@@ -531,7 +539,7 @@ class SequenceProvider(Sequence):
             if block.rf is not None: #rf event
                 _seq[block_positions[idx]*4:block_positions[idx+1]*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
                 _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = \
-                    _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | rf_pulses[event[1]][1] # Add deblanking
+                    _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | rf_pulses[event[1]][1] # Add deblankin
             if block.adc is not None: #adc event
                 adc_count       += 1
                 adc_waveform    = adc_events[event[5]-1][1].waveform
