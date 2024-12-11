@@ -501,27 +501,25 @@ class SequenceProvider(Sequence):
         adc_count: int = 0
 
         for idx, (event_key, event) in enumerate(events_list.items()):
-            if event[1]: #rf event
+            block = self.get_block(event_key)
+            if block.rf is not None: #rf event
                 _seq[block_positions[idx]*4:block_positions[idx+1]*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
                 _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = rf_pulses[event[1]][1] # Add deblanking
 
-            if event[2]: #gx event
-                block = self.get_block(event_key)
+            if block.gx is not None: #gx event
                 _seq[block_positions[idx]*4+1:block_positions[idx+1]*4+1:4] = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
                     )
-            if event[3]: #gy event
-                block = self.get_block(event_key)
+            if block.gy is not None: #gy event
                 _seq[block_positions[idx]*4+2:block_positions[idx+1]*4+2:4] = self.calculate_gradient(
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
-            if event[4]: #gz event
-                block = self.get_block(event_key)
+            if block.gz is not None: #gz event
                 _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = \
                     _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 ) # Add gradient waveform for Z and add RF unblanking
-            if event[5]: #adc event
+            if block.adc is not None: #adc event
                 adc_count       += 1
                 adc_waveform    = adc_events[event[5]-1][1].waveform
                 ref_signal      = adc_events[event[5]-1][1].ref_signal
