@@ -49,5 +49,8 @@ _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for i
 
 Please follow the project [documentation](https://schote.github.io/nexus-console/) which contains a quick-start guide, some examples and a user guide.
 
+To launch the server execute the nexus_server.py script, this launches a fastAPI server using uvicorn, the default ip address is 127.0.0.1 and port 8000, this can be changed by passing --host and --port arguments at launch, respectively.
 
----
+The server should pointed to the device config yaml of your system by passing --device_config "string to your path"
+
+The client side connection is handled by the nexus_client module, with an example of its use shown on the nexus-console-experiments 'server' branch.
