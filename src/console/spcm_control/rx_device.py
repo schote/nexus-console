@@ -5,7 +5,7 @@ from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
-
+import time
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
@@ -435,7 +435,14 @@ class RxCard(SpectrumDevice):
 
                         # Tell the card that we have read the data.
                         # It is better for tracking if the card length is in the order of notify (page) size.
-                        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
+
+                        # The following line has been removed because it causes crashes when running acquisitions
+                        # "sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)"
+                        # ERROR: The value for this register is not in a valid range
+                        # Solution :A time delay seem to solve the problem.
+                        time.sleep(1000e-6)
+                        error = sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
+                        self.handle_error(error)
                         break
 
         self.log.debug("Card operation stopped")
