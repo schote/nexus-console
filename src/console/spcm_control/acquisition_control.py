@@ -364,7 +364,8 @@ class AcquisitionControl:
 
             # Apply phase correction with mean value
             # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
-            data = data * np.exp(-1j * np.angle(ref_dec))
+            # a factor 2 is added to compensate for the halving due to the processing.
+            data = data * 2 * np.exp(-1j * np.angle(ref_dec))
 
             # Append to global raw data list
             if raw_size > 0:
