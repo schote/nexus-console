@@ -327,10 +327,11 @@ class AcquisitionControl:
 
         for k, data in enumerate(gate_lengths):
             # Extract digital reference signal from channel 0
-            _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
+            _ref = (data[1, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
 
-            # Remove digital signal from channel 0
-            data[0, ...] = data[0, ...] << 1
+            # Remove digital signal from channel 1
+            # channel 1 has been chosen to allow channel 0 to have max resolution for Rx readouts.
+            data[1, ...] = data[1, ...] << 1 
             data = data.astype(np.int16) * scaling
 
             # Stack signal and reference in coil dimension

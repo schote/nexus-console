@@ -188,8 +188,9 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
         # Setup digital input channels for reference signal
+        # SPC_DIGMODE1 is used to store the ref signal in channel 1
         sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE1, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
         # TODO: Double check, why is the post trigger divided by number of channels and multiplied by 2?
         self.post_trigger = 4096 // self.num_channels.value
