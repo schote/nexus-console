@@ -1,11 +1,12 @@
 """Implementation of receive card."""
 import logging
 import threading
+import time
 from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
-import time
+
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
