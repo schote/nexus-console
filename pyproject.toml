@@ -41,8 +41,11 @@ dependencies = [
 test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
 lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
+service = ["fastapi", "uvicorn"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
+[project.scripts]
+nexus-service = "console.service.app:start_service"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
