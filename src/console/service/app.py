@@ -14,6 +14,7 @@ import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.service.models import Job
 from console.spcm_control.acquisition_control import AcquisitionControl
+from console.service import config
 
 # Define logging levels
 get_log_level = {
@@ -25,7 +26,7 @@ get_log_level = {
 }
 
 def start_service():
-    uvicorn.run("console.service.app:app", reload=True)
+    uvicorn.run("console.service.app:app", host=config.HOST, port=config.PORT, reload=True)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -71,7 +72,7 @@ job_queue: dict = {}
 
 
 @app.get("/healthiness", response_model={}, tags=["health"])
-async def readiness() -> dict:
+async def health() -> dict:
     """Check if the service is running and healthy."""
     if acq is None:
         return {"status": "error", "message": "Acquisition control not initialized"}
@@ -159,10 +160,9 @@ def acquisition_worker(job_id: str, job: Job) -> None:
     job_queue[job_id]["state"] = "running"
 
     acq_data: AcquisitionData = acq.run()
-    acq_data_path = acq_data.save()
+    acq_data_path = acq_data.save(save_unprocessed=job.save_unprocessed)
 
     # Mark job as finished and store a "result"
     job_queue[job_id]["state"] = "finished"
     job_queue[job_id]["result"] = acq_data_path
     print(f"[Worker] Completed job_id={job_id}")
-    return

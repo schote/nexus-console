@@ -7,4 +7,4 @@ class Job(BaseModel):
     """Job model."""
 
     sequence: str | Sequence
-    params: dict = {}
+    save_unprocessed: bool = False
