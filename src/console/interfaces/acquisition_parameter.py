@@ -142,7 +142,7 @@ class AcquisitionParameter:
             return cls(**state)
         raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)
 
-    def update(self, params: dict[str, Any]) -> None:
+    def update(self, params: dict) -> None:
         """Update acquisition parameter state with new parameters.
 
         Parameters
@@ -152,4 +152,11 @@ class AcquisitionParameter:
         """
         for key, value in params.items():
             if hasattr(self, key):
-                setattr(self, key, value)
+                if key == "gradient_offset":
+                    setattr(self, key, Dimensions(**value))
+                elif key == "fov_scaling":
+                    setattr(self, key, Dimensions(**value))
+                elif key == "ddc_method":
+                    setattr(self, key, DDCMethod(value))
+                else:
+                    setattr(self, key, value)
