@@ -3,7 +3,7 @@ import argparse
 import logging
 import os
 import uuid
-from contextlib import asynccontextmanager
+# from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pypulseq as pp
@@ -26,12 +26,12 @@ get_log_level = {
 }
 
 def start_service():
-    uvicorn.run("console.service.app:app", host=config.HOST, port=config.PORT, reload=True)
+    # Disable reload, because every reload triggers a re-instantiation of the acquisition control
+    uvicorn.run("console.service.app:app", host=config.HOST, port=config.PORT, reload=False)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+def lifespan(app: FastAPI):
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
-    parser.add_argument("--device_config", type=str,
+    parser.add_argument("--device_config", type=str, required=True,
         help="Path to device configuration yaml file.",
     )
     parser.add_argument("--sessions_folder", type=str, default=os.path.join(Path.home(), "nexus-console"),
@@ -46,8 +46,8 @@ async def lifespan(app: FastAPI):
     args = parser.parse_args()
 
     print(args.file_log_level)
-    input("[NEXUS] Before starting the setup, confirm that all the amplifiers are turned off.\nPress Enter to continue...")
-    print("[NEXUS] Setting up the acquisition control...")
+    input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\nPress Enter to continue...")
+    print("\n[neXus] Setting up the acquisition control...\n")
 
     # Create global instance
     global acq
@@ -58,8 +58,8 @@ async def lifespan(app: FastAPI):
         console_log_level=get_log_level[args.console_log_level],
     )
 
-    input("[NEXUS] Setup completed, hardware components can be turned on.\nPress Enter to continue...")
-    print("[NEXUS] Test:: Acquisition control instance: ", acq)
+    input("\n[neXus] Setup completed, hardware components can be turned on.\nPress Enter to continue...")
+    print("\n[neXus] Test:: Acquisition control instance: ", acq)
 
     yield
     # Delete acquisition control instance at the end of the lifespan
@@ -72,7 +72,7 @@ job_queue: dict = {}
 
 
 @app.get("/healthiness", response_model={}, tags=["health"])
-async def health() -> dict:
+def health() -> dict:
     """Check if the service is running and healthy."""
     if acq is None:
         return {"status": "error", "message": "Acquisition control not initialized"}
@@ -80,7 +80,7 @@ async def health() -> dict:
 
 
 @app.post("/acquisition_parameter", tags=["acquisition"])
-async def set_acquisition_parameter(params: dict) -> dict:
+def set_acquisition_parameter(params: dict) -> None:
     """Update acquisition parameters.
 
     Parameters
@@ -92,26 +92,28 @@ async def set_acquisition_parameter(params: dict) -> dict:
     -------
         Updated dictionary
     """
-    print("[NEXUS] Acquisition parameters to update: ", params)
+    print("[neXus] Acquisition parameters to update: ", params)
     console.parameter.update(params)
-    print("[NEXUS] Set acquisition parameter: ", console.parameter)
+    print("[neXus] Updated acquisition parameter: ", console.parameter.dict())
     return console.parameter.dict()
 
 
 @app.get("/acquisition_parameter", tags=["acquisition"])
-async def get_acquisition_parameter() -> dict:
+def get_acquisition_parameter() -> dict:
     """Return acquisition parameters.
 
     Returns
     -------
         Dictionary of acquisition parameters.
     """
+    print("[neXus] Acquisition parameters: ", console.parameter.dict())
     return console.parameter.dict()
 
 
 @app.post("/submit", tags=["acquisition"])
-async def submit_sequence(job: Job, background_tasks: BackgroundTasks):
+def submit_sequence(job: Job, background_tasks: BackgroundTasks):
     """Submit a new job. Returns a job_id that you can use to check status."""
+    print("[neXus] Received job: ", job)
     # Generate a unique job ID
     job_id = str(uuid.uuid4())
 
@@ -126,8 +128,8 @@ async def submit_sequence(job: Job, background_tasks: BackgroundTasks):
     return {"job_id": job_id}
 
 
-@app.get("/status/{job_id}", tags=["jobs"])
-async def get_status(job_id: str):
+@app.get("/status/{job_id}", tags=["acquisition"])
+def get_status(job_id: str):
     """Retrieve the status of a previously submitted job."""
     if job_id in job_queue:
         return job_queue[job_id]
@@ -152,17 +154,25 @@ def acquisition_worker(job_id: str, job: Job) -> None:
     if acq is None:
         job_queue[job_id]["state"] = "error: acquisition control not initialized"
         return
-    seq = pp.Sequence(acq.seq_provider.system).read(job.sequence) if job.sequence is str else job.sequence
+
+    if seq := pp.Sequence(acq.seq_provider.system):
+        seq.read(job.sequence)
+        # print(seq)
+    if not seq:
+        return
 
     # Set sequence
     acq.set_sequence(seq)
     # Mark as running
     job_queue[job_id]["state"] = "running"
+    job_queue[job_id]["duration"] = seq.duration()[0]
 
+    print("\n[neXus] Starting acquisition...\n")
     acq_data: AcquisitionData = acq.run()
     acq_data_path = acq_data.save(save_unprocessed=job.save_unprocessed)
 
     # Mark job as finished and store a "result"
     job_queue[job_id]["state"] = "finished"
     job_queue[job_id]["result"] = acq_data_path
-    print(f"[Worker] Completed job_id={job_id}")
+    
+    print(f"\n[neXus] Completed job_id: ", job_id)
