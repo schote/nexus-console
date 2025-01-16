@@ -99,7 +99,7 @@ class AcquisitionData:
         """
         return self.get_data(gate_index=0)
 
-    def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> None:
+    def save(self, user_path: str | None = None, save_unprocessed: bool = False, overwrite: bool = False) -> str:
         """Save all the acquisition data to a given data path.
 
         Parameters
@@ -161,6 +161,7 @@ class AcquisitionData:
                 np.save(os.path.join(acq_folder_path, "unprocessed_data.npy"), self.unprocessed_data[0])
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
+        return acq_folder_path
 
     def add_info(self, info: dict[str, Any]) -> None:
         """Add entries to meta data dictionary.

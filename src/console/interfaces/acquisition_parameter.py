@@ -141,3 +141,15 @@ class AcquisitionParameter:
                 state = pickle.load(state_file)  # noqa: S301
             return cls(**state)
         raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)
+
+    def update(self, params: dict[str, Any]) -> None:
+        """Update acquisition parameter state with new parameters.
+
+        Parameters
+        ----------
+        params
+            Dictionary with new acquisition parameters.
+        """
+        for key, value in params.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
