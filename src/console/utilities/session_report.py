@@ -13,7 +13,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 from tqdm import tqdm
 
-from console.utilities.plot import plot_2d, plot_slices, plt
+from console.utilities.plot import plot_2d, plot_slices
 
 PAGE_WIDTH, PAGE_HEIGHT = A4
 
@@ -34,6 +34,7 @@ def get_image_from_matplotlib(fig):
     fig.savefig(imgdata, format='png', bbox_inches='tight')
     imgdata.seek(0)  # Rewind the buffer
     return ImageReader(imgdata)
+
 
 def create_report(data_path: str):
     """Create the session report.
@@ -75,7 +76,7 @@ def create_report(data_path: str):
             data_fft = np.fft.ifftshift(np.fft.fft(np.fft.fftshift(data), axis=-1))
             # Define time/frequency axis
             dwell_time = meta["dwell_time"]
-            time_ax = np.linspace(0, num_samples*dwell_time, num_samples)
+            time_ax = np.linspace(0, num_samples * dwell_time, num_samples)
             freq_ax = np.fft.fftshift(np.fft.fftfreq(num_samples, dwell_time))
 
             fig, ax = plt.subplots(1, 2, figsize=(10, 4), dpi=300)
@@ -84,11 +85,11 @@ def create_report(data_path: str):
             if num_coils > 1:
                 for k in range(num_coils):
                     # Only plot magnitude data if multiple coils are available
-                    ax[0].plot(time_ax*1e3, np.abs(data[k, ...]), label=f"Coil {k+1}")
+                    ax[0].plot(time_ax * 1e3, np.abs(data[k, ...]), label=f"Coil {k + 1}")
             else:
-                ax[0].plot(time_ax*1e3, np.abs(data), label="Abs.")
-                ax[0].plot(time_ax*1e3, np.real(data), label="Real")
-                ax[0].plot(time_ax*1e3, np.imag(data), label="Imag")
+                ax[0].plot(time_ax * 1e3, np.abs(data), label="Abs.")
+                ax[0].plot(time_ax * 1e3, np.real(data), label="Real")
+                ax[0].plot(time_ax * 1e3, np.imag(data), label="Imag")
             ax[0].legend(loc="upper right")
             ax[0].set_xlabel("Time / ms")
             ax[0].set_ylabel("Amplitude / mV")
@@ -96,10 +97,10 @@ def create_report(data_path: str):
             # FREQUENCY DOMAIN
             if num_coils > 1:
                 for k in range(num_coils):
-                    ax[1].plot(freq_ax/1e3, np.abs(data_fft[k, ...]), label=f"Coil {k+1}")
+                    ax[1].plot(freq_ax / 1e3, np.abs(data_fft[k, ...]), label=f"Coil {k + 1}")
                 ax[1].legend(loc="upper right")
             else:
-                ax[1].plot(freq_ax/1e3, np.abs(data_fft))
+                ax[1].plot(freq_ax / 1e3, np.abs(data_fft))
             ax[1].set_yscale('log')
             ax[1].set_xlabel("Frequency / kHz")
             ax[1].set_ylabel("Abs. spectrum / dB")
@@ -128,7 +129,7 @@ def create_report(data_path: str):
         acq_counter += 1
 
         # Define meta entries to print to PDF
-        meta_text={
+        meta_text = {
             "DATETIME": meta["date_time"],
             "ACQUISITION PARAMETER": meta['acquisition_parameter'],
             "INFO": meta["info"],
@@ -145,16 +146,20 @@ def create_report(data_path: str):
 
         # Add the image to the page
         fig_size = fig.get_size_inches()
-        fig_aspect = fig_size[1]/fig_size[0]
-        image_height = (PAGE_HEIGHT - 2 * margin)/3
+        fig_aspect = fig_size[1] / fig_size[0]
+        image_height = (PAGE_HEIGHT - 2 * margin) / 3
         image_width = image_height / fig_aspect
-        if image_width > (max_width := PAGE_WIDTH - 2*margin):
+        if image_width > (max_width := PAGE_WIDTH - 2 * margin):
             # Set max. width to page width if exceeded
             image_width = max_width
             image_height = image_width * fig_aspect
 
-        pdf_canvas.drawImage(img, margin, PAGE_HEIGHT - margin - image_height - 30, width=image_width, height=image_height)
-        # canvas.drawInlineImage(img, margin, PAGE_HEIGHT - margin - image_height - 30, width=image_width, height=image_height)
+        pdf_canvas.drawImage(
+            img, margin,
+            PAGE_HEIGHT - margin - image_height - 30,
+            width=image_width,
+            height=image_height
+        )
 
         # Add metadata below the image
         text_start_y = PAGE_HEIGHT - margin - image_height - 50
@@ -207,5 +212,7 @@ def main():
     create_report(os.path.join(args.session_path, ""))
 
 # %%
+
+
 if __name__ == '__main__':
     main()

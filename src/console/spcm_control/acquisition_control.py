@@ -341,10 +341,14 @@ class AcquisitionControl:
             print("Demodulation at freq.:", console.parameter.larmor_frequency)
 
             # Demodulation and decimation
-            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * console.parameter.larmor_frequency / self.f_spcm)
+            data = data * np.exp(
+                2j * np.pi * np.arange(data.shape[-1]) * console.parameter.larmor_frequency / self.f_spcm
+            )
 
             # Always decimate the reference signal with moving average filter
-            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=console.parameter.decimation, overlap=8)[None, ...]
+            ref_dec = ddc.filter_moving_average(
+                data[-1, ...], decimation=console.parameter.decimation, overlap=8
+            )[None, ...]
             # Extract the demodulated signal data
             data = data[:-1, ...]
 
@@ -360,9 +364,7 @@ class AcquisitionControl:
 
             # Apply phase correction with mean value
             # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
-            
-            
-            
+
             data = data * np.exp(-1j * np.angle(ref_dec))
 
             # Append to global raw data list

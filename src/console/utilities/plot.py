@@ -18,7 +18,7 @@ def plot_slices(img: np.ndarray, vmin: float | None = None, vmax: float | None =
     for k, x in enumerate(img[:, ...]):
         if set_aspect:
             dim = x.shape
-            ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray", aspect=dim[1]/dim[0])
+            ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray", aspect=dim[1] / dim[0])
         else:
             ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray")
         ax[k].axis("off")
@@ -30,12 +30,18 @@ def plot_slices(img: np.ndarray, vmin: float | None = None, vmax: float | None =
     return fig, ax
 
 
-def plot_2d(img: np.ndarray, vmin: float | None = None, vmax: float | None = None, set_aspect: bool = True, cmap="gray"):
+def plot_2d(
+    img: np.ndarray,
+    vmin: float | None = None,
+    vmax: float | None = None,
+    set_aspect: bool = True,
+    cmap="gray"
+):
     """Return 2D plot image plot."""
     dim = img.shape[-2:]
     if set_aspect:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, aspect=dim[1]/dim[0])
+        ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, aspect=dim[1] / dim[0])
     else:
         fig, ax = plt.subplots(1, 1)
         ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)
@@ -45,12 +51,16 @@ def plot_2d(img: np.ndarray, vmin: float | None = None, vmax: float | None = Non
     return fig, ax
 
 
-def plot_1d(img: np.ndarray, vmin: float | None = None, vmax: float | None = None, set_aspect: bool = True, cmap="gray"):
+def plot_1d(
+    img: np.ndarray, vmin: float | None = None,
+    vmax: float | None = None,
+    set_aspect: bool = True, cmap="gray"
+):
     """Return 2D plot image plot."""
     dim = img.shape[-2:]
     if set_aspect:
         fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-        ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, aspect=dim[1]/dim[0])
+        ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax, aspect=dim[1] / dim[0])
     else:
         fig, ax = plt.subplots(1, 1)
         ax.imshow(img, cmap=cmap, vmin=vmin, vmax=vmax)

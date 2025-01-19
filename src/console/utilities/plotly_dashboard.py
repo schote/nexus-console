@@ -1,21 +1,26 @@
 """
-TODO: Add annotation option to add comments, session option to show multiple acquisitions in tabs, add sequence plot
+Implementation of plotly dashboard to visualize console data.
+
+TODO: Implementation of annotation feature, session option to show multiple acquisitions in tabs, sequence plot.
 """
 # %%
 import argparse
 import json
 import logging
 import os
+from dataclasses import dataclass
 
 import dash_bootstrap_components as dbc
 import numpy as np
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 from dash_extensions import EventListener
-from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class AxisDesc:
+    """Description of Axis."""
+
     x_axis: str
     y_axis: str
     title: str
@@ -175,9 +180,9 @@ def image_viewer(data, app, viewer_id: str):
         image_fig.update_layout(
             margin=dict(l=10, r=10, t=10, b=10),
             # xaxis=dict(title="RO"),
-            yaxis=dict(title=f"Slice: {slice_index+1}"),
+            yaxis=dict(title=f"Slice: {slice_index + 1}"),
             height=image_base_height,  # Adjust height to ensure clarity
-            width=image_base_height*aspect_ratio,
+            width=image_base_height * aspect_ratio,
             newshape_line_color='blue',
         )
 
@@ -247,6 +252,7 @@ def data_viewer_1d(x_data, y_data, view_id: str, desc: AxisDesc, show_complex: b
     )
 
     return dcc.Graph(id=view_id, figure=fig)
+
 
 def dashboard_app(data_dir):
     """Build the dashboard main app."""
@@ -343,13 +349,13 @@ def dashboard_app(data_dir):
 
         # Define time/frequency axis
         dwell_time = meta_info["dwell_time"]
-        time_ax = np.linspace(0, num_samples*dwell_time, num_samples)
+        time_ax = np.linspace(0, num_samples * dwell_time, num_samples)
         freq_ax = np.fft.fftshift(np.fft.fftfreq(num_samples, dwell_time))
 
         view_column.append(
             dbc.Col([
                 data_viewer_1d(
-                    time_ax*1e3,
+                    time_ax * 1e3,
                     data,
                     view_id="time-1d",
                     show_complex=True,
@@ -382,6 +388,7 @@ def dashboard_app(data_dir):
 
     return app
 
+
 # %%
 def main():
     """Parse arguments and start the dashboard server."""
@@ -402,7 +409,6 @@ def main():
 
     args = parser.parse_args()
     app = dashboard_app(args.data_path)
-    # app = dashboard_app(r"C:\Users\schote01\OneDrive - Physikalisch-Technische Bundesanstalt\6_Data\nexus-console\2024-12-02-session\2024-12-02-141033-se_decay_spectrum")
     app.run_server(debug=args.debug_mode, use_reloader=False)
 
 
