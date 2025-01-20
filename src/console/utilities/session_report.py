@@ -119,7 +119,7 @@ def create_report(data_path: str):
                 img = img[0, ...]
 
             if img.ndim == 2:
-                fig, _ = plot_2d(np.abs(img), set_aspect=False)
+                fig, _ = plot_2d(np.abs(img), set_aspect=True)
             elif img.ndim == 3:
                 fig, _ = plot_slices(np.abs(img), set_aspect=False)
             else:
