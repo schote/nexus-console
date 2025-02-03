@@ -119,10 +119,7 @@ class TxCard(SpectrumDevice):
         card_features = spcm.int32(0)
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCIFEATURES, ctypes.byref(card_features))
 
-        if card_features.value & spcm.SPCM_FEAT_DIG16_FX2:
-            self.log.info("IO expansion card with FX2 connector detected")
-            self.has_IO_expansion = True
-        elif card_features.value & spcm.SPCM_FEAT_DIG16_SMB:
+        if card_features.value & (spcm.SPCM_FEAT_DIG16_FX2 | spcm.SPCM_FEAT_DIG16_SMB):
             self.log.info("IO expansion card with FX2 connector detected")
             self.has_IO_expansion = True
         else:
