@@ -15,30 +15,33 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
-  
-  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
-
-    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=4cc05613" />
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
-    <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/console/spcm_control/tx_device';</script>
@@ -47,6 +50,7 @@
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.0.1" />
   </head>
   
   
@@ -62,19 +66,8 @@
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="../../../search.html"
       method="get">
@@ -82,7 +75,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -90,8 +82,8 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
   <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
@@ -125,7 +117,7 @@
     
     
     <img src="../../../_static/logo.png" class="logo__image only-light" alt=""/>
-    <script>document.write(`<img src="../../../_static/logo.png" class="logo__image only-dark" alt=""/>`);</script>
+    <img src="../../../_static/logo.png" class="logo__image only-dark pst-js-only" alt=""/>
   
   
     <p class="title logo__title">Nexus-Console</p>
@@ -180,29 +172,21 @@
         <div class="navbar-item navbar-persistent--container">
           
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
         </div>
       
       
         <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -238,15 +222,11 @@ document.write(`
   
     <div class="navbar-persistent--mobile">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">Search</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script>
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
     </div>
   
 
@@ -263,7 +243,8 @@ document.write(`
       
         
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -317,15 +298,11 @@ document.write(`
         
           <div class="navbar-item">
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script></div>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -367,7 +344,6 @@ document.write(`
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search the docs ..."
          aria-label="Search the docs ..."
          autocomplete="off"
@@ -380,9 +356,14 @@ document.write(`
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -400,8 +381,6 @@ document.write(`
       
         <div class="header-article-item">
 
-
-
 <nav aria-label="Breadcrumb" class="d-print-none">
   <ul class="bd-breadcrumbs">
     
@@ -413,7 +392,7 @@ document.write(`
     
     <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page">console.spcm...</li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">console.spcm_control.tx_device</span></li>
   </ul>
 </nav>
 </div>
@@ -432,24 +411,24 @@ document.write(`
                   
   <h1>Source code for console.spcm_control.tx_device</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Implementation of transmit card.&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">ctypes</span>
-<span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">threading</span>
-<span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">console.spcm_control.spcm.pyspcm</span> <span class="k">as</span> <span class="nn">spcm</span>
-<span class="kn">from</span> <span class="nn">console.interfaces.acquisition_parameter</span> <span class="kn">import</span> <span class="n">Dimensions</span>
-<span class="kn">from</span> <span class="nn">console.interfaces.unrolled_sequence</span> <span class="kn">import</span> <span class="n">UnrolledSequence</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.abstract_device</span> <span class="kn">import</span> <span class="n">SpectrumDevice</span>
-<span class="kn">from</span> <span class="nn">console.spcm_control.spcm.tools</span> <span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.pyspcm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">spcm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimensions</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.unrolled_sequence</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnrolledSequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.abstract_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDevice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
 
 
 <div class="viewcode-block" id="TxCard">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard">[docs]</a>
 <span class="nd">@dataclass</span>
-<span class="k">class</span> <span class="nc">TxCard</span><span class="p">(</span><span class="n">SpectrumDevice</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TxCard</span><span class="p">(</span><span class="n">SpectrumDevice</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Implementation of TX device.</span>
 
@@ -474,7 +453,7 @@ document.write(`
 
     <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TxCard&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Post init function which is required to use dataclass arguments.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
@@ -516,7 +495,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.dict">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.dict">[docs]</a>
-    <span class="k">def</span> <span class="nf">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returnt class variables which are json serializable as dictionary.</span>
 
 <span class="sd">        Returns</span>
@@ -528,7 +507,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.setup_card">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">[docs]</a>
-    <span class="k">def</span> <span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up spectrum card in transmit (TX) mode.</span>
 
 <span class="sd">        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,</span>
@@ -554,6 +533,16 @@ document.write(`
         <span class="k">except</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
+
+        <span class="c1"># Check for presence of IO expansion cards</span>
+        <span class="n">card_features</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_PCIFEATURES</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">card_features</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="n">card_features</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_FEAT_DIG16_FX2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_FEAT_DIG16_SMB</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;IO expansion card with FX2 connector detected&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_IO_expansion</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_IO_expansion</span> <span class="o">=</span> <span class="kc">False</span>
 
         <span class="c1"># &gt;&gt; TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?</span>
 
@@ -621,12 +610,13 @@ document.write(`
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X1_MODE</span><span class="p">,</span>
             <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="c1"># Replicate ADC gate on extension port X12</span>
-        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X12_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_IO_expansion</span><span class="p">:</span>
+            <span class="c1"># Replicate ADC gate on extension port X12</span>
+            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
+                <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X12_MODE</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">)</span>
         <span class="c1"># Channel X2: dig. reference signal (15th bit from analog channel 2)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
@@ -639,12 +629,13 @@ document.write(`
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X3_MODE</span><span class="p">,</span>
             <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="c1"># Replicate unblanking signal at extension port X13</span>
-        <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-            <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X13_MODE</span><span class="p">,</span>
-            <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_IO_expansion</span><span class="p">:</span>
+            <span class="c1"># Replicate unblanking signal at extension port X13</span>
+            <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
+                <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_X13_MODE</span><span class="p">,</span>
+                <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
+            <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Device setup completed&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_card_status</span><span class="p">()</span></div>
@@ -652,7 +643,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.set_gradient_offsets">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.set_gradient_offsets">[docs]</a>
-    <span class="k">def</span> <span class="nf">set_gradient_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsets</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_gradient_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsets</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">,</span> <span class="kc">True</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set offset values of the gradient output channels.</span>
 
 <span class="sd">        Parameters</span>
@@ -719,7 +710,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.start_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
-    <span class="k">def</span> <span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start transmit (TX) card operation.</span>
 
 <span class="sd">        Steps:</span>
@@ -783,7 +774,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.stop_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.stop_operation">[docs]</a>
-    <span class="k">def</span> <span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card operation by thread event and stop card.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -801,7 +792,7 @@ document.write(`
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No active replay thread found...&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span> <span class="nf">_fifo_stream_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_fifo_stream_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Continuous FIFO mode examples.</span>
 
 <span class="sd">        Parameters</span>
@@ -915,7 +906,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.get_status">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current card status.</span>
 
 <span class="sd">        Returns</span>
@@ -935,7 +926,7 @@ document.write(`
 
 <div class="viewcode-block" id="TxCard.log_card_status">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.log_card_status">[docs]</a>
-    <span class="k">def</span> <span class="nf">log_card_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_desc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_card_status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_desc</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log current card status.</span>
 
 <span class="sd">        The status is represented by a list. Each entry represents a possible card status in form</span>
@@ -981,8 +972,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1007,7 +998,8 @@ document.write(`
       
         <div class="footer-item">
 <p class="theme-version">
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.15.4.
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
 </p></div>
       
     </div>
