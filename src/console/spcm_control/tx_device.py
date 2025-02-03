@@ -115,6 +115,16 @@ class TxCard(SpectrumDevice):
             self.log.exception(err, exc_info=True)
             raise err
 
+        # Check for presence of IO expansion cards
+        card_features = spcm.int32(0)
+        spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCIFEATURES, ctypes.byref(card_features))
+
+        if card_features.value & (spcm.SPCM_FEAT_DIG16_FX2 | spcm.SPCM_FEAT_DIG16_SMB):
+            self.log.info("IO expansion card with FX2 connector detected")
+            self.has_IO_expansion = True
+        else:
+            self.has_IO_expansion = False
+
         # >> TODO: At this point, card alread has M2STAT_CARD_PRETRIGGER and M2STAT_CARD_TRIGGER set, correct?
 
         # Set trigger
@@ -181,12 +191,13 @@ class TxCard(SpectrumDevice):
             spcm.SPCM_X1_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
-        # Replicate ADC gate on extension port X12
-        spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X12_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        )
+        if self.has_IO_expansion:
+            # Replicate ADC gate on extension port X12
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPCM_X12_MODE,
+                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            )
         # Channel X2: dig. reference signal (15th bit from analog channel 2)
         spcm.spcm_dwSetParam_i32(
             self.card,
@@ -199,12 +210,13 @@ class TxCard(SpectrumDevice):
             spcm.SPCM_X3_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
-        # Replicate unblanking signal at extension port X13
-        spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X13_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        )
+        if self.has_IO_expansion:
+            # Replicate unblanking signal at extension port X13
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPCM_X13_MODE,
+                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            )
 
         self.log.debug("Device setup completed")
         self.log_card_status()
