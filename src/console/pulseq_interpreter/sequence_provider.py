@@ -207,8 +207,8 @@ class SequenceProvider(Sequence):
         # Set unblanking signal: 16th bit set to 1 (high)
         rf_unblanking_start = num_samples_delay - num_samples_dead_time
         rf_unblanking_end = num_samples_delay + num_samples
-        rf_unblanking = np.zeros(rf_unblanking_end, dtype = np.int16)
-        rf_unblanking[rf_unblanking_start:] = 1
+        rf_unblanking = np.zeros(rf_unblanking_end, dtype = np.uint16)
+        rf_unblanking[rf_unblanking_start:] = 2**15
 
         # Calculate the static phase offset, defined by RF pulse
         phase_offset = np.exp(1j * block.phase_offset)
