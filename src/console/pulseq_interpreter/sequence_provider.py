@@ -505,7 +505,7 @@ class SequenceProvider(Sequence):
         _seq        = np.zeros(4*seq_samples, dtype = np.int16)
         _adc        = np.zeros(seq_samples, dtype = np.uint16)
         _unblanking = np.zeros(seq_samples, dtype = np.uint16)
-        _ref        = np.zeros(seq_samples, dtype = np.uint16)
+        #_ref        = np.zeros(seq_samples, dtype = np.uint16)
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
@@ -537,9 +537,10 @@ class SequenceProvider(Sequence):
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 ) # Add gradient waveform for Z and add RF unblanking
             if block.rf is not None: #rf event
-                _seq[block_positions[idx]*4:block_positions[idx+1]*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
-                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = \
-                    _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] | rf_pulses[event[1]][1] # Add deblankin
+                event_size = np.size(rf_pulses[event[1]][0])
+                _seq[block_positions[idx]*4:(block_positions[idx]+event_size)*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
+                _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)*4+3:4] = \
+                    _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)+3:4] | rf_pulses[event[1]][1] # Add deblanking
             if block.adc is not None: #adc event
                 adc_count       += 1
                 adc_waveform    = adc_events[event[5]-1][1].waveform
