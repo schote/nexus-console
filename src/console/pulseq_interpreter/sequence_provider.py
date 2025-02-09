@@ -333,11 +333,11 @@ class SequenceProvider(Sequence):
 
             else:
                 raise ValueError("Block is not a valid gradient block")
+            # Shims offsert added at card level, no need to add to waveform
             # Add the shim offset to the gradient waveform
+            #gradient += offset
 
-            gradient += offset
-
-            if np.amax(gradient) > INT16_MAX:
+            if np.amax(gradient + offset) > INT16_MAX:
                 max_strength = gradient[np.argmax(np.abs(gradient))]
                 raise ValueError(
                     f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude")
@@ -510,17 +510,18 @@ class SequenceProvider(Sequence):
         # Count the total number of sample points and gate signals
         adc_count: int = 0
 
-        # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
-        offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x")\
-            / (INT16_MAX) * self.output_limits[1])).view(np.uint16) << 1
-        offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y")\
-            / (INT16_MAX) * self.output_limits[2])).view(np.uint16) << 1
-        offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z")\
-            / (INT16_MAX) * self.output_limits[3])).view(np.uint16) << 1
+        # Shims set as offsets to card channels, dont need to add them to gradient waveform
+        # # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
+        # offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x")\
+        #     / (INT16_MAX) * self.output_limits[1])).view(np.uint16) >> 1
+        # offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y")\
+        #     / (INT16_MAX) * self.output_limits[2])).view(np.uint16) >> 1
+        # offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z")\
+        #     / (INT16_MAX) * self.output_limits[3])).view(np.uint16) >> 1
 
-        _seq[1::4] = offset_gx
-        _seq[2::4] = offset_gy
-        _seq[3::4] = offset_gz
+        # _seq[1::4] = offset_gx
+        # _seq[2::4] = offset_gy
+        # _seq[3::4] = offset_gz
 
         for idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
@@ -540,7 +541,7 @@ class SequenceProvider(Sequence):
                 event_size = np.size(rf_pulses[event[1]][0])
                 _seq[block_positions[idx]*4:(block_positions[idx]+event_size)*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
                 _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)*4+3:4] = \
-                    _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)+3:4] | rf_pulses[event[1]][1] # Add deblanking
+                    _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)*4+3:4] | rf_pulses[event[1]][1] # Add deblanking
             if block.adc is not None: #adc event
                 adc_count       += 1
                 adc_waveform    = adc_events[event[5]-1][1].waveform
