@@ -356,29 +356,29 @@ class SequenceProvider(Sequence):
         """Extract ADC 'waveforms' from the sequence.
 
         TODO: Add error checks
+        
         Raises:
             ValueError: _description_
             ValueError: _description_
             ValueError: _description_
             err: _description_
         Returns:
-            list: List of SimpleNamespace object describing each unique adc waveform event.
+            list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
         """
         adc_waveforms = self.adc_library
         adc_list = []
         for adc_waveform in adc_waveforms.data.items():
-            adc_gate                = SimpleNamespace()
-            adc_gate.dwell_time     = adc_waveform[1][0]
-            adc_gate.num_samples    = adc_waveform[1][1]
-            adc_gate.delay          = adc_waveform[1][2]
-            delay_samples           = int(round(adc_gate.delay*self.spcm_freq))
-            adc_gate.gate_duration  = adc_gate.num_samples*adc_gate.dwell_time
-            gate_samples            = int(round(adc_gate.gate_duration*self.spcm_freq))
-            adc_gate.waveform       = np.zeros(delay_samples+gate_samples, dtype = np.uint16)
-            adc_gate.waveform[delay_samples:] = 2**15
-            time_scale              = np.arange(gate_samples + delay_samples)/self.spcm_freq
-            adc_gate.ref_signal     = np.exp(2j*np.pi*time_scale*self.larmor_freq)
-            adc_list.append((adc_waveform[0], adc_gate))
+            dwell_time = adc_waveform[1][0]
+            num_samples = adc_waveform[1][1]
+            delay = adc_waveform[1][2]
+            delay_samples = int(round(delay * self.spcm_freq))
+            gate_duration = num_samples * dwell_time
+            gate_samples = int(round(gate_duration * self.spcm_freq))
+            waveform = np.zeros(delay_samples + gate_samples, dtype=np.int16)
+            waveform[delay_samples:] = 2**15
+            time_scale = np.arange(gate_samples + delay_samples)/self.spcm_freq
+            ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
+            adc_list.append((adc_waveform[0], waveform, ref_signal))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -488,13 +488,13 @@ class SequenceProvider(Sequence):
                                                                   b1_scaling = console.parameter.b1_scaling)
 
         seq_duration, num_samples, _ = self.duration()
-        seq_samples = int(round(seq_duration*self.spcm_freq))
+        seq_samples = int(round(seq_duration * self.spcm_freq))
 
         #calculate the start time (and sample position) and duration of each block
         block_durations = [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
-        block_durations = np.round(np.array(block_durations)*self.spcm_freq).astype(int)
-        block_positions = np.cumsum(block_durations, dtype = np.int64)
-        block_positions = np.concatenate(([0],  block_positions))
+        block_durations = np.round(np.array(block_durations) * self.spcm_freq).astype(int)
+        block_positions = np.cumsum(block_durations, dtype=np.int64)
+        block_positions = np.concatenate(([0], block_positions))
 
         if seq_samples != block_positions[-1]:
             raise IndexError(
@@ -502,9 +502,9 @@ class SequenceProvider(Sequence):
             )
 
         #setup output arrays
-        _seq        = np.zeros(4*seq_samples, dtype = np.int16)
-        _adc        = np.zeros(seq_samples, dtype = np.uint16)
-        _unblanking = np.zeros(seq_samples, dtype = np.uint16)
+        _seq        = np.zeros(4 * seq_samples, dtype=np.int16)
+        _adc        = np.zeros(seq_samples, dtype=np.uint16)
+        _unblanking = np.zeros(seq_samples, dtype=np.uint16)
         #_ref        = np.zeros(seq_samples, dtype = np.uint16)
 
         # Count the total number of sample points and gate signals
@@ -526,36 +526,38 @@ class SequenceProvider(Sequence):
         for idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             if block.gx is not None: #gx event
-                _seq[block_positions[idx]*4+1:block_positions[idx+1]*4+1:4] = self.calculate_gradient(
+                _seq[block_positions[idx] * 4 + 1:block_positions[idx + 1] * 4 + 1:4] = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
                     )
             if block.gy is not None: #gy event
-                _seq[block_positions[idx]*4+2:block_positions[idx+1]*4+2:4] = self.calculate_gradient(
+                _seq[block_positions[idx] * 4 + 2:block_positions[idx + 1] * 4 + 2:4] = self.calculate_gradient(
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
             if block.gz is not None: #gz event
-                _seq[block_positions[idx]*4+3:block_positions[idx+1]*4+3:4] = self.calculate_gradient(
+                _seq[block_positions[idx] * 4 + 3:block_positions[idx + 1] * 4 + 3:4] = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 ) # Add gradient waveform for Z and add RF unblanking
             if block.rf is not None: #rf event
                 event_size = np.size(rf_pulses[event[1]][0])
-                _seq[block_positions[idx]*4:(block_positions[idx]+event_size)*4:4]     = rf_pulses[event[1]][0] # Add RF waveform
-                _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)*4+3:4] = \
-                    _seq[block_positions[idx]*4+3:(block_positions[idx]+event_size)*4+3:4] | rf_pulses[event[1]][1] # Add deblanking
+                # Add RF waveform
+                _seq[block_positions[idx] * 4:(block_positions[idx] + event_size) * 4:4] = rf_pulses[event[1]][0]
+                # Add deblanking signal
+                _seq[block_positions[idx] * 4 + 3:(block_positions[idx] + event_size) * 4 + 3:4] = \
+                    _seq[block_positions[idx] * 4 + 3:(block_positions[idx] + event_size) * 4 + 3:4] | rf_pulses[event[1]][1]
             if block.adc is not None: #adc event
-                adc_count       += 1
-                adc_waveform    = adc_events[event[5]-1][1].waveform
-                ref_signal      = adc_events[event[5]-1][1].ref_signal
+                adc_count += 1
+                adc_waveform = adc_events[event[5]-1][1]
+                ref_signal = adc_events[event[5]-1][2]
 
-                _seq[block_positions[idx]*4+1:(block_positions[idx]+np.size(adc_waveform))*4+1:4] = \
-                    _seq[block_positions[idx]*4+1:(block_positions[idx]+np.size(adc_waveform))*4+1:4] | adc_waveform
+                _seq[block_positions[idx] * 4 + 1:(block_positions[idx] + np.size(adc_waveform)) * 4 + 1:4] = \
+                    _seq[block_positions[idx] * 4 + 1:(block_positions[idx] + np.size(adc_waveform)) * 4 + 1:4] | adc_waveform
 
                 # Create ref signal in adc waveform
-                time_offset = block_positions[idx]*self.spcm_dwell_time
-                ref_signal  = ref_signal*np.exp(2j*np.pi*time_offset*self.larmor_freq)
-                ref_waveform = (ref_signal.real > 0)*(2**15)
-                _seq[block_positions[idx]*4+2:(block_positions[idx]+np.size(adc_waveform))*4+2:4] = \
-                    _seq[block_positions[idx]*4+2:(block_positions[idx]+np.size(adc_waveform))*4+2:4] | ref_waveform
+                time_offset = block_positions[idx] * self.spcm_dwell_time
+                ref_signal = ref_signal*np.exp(2j * np.pi * time_offset * self.larmor_freq)
+                ref_waveform = (ref_signal.real > 0) * (2**15)
+                _seq[block_positions[idx] * 4 + 2:(block_positions[idx] + np.size(adc_waveform)) * 4 + 2:4] = \
+                    _seq[block_positions[idx] * 4 + 2:(block_positions[idx] + np.size(adc_waveform)) * 4 + 2:4] | ref_waveform
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
