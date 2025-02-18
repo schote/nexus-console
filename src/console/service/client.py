@@ -88,6 +88,7 @@ def submit_acquisition_job(sequence: pp.Sequence | str, save_unprocessed: bool =
         return data["job_id"]
     except requests.RequestException as e:
         print("[client] Error:", e)
+        return ""
 
 
 def get_job_status(job_id: str):
@@ -137,7 +138,7 @@ def calibrate_f0(save_unprocessed: bool = False):
 
     job_id = submit_acquisition_job(sequence=seq, save_unprocessed=save_unprocessed)
     job = wait_until_finished(job_id)
-    
+
     if "result" in job.keys():
         acq_path = job["result"]
         data_path = os.path.join(acq_path, "raw_data.npy")
@@ -147,7 +148,7 @@ def calibrate_f0(save_unprocessed: bool = False):
         acq_data = np.load(data_path)
         with open(os.path.join(acq_path, "meta.json"), "rb") as meta_file:
             meta = json.load(meta_file)
-            
+
         dwell_time = meta["dwell_time"]
 
         # FFT
