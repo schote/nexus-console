@@ -62,6 +62,7 @@ def lifespan(app: FastAPI):
     print("\n[neXus] Test:: Acquisition control instance: ", acq)
 
     yield
+
     # Delete acquisition control instance at the end of the lifespan
     del acq
 
