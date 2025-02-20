@@ -61,14 +61,15 @@ class AcquisitionParameter:
 
     save_on_mutation: bool = False
     """Flag which indicates if state is saved on mutation."""
+    
 
-    def __setattr__(self, __name: str, __value: Any) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite __setattr__ function to save object on each mutation.
 
         Requires __save_on_mutation flag which is set in __post_init__ method.
         """
         _hash = hash(self)
-        super().__setattr__(__name, __value)
+        super().__setattr__(name, value)
         if self.save_on_mutation and hash(self) != _hash:
             self.save()
 
