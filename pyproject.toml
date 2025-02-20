@@ -45,7 +45,8 @@ service = ["fastapi", "uvicorn"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [project.scripts]
-nexus-service = "console.service.app:start_service"
+nexus-service = "console.service.server:start_service"
+nexus-manager = "console.service.manager:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
