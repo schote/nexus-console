@@ -7,7 +7,7 @@ import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
-from console.utilities import sequences
+from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance
 acq = AcquisitionControl(configuration_file="example_device_config.yaml")
@@ -17,7 +17,7 @@ params = {
     "echo_time": 14e-3,
     "repetition_time": 600e-3,
     "etl": 7,
-    "trajectory": "in-out",
+    "trajectory": tse_3d.Trajectory.INOUT,
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
     "fov": Dimensions(x=180 - 3, y=180e-3, z=180e-3),
@@ -27,7 +27,7 @@ params = {
     "ro_bandwidth": 20e3,
     "n_enc": Dimensions(x=30, y=60, z=60),
 }
-seq, header = sequences.tse.tse_3d.constructor(**params)
+seq, header = tse_3d.constructor(**params)
 
 # Calculate decimation:
 decimation = int(acq.rx_card.sample_rate * 1e6 / params["ro_bandwidth"])
@@ -39,7 +39,7 @@ acq.set_sequence(sequence=seq)
 
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
-ksp = sequences.tse.tse_3d.sort_kspace(acq_data.raw, seq).squeeze()
+ksp = tse_3d.sort_kspace(acq_data.raw, seq).squeeze()
 
 # Image reconstruction with FFT
 img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
