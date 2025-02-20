@@ -1,6 +1,7 @@
 """Nexus service network configuration."""
 
-HOST: str = "127.0.0.1"
+# HOST: str = "127.0.0.1"
+HOST: str = "localhost"
 PORT: int = 8000
 
 def get_url() -> str:
