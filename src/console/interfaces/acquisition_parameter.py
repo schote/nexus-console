@@ -61,7 +61,6 @@ class AcquisitionParameter:
 
     save_on_mutation: bool = False
     """Flag which indicates if state is saved on mutation."""
-    
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite __setattr__ function to save object on each mutation.

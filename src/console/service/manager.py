@@ -1,17 +1,18 @@
 """Start acquisition control manager service/process."""
+import argparse
+import logging
 import os
 from pathlib import Path
+
 from console.service.acquisition_manager import AcquisitionControlManager, AcquisitionParameterProxy
 from console.spcm_control.acquisition_control import AcquisitionControl
-import logging
-import argparse
-
 
 acquisition_control: AcquisitionControl | None = None
 parameter_proxy = AcquisitionParameterProxy()
 
+
 def main():
-    """Setup the acquisition control and start the acquisition manager."""
+    """Start the acquisition control and setup the manager."""
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
     parser.add_argument(
         "-d",
@@ -49,9 +50,10 @@ def main():
         help="Manager process connection port",
     )
     args = parser.parse_args()
-    input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\nPress Enter to continue...")
+    input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\
+        \nPress Enter to continue...")
     print("\n[neXus] Setting up the acquisition control...\n")
-    
+
     # Setup global acquisition control with argparse arguments
     global acquisition_control
     acquisition_control = AcquisitionControl(
@@ -60,14 +62,14 @@ def main():
         console_log_level=logging.INFO,
         file_log_level=logging.INFO
     )
-    
+
     manager = AcquisitionControlManager(
         callable_acq_control=lambda: acquisition_control,
         callable_acq_parameter=lambda: parameter_proxy,
         address=(args.address, args.port),
         authkey=args.authkey,
     )
-    
+
     server = manager.get_server()
     print("\n[neXus] AcquisitionControlManager >> Server started on port 50000...")
     server.serve_forever()

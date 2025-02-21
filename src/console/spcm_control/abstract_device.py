@@ -88,7 +88,7 @@ class SpectrumDevice(ABC):
 
     def handle_error(self, error: int):
         """General error handling function."""
-        if error != sp.ERR_OK:  
+        if error != sp.ERR_OK:
             # sp.ERR_OK = 0, this corresponds to "if error:"
             if error == sp.ERR_TIMEOUT:
                 # Check for timeout
@@ -98,7 +98,9 @@ class SpectrumDevice(ABC):
                 err_msg = create_string_buffer(sp.ERRORTEXTLEN)
                 if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
                     # double check if error is not ERR_OK, disconnect and raise error
-                    self.log.critical(f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; stopping card {self.name}")
+                    self.log.critical(
+                        f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
+                    )
                     sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
                     raise RuntimeError
 
