@@ -326,13 +326,12 @@ class SequenceProvider(Sequence):
 
             else:
                 raise ValueError("Block is not a valid gradient block")
-        
+    
             # Calculate gradient offset int16 value from mV
             # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
             # Gradient offset is used for calculating output limits but is not added to the waveform
             offset = getattr(console.parameter.gradient_offset, block.channel)
             offset *= INT16_MAX / self.output_limits[idx + 1]
-
 
             if np.amax(gradient + offset) > INT16_MAX:
                 max_strength = gradient[np.argmax(np.abs(gradient + offset))] + offset
@@ -342,9 +341,9 @@ class SequenceProvider(Sequence):
                     f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude")
             else:
                 gradient = gradient.astype(np.int16)
-            
+
             # Shifting gradient waveform to 15 bits already for adding the gate signals later
-            return gradient.view(np.uint16) >> 1  
+            return gradient.view(np.uint16) >> 1
 
         except (ValueError, IndexError) as err:
             self.log.exception(err, exc_info=True)
@@ -357,6 +356,7 @@ class SequenceProvider(Sequence):
         TODO: Add error checks
 
         Returns:
+        -------
             list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
         """
         adc_waveforms = self.adc_library
@@ -482,7 +482,7 @@ class SequenceProvider(Sequence):
             rf_pulses[rf_event[0]] = self.calculate_rf(block=rf_event[1],
                                                                   b1_scaling=console.parameter.b1_scaling)
 
-        seq_duration, _ , _ = self.duration()
+        seq_duration, _, _ = self.duration()
         seq_samples = int(round(seq_duration * self.spcm_freq))
 
         # Calculate the start time (and sample position) and duration of each block
@@ -530,12 +530,12 @@ class SequenceProvider(Sequence):
             if block.gz is not None:  # Gz event
                 _seq[block_pos[idx] * 4 + 3:block_pos[idx + 1] * 4 + 3:4] = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
-                ) # Add gradient waveform for Z and add RF unblanking
+                )
             if block.rf is not None:  # RF event
                 event_size = np.size(rf_pulses[event[1]][0])
                 # Add RF waveform
                 _seq[block_pos[idx] * 4:(block_pos[idx] + event_size) * 4:4] = rf_pulses[event[1]][0]
-                # Add deblanking signal
+                # Add deblanking signal to Z gradient
                 _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + event_size) * 4 + 3:4] = \
                     _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + event_size) * 4 + 3:4] | rf_pulses[event[1]][1]
             if block.adc is not None:  # ADC event
