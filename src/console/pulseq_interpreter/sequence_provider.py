@@ -355,7 +355,7 @@ class SequenceProvider(Sequence):
 
         TODO: Add error checks
 
-        Returns:
+        Returns
         -------
             list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
 
