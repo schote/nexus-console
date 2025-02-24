@@ -326,7 +326,7 @@ class SequenceProvider(Sequence):
 
             else:
                 raise ValueError("Block is not a valid gradient block")
-    
+
             # Calculate gradient offset int16 value from mV
             # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
             # Gradient offset is used for calculating output limits but is not added to the waveform
@@ -358,6 +358,7 @@ class SequenceProvider(Sequence):
         Returns:
         -------
             list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
+
         """
         adc_waveforms = self.adc_library
         adc_list = []
