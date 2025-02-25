@@ -239,7 +239,7 @@ class SequenceProvider(Sequence):
         carrier = np.exp(2j * np.pi * ((self.larmor_freq + block.freq_offset) * carrier_time + carrier_phase_offset))
 
         try:
-            waveform_rf = np.concatenate((np.zeros(num_samples_delay), (envelope*carrier).real)).astype(np.int16)
+            waveform_rf = np.concatenate((np.zeros(num_samples_delay), (envelope * carrier).real)).astype(np.int16)
         except IndexError as err:
             self.log.exception(err, exc_info=True)
 
@@ -373,7 +373,7 @@ class SequenceProvider(Sequence):
             delay_samples = int(round(delay * self.spcm_freq))
             gate_duration = num_samples * dwell_time
             gate_samples = int(round(gate_duration * self.spcm_freq))
-            waveform = np.zeros(delay_samples + gate_samples, dtype=np.int16)
+            waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
             waveform[delay_samples:] = 2**15
             time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
             ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
@@ -524,10 +524,10 @@ class SequenceProvider(Sequence):
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 )
             if block.rf is not None:  # RF event
-                # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't 
+                # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
-                rf_waveform =  rf_pulses[event[1]][0]
+                rf_waveform = rf_pulses[event[1]][0]
                 rf_unblanking = rf_pulses[event[1]][1]
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
