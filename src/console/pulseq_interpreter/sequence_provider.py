@@ -238,7 +238,11 @@ class SequenceProvider(Sequence):
         carrier_time = np.arange(num_samples) * self.spcm_dwell_time
         carrier = np.exp(2j * np.pi * ((self.larmor_freq + block.freq_offset) * carrier_time + carrier_phase_offset))
 
-        waveform_rf = np.concatenate((np.zeros(num_samples_delay), (envelope * carrier).real)).astype(np.int16)
+        try:
+            waveform_rf = np.concatenate((np.zeros(num_samples_delay), (envelope*carrier).real)).astype(np.int16)
+        except IndexError as err:
+            self.log.exception(err, exc_info=True)
+
         return (waveform_rf, rf_unblanking)
 
     @profile
@@ -505,19 +509,6 @@ class SequenceProvider(Sequence):
         # Count the total number of sample points and gate signals
         adc_count: int = 0
 
-        # Shims set as offsets to card channels, dont need to add them to gradient waveform
-        # # Add shim offsets to gradient channels, no limits check needed, takes place in waveform calculation
-        # offset_gx = np.int16(round(getattr(console.parameter.gradient_offset, "x")\
-        #     / (INT16_MAX) * self.output_limits[1])).view(np.uint16) >> 1
-        # offset_gy = np.int16(round(getattr(console.parameter.gradient_offset, "y")\
-        #     / (INT16_MAX) * self.output_limits[2])).view(np.uint16) >> 1
-        # offset_gz = np.int16(round(getattr(console.parameter.gradient_offset, "z")\
-        #     / (INT16_MAX) * self.output_limits[3])).view(np.uint16) >> 1
-
-        # _seq[1::4] = offset_gx
-        # _seq[2::4] = offset_gy
-        # _seq[3::4] = offset_gz
-
         for idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             if block.gx is not None:  # Gx event
@@ -533,23 +524,32 @@ class SequenceProvider(Sequence):
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 )
             if block.rf is not None:  # RF event
-                event_size = np.size(rf_pulses[event[1]][0])
+                # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't 
+                # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
+                # and the array is then sliced using the duration of the RF waveform to ensure a good fit
+                rf_waveform =  rf_pulses[event[1]][0]
+                rf_unblanking = rf_pulses[event[1]][1]
+
+                rf_size = np.size(rf_waveform)  # Get size of the RF waveform
+                if rf_size > (block_pos[idx + 1] - block_pos[idx]):
+                    raise IndexError("RF waveform size exceeds block size.")
+
                 # Add RF waveform
-                _seq[block_pos[idx] * 4:(block_pos[idx] + event_size) * 4:4] = rf_pulses[event[1]][0]
+                _seq[block_pos[idx] * 4:(block_pos[idx] + rf_size) * 4:4] = rf_waveform
                 # Add deblanking signal to Z gradient
-                _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + event_size) * 4 + 3:4] = \
-                    _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + event_size) * 4 + 3:4] | rf_pulses[event[1]][1]
+                _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + rf_size) * 4 + 3:4] = \
+                    _seq[block_pos[idx] * 4 + 3:(block_pos[idx] + rf_size) * 4 + 3:4] | rf_unblanking
             if block.adc is not None:  # ADC event
                 adc_count += 1
-                adc_waveform = adc_events[event[5] - 1][1]
-                ref_signal = adc_events[event[5] - 1][2]
+                adc_waveform = adc_events[event[5] - 1][1]  # Grab the ADC event from the pre-calculated list
+                ref_signal = adc_events[event[5] - 1][2]  # Pulseq is 1 indexed, shift idx by -1 for correct event
 
                 _seq[block_pos[idx] * 4 + 1:(block_pos[idx] + np.size(adc_waveform)) * 4 + 1:4] = \
                     _seq[block_pos[idx] * 4 + 1:(block_pos[idx] + np.size(adc_waveform)) * 4 + 1:4] | adc_waveform
 
                 # Create ref signal in ADC waveform
                 time_offset = block_pos[idx] * self.spcm_dwell_time
-                ref_signal = ref_signal * np.exp(2j * np.pi * time_offset * self.larmor_freq)
+                ref_signal = ref_signal * np.exp(2j * np.pi * time_offset)
                 ref_waveform = (ref_signal.real > 0) * (2**15)
                 _seq[block_pos[idx] * 4 + 2:(block_pos[idx] + np.size(adc_waveform)) * 4 + 2:4] = \
                     _seq[block_pos[idx] * 4 + 2:(block_pos[idx] + np.size(adc_waveform)) * 4 + 2:4] | ref_waveform
@@ -602,7 +602,7 @@ class SequenceProvider(Sequence):
         seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
         samples = np.arange(self.sample_count, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
 
-        sqnc = np.concatenate(self._sqnc_cache)
+        sqnc = self._sqnc_cache
         rf_signal = sqnc[0::4][seq_start:seq_end]
         gx_signal = sqnc[1::4][seq_start:seq_end]
         gy_signal = sqnc[2::4][seq_start:seq_end]
