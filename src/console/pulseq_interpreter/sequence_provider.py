@@ -229,17 +229,14 @@ class SequenceProvider(Sequence):
         # Resampling of scaled complex envelope
         envelope = resample(envelope_scaled, num=num_samples)
 
-        # Calculate phase offset of RF according to total sample count
-        carrier_phase_samples = self.sample_count + num_samples_delay - num_samples_rf_start
-        carrier_phase_offset = carrier_phase_samples * self.spcm_dwell_time
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency and phase offsets of an RF block event
         carrier_time = np.arange(num_samples) * self.spcm_dwell_time
-        carrier = np.exp(2j * np.pi * ((self.larmor_freq + block.freq_offset) * carrier_time + carrier_phase_offset))
+        carrier = np.exp(2j * np.pi * (self.larmor_freq + block.freq_offset) * carrier_time)
 
         try:
-            waveform_rf = np.concatenate((np.zeros(num_samples_delay), (envelope * carrier).real)).astype(np.int16)
+            waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype = complex), (envelope * carrier)))
         except IndexError as err:
             self.log.exception(err, exc_info=True)
 
@@ -509,6 +506,8 @@ class SequenceProvider(Sequence):
         # Count the total number of sample points and gate signals
         adc_count: int = 0
 
+        rf_start_sample_pos: int | None = None
+
         for idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             if block.gx is not None:  # Gx event
@@ -529,6 +528,16 @@ class SequenceProvider(Sequence):
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
                 rf_waveform = rf_pulses[event[1]][0]
                 rf_unblanking = rf_pulses[event[1]][1]
+
+                if rf_start_sample_pos is None:
+                    rf_start_sample_pos = block_pos[idx]  # Store location of first RF event for ref offset
+
+                # Get the delay before the RF pulse starts
+                start_delay = round(max(block.rf.dead_time, block.rf.delay) * self.spcm_freq)
+                # Calculate phase offset of RF according to total sample count
+                carrier_sample_offset = block_pos[idx] + start_delay - rf_start_sample_pos
+                carrier_phase_offset =  carrier_sample_offset * self.spcm_dwell_time
+                rf_waveform = (rf_waveform * np.exp(2j * np.pi * carrier_phase_offset)).real.astype(np.int16)
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[idx + 1] - block_pos[idx]):
