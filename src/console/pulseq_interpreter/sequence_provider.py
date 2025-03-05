@@ -377,7 +377,7 @@ class SequenceProvider(Sequence):
         adc_dur = block.num_samples * block.dwell
         adc_len = round(adc_dur * self.spcm_freq)
         # Gate signal
-        gate[delay : delay + adc_len] = 1
+        gate[delay: delay + adc_len] = 1
 
         # Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)
         offset = self.sample_count * self.spcm_dwell_time
