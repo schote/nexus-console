@@ -595,7 +595,7 @@ class SequenceProvider(Sequence):
 
     def plot_unrolled(
             self, time_range: tuple[float, float] = (0, -1)
-        ) -> tuple[mpl.figure.Figure, np.ndarray]:
+        ) -> tuple[mpl.figure.Figure, np.ndarray] :
         """Plot unrolled waveforms for replay.
 
         Parameters
@@ -610,7 +610,7 @@ class SequenceProvider(Sequence):
         """
         fig, axis = plt.subplots(5, 1, figsize=(16, 9))
 
-        if not self._sqnc_cache:
+        if self._sqnc_cache is not None:
             print("No unrolled sequence...")
             return fig, axis
 
