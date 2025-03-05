@@ -489,7 +489,7 @@ class SequenceProvider(Sequence):
         block_durations = [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
         block_durations = np.round(np.array(block_durations) * self.spcm_freq).astype(int)
         block_pos = np.cumsum(block_durations, dtype=np.int64)
-        block_pos = np.concatenate((np.array(0, dtype=np.int64), block_pos))
+        block_pos = np.insert(block_pos, 0, 0)
 
         if seq_samples != block_pos[-1]:
             raise IndexError(
