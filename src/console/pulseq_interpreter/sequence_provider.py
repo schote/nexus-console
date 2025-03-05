@@ -106,7 +106,6 @@ class SequenceProvider(Sequence):
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
         self.larmor_freq: float = float("nan")
-        self.sample_count: int = 0
         self._sqnc_cache: np.ndarray | None = None
 
     def dict(self) -> dict:
@@ -119,7 +118,6 @@ class SequenceProvider(Sequence):
             "gradient_efficiency": self.grad_eff,
             "output_limits": self.output_limits,
             "larmor_freq": self.larmor_freq,
-            "sample_count": self.sample_count
         }
 
     def from_pypulseq(self, seq: Sequence) -> None:
@@ -224,7 +222,6 @@ class SequenceProvider(Sequence):
 
         # Resampling of scaled complex envelope
         envelope = resample(envelope_scaled, num=num_samples)
-
 
         # Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency and phase offsets of an RF block event
@@ -583,7 +580,7 @@ class SequenceProvider(Sequence):
 
         return UnrolledSequence(
             seq=_seq,
-            sample_count=self.sample_count,
+            sample_count=seq_samples,
             gpa_gain=self.gpa_gain,
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
@@ -595,7 +592,7 @@ class SequenceProvider(Sequence):
 
     def plot_unrolled(
             self, time_range: tuple[float, float] = (0, -1)
-        ) -> tuple[mpl.figure.Figure, np.ndarray] :
+        ) -> tuple[mpl.figure.Figure, np.ndarray]:
         """Plot unrolled waveforms for replay.
 
         Parameters
@@ -610,15 +607,14 @@ class SequenceProvider(Sequence):
         """
         fig, axis = plt.subplots(5, 1, figsize=(16, 9))
 
-        if self._sqnc_cache is not None:
+        if (sqnc := self._sqnc_cache) is None:
             print("No unrolled sequence...")
             return fig, axis
 
         seq_start = int(time_range[0] * self.spcm_freq)
         seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
-        samples = np.arange(self.sample_count, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
+        samples = np.arange(len(sqnc) // 4, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
 
-        sqnc = self._sqnc_cache
         rf_signal = sqnc[0::4][seq_start:seq_end]
         gx_signal = sqnc[1::4][seq_start:seq_end]
         gy_signal = sqnc[2::4][seq_start:seq_end]
