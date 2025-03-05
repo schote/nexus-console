@@ -51,7 +51,7 @@ def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
     # 1D strided convolution
     for k in range(num_ddc_samples):
         # _tmp = np.sum(signal_pad[..., k * decimation : k * decimation + kernel_size] * kernel)
-        _tmp = signal_pad[..., k * decimation : k * decimation + kernel_size] @ kernel
+        _tmp = signal_pad[..., k * decimation: k * decimation + kernel_size] @ kernel
         signal_filtered[..., k] = 2 * _tmp / norm
     return signal_filtered
 
