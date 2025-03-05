@@ -71,11 +71,9 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
 
-        # Define pre and post trigger time.
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
         self.post_trigger = 4096
-        self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
         self.rx_data = []
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
@@ -190,9 +188,9 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
-        # TODO: Double-check, why is the post trigger divided by number of channels and multiplied by 2?
+        # Calculate actual post trigger size depending on the number of active channels
         self.post_trigger = 4096 // self.num_channels.value
-        self.post_trigger_size = self.post_trigger * 2
+
         # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
@@ -302,7 +300,6 @@ class RxCard(SpectrumDevice):
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
         total_gates = 0
-        # bytes_leftover = 0
         total_leftover = 0
 
         # Start receiver
@@ -356,7 +353,7 @@ class RxCard(SpectrumDevice):
 
                 # Check for rounding errors
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
-                # bytes_sequence = (gate_sample + self.pre_trigger + self.post_trigger) * 2 * self.num_channels.value
+                bytes_sequence = (gate_sample + self.pre_trigger + self.post_trigger) * 2 * self.num_channels.value
 
                 # Read available data length and position
                 # TODO: Double-check, why is this required? Values are read again after wait dma command.
@@ -368,7 +365,6 @@ class RxCard(SpectrumDevice):
                 # self.log.debug("Expected adc data in bytes: %s", total_bytes)
                 # self.log.debug("User position (adc buffer): %s", data_user_position.value)
                 # self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
-                # self.log.debug("Left over in bytes: %s", bytes_leftover)
 
                 while not self.is_running.is_set():
 
@@ -390,19 +386,17 @@ class RxCard(SpectrumDevice):
                         total_gates += 1
 
                         byte_position = available_data_position.value // 2
-                        total_bytes_to_read = available_data_bytes.value
-                        index_0 = byte_position + total_leftover // 2
+                        # total_bytes_to_read = available_data_bytes.value
+                        index_0 = byte_position + (total_leftover // 2)
 
-                        if total_bytes_to_read + available_data_position.value >= rx_size:
-                            # self.log.info("total_bytes_to_read + data_user_position.value >= rx_size")
+                        if available_data_bytes.value + available_data_position.value >= rx_size:
                             # >> We need two indices in case of memory position overflows the total memory length
                             # Get the last position available and subtract it from current byte position
                             index_1 = rx_size // 2 - index_0
-
                             # Get the remaining length after overflow. Then subtract it from the total bytes.
                             index_2 = total_bytes_gate // 2 - index_1
 
-                            # Numpy array conversation. Get the first part of the slice
+                            # Get the first part of the slice
                             offset_bytes_1 = index_1 * sizeof(c_short)
                             ptr_to_slice_1 = cast(addressof(rx_data.contents) + offset_bytes_1, POINTER(c_short))
                             slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, ((index_1),))
@@ -416,7 +410,6 @@ class RxCard(SpectrumDevice):
                             gate_data = np.concatenate((slice_1, slice_2))
 
                         else:
-                            # self.log.info("total_bytes_to_read + data_user_position.value < rx_size")
                             # If there is no memory position overflow, just get the data.
                             offset_bytes = index_0 * sizeof(c_short)
                             ptr_to_slice = cast(addressof(rx_data.contents) + offset_bytes, POINTER(c_short))
@@ -427,29 +420,17 @@ class RxCard(SpectrumDevice):
                         gate_data = gate_data[pre_trigger_cut:]
                         self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
-                        # Most probably we have not filled the whole page.
-                        # There should be some bytes in the buffer, which are not readable yet.
-                        # bytes_leftover = (total_bytes_gate + self.post_trigger_size * self.num_channels.value) \
-                        #     % rx_notify.value
 
-                        # Calculate the accumulation of the leftover bytes.
-                        # If it is bigger than the notify value read the page.
-                        # TODO: Double check the following code, is this necessary?
-                        # total_leftover += bytes_leftover
-                        # if total_leftover >= rx_notify.value:
-                        #     # self.log.info("total_leftover >= rx_notify.value")
-                        #     total_leftover = total_leftover - rx_notify.value
-                        #     available_card_len = bytes_sequence - (bytes_leftover) + rx_notify.value
-                        # else:
-                        #     # self.log.info("total_leftover < rx_notify.value")
-                        #     available_card_len = bytes_sequence - (bytes_leftover)
+                        # The accumulation of the leftover bytes is positive, 
+                        # if if the post-trigger event was not fully captured (accumulated sum increases),
+                        # or negative if more then the expected data could be read due to lefter bytes
+                        # from a previous acquisition (accumulated sum decreases).
+                        total_leftover += (bytes_sequence - available_data_bytes.value)
 
-                        # Tell the card that we have read the data.
-                        # It is better for tracking if the card length is in the order of notify (page) size.
+                        # Tell the card that data has been read and the buffer can be reused.
+                        # Using the size of available data bytes prevents invalid values.
                         try:
-                            # TODO: Carefully verify the following change...
                             self.handle_error(
-                                # sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_data_bytes)
                             )
                         except RuntimeError:  # Reraise error for traceability
