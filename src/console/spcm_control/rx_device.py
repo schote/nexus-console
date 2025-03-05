@@ -420,7 +420,6 @@ class RxCard(SpectrumDevice):
                         gate_data = gate_data[pre_trigger_cut:]
                         self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
-
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),
                         # or negative if more then the expected data could be read due to lefter bytes
