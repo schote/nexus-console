@@ -50,8 +50,9 @@ _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for i
 Please follow the project [documentation](https://schote.github.io/nexus-console/) which contains a quick-start guide, some examples and a user guide.
 
 ## Publications
-If you find this useful in your work, please cite:
-Schote D, Silemek B, O'Reilly T, et al. Nexus: A versatile console for advanced low-field MRI. Magn Reson Med. 2025. doi: 10.1002/mrm.30406.
+If you find this useful in your work, please [cite](https://doi.org/10.1002/mrm.30406):
+
+Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. Magn Reson Med. 2025. doi: 10.1002/mrm.30406.
 
 ## Acknowledgments
 
