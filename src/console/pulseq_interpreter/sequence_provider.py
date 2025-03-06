@@ -508,17 +508,23 @@ class SequenceProvider(Sequence):
             waveform_start = block_pos[event_idx] * 4
             waveform_end = block_pos[event_idx + 1] * 4
             if block.gx is not None:  # Gx event
-                _seq[waveform_start + 1:waveform_end + 1:4] = self.calculate_gradient(
+                waveform = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
                 )
+                waveform_samples = np.size(waveform)
+                _seq[waveform_start + 1:waveform_start + 4 * waveform_samples + 1:4] = waveform
             if block.gy is not None:  # Gy event
-                _seq[waveform_start + 2:waveform_end + 2:4] = self.calculate_gradient(
+                waveform = self.calculate_gradient(
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
+                waveform_samples = np.size(waveform)
+                _seq[waveform_start + 2:waveform_start + 4 * waveform_samples + 2:4] = waveform
             if block.gz is not None:  # Gz event
-                _seq[waveform_start + 3:waveform_end + 3:4] = self.calculate_gradient(
+                waveform = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 )
+                waveform_samples = np.size(waveform)
+                _seq[waveform_start + 3:waveform_start + 4 * waveform_samples + 3:4] = waveform
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
