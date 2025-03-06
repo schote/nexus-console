@@ -506,7 +506,6 @@ class SequenceProvider(Sequence):
             block = self.get_block(event_key)
             # Calculate gradient waveform start and end positions according to block position
             waveform_start = block_pos[event_idx] * 4
-            waveform_end = block_pos[event_idx + 1] * 4
             if block.gx is not None:  # Gx event
                 waveform = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
