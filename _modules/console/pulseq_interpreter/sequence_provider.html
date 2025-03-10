@@ -523,8 +523,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_limits</span> <span class="k">if</span> <span class="n">output_limits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="SequenceProvider.dict">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.dict">[docs]</a>
@@ -538,7 +537,6 @@
             <span class="s2">&quot;gradient_efficiency&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
             <span class="s2">&quot;output_limits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">,</span>
             <span class="s2">&quot;larmor_freq&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">,</span>
-            <span class="s2">&quot;sample_count&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span>
         <span class="p">}</span></div>
 
 
@@ -583,11 +581,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_rf</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span>
-        <span class="n">unroll_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
         <span class="n">b1_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-        <span class="n">unblanking</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-        <span class="n">num_samples_rf_start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate RF sample points to be played by TX card.</span>
 
 <span class="sd">        Parameters</span>
@@ -600,13 +595,10 @@
 <span class="sd">            Experiment dependent scaling factor of the RF amplitude</span>
 <span class="sd">        unblanking</span>
 <span class="sd">            Unblanking signal which is updated in-place for the calculated RF event</span>
-<span class="sd">        num_samples_rf_start</span>
-<span class="sd">            Number of samples until the first RF event in the sequence.</span>
-<span class="sd">            This value is important to calculate the correct carrier wave phase offset.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">            Array with sample points of RF waveform as int16 values</span>
+<span class="sd">            List with the RF pulse in the first element, and the unblanking signal in the second element</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -622,19 +614,20 @@
 
         <span class="c1"># Calculate the number of delay samples before an RF event (and unblanking)</span>
         <span class="c1"># Dead-time is automatically set as delay! Delay accounts for start of RF event</span>
-        <span class="n">num_samples_delay</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">delay</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
+        <span class="n">num_samples_delay</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">delay</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
         <span class="c1"># Calculate the number of dead-time samples between unblanking and RF event</span>
         <span class="c1"># Delay - dead-time samples account for start of unblanking</span>
-        <span class="n">num_samples_dead_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
+        <span class="n">num_samples_dead_time</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
         <span class="c1"># Calculate the number of ringdown samples at the end of RF pulse</span>
         <span class="c1"># num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)</span>
         <span class="c1"># Calculate the number of RF shape sample points</span>
-        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
+        <span class="n">num_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
 
         <span class="c1"># Set unblanking signal: 16th bit set to 1 (high)</span>
-        <span class="n">unblanking_start</span> <span class="o">=</span> <span class="n">num_samples_delay</span> <span class="o">-</span> <span class="n">num_samples_dead_time</span>
-        <span class="n">unblanking_end</span> <span class="o">=</span> <span class="n">num_samples_delay</span> <span class="o">+</span> <span class="n">num_samples</span>
-        <span class="n">unblanking</span><span class="p">[</span><span class="n">unblanking_start</span><span class="p">:</span><span class="n">unblanking_end</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">rf_unblanking_start</span> <span class="o">=</span> <span class="n">num_samples_delay</span> <span class="o">-</span> <span class="n">num_samples_dead_time</span>
+        <span class="n">rf_unblanking_end</span> <span class="o">=</span> <span class="n">num_samples_delay</span> <span class="o">+</span> <span class="n">num_samples</span>
+        <span class="n">rf_unblanking</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">rf_unblanking_end</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+        <span class="n">rf_unblanking</span><span class="p">[</span><span class="n">rf_unblanking_start</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span>
 
         <span class="c1"># Calculate the static phase offset, defined by RF pulse</span>
         <span class="n">phase_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">phase_offset</span><span class="p">)</span>
@@ -655,32 +648,23 @@
         <span class="c1"># Resampling of scaled complex envelope</span>
         <span class="n">envelope</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">envelope_scaled</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
 
-        <span class="c1"># Calculate phase offset of RF according to total sample count</span>
-        <span class="n">carrier_phase_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">+</span> <span class="n">num_samples_delay</span> <span class="o">-</span> <span class="n">num_samples_rf_start</span>
-        <span class="n">carrier_phase_offset</span> <span class="o">=</span> <span class="n">carrier_phase_samples</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
-
         <span class="c1"># Only precalculate carrier time array, calculate carriere here to take into account the</span>
         <span class="c1"># frequency and phase offsets of an RF block event</span>
         <span class="n">carrier_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
-        <span class="n">carrier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">+</span> <span class="n">block</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">carrier_time</span> <span class="o">+</span> <span class="n">carrier_phase_offset</span><span class="p">))</span>
+        <span class="n">carrier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">+</span> <span class="n">block</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">carrier_time</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Calculate position indices for unrolled RF event</span>
-            <span class="n">idx_signal_end</span> <span class="o">=</span> <span class="n">num_samples_delay</span> <span class="o">+</span> <span class="n">num_samples</span>
-            <span class="c1"># Check if end index of unrolled signal exceeds available array dimension</span>
-            <span class="k">if</span> <span class="n">idx_signal_end</span> <span class="o">&gt;</span> <span class="n">unroll_arr</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Unrolled RF event exceeds number of block samples&quot;</span><span class="p">)</span>
-            <span class="c1"># Write unrolled RF event in place</span>
-            <span class="n">unroll_arr</span><span class="p">[</span><span class="n">num_samples_delay</span><span class="p">:</span><span class="n">idx_signal_end</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">envelope</span> <span class="o">*</span> <span class="n">carrier</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+            <span class="n">waveform_rf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">num_samples_delay</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">complex</span><span class="p">),</span> <span class="p">(</span><span class="n">envelope</span> <span class="o">*</span> <span class="n">carrier</span><span class="p">)))</span>
         <span class="k">except</span> <span class="ne">IndexError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">err</span></div>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">waveform_rf</span><span class="p">,</span> <span class="n">rf_unblanking</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SequenceProvider.calculate_gradient">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_gradient">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate spectrum-card sample points of a pypulseq gradient block event.</span>
 
 <span class="sd">        Parameters</span>
@@ -702,19 +686,11 @@
 <span class="sd">        ValueError</span>
 <span class="sd">            Invalid block type (must be either ``grad`` or ``trap``),</span>
 <span class="sd">            gradient amplitude exceeds channel maximum output level</span>
-<span class="sd">        IndexError</span>
-<span class="sd">            Unrolled gradient waveform does not fit in unrolled array shape</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Both gradient types have a delay, calculate delay in number of samples</span>
-        <span class="n">samples_delay</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
         <span class="c1"># Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1</span>
         <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">channel</span><span class="p">)</span>
 
-        <span class="c1"># Calculate gradient offset int16 value from mV</span>
-        <span class="c1"># block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel</span>
-        <span class="n">offset</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">channel</span><span class="p">)</span> <span class="o">/</span> <span class="n">INT16_MAX</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
-
-        <span class="c1"># Calculat gradient waveform scaling</span>
+        <span class="c1"># Calculate gradient waveform scaling</span>
         <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mf">42.58e3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -722,7 +698,7 @@
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;grad&quot;</span><span class="p">:</span>
                 <span class="c1"># Arbitrary gradient waveform, interpolate linearly</span>
                 <span class="c1"># This function requires float input =&gt; cast to int16 afterwards</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">waveform</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scaling</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">waveform</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scaling</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                         <span class="s2">&quot;Amplitude of </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">) gradient exceeded output limit (</span><span class="si">%s</span><span class="s2">)&quot;</span>
                         <span class="o">%</span> <span class="p">(</span>
@@ -731,45 +707,41 @@
                             <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
-                <span class="c1"># Trasnfer mV floating point waveform values to int16 if amplitude check passed</span>
+                <span class="c1"># Transfer mV floating point waveform values to int16 if amplitude check passed</span>
                 <span class="n">waveform</span> <span class="o">*=</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
                 <span class="n">gradient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
                     <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
                         <span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                         <span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-                        <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
+                        <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
                     <span class="p">),</span>
                     <span class="n">xp</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">,</span>
                     <span class="n">fp</span><span class="o">=</span><span class="n">waveform</span><span class="p">,</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+                <span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;trap&quot;</span><span class="p">:</span>
                 <span class="c1"># Construct trapezoidal gradient from rise, flat and fall sections</span>
-                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">flat_amp</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">*</span> <span class="n">scaling</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">flat_amp</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">*</span> <span class="n">scaling</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Amplitude of </span><span class="si">{</span><span class="n">block</span><span class="o">.</span><span class="n">channel</span><span class="si">}</span><span class="s2"> gradient exceeded max. amplitude </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
-
-                <span class="c1"># Trasnfer mV floating point flat amplitude to int16 if amplitude check passed</span>
-                <span class="n">flat_amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">(</span><span class="n">flat_amp</span> <span class="o">*</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="c1"># Transfer mV floating point flat amplitude to int16 if amplitude check passed</span>
+                <span class="n">flat_amp</span> <span class="o">=</span> <span class="n">flat_amp</span> <span class="o">*</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
                 <span class="n">rise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
                     <span class="mi">0</span><span class="p">,</span>
                     <span class="n">flat_amp</span><span class="p">,</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">rise_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+                    <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">rise_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">)</span>
                 <span class="p">)</span>
                 <span class="n">flat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">flat_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
-                    <span class="n">fill_value</span><span class="o">=</span><span class="n">flat_amp</span><span class="p">,</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+                    <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">flat_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
+                    <span class="n">fill_value</span><span class="o">=</span><span class="n">flat_amp</span>
                 <span class="p">)</span>
                 <span class="n">fall</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
                     <span class="n">flat_amp</span><span class="p">,</span>
                     <span class="mi">0</span><span class="p">,</span>
-                    <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">fall_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span>
-                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">,</span>
+                    <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">fall_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">)</span>
                 <span class="p">)</span>
 
                 <span class="n">gradient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">rise</span><span class="p">,</span> <span class="n">flat</span><span class="p">,</span> <span class="n">fall</span><span class="p">))</span>
@@ -777,49 +749,70 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Block is not a valid gradient block&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Check if gradient waveform fits into unroll array space</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">index_end</span> <span class="o">:=</span> <span class="n">samples_delay</span> <span class="o">+</span> <span class="n">gradient</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">unroll_arr</span><span class="o">.</span><span class="n">size</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;Unrolled gradient event exceeds number of block samples&quot;</span><span class="p">)</span>
+            <span class="c1"># Calculate gradient offset int16 value from mV</span>
+            <span class="c1"># block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel</span>
+            <span class="c1"># Gradient offset is used for calculating output limits but is not added to the waveform</span>
+            <span class="n">offset</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">channel</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">*=</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
-            <span class="c1"># Add gradient waveform (trapezoid or arbitrary) in place</span>
-            <span class="n">unroll_arr</span><span class="p">[</span><span class="n">samples_delay</span><span class="p">:</span><span class="n">index_end</span><span class="p">]</span> <span class="o">=</span> <span class="n">gradient</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">gradient</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">INT16_MAX</span><span class="p">:</span>
+                <span class="n">max_strength</span> <span class="o">=</span> <span class="n">gradient</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">gradient</span> <span class="o">+</span> <span class="n">offset</span><span class="p">))]</span> <span class="o">+</span> <span class="n">offset</span>
+                <span class="c1"># Report maximum strength in mV</span>
+                <span class="n">max_strength</span> <span class="o">/=</span> <span class="p">(</span><span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Amplitude of combined gradient and shim waveforms </span><span class="si">{</span><span class="n">max_strength</span><span class="si">}</span><span class="s2"> exceed max gradient amplitude&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">gradient</span> <span class="o">=</span> <span class="n">gradient</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+            <span class="c1"># Shifting gradient waveform to 15 bits already for adding the gate signals later</span>
+            <span class="k">return</span> <span class="n">gradient</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
 
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span></div>
 
 
-<div class="viewcode-block" id="SequenceProvider.add_adc_gate">
-<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.add_adc_gate">[docs]</a>
+<div class="viewcode-block" id="SequenceProvider.get_adc_events">
+<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.get_adc_events">[docs]</a>
     <span class="nd">@profile</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_adc_gate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SimpleNamespace</span><span class="p">,</span> <span class="n">gate</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">clk_ref</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add ADC gate signal and reference signal during gate inplace to gate and reference arrays.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_adc_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract ADC &#39;waveforms&#39; from the sequence.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        block</span>
-<span class="sd">            ADC event of sequence block.</span>
-<span class="sd">        gate</span>
-<span class="sd">            Gate array, predefined by zeros. If ADC event is present, the corresponding range is set to one.</span>
-<span class="sd">        clk_ref</span>
-<span class="sd">            Phase reference array, predefined by zeros. Digital signal during ADC which encodes the signal phase.</span>
+<span class="sd">        TODO: Add error checks</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            list: List of with waveform ID, gate signal and reference signal for each unique ADC event.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">delay</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
-        <span class="n">adc_dur</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">dwell</span>
-        <span class="n">adc_len</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">adc_dur</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
-        <span class="c1"># Gate signal</span>
-        <span class="n">gate</span><span class="p">[</span><span class="n">delay</span> <span class="p">:</span> <span class="n">delay</span> <span class="o">+</span> <span class="n">adc_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">adc_waveforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc_library</span>
+        <span class="n">adc_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">adc_waveform</span> <span class="ow">in</span> <span class="n">adc_waveforms</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dwell_time</span> <span class="o">=</span> <span class="n">adc_waveform</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">num_samples</span> <span class="o">=</span> <span class="n">adc_waveform</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">delay</span> <span class="o">=</span> <span class="n">adc_waveform</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">delay_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
+            <span class="n">gate_duration</span> <span class="o">=</span> <span class="n">num_samples</span> <span class="o">*</span> <span class="n">dwell_time</span>
+            <span class="n">gate_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_duration</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
+            <span class="n">waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">delay_samples</span> <span class="o">+</span> <span class="n">gate_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+            <span class="n">waveform</span><span class="p">[</span><span class="n">delay_samples</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span>
+            <span class="n">time_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">gate_samples</span> <span class="o">+</span> <span class="n">delay_samples</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span>
+            <span class="n">ref_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">time_scale</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span><span class="p">)</span>
+            <span class="n">adc_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">adc_waveform</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">waveform</span><span class="p">,</span> <span class="n">ref_signal</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">adc_list</span></div>
 
-        <span class="c1"># Calculate reference signal with phase offset (dependent on total number of samples at beginning of adc)</span>
-        <span class="n">offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
-        <span class="n">ref_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">clk_ref</span><span class="o">.</span><span class="n">size</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
 
-        <span class="c1"># Time consuming operation, if computed over the whole gate</span>
-        <span class="c1"># Instead limit to max(clk_ref.size, 2000) to use at most the first 2000 samples for phase synchronization</span>
-        <span class="c1"># 2000 samples == 0.1 ms, at 2 MHz this still covers 200 cycles</span>
-        <span class="n">ref_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">larmor_freq</span> <span class="o">*</span> <span class="n">ref_time</span> <span class="o">+</span> <span class="n">offset</span><span class="p">))</span>
-        <span class="c1"># Digital reference signal, sin &gt; 0 is high, 16th bit set to 1 (high)</span>
-        <span class="n">clk_ref</span><span class="p">[</span><span class="n">ref_signal</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
+<div class="viewcode-block" id="SequenceProvider.get_rf_events">
+<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.get_rf_events">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_rf_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract RF &#39;waveforms&#39; from sequence file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            list: list of unique RF events.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rf_waveforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_library</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">rf_pulse</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="o">.</span><span class="n">rf_from_lib_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_pulse</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">rf_pulse</span> <span class="ow">in</span> <span class="n">rf_waveforms</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span></div>
 
 
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
@@ -887,8 +880,7 @@
 
 <span class="sd">        As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Check larmor frequency</span>
@@ -910,70 +902,119 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
-        <span class="c1"># Get all blocks in a list and pre-calculate number of sample points per block</span>
-        <span class="c1"># to allocate empty sequence array.</span>
-        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
-        <span class="n">samples_per_block</span> <span class="o">=</span> <span class="p">[</span><span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">block_duration</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">)</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">]</span>
+        <span class="c1"># Get list of all events and list of unique RF and ADC events, since they are frequently reused</span>
+        <span class="n">events_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_events</span>
+        <span class="n">adc_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_adc_events</span><span class="p">()</span>
+        <span class="n">rf_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rf_events</span><span class="p">()</span>
 
-        <span class="c1"># Internal list of arrays to store sequence and digital signals</span>
-        <span class="c1"># Empty list of list, 4 channels =&gt; 4 times n_samples</span>
-        <span class="c1"># Sequence, ADC events, unblanking and reference signal (for phase synchronization)</span>
-        <span class="n">_seq</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
-        <span class="n">_adc</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
-        <span class="n">_unblanking</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
-        <span class="n">_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">samples_per_block</span><span class="p">]</span>
+        <span class="c1"># Calculate rf pulse and unblanking waveforms from RF event</span>
+        <span class="c1"># Should probably be moved inside of get_rf_events()</span>
+        <span class="n">rf_pulses</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">rf_event</span> <span class="ow">in</span> <span class="n">rf_events</span><span class="p">:</span>
+            <span class="n">rf_pulses</span><span class="p">[</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rf</span><span class="p">(</span>
+                <span class="n">block</span><span class="o">=</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">b1_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span>
+            <span class="p">)</span>
+
+        <span class="n">seq_duration</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span>
+        <span class="n">seq_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">seq_duration</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">))</span>
+
+        <span class="c1"># Calculate the start time (and sample position) and duration of each block</span>
+        <span class="n">block_durations</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">block_idx</span><span class="p">)</span><span class="o">.</span><span class="n">block_duration</span> <span class="k">for</span> <span class="n">block_idx</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">events_list</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span>
+        <span class="n">block_durations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">block_durations</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">block_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">block_durations</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+        <span class="n">block_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">block_pos</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">seq_samples</span> <span class="o">!=</span> <span class="n">block_pos</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span>
+                <span class="s2">&quot;Number of sequence samples does not match total number of block samples&quot;</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Setup output arrays</span>
+        <span class="n">_seq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">seq_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="n">_adc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">seq_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+        <span class="n">_unblanking</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">seq_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
 
         <span class="c1"># Count the total number of sample points and gate signals</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">adc_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">rf_start_sample_pos</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="n">block</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">samples_per_block</span><span class="p">,</span> <span class="n">blocks</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">event_idx</span><span class="p">,</span> <span class="p">(</span><span class="n">event_key</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">events_list</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">event_key</span><span class="p">)</span>
+            <span class="c1"># Calculate gradient waveform start and end positions according to block position</span>
+            <span class="n">waveform_start</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Gx event</span>
+                <span class="n">waveform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gx</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">x</span>
+                <span class="p">)</span>
+                <span class="n">waveform_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">waveform_samples</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">waveform</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Gy event</span>
+                <span class="n">waveform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">y</span>
+                <span class="p">)</span>
+                <span class="n">waveform_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">waveform_samples</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">waveform</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Gz event</span>
+                <span class="n">waveform</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="p">,</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">z</span>
+                <span class="p">)</span>
+                <span class="n">waveform_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">waveform_start</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">waveform_samples</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">waveform</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># RF event</span>
+                <span class="c1"># Pre-calculated RF event size can be shorter than the duration of the block since it doesn&#39;t</span>
+                <span class="c1"># consider the post-pulse ring-down time. The RF waveform is placed at the start of the block</span>
+                <span class="c1"># and the array is then sliced using the duration of the RF waveform to ensure a good fit</span>
+                <span class="n">rf_waveform</span> <span class="o">=</span> <span class="n">rf_pulses</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">rf_unblanking</span> <span class="o">=</span> <span class="n">rf_pulses</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c1"># Every 4th value in _seq starting at index 0 belongs to RF</span>
                 <span class="k">if</span> <span class="n">rf_start_sample_pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">rf_start_sample_pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_rf</span><span class="p">(</span>
-                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">,</span>
-                    <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span>
-                    <span class="n">unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
-                    <span class="n">b1_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
-                    <span class="n">num_samples_rf_start</span><span class="o">=</span><span class="n">rf_start_sample_pos</span><span class="p">,</span>
-                <span class="p">)</span>
+                    <span class="n">rf_start_sample_pos</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span>  <span class="c1"># Store location of first RF event for ref offset</span>
 
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">add_adc_gate</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="p">,</span> <span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">_ref</span><span class="p">[</span><span class="n">k</span><span class="p">])</span>
+                <span class="c1"># Get the delay before the RF pulse starts</span>
+                <span class="n">start_delay</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">dead_time</span><span class="p">,</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="o">.</span><span class="n">delay</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
+                <span class="c1"># Calculate phase offset of RF according to total sample count</span>
+                <span class="n">carrier_sample_offset</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">start_delay</span> <span class="o">-</span> <span class="n">rf_start_sample_pos</span>
+                <span class="n">carrier_phase_offset</span> <span class="o">=</span> <span class="n">carrier_sample_offset</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
+                <span class="n">rf_waveform</span> <span class="o">=</span> <span class="p">(</span><span class="n">rf_waveform</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">carrier_phase_offset</span><span class="p">))</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+                <span class="n">rf_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">rf_waveform</span><span class="p">)</span>  <span class="c1"># Get size of the RF waveform</span>
+                <span class="k">if</span> <span class="n">rf_size</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]):</span>
+                    <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="s2">&quot;RF waveform size exceeds block size.&quot;</span><span class="p">)</span>
+
+                <span class="c1"># Calculate RF waveform start and end positions according to block position</span>
+                <span class="n">rf_start</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="n">rf_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">rf_size</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+
+                <span class="c1"># Add RF waveform</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span><span class="p">:</span><span class="n">rf_end</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rf_waveform</span>
+                <span class="c1"># Add deblanking signal to Z gradient</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">rf_unblanking</span>
+
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># ADC event</span>
                 <span class="n">adc_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">adc_waveform</span> <span class="o">=</span> <span class="n">adc_events</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Grab the ADC event from the pre-calculated list</span>
+                <span class="n">ref_signal</span> <span class="o">=</span> <span class="n">adc_events</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># Pulseq is 1 indexed, shift idx by -1 for correct event</span>
 
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># Every 4th value in _seq starting at index 1 belongs to x gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
-                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gx</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">x</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># Every 4th value in _seq starting at index 2 belongs to y gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
-                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">y</span>
-                <span class="p">)</span>
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">gz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># Every 4th value in _seq starting at index 3 belongs to z gradient</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">calculate_gradient</span><span class="p">(</span>
-                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="p">,</span> <span class="n">unroll_arr</span><span class="o">=</span><span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">],</span> <span class="n">fov_scaling</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">fov_scaling</span><span class="o">.</span><span class="n">z</span>
-                <span class="p">)</span>
+                <span class="c1"># Calculate ADC start and end positions according to block position</span>
+                <span class="n">adc_start</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="n">adc_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">adc_waveform</span><span class="p">))</span> <span class="o">*</span> <span class="mi">4</span>
 
-            <span class="c1"># Bitwise operations to merge gx with adc and gy with unblanking</span>
-            <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_adc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
-            <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_ref</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
-            <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span> <span class="o">|</span> <span class="p">(</span><span class="n">_unblanking</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">)</span>
+                <span class="c1"># Add ADC gate to X gradient</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">adc_waveform</span>
 
-            <span class="c1"># Count the total amount of samples (for one channel) to keep track of the phase</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span> <span class="o">+=</span> <span class="n">n_samples</span>
+                <span class="c1"># Create ref signal in ADC waveform</span>
+                <span class="n">time_offset</span> <span class="o">=</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
+                <span class="n">ref_signal</span> <span class="o">=</span> <span class="n">ref_signal</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">time_offset</span><span class="p">)</span>
+                <span class="n">ref_waveform</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref_signal</span><span class="o">.</span><span class="n">real</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+
+                <span class="c1"># Add ref signal to Y gradient</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">ref_waveform</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
             <span class="s2">&quot;Unrolled sequence; Total sample points: </span><span class="si">%s</span><span class="s2">; Total block events: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span><span class="p">,</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">blocks</span><span class="p">),</span>
+            <span class="n">seq_samples</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">block_durations</span><span class="p">),</span>
         <span class="p">)</span>
 
         <span class="c1"># Save unrolled sequence in class</span>
@@ -981,9 +1022,7 @@
 
         <span class="k">return</span> <span class="n">UnrolledSequence</span><span class="p">(</span>
             <span class="n">seq</span><span class="o">=</span><span class="n">_seq</span><span class="p">,</span>
-            <span class="n">adc_gate</span><span class="o">=</span><span class="n">_adc</span><span class="p">,</span>
-            <span class="n">rf_unblanking</span><span class="o">=</span><span class="n">_unblanking</span><span class="p">,</span>
-            <span class="n">sample_count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span><span class="p">,</span>
+            <span class="n">sample_count</span><span class="o">=</span><span class="n">seq_samples</span><span class="p">,</span>
             <span class="n">gpa_gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
             <span class="n">gradient_efficiency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
             <span class="n">rf_to_mvolt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
@@ -1013,15 +1052,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sqnc</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No unrolled sequence...&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span>
 
         <span class="n">seq_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
         <span class="n">seq_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span> <span class="k">if</span> <span class="n">time_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_count</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">*</span> <span class="mf">1e3</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sqnc</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">*</span> <span class="mf">1e3</span>
 
-        <span class="n">sqnc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">)</span>
         <span class="n">rf_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
         <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
         <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
@@ -1033,9 +1071,9 @@
 
         <span class="c1"># Get gradient waveforms</span>
         <span class="n">rf_signal</span> <span class="o">=</span> <span class="n">rf_signal</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">)</span>
-        <span class="n">gx_signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gx_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span>
-        <span class="n">gy_signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gy_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span>
-        <span class="n">gz_signal</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gz_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span>
+        <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gx_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+        <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gy_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+        <span class="n">gz_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gz_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
 
         <span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rf_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">axis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">gx_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>

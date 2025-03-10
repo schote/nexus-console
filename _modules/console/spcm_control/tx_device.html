@@ -734,7 +734,7 @@
             <span class="c1"># Data must have a default value as start_operation is an abstract method and data is optional</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No unrolled sequence data provided.&quot;</span><span class="p">)</span>
-            <span class="n">sqnc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+            <span class="n">sqnc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">seq</span>
 
             <span class="c1"># Check if sequence datatype is valid</span>
             <span class="k">if</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
