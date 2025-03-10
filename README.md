@@ -49,5 +49,16 @@ _Hint: Multiple dependency groups can be installed using `".[lint, test]"` for i
 
 Please follow the project [documentation](https://schote.github.io/nexus-console/) which contains a quick-start guide, some examples and a user guide.
 
+## Publications
+If you find this useful in your work, please [cite](https://doi.org/10.1002/mrm.30406):
+
+Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. Magn Reson Med. 2025. doi: 10.1002/mrm.30406.
+
+## Acknowledgments
+
+This work is part of the Metrology for Artificial Intelligence for Medicine (M4AIM) project, which is funded by the Federal Ministry of Economic Affairs and Climate Action (BMWK) as part of the QI-Digital initiative. 
+The projects 21NRM05 STASIS and 22HLT02 A4IM have received funding from the European Partnership on Metrology, cofinanced by the European Union's Horizon Europe Research and Innovation Program and by the Participating States. 
+Partial support for this project is provided by a European Research Council Advanced Grant (PASMAR 101021218).
+This work is supported by the Open Source Imaging Initiative (OSI²)
 
 ---
