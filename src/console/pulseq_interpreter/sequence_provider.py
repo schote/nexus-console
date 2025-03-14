@@ -365,9 +365,11 @@ class SequenceProvider(Sequence):
         adc_waveforms = self.adc_library
         adc_list = []
         for adc_waveform in adc_waveforms.data.items():
-            dwell_time = adc_waveform[1][0]
-            num_samples = adc_waveform[1][1]
+            num_samples = adc_waveform[1][0]
+            dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
+            freq_offset = adc_waveform[1][3]
+            phase_offset = adc_waveform[1][4]
             delay_samples = int(round(delay * self.spcm_freq))
             gate_duration = num_samples * dwell_time
             gate_samples = int(round(gate_duration * self.spcm_freq))
@@ -375,7 +377,7 @@ class SequenceProvider(Sequence):
             waveform[delay_samples:] = 2**15
             time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
             ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
-            adc_list.append((adc_waveform[0], waveform, ref_signal))
+            adc_list.append((adc_waveform[0], waveform, ref_signal, freq_offset, phase_offset))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -505,8 +507,8 @@ class SequenceProvider(Sequence):
 
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
-        _adc = np.zeros(seq_samples, dtype=np.uint16)
-        _unblanking = np.zeros(seq_samples, dtype=np.uint16)
+        _rx_freq_offset = []
+        _rx_phase_offset = []
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
@@ -569,6 +571,9 @@ class SequenceProvider(Sequence):
                 adc_waveform = adc_events[event[5] - 1][1]  # Grab the ADC event from the pre-calculated list
                 ref_signal = adc_events[event[5] - 1][2]  # Pulseq is 1 indexed, shift idx by -1 for correct event
 
+                _rx_freq_offset.append(adc_events[event[5] - 1][3])
+                _rx_phase_offset.append(adc_events[event[5] - 1][4])
+
                 # Calculate ADC start and end positions according to block position
                 adc_start = block_pos[event_idx] * 4
                 adc_end = (block_pos[event_idx] + np.size(adc_waveform)) * 4
@@ -595,6 +600,8 @@ class SequenceProvider(Sequence):
 
         return UnrolledSequence(
             seq=_seq,
+            rx_phase_offset = _rx_phase_offset,
+            rx_freq_offset = _rx_freq_offset,
             sample_count=seq_samples,
             gpa_gain=self.gpa_gain,
             gradient_efficiency=self.grad_eff,

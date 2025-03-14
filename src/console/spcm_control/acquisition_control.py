@@ -352,6 +352,9 @@ class AcquisitionControl:
             # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
             data = data * np.exp(-1j * np.angle(ref_dec))
 
+            # Correct for Rx phase
+            data = data * np.exp(-1j * np.array(self.unrolled_seq.rx_phase_offset))[:,np.newaxis]
+
             # Append to global raw data list
             if raw_size > 0:
                 self._raw[k] = np.concatenate((self._raw[k], data[None, ...]), axis=0)
