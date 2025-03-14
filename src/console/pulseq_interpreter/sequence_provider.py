@@ -550,7 +550,7 @@ class SequenceProvider(Sequence):
                 start_delay = round(max(block.rf.dead_time, block.rf.delay) * self.spcm_freq)
                 # Calculate phase offset of RF according to total sample count
                 carrier_sample_offset = block_pos[event_idx] + start_delay - rf_start_sample_pos
-                carrier_phase_offset = carrier_sample_offset * self.spcm_dwell_time
+                carrier_phase_offset = carrier_sample_offset * self.larmor_freq
                 rf_waveform = (rf_waveform * np.exp(2j * np.pi * carrier_phase_offset)).real.astype(np.int16)
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
