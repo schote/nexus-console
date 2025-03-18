@@ -101,6 +101,8 @@ class AcquisitionControl:
         self.f_spcm = self.rx_card.sample_rate * 1e6
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
+        # Pass the ring buffer size to sequence provider
+        self.seq_provider.ring_buffer_size = self.tx_card.ring_buffer_size
 
         self.unrolled_seq: UnrolledSequence | None = None
 

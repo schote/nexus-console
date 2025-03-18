@@ -84,6 +84,8 @@ class SequenceProvider(Sequence):
         self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
 
+        self.ring_buffer_size: int | None = None
+
         try:
             if len(gradient_efficiency) != 3:
                 raise ValueError("Invalid number of gradient efficiency values, 3 values must be provided")
@@ -493,8 +495,20 @@ class SequenceProvider(Sequence):
                 "Number of sequence samples does not match total number of block samples"
             )
 
+        if self.ring_buffer_size is not None:
+            # Ensure the size of the sequence array is an integer multiple of ring buffer size
+            seq_mem_size = 4 * seq_samples * 2  # Calulate the size in memory of the sequence array
+            mem_mismatch = seq_mem_size % self.ring_buffer_size.value
+            if mem_mismatch > 0:
+                self.log.debug("Sequence array size is not an integer multiple of ring buffer size")
+                append_bytes = self.ring_buffer_size.value - mem_mismatch
+                append_samples = int(append_bytes/2)  # Each sample is 2 bytes
+                self.log.debug(f"Appending {append_samples} samples to the sequence array")
+        else:
+            append_samples = 0
+
         # Setup output arrays
-        _seq = np.zeros(4 * seq_samples, dtype=np.int16)
+        _seq = np.zeros(4 * seq_samples + append_samples, dtype=np.int16)
         _adc = np.zeros(seq_samples, dtype=np.uint16)
         _unblanking = np.zeros(seq_samples, dtype=np.uint16)
 
