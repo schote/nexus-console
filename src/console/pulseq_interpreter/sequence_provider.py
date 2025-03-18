@@ -502,7 +502,7 @@ class SequenceProvider(Sequence):
             if mem_mismatch > 0:
                 self.log.debug("Sequence array size is not an integer multiple of ring buffer size")
                 append_bytes = self.ring_buffer_size.value - mem_mismatch
-                append_samples = int(append_bytes/2)  # Each sample is 2 bytes
+                append_samples = int(append_bytes / 2)  # Each sample is 2 bytes
                 self.log.debug(f"Appending {append_samples} samples to the sequence array")
         else:
             append_samples = 0
