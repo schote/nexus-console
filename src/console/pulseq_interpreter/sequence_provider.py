@@ -512,7 +512,6 @@ class SequenceProvider(Sequence):
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
-        rf_start_sample_pos: int | None = None
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
@@ -540,18 +539,8 @@ class SequenceProvider(Sequence):
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
-                rf_waveform = rf_pulses[event[1]][0]
+                rf_waveform = rf_pulses[event[1]][0].real.astype(np.int16)
                 rf_unblanking = rf_pulses[event[1]][1]
-
-                if rf_start_sample_pos is None:
-                    rf_start_sample_pos = block_pos[event_idx]  # Store location of first RF event for ref offset
-
-                # Get the delay before the RF pulse starts
-                start_delay = round(max(block.rf.dead_time, block.rf.delay) * self.spcm_freq)
-                # Calculate phase offset of RF according to total sample count
-                carrier_sample_offset = block_pos[event_idx] + start_delay - rf_start_sample_pos
-                carrier_phase_offset = carrier_sample_offset * self.larmor_freq
-                rf_waveform = (rf_waveform * np.exp(2j * np.pi * carrier_phase_offset)).real.astype(np.int16)
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[event_idx + 1] - block_pos[event_idx]):
@@ -569,7 +558,6 @@ class SequenceProvider(Sequence):
             if block.adc is not None:  # ADC event
                 adc_count += 1
                 adc_waveform = adc_events[event[5] - 1][1]  # Grab the ADC event from the pre-calculated list
-                ref_signal = adc_events[event[5] - 1][2]  # Pulseq is 1 indexed, shift idx by -1 for correct event
 
                 _rx_freq_offset.append(adc_events[event[5] - 1][3])
                 _rx_phase_offset.append(adc_events[event[5] - 1][4])
@@ -580,14 +568,6 @@ class SequenceProvider(Sequence):
 
                 # Add ADC gate to X gradient
                 _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
-
-                # Create ref signal in ADC waveform
-                time_offset = block_pos[event_idx] * self.spcm_dwell_time
-                ref_signal = ref_signal * np.exp(2j * np.pi * time_offset)
-                ref_waveform = (ref_signal.real > 0) * (2**15)
-
-                # Add ref signal to Y gradient
-                _seq[adc_start + 2:adc_end + 2:4] = _seq[adc_start + 2:adc_end + 2:4] | ref_waveform
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",

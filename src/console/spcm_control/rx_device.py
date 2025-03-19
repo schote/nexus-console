@@ -87,7 +87,7 @@ class RxCard(SpectrumDevice):
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     def setup_card(self):
-        """Set up spectrum card in transmit (TX) mode.
+        """Set up spectrum card in transmit (Rx) mode.
 
         At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
         defined by the class attribute.

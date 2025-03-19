@@ -312,15 +312,9 @@ class AcquisitionControl:
         scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
 
         for k, data in enumerate(gate_lengths):
-            # Extract digital reference signal from channel 0
-            _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
 
             # Remove digital signal from channel 0
-            data[0, ...] = data[0, ...] << 1
-            data = data.astype(np.int16) * scaling
-
-            # Stack signal and reference in coil dimension
-            data = np.concatenate((data, _ref), axis=0)
+            data = data * scaling
 
             # Append unprocessed data without post processing (last coil dimension entry contains reference)
             if raw_size > 0:
@@ -333,11 +327,6 @@ class AcquisitionControl:
             # Demodulation and decimation
             data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
-            # Always decimate the reference signal with moving average filter
-            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
-            # Extract the demodulated signal data
-            data = data[:-1, ...]
-
             # Switch case for DDC function
             match parameter.ddc_method:
                 case DDCMethod.CIC:
@@ -347,10 +336,6 @@ class AcquisitionControl:
                 case _:
                     # Default case is FIR decimation
                     data = signal.decimate(data, q=parameter.decimation, ftype="fir")
-
-            # Apply phase correction with mean value
-            # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
-            data = data * np.exp(-1j * np.angle(ref_dec))
 
             # Correct for Rx phase
             data = data * np.exp(-1j * np.array(self.unrolled_seq.rx_phase_offset))[:,np.newaxis]
