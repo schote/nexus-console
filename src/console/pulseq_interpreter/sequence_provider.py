@@ -580,8 +580,8 @@ class SequenceProvider(Sequence):
 
         return UnrolledSequence(
             seq=_seq,
-            rx_phase_offset = _rx_phase_offset,
-            rx_freq_offset = _rx_freq_offset,
+            rx_phase_offset=_rx_phase_offset,
+            rx_freq_offset=_rx_freq_offset,
             sample_count=seq_samples,
             gpa_gain=self.gpa_gain,
             gradient_efficiency=self.grad_eff,
