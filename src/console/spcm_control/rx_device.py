@@ -84,7 +84,7 @@ class RxCard(SpectrumDevice):
         self.post_trigger = 4096
 
         self.rx_data: list = []
-        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
+        self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
 
     def setup_card(self):
         """Set up spectrum card in transmit (Rx) mode.
