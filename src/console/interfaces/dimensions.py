@@ -15,3 +15,10 @@ class Dimensions:
 
     z: float | int  # pylint: disable=invalid-name
     """Z dimension."""
+
+    @classmethod
+    def from_dict(cls, dim: dict[str, float | int]) -> "Dimensions":
+        return cls(x=dim["x"], y=dim["y"], z=dim["z"])
+
+    # def __dict__(self) -> dict[str, float | int]:
+    #     return {"x": self.x, "y": self.y, "z": self.z}
