@@ -1,6 +1,7 @@
 """Interface class for an unrolled sequence."""
 
 from dataclasses import dataclass
+
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
@@ -61,4 +62,3 @@ class UnrolledSequence:
 
     parameter: AcquisitionParameter
     """Hash of acquisition parameters used to calculate the sequence."""
-

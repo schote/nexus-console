@@ -3,7 +3,6 @@ import argparse
 import logging
 import os
 from pathlib import Path
-from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 from console.service.acquisition_manager import AcquisitionControlManager
 from console.spcm_control.acquisition_control import AcquisitionControl

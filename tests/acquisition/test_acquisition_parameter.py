@@ -24,5 +24,3 @@ def test_autosave(acquisition_parameter: AcquisitionParameter) -> None:
     params_copy.save_on_mutation = True
     params_copy.larmor_frequency = 9.87654e6
     assert params_copy == AcquisitionParameter.load(params_copy.state_filepath)
-
-

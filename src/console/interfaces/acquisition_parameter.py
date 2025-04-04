@@ -12,8 +12,10 @@ from console.interfaces.enums import DDCMethod
 def _grad_factory() -> Dimensions:
     return Dimensions(x=0., y=0., z=0.)
 
+
 def _fov_factory() -> Dimensions:
     return Dimensions(x=1., y=1., z=1.)
+
 
 @dataclass(unsafe_hash=True)
 class AcquisitionParameter:
@@ -83,7 +85,7 @@ class AcquisitionParameter:
         data = self.dict()
         output = "Acquisition parameter\n----------\n"
         for k, (key, value) in enumerate(data.items()):
-            output += f"{key} = {value}" if k == len(data)-1 else f"{key} = {value}\n"
+            output += f"{key} = {value}" if k == len(data) - 1 else f"{key} = {value}\n"
         return output
 
     def dict(self, use_strings: bool = False) -> dict:

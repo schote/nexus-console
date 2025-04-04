@@ -11,10 +11,11 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
+from console.interfaces.acquisition_parameter import AcquisitionParameter
+
 # import console
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
-from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 try:
     from line_profiler import profile
@@ -253,7 +254,9 @@ class SequenceProvider(Sequence):
             raise err
 
     @profile
-    def calculate_gradient(self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float, offset: float | int) -> None:
+    def calculate_gradient(
+        self, block: SimpleNamespace, unroll_arr: np.ndarray, fov_scaling: float, offset: float | int
+    ) -> None:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
         Parameters

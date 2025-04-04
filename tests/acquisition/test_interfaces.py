@@ -1,15 +1,25 @@
 """Test interfaces."""
+from dataclasses import FrozenInstanceError
+
+import numpy as np
 import pytest
 
 from console.interfaces.dimensions import Dimensions
-from console.interfaces.enums import DDCMethod
-import numpy as np
-from dataclasses import FrozenInstanceError
+
+generator = np.random.default_rng()
 
 
-@pytest.mark.parametrize(
-    "generator", (lambda: np.random.randint(low=0, high=10000), lambda: np.random.random())
-)
+def get_random_int() -> int:
+    """Return random integer value."""
+    return generator.integers(low=0, high=10000)
+
+
+def get_random_float() -> float:
+    """Return random integer value."""
+    return generator.random()
+
+
+@pytest.mark.parametrize("generator", (get_random_int, get_random_float))
 def test_dimensions_from_dict(generator):
     """Test creations of dimensions object from dictionary."""
     x = generator()
@@ -25,9 +35,7 @@ def test_dimensions_from_dict(generator):
     assert dim.as_dict() == dim_dct
 
 
-@pytest.mark.parametrize(
-    "generator", (lambda: np.random.randint(low=0, high=10000), lambda: np.random.random())
-)
+@pytest.mark.parametrize("generator", (get_random_int, get_random_float))
 def test_dimensions(generator):
     """Test creations of dimensions object and check if instance is frozen."""
     x = generator()
