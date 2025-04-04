@@ -1,20 +1,19 @@
 """Interface class for acquisition parameters."""
 
-import json
-import os
 import pickle  # noqa: S403
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.enums import DDCMethod
 
-DEFAULT_STATE_FILE_PATH = os.path.join(Path.home(), "nexus-console", "acquisition-parameter.state")
-DEFAULT_FOV_SCALING = Dimensions(x=1., y=1., z=1.)
-DEFAULT_GRADIENT_OFFSET = Dimensions(x=0., y=0., z=0.)
-FILENAME_STATE = "acquisition-parameter.state"
 
+def _grad_factory() -> Dimensions:
+    return Dimensions(x=0., y=0., z=0.)
+
+def _fov_factory() -> Dimensions:
+    return Dimensions(x=1., y=1., z=1.)
 
 @dataclass(unsafe_hash=True)
 class AcquisitionParameter:
@@ -39,10 +38,10 @@ class AcquisitionParameter:
     b1_scaling: float = 1.0
     """Scaling of the B1 field (RF transmit power)."""
 
-    gradient_offset: Dimensions = DEFAULT_GRADIENT_OFFSET
+    gradient_offset: Dimensions = field(default_factory=_grad_factory)
     """Gradient offset values in mV."""
 
-    fov_scaling: Dimensions = DEFAULT_FOV_SCALING
+    fov_scaling: Dimensions = field(default_factory=_fov_factory)
     """Field of view scaling for Gx, Gy and Gz."""
 
     decimation: int = 200
@@ -56,25 +55,36 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    default_state_file_path: str = DEFAULT_STATE_FILE_PATH
+    state_filepath: Path = Path.home() / Path("nexus-console/acquisition-parameter.state")
     """Default file path for acquisition parameter state."""
 
-    save_on_mutation: bool = False
-    """Flag which indicates if state is saved on mutation."""
+    _initialized: bool = field(default=False, init=False, repr=False)
+
+    def __post_init__(self):
+        """Post initialization method."""
+        if not self.state_filepath.name.endswith(".state"):
+            self.state_filepath = self.state_filepath / "acquisition-parameter.state"
+        self._initialized = True
+        self.save()
 
     def __setattr__(self, name: str, value: Any) -> None:
-        """Overwrite __setattr__ function to save object on each mutation.
+        """Overwrite __setattr__ function to save object on each mutation."""
+        if self._initialized:
+            _hash = hash(self)
+            super().__setattr__(name, value)
+            if hash(self) != _hash:
+                print("Saving parameter...")
+                self.save()
+        else:
+            super().__setattr__(name, value)
 
-        Requires __save_on_mutation flag which is set in __post_init__ method.
-        """
-        _hash = hash(self)
-        super().__setattr__(name, value)
-        if self.save_on_mutation and hash(self) != _hash:
-            self.save()
-
-    def __repr__(self) -> str:
-        """Representation of acquisition parameter as string."""
-        return json.dumps(self.dict(), indent=4)
+    def __str__(self):
+        """Get string representation of acquisition parameter."""
+        data = self.dict()
+        output = "Acquisition parameter\n----------\n"
+        for k, (key, value) in enumerate(data.items()):
+            output += f"{key} = {value}" if k == len(data)-1 else f"{key} = {value}\n"
+        return output
 
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
@@ -92,7 +102,7 @@ class AcquisitionParameter:
             return {k: str(v) for k, v in asdict(self).items() if not k.startswith("_")}
         return {k: v for k, v in asdict(self).items() if not k.startswith("_")}
 
-    def save(self, file_path: str | None = None) -> None:
+    def save(self, filepath: str | Path | None = None) -> None:
         """Save current acquisition parameter state.
 
         Parameters
@@ -102,12 +112,13 @@ class AcquisitionParameter:
             If None, the default state file path is taken which is <home>/nexus-console/acquisition-parameter.state
             Default state file path can be changed using the set_default_path method.
         """
-        if not file_path:
-            file_path = self.default_state_file_path
-        if not file_path.endswith(".state"):
-            file_path = os.path.join(file_path, FILENAME_STATE)
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "wb") as file:
+        _filepath = filepath if filepath else self.state_filepath
+        if isinstance(_filepath, str):
+            _filepath = Path(_filepath)
+        if not _filepath.name.endswith(".state"):
+            _filepath = _filepath / "acquisition-parameter.state"
+        _filepath.parent.mkdir(parents=True, exist_ok=True)
+        with open(_filepath, "wb") as file:
             pickle.dump(self.__dict__, file)
 
     def hash(self) -> int:
@@ -115,7 +126,7 @@ class AcquisitionParameter:
         return self.__hash__()
 
     @classmethod
-    def load(cls, file_path: str) -> "AcquisitionParameter":
+    def load(cls, filepath: Path) -> "AcquisitionParameter":
         """Load acquisition parameter state from state file in-place.
 
         Parameters
@@ -134,10 +145,8 @@ class AcquisitionParameter:
         FileNotFoundError
             Provided file_path is not a pickle file or does not exist.
         """
-        if not file_path.endswith(".state"):
-            file_path = os.path.join(file_path, FILENAME_STATE)
-        if os.path.exists(file_path):
-            with open(file_path, "rb") as state_file:
-                state = pickle.load(state_file)  # noqa: S301
-            return cls(**state)
-        raise FileNotFoundError("Acquisition parameter state file not found: ", file_path)
+        if not filepath.exists():
+            raise FileNotFoundError("Acquisition parameter state file not found: ", filepath)
+        with open(filepath, "rb") as state_file:
+            state = pickle.load(state_file)  # noqa: S301
+        return cls(**state)
