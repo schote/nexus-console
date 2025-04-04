@@ -32,7 +32,7 @@ def test_dimensions_from_dict(generator):
     assert x == dim.x
     assert y == dim.y
     assert z == dim.z
-    assert dim.as_dict() == dim_dct
+    assert dim.dict() == dim_dct
 
 
 @pytest.mark.parametrize("generator", (get_random_int, get_random_float))

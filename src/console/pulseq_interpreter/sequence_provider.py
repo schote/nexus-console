@@ -486,8 +486,10 @@ class SequenceProvider(Sequence):
         seq_samples = int(round(seq_duration * self.spcm_freq))
 
         # Calculate the start time (and sample position) and duration of each block
-        block_durations = [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
-        block_durations = np.round(np.array(block_durations) * self.spcm_freq).astype(int)
+        block_durations = np.array(
+            [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
+        )
+        block_durations = np.round(block_durations * self.spcm_freq).astype(int)
         block_pos = np.cumsum(block_durations, dtype=np.int64)
         block_pos = np.insert(block_pos, 0, 0)
 
