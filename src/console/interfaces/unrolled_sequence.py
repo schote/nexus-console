@@ -2,9 +2,9 @@
 
 from dataclasses import dataclass
 
-from console.interfaces.acquisition_parameter import AcquisitionParameter
-
 import numpy as np
+
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
 @dataclass(slots=True, frozen=True)
