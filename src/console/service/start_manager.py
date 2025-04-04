@@ -3,12 +3,12 @@ import argparse
 import logging
 import os
 from pathlib import Path
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 
-from console.service.acquisition_manager import AcquisitionControlManager, AcquisitionParameterProxy
+from console.service.acquisition_manager import AcquisitionControlManager
 from console.spcm_control.acquisition_control import AcquisitionControl
 
 acquisition_control: AcquisitionControl | None = None
-parameter_proxy = AcquisitionParameterProxy()
 
 
 def main():
@@ -65,7 +65,7 @@ def main():
 
     manager = AcquisitionControlManager(
         callable_acq_control=lambda: acquisition_control,
-        callable_acq_parameter=lambda: parameter_proxy,
+        # callable_acq_parameter=lambda: parameter_proxy,
         address=(args.address, args.port),
         authkey=args.authkey,
     )

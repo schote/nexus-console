@@ -43,7 +43,7 @@ docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [project.scripts]
-nexus-manager = "console.service.manager:main"
+nexus = "console.service.start_manager:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
