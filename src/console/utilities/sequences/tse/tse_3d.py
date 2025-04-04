@@ -82,7 +82,7 @@ def constructor(
         Number of encoding steps per dimension, by default default_encoding = Dimensions(x=70, y=70, z=49).
         If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
     trajectroy, optional
-        The k-space trajectory, by default set to in-out, other currently implemented options are...
+        The k-space trajectory, by default set to in-out, other currently implemented options are out in and linear
     excitation_angle, excitation_phase, optional
         set the flip angle and phase of the excitation pulse in radians, defaults to 90 degree flip angle, 0 phase
     refocussing_angle, refocussing_phase, optional

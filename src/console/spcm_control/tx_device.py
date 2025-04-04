@@ -309,7 +309,7 @@ class TxCard(SpectrumDevice):
             # Data must have a default value as start_operation is an abstract method and data is optional
             if not data:
                 raise ValueError("No unrolled sequence data provided.")
-            sqnc = np.concatenate(data.seq)
+            sqnc = data.seq
 
             # Check if sequence datatype is valid
             if sqnc.dtype != np.int16:
