@@ -10,7 +10,6 @@ from pathlib import Path
 import numpy as np
 from scipy import signal
 
-import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
 from console.interfaces.dimensions import Dimensions
@@ -71,18 +70,6 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
-        # Define global acquisition parameter object
-        try:
-            console.parameter = AcquisitionParameter.load(nexus_data_dir)
-        except FileNotFoundError as exc:
-            self.log.warning("Acquisition parameter state could not be loaded from dir: %s.\
-                Creating new acquisition parameter object.", exc)
-            console.parameter = AcquisitionParameter()
-        console.parameter.save_on_mutation = True
-
-        # Store parameter hash to detect when a sequence needs to be recalculated
-        self._current_parameter_hash: int = hash(console.parameter)
-
         # Get instances from configuration file
         ctx = get_instances(configuration_file)
         self.seq_provider: SequenceProvider = ctx[0]
@@ -102,7 +89,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.unrolled_seq: UnrolledSequence | None = None
+        self.sequence: UnrolledSequence | None = None
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -137,13 +124,13 @@ class AcquisitionControl:
         )
 
         # Define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(console_level)
+        log_console = logging.StreamHandler()
+        log_console.setLevel(console_level)
         formatter = logging.Formatter("%(name)-7s: %(levelname)-8s >> %(message)s")
-        console.setFormatter(formatter)
-        logging.getLogger("").addHandler(console)
+        log_console.setFormatter(formatter)
+        logging.getLogger("").addHandler(log_console)
 
-    def set_sequence(self, sequence: str | Sequence) -> None:
+    def set_sequence(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> None:
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -174,15 +161,14 @@ class AcquisitionControl:
             raise err
 
         # Reset unrolled sequence
-        self.unrolled_seq = None
+        self.sequence = None
         self.log.info(
             "Unrolling sequence: %s",
             self.seq_provider.definitions["Name"].replace(" ", "_"),
         )
         # Update sequence parameter hash and calculate sequence
-        self._current_parameter_hash = hash(console.parameter)
-        self.unrolled_seq = self.seq_provider.unroll_sequence()
-        self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
+        self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
+        self.log.info("Sequence duration: %s s", self.sequence.duration)
 
     def run(self) -> AcquisitionData:
         """Run an acquisition job.
@@ -198,44 +184,35 @@ class AcquisitionControl:
             # Check setup
             if not self.is_setup:
                 raise RuntimeError("Measurement cards are not setup.")
-            if self.unrolled_seq is None:
+            if self.sequence is None:
                 raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
         except (RuntimeError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
-        if self._current_parameter_hash != hash(console.parameter):
-            # Redo sequence unrolling in case acquisition parameters changed, i.e. different hash
-            self.unrolled_seq = None
-            self.log.info(
-                "Unrolling sequence: %s", self.seq_provider.definitions["Name"].replace(" ", "_")
-            )
-            # Update acquisition parameter hash value
-            self._current_parameter_hash = hash(console.parameter)
-            self.unrolled_seq = self.seq_provider.unroll_sequence()
-            self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
-
         # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + self.unrolled_seq.duration
+        timeout = 5 + self.sequence.duration
 
         self._unproc = []
         self._raw = []
 
         # Set gradient offset values
-        self.tx_card.set_gradient_offsets(console.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
+        self.tx_card.set_gradient_offsets(
+            self.sequence.parameter.gradient_offset, self.seq_provider.high_impedance[1:]
+        )
 
-        for k in range(console.parameter.num_averages):
-            self.log.info("Acquisition %s/%s", k + 1, console.parameter.num_averages)
+        for k in range(self.sequence.parameter.num_averages):
+            self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
             time.sleep(0.01)
-            self.tx_card.start_operation(self.unrolled_seq)
+            self.tx_card.start_operation(self.sequence)
 
             # Get start time of acquisition
             time_start = time.time()
 
-            while (num_gates := len(self.rx_card.rx_data)) < self.unrolled_seq.adc_count or num_gates == 0:
+            while (num_gates := len(self.rx_card.rx_data)) < self.sequence.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
@@ -243,32 +220,32 @@ class AcquisitionControl:
                     # Could not receive all the data before timeout
                     self.log.warning(
                         "Acquisition Timeout: Only received %s/%s adc events",
-                        num_gates, self.unrolled_seq.adc_count
+                        num_gates, self.sequence.adc_count
                     )
                     break
 
-                if num_gates >= self.unrolled_seq.adc_count and num_gates > 0:
+                if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
             if num_gates > 0:
-                self.post_processing(console.parameter)
+                self.post_processing(self.sequence.parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if console.parameter.averaging_delay > 0:
-                time.sleep(console.parameter.averaging_delay)
+            if self.sequence.parameter.averaging_delay > 0:
+                time.sleep(self.sequence.parameter.averaging_delay)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         try:
             # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == console.parameter.num_averages for gate in self._raw):
+            if not all(gate.shape[0] == self.sequence.parameter.num_averages for gate in self._raw):
                 raise ValueError(
                     "Missing averages: %s/%s",
                     [gate.shape[0] for gate in self._raw],
-                    console.parameter.num_averages,
+                    self.sequence.parameter.num_averages,
                 )
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -284,8 +261,8 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=console.parameter.decimation / self.f_spcm,
-            acquisition_parameters=console.parameter,
+            dwell_time=self.sequence.parameter.decimation / self.f_spcm,
+            acquisition_parameters=self.sequence.parameter,
         )
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
@@ -353,7 +330,7 @@ class AcquisitionControl:
             data = data[:-1, ...]
 
             # Switch case for DDC function
-            match console.parameter.ddc_method:
+            match parameter.ddc_method:
                 case DDCMethod.CIC:
                     data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
                 case DDCMethod.AVG:
