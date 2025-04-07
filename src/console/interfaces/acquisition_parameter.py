@@ -68,6 +68,11 @@ class AcquisitionParameter:
             self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):
             self.state_filepath = self.state_filepath / "acquisition-parameter.state"
+        # Load state file if it already exists
+        if self.state_filepath.exists():
+            with self.state_filepath.open(mode="rb") as state_file:
+                state = pickle.load(state_file)  # noqa: S301
+            self.__dict__.update(**state)
         self._initialized = True
         self.save()
 
@@ -77,7 +82,6 @@ class AcquisitionParameter:
             _hash = hash(self)
             super().__setattr__(name, value)
             if hash(self) != _hash:
-                print("Saving parameter...")
                 self.save()
         else:
             super().__setattr__(name, value)
