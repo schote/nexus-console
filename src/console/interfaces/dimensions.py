@@ -28,3 +28,39 @@ class Dimensions:
     def __str__(self):
         """Return custom representation string."""
         return f"x={self.x}, y={self.y}, z={self.z}"
+
+    def __mul__(self, other) -> "Dimensions":
+        """Multiply dimension."""
+        if isinstance(other, Dimensions):
+            return Dimensions(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
+        else:
+            return Dimensions(x=self.x * other, y=self.y * other, z=self.z * other)
+
+    def __add__(self, other) -> "Dimensions":
+        """Multiply dimension."""
+        if isinstance(other, Dimensions):
+            return Dimensions(x=self.x + other.x, y=self.y + other.y, z=self.z + other.z)
+        else:
+            return Dimensions(x=self.x + other, y=self.y + other, z=self.z + other)
+
+    def __sub__(self, other) -> "Dimensions":
+        """Multiply dimension."""
+        if isinstance(other, Dimensions):
+            return Dimensions(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
+        else:
+            return Dimensions(x=self.x - other, y=self.y - other, z=self.z - other)
+
+    def __imul__(self, _):
+        """In-place multiplication."""
+        raise TypeError("In-place operations are not supported.\
+            Use 'dimensions = dimensions * value' instead.")
+
+    def __iadd__(self, _):
+        """In-place addition."""
+        raise TypeError("In-place operations are not supported.\
+            Use 'dimensions = dimensions + value' instead.")
+
+    def __isub__(self, _):
+        """In-place addition."""
+        raise TypeError("In-place operations are not supported.\
+            Use 'dimensions = dimensions - value' instead.")

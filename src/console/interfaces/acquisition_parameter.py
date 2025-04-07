@@ -57,13 +57,15 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    state_filepath: Path = Path.home() / Path("nexus-console/acquisition-parameter.state")
+    state_filepath: Path | str = Path.home() / Path("nexus-console/acquisition-parameter.state")
     """Default file path for acquisition parameter state."""
 
-    _initialized: bool = field(default=False, init=False, repr=False)
+    _initialized: bool = field(default=False, init=True, repr=False, compare=False, hash=False)
 
     def __post_init__(self):
         """Post initialization method."""
+        if isinstance(self.state_filepath, str):
+            self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):
             self.state_filepath = self.state_filepath / "acquisition-parameter.state"
         self._initialized = True
@@ -88,6 +90,13 @@ class AcquisitionParameter:
             output += f"{key} = {value}" if k == len(data) - 1 else f"{key} = {value}\n"
         return output
 
+    def __copy__(self):
+        """Copy acquisition parameter."""
+        cls = self.__class__
+        result = cls(**self.__dict__)
+        result._initialized = True
+        return result
+
     def dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
 
@@ -102,7 +111,10 @@ class AcquisitionParameter:
         """
         if use_strings:
             return {k: str(v) for k, v in asdict(self).items() if not k.startswith("_")}
-        return {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+        data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+        # Make state filepath a str (Path variable)
+        data["state_filepath"] = str(data["state_filepath"])
+        return data
 
     def save(self, filepath: str | Path | None = None) -> None:
         """Save current acquisition parameter state.
@@ -120,15 +132,16 @@ class AcquisitionParameter:
         if not _filepath.name.endswith(".state"):
             _filepath = _filepath / "acquisition-parameter.state"
         _filepath.parent.mkdir(parents=True, exist_ok=True)
+        data = {key: value for key, value in self.__dict__.items() if not key.startswith("_")}
         with open(_filepath, "wb") as file:
-            pickle.dump(self.__dict__, file)
+            pickle.dump(data, file)
 
     def hash(self) -> int:
         """Return acquisition parameter integer hash."""
         return self.__hash__()
 
     @classmethod
-    def load(cls, filepath: Path) -> "AcquisitionParameter":
+    def load(cls, filepath: Path | str) -> "AcquisitionParameter":
         """Load acquisition parameter state from state file in-place.
 
         Parameters
@@ -147,8 +160,11 @@ class AcquisitionParameter:
         FileNotFoundError
             Provided file_path is not a pickle file or does not exist.
         """
+        filepath = Path(filepath) if isinstance(filepath, str) else filepath
         if not filepath.exists():
             raise FileNotFoundError("Acquisition parameter state file not found: ", filepath)
         with open(filepath, "rb") as state_file:
             state = pickle.load(state_file)  # noqa: S301
-        return cls(**state)
+        instance = cls(**state)
+        instance._initialized = True
+        return instance
