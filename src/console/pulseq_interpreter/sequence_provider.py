@@ -327,7 +327,7 @@ class SequenceProvider(Sequence):
             offset = getattr(console.parameter.gradient_offset, block.channel)
             offset *= INT16_MAX / self.output_limits[idx + 1]
 
-            if np.amax(gradient + offset) > INT16_MAX:
+            if np.amax(np.abs(gradient + offset)) > INT16_MAX:
                 max_strength = gradient[np.argmax(np.abs(gradient + offset))] + offset
                 # Report maximum strength in mV
                 max_strength /= (INT16_MAX / self.output_limits[idx + 1])
