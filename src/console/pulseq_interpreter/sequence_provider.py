@@ -276,7 +276,7 @@ class SequenceProvider(Sequence):
                 # This function requires float input => cast to int16 afterwards
                 if np.amax(waveform := block.waveform * scaling) > self.output_limits[idx + 1]:
                     raise ValueError(
-                        "Amplitude of %s (%s) gradient exceeded output limit (%s)"
+                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
                         % (
                             block.channel,
                             np.amax(waveform),
@@ -300,7 +300,12 @@ class SequenceProvider(Sequence):
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 if np.amax(flat_amp := block.amplitude * scaling) > self.output_limits[idx + 1]:
                     raise ValueError(
-                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx + 1]}."
+                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
+                        % (
+                            block.channel,
+                            flat_amp,
+                            self.output_limits[idx + 1],
+                        )
                     )
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp = flat_amp * INT16_MAX / self.output_limits[idx + 1]
