@@ -321,6 +321,11 @@ class TxCard(SpectrumDevice):
             if not self.card:
                 raise ConnectionError("No connection to card established...")
 
+
+            # TODO: Get rid of the sequence extension here...
+            # TODO: Instead implement a function which transfers a notify size of data from the sequence, 
+            # and only fills the last tiny bit in the end if necessary
+
             # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
             if (rest := sqnc.nbytes % self.ring_buffer_size.value) != 0:
                 rest = self.ring_buffer_size.value - rest
@@ -328,6 +333,7 @@ class TxCard(SpectrumDevice):
                     raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
 
                 fill_size = int((rest) / 2)
+                # The following line causes the an increase of memory consumption
                 sqnc = np.append(sqnc, np.zeros(fill_size, dtype=np.int16))
                 self.log.debug("Appended %s zeros to data array", fill_size)
 
@@ -393,6 +399,8 @@ class TxCard(SpectrumDevice):
         # Setup replay data buffer
         data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         # Allocate continuous ring buffer as defined by class attribute
+
+        # TODO: use something like min(self.ring_buffer_size.value, seq_size)
         ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
 
         try:
