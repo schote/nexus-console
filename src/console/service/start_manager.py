@@ -71,35 +71,23 @@ def main():
         authkey=args.authkey,
     )
 
-    # server = manager.get_server()
-    manager.start()
+    server = manager.get_server()
 
-    def shutdown_handler(signum=None, frame=None):
-        if signum:
-            print(f"\n[neXus] Stopping nexus server, received signal: {signum}...")
-        else:
-            print("\n[neXus] Stopping nexus server...")
+    def shutdown_handler():
         try:
-            manager.shutdown()  # Properly shutdown the manager
-            print("[neXus] Manager/service shutdown successfully.")
+            print("\n[neXus] Shutting down nexus server...\n")
+            if acquisition_control:
+                acquisition_control.__del__()
+                print("[neXus] Acquisition control shutdown successfully.")
         except Exception as e:
-            print(f"[neXus] Failed to shutdown server: {e}")
+            print(f"[neXus] Error during shutdown: {e}")
         finally:
-            acquisition_control.__del__()
-            sys.exit(0)
-
-    # Register signal handlers
-    signal.signal(signal.SIGINT, shutdown_handler)   # Ctrl+C
-    if hasattr(signal, "SIGTERM"):
-        signal.signal(signal.SIGTERM, shutdown_handler)  # Unix, WSL, some service tools
-    if hasattr(signal, "SIGBREAK"):
-        signal.signal(signal.SIGBREAK, shutdown_handler)  # Windows: Ctrl+Break
+            print("[neXus] Shutdown complete.")
 
     atexit.register(shutdown_handler)
 
     print(f"\n[neXus] AcquisitionControlManager >> Server started on port {args.port}...\n")
-    # server.serve_forever()
-
+    server.serve_forever()
 
 if __name__ == '__main__':
     main()
