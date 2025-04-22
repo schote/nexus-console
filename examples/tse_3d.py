@@ -35,7 +35,7 @@ console.parameter.decimation = decimation
 
 
 # Calculate sequence and perform acquisition
-acq.set_sequence(sequence=seq)
+acq.set_sequence(sequence=seq, parameter=console.parameter)
 
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()

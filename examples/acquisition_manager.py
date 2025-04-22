@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import console
 from console.interfaces.dimensions import Dimensions
 from console.service.acquisition_manager import AcquisitionControlManager
 from console.utilities.sequences import tse_3d
@@ -25,22 +26,13 @@ seq, _ = tse_3d.constructor(
 # %%
 with AcquisitionControlManager() as mngr:
 
-    mngr.parameter.set_larmor_frequency(1.995e6)
-    mngr.parameter.set_gradient_offset(Dimensions(x=1, y=10, z=100))
+    console.parameter.larmor_frequency = 1.995e6
+    console.parameter.gradient_offset = Dimensions(x=1, y=10, z=100)
+    print(console.parameter)
 
     # # acq_control.set_sequence("/home/schote01/code/spectrum-console-experiments/service/2d_tse.seq")
-    mngr.acquisition.set_sequence(sequence=seq)
+    mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)
     data = mngr.acquisition.run()
-
-    print("larmor frequency: ", mngr.parameter.get_larmor_frequency())
-    print("gradient offsets: ", mngr.parameter.get_gradient_offset())
-
-    mngr.parameter.set_larmor_frequency(2.0322e6)
-    mngr.parameter.set_gradient_offset(Dimensions(x=0, y=0, z=0))
-
-    print("larmor frequency: ", mngr.parameter.get_larmor_frequency())
-    print("gradient offsets: ", mngr.parameter.get_gradient_offset())
-
 
 # %%
 
