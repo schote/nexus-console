@@ -210,7 +210,7 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         self.log.debug("Device setup completed")
-        _ = self.get_status()
+        # _ = self.get_status()
 
     def start_operation(self):
         """Start card operation."""

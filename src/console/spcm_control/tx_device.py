@@ -184,7 +184,7 @@ class TxCard(SpectrumDevice):
             ))
 
         self.log.debug("Device setup completed")
-        _ = self.get_status()
+        # _ = self.get_status()
 
     def set_gradient_offsets(self, offsets: Dimensions, high_impedance: list[bool] = [True, True, True]) -> None:
         """Set offset values of the gradient output channels.
@@ -390,9 +390,11 @@ class TxCard(SpectrumDevice):
             notify_size,
             ring_buffer,
             spcm.uint64(0),
-            self.max_ring_buffer_size,
+            # self.max_ring_buffer_size,
+            len(ring_buffer),
         )
-        self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.max_ring_buffer_size))
+        # self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.max_ring_buffer_size))
+        self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, len(ring_buffer)))
 
         self.log.debug("Starting card memory transfer")
         self.handle_error(spcm.spcm_dwSetParam_i32(
