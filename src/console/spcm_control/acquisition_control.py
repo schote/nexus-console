@@ -80,9 +80,16 @@ class AcquisitionControl:
 
         # Setup the cards
         self.is_setup: bool = False
-        if self.tx_card.connect() and self.rx_card.connect():
-            self.log.info("Setup of measurement cards successful.")
-            self.is_setup = True
+        try:
+            if self.tx_card.connect() and self.rx_card.connect():
+                self.log.info("Setup of measurement cards successful.")
+                self.is_setup = True
+        except Exception:
+            self.log.exception("Error during card connection.")
+            if self.tx_card:
+                self.tx_card.disconnect()
+            if self.rx_card:
+                self.rx_card.disconnect()
 
         # Get the rx sampling rate for DDC
         self.f_spcm = self.rx_card.sample_rate * 1e6
