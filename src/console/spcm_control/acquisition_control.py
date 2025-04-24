@@ -136,13 +136,6 @@ class AcquisitionControl:
             filemode="a",
         )
 
-        # Define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(console_level)
-        formatter = logging.Formatter("%(name)-7s: %(levelname)-8s >> %(message)s")
-        console.setFormatter(formatter)
-        logging.getLogger("").addHandler(console)
-
     def set_sequence(self, sequence: str | Sequence, num_repetitions: int) -> None:
         """Set sequence and acquisition parameter.
 
