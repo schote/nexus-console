@@ -208,8 +208,8 @@ class AcquisitionControl:
             self.unrolled_seq = self.seq_provider.unroll_sequence()
             self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
-        # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + self.unrolled_seq.duration
+        # Define timeout for acquisition process: 10 sec + sequence duration
+        timeout = 10 + self.unrolled_seq.duration
 
         self._unproc = []
         self._raw = []
