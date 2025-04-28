@@ -77,6 +77,7 @@ class RxCard(SpectrumDevice):
 
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
+        self.is_receiving = threading.Event()
 
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
@@ -216,6 +217,7 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
+        self.is_receiving.clear()
         self.rx_data = []
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
@@ -231,13 +233,11 @@ class RxCard(SpectrumDevice):
             # Stop the card. We will stop the card in two steps.
             # First we will stop the data transfer and then we will stop the card.
             # If time stamp mode is enabled, we need to stop the extra data transfer as well.
-            error = sp.spcm_dwSetParam_i32(
+            self.handle_error(sp.spcm_dwSetParam_i32(
                 self.card,
                 sp.SPC_M2CMD,
                 sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA,
-            )
-            self.handle_error(error)
-            self.worker = None
+            ))
         else:
             # No thread is running
             self.log.error("No active process found")
@@ -302,6 +302,7 @@ class RxCard(SpectrumDevice):
 
         # Start receiver
         self.log.debug("Starting receive")
+        self.is_receiving.set()
 
         while not self.is_running.is_set():
 

@@ -213,7 +213,9 @@ class AcquisitionControl:
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            time.sleep(0.01)
+            while not self.rx_card.is_receiving.is_set():
+                time.sleep(0.01)
+                # self.log.debug("Waiting for RX card to start receiving...")
             self.tx_card.start_operation(self.sequence)
 
             # Get start time of acquisition
