@@ -52,3 +52,6 @@ class UnrolledSequence:
 
     adc_count: int
     """Number of adc events in the sequence."""
+
+    num_repetitions: int
+    """Number of times the sequence must be repeat"""

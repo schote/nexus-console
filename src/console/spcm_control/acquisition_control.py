@@ -143,7 +143,7 @@ class AcquisitionControl:
         console.setFormatter(formatter)
         logging.getLogger("").addHandler(console)
 
-    def set_sequence(self, sequence: str | Sequence) -> None:
+    def set_sequence(self, sequence: str | Sequence, num_repetitions: int) -> None:
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -181,7 +181,7 @@ class AcquisitionControl:
         )
         # Update sequence parameter hash and calculate sequence
         self._current_parameter_hash = hash(console.parameter)
-        self.unrolled_seq = self.seq_provider.unroll_sequence()
+        self.unrolled_seq = self.seq_provider.unroll_sequence(num_repetitions=num_repetitions)
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
     def run(self) -> AcquisitionData:

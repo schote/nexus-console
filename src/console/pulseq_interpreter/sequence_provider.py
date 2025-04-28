@@ -381,7 +381,7 @@ class SequenceProvider(Sequence):
         return [(rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in rf_waveforms.data.items()]
 
     @profile
-    def unroll_sequence(self) -> UnrolledSequence:
+    def unroll_sequence(self, num_repetitions: int) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -591,8 +591,9 @@ class SequenceProvider(Sequence):
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
             larmor_frequency=self.larmor_freq,
-            duration=self.duration()[0],
-            adc_count=adc_count,
+            duration=self.duration()[0] * num_repetitions,
+            adc_count=adc_count * num_repetitions,
+            num_repetitions=num_repetitions
         )
 
     def plot_unrolled(

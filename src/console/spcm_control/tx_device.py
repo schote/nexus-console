@@ -204,7 +204,7 @@ class TxCard(SpectrumDevice):
             spcm.SPCM_X2_MODE,
             (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
         )
-        # Channel X3, X12: dig. unblanking signal (15th bit of analog channel 3)
+        # Channel X3, X13: dig. unblanking signal (15th bit of analog channel 3)
         spcm.spcm_dwSetParam_i32(
             self.card,
             spcm.SPCM_X3_MODE,
@@ -320,14 +320,6 @@ class TxCard(SpectrumDevice):
                 raise ConnectionError("No connection to card established...")
 
             # Extend the provided data array with zeros to obtain a multiple of ring buffer size in memory
-            if (rest := sqnc.nbytes % self.ring_buffer_size.value) != 0:
-                rest = self.ring_buffer_size.value - rest
-                if rest % 2 != 0:
-                    raise MemoryError("Providet data array size is not a multiple of 2 bytes (size of one sample)")
-
-                fill_size = int((rest) / 2)
-                sqnc = np.append(sqnc, np.zeros(fill_size, dtype=np.int16))
-                self.log.debug("Appended %s zeros to data array", fill_size)
 
         except Exception as exc:
             self.log.exception(exc, exc_info=True)
@@ -343,7 +335,7 @@ class TxCard(SpectrumDevice):
 
         # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
+        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc, data.num_repetitions))
         self.worker.start()
 
     def stop_operation(self) -> None:
@@ -363,7 +355,7 @@ class TxCard(SpectrumDevice):
         else:
             print("No active replay thread found...")
 
-    def _fifo_stream_worker(self, data: np.ndarray) -> None:
+    def _fifo_stream_worker(self, data: np.ndarray, num_repetitions: int) -> None:
         """Continuous FIFO mode examples.
 
         Parameters
@@ -388,26 +380,64 @@ class TxCard(SpectrumDevice):
         self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 
         # >> Define software buffer
-        # Setup replay data buffer
-        data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        # Allocate continuous ring buffer as defined by class attribute
+        # Data buffer contains the data of the sequence to be sent multiple
+        # times to the ring buffer each repetition
+        data_buffer = ctypes.cast(data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16)), ctypes.c_void_p).value
+
+        # Ring_buffer is the instance for the TxCard buffer.
         ring_buffer = create_dma_buffer(self.ring_buffer_size.value)
+
+        # Initialize variables
+        data_buffer_index = 0
+        bytes_to_transfer = self.data_buffer_size * num_repetitions
+        transferred_bytes = 0
 
         try:
             # Perform initial memory transfer: Fill the whole ring buffer
+
+            # Get position in both ring and data buffers
             if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
-                if _data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value:
-                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.ring_buffer_size.value)
-                    transferred_bytes = self.ring_buffer_size.value
-                else:
-                    raise RuntimeError("Could not get data buffer position")
+                _ring_buffer_pos = int(_ring_buffer_pos)
             else:
                 raise RuntimeError("Could not get ring buffer position")
+
+            if data_buffer:
+                data_buffer = int(data_buffer)
+            else:
+                raise RuntimeError("Could not get data buffer position")
+
+            # If the total number of bytes to transfer is smaller than the ring buffer
+            # Send the data to be transferred at once
+            if bytes_to_transfer <= self.ring_buffer_size.value:
+                while transferred_bytes < bytes_to_transfer:
+                    ctypes.memmove(_ring_buffer_pos + transferred_bytes,
+                                    data_buffer,
+                                    self.data_buffer_size)  # Fill by chunks of "data_buffer"
+                    transferred_bytes += self.data_buffer_size
+
+                # Fill the remaining with zeros
+                _fill_with_zeros(_ring_buffer_pos + transferred_bytes, self.ring_buffer_size.value - transferred_bytes)
+                transferred_bytes = self.ring_buffer_size.value
+
+            # If the total number of bytes to transfer is greater than the ring buffer
+            # Fill the whole ring buffer
+            else:
+                block_size = 0  # Initialize block_size, to assign data_buffer_index value after while loop
+                while transferred_bytes < self.ring_buffer_size.value:
+                    remaining_bytes = self.ring_buffer_size.value - transferred_bytes
+                    block_size = min(remaining_bytes, self.data_buffer_size)
+                    ctypes.memmove(
+                        _ring_buffer_pos + transferred_bytes,
+                        data_buffer,
+                        block_size,
+                    )
+                    transferred_bytes += block_size
+                data_buffer_index = block_size
         except RuntimeError as err:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Perform initial data transfer to completely fill continuous buffer
+        # Perform initial data transfer to completely fill the TxCard buffer
         spcm.spcm_dwDefTransfer_i64(
             self.card,
             spcm.SPCM_BUF_DATA,
@@ -419,6 +449,7 @@ class TxCard(SpectrumDevice):
         )
         spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.ring_buffer_size)
 
+        # Enable card memory transfer
         self.log.debug("Starting card memory transfer")
         error = spcm.spcm_dwSetParam_i32(
             self.card,
@@ -440,35 +471,65 @@ class TxCard(SpectrumDevice):
         usr_position = spcm.int32(0)
         transfer_count = 0
 
-        while (transferred_bytes < self.data_buffer_size) and not self.is_running.is_set():
+        while (transferred_bytes < bytes_to_transfer) and not self.is_running.is_set():
             # Read available bytes and user position
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
 
-            # Calculate new data for the transfer, when notify_size is available on continous buffer
+            # Calculate new data for the transfer, when notify_size is available on TxCard Buffer
             if avail_bytes.value >= self.notify_size.value:
                 transfer_count += 1
 
                 # Get new buffer positions
-                if ring_buffer_position := ctypes.cast(
+                ring_buffer_position = ctypes.cast(
                     (ctypes.c_char * (self.ring_buffer_size.value - usr_position.value)).from_buffer(
                         ring_buffer, usr_position.value
                     ),
                     ctypes.c_void_p,
-                ).value:
-                    if current_data_buffer := ctypes.cast(data_buffer, ctypes.c_void_p).value:
-                        data_buffer_position = current_data_buffer + transferred_bytes
+                ).value
 
-                        # Move memory: Current ring buffer position,
-                        # position in sequence data and amount to transfer (=> notify size)
+                if ring_buffer_position is None:
+                    msg = "Could not get ring buffer position"
+                    self.log.error(msg)
+                    raise RuntimeError(msg)
+
+                # Send data of size = notify_size.value
+                transferred_in_this_loop = 0
+                while transferred_in_this_loop < self.notify_size.value:
+                    # Compute the remaining bytes to send to reach notify size
+                    remaining_bytes = self.notify_size.value - transferred_in_this_loop
+
+                    # If all the bytes to transfer have been sent
+                    if transferred_bytes >= bytes_to_transfer:
+                        # Fill the remaining bytes to reach notify size with zeros
+                        _fill_with_zeros(ring_buffer_position + transferred_in_this_loop, remaining_bytes)
+
+                    # If there are still bytes to transfer
+                    else:
+                        # Make a block of bytes to send
+                        # The block is the minimum between the number of bytes to reach notify size,
+                        # the number of bytes to reach the end of the data buffer (the buffer containing sequence),
+                        # and the number of bytes remaining to have sent all the bytes to transfer
+                        block_size = min(
+                            remaining_bytes,
+                            self.data_buffer_size - data_buffer_index,
+                            bytes_to_transfer - transferred_bytes
+                            )
+                        # Send the bytes to TxCard
                         ctypes.memmove(
-                            ring_buffer_position,
-                            data_buffer_position,
-                            self.notify_size.value,
+                            ring_buffer_position + transferred_in_this_loop,
+                            data_buffer + data_buffer_index,
+                            block_size,
                         )
+                        # Compute the new position in the data buffer
+                        data_buffer_index = (data_buffer_index + block_size) % self.data_buffer_size
 
+                        transferred_bytes += block_size
+
+                    transferred_in_this_loop += block_size
+
+                # Notice the TxCard that a chunk of size notify_size is available for data streaming
                 spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, self.notify_size)
-                transferred_bytes += self.notify_size.value
 
                 error = spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA)
                 self.handle_error(error)
@@ -507,3 +568,22 @@ class TxCard(SpectrumDevice):
         msg, _ = translate_status(self.get_status(), include_desc=include_desc)
         status = {key: val for val, key in msg.values()}
         self.log.debug("Card status:\n%s", status)
+
+
+def _fill_with_zeros(ptr: int, nb_bytes: int):
+    """Fill the bytes with zeros after a pointer and for a specific number of bytes.
+
+    Parameters
+    ----------
+    ptr
+        Pointer where to start setting the bytes to zero.
+    nb_bytes
+        Number of bytes to set to zero after the given pointer.
+    """
+    zeros = np.zeros(nb_bytes, dtype=np.int16)
+    zeros_ptr = zeros.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+    ctypes.memmove(
+        ptr,
+        zeros_ptr,
+        nb_bytes,
+    )
