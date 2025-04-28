@@ -386,26 +386,24 @@ class RxCard(SpectrumDevice):
                         )
 
                         byte_position = data_user_position.value // 2
-                        total_bytes_to_read = available_user_databytes.value
                         index_0 = byte_position + total_leftover // 2
 
-                        if total_bytes_to_read + data_user_position.value >= rx_size:
+                        if total_bytes + data_user_position.value >= rx_size:
                             # >> We need two indices in case of memory position overflows the total memory length
                             # Get the last position available and subtract it from current byte position
-                            index_1 = rx_size // 2 - index_0
+                            bytes_to_end = rx_size // 2 - index_0
 
                             # Get the remaining length after overflow. Then subtract it from the total bytes.
-                            index_2 = total_bytes // 2 - index_1
+                            bytes_from_start = total_bytes // 2 - bytes_to_end
 
-                            # Numpy array conversation. Get the first part of the slice
-                            offset_bytes_1 = index_1 * sizeof(c_short)
-                            ptr_to_slice_1 = cast(addressof(rx_data.contents) + offset_bytes_1, POINTER(c_short))
-                            slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, ((index_1),))
+                            # Numpy array conversation. Get the first part of the slice (from index_0 to end of buffer)
+                            offset_bytes = index_0 * sizeof(c_short)
+                            ptr_to_slice_1 = cast(addressof(rx_data.contents) + offset_bytes, POINTER(c_short))
+                            slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, (bytes_to_end,))
 
-                            # Get the second part of the numpy slice
-                            offset_bytes_2 = index_2 * sizeof(c_short)
-                            ptr_to_slice_2 = cast(addressof(rx_data.contents) + offset_bytes_2, POINTER(c_short))
-                            slice_2 = np.ctypeslib.as_array(ptr_to_slice_2, ((index_2),))
+                            # Get the second part of the numpy slice (from 0 to remaining bytes)
+                            ptr_to_slice_2 = cast(addressof(rx_data.contents), POINTER(c_short))
+                            slice_2 = np.ctypeslib.as_array(ptr_to_slice_2, (bytes_from_start,))
 
                             # Combine the slices
                             gate_data = np.concatenate((slice_1, slice_2))
@@ -419,7 +417,8 @@ class RxCard(SpectrumDevice):
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-                        self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
+                        rep_data = gate_data.reshape((self.num_channels.value, gate_sample), order="F")
+                        self.rx_data.append(rep_data.copy())
 
                         # Most probably we have not filled the whole page.
                         # There should be some bytes in the buffer, which are not readable yet.
