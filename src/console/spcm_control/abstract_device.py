@@ -97,18 +97,18 @@ class SpectrumDevice(ABC):
         if error != sp.ERR_OK:
             # sp.ERR_OK = 0, this corresponds to "if error:"
             if error == sp.ERR_TIMEOUT:
-                # Check for timeout
-                self.log.debug("Timeout")
-            else:
-                # Read error message from card
-                err_msg = create_string_buffer(sp.ERRORTEXTLEN)
-                if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
-                    # double check if error is not ERR_OK, disconnect and raise error
-                    self.log.critical(
-                        f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
-                    )
-                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
-                    raise RuntimeError
+                # Check for timeout, could be logged but occurs in normal operation
+                # self.log.debug("Received timeout")
+                return
+            # Read error message from card
+            err_msg = create_string_buffer(sp.ERRORTEXTLEN)
+            if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
+                # double check if error is not ERR_OK, disconnect and raise error
+                self.log.critical(
+                    f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
+                )
+                sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
+                raise RuntimeError
 
 
     def get_status(self) -> int:
