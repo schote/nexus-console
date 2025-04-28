@@ -336,8 +336,7 @@ class SequenceProvider(Sequence):
             else:
                 gradient = gradient.astype(np.int16)
 
-            # Shifting gradient waveform to 15 bits already for adding the gate signals later
-            return gradient.view(np.uint16) >> 1
+            return gradient
 
         except (ValueError, IndexError) as err:
             self.log.exception(err, exc_info=True)
@@ -496,6 +495,7 @@ class SequenceProvider(Sequence):
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
         _adc = np.zeros(seq_samples, dtype=np.uint16)
+        _ref = np.zeros(seq_samples, dtype=np.uint16)
         _unblanking = np.zeros(seq_samples, dtype=np.uint16)
 
         # Count the total number of sample points and gate signals
@@ -546,13 +546,13 @@ class SequenceProvider(Sequence):
                     raise IndexError("RF waveform size exceeds block size.")
 
                 # Calculate RF waveform start and end positions according to block position
-                rf_start = block_pos[event_idx] * 4
-                rf_end = (block_pos[event_idx] + rf_size) * 4
+                rf_start = block_pos[event_idx]
+                rf_end = (block_pos[event_idx] + rf_size)
 
                 # Add RF waveform
-                _seq[rf_start:rf_end:4] = rf_waveform
-                # Add deblanking signal to Z gradient
-                _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
+                _seq[rf_start * 4: rf_end * 4:4] = rf_waveform
+                # Fill unblanking array
+                _unblanking[rf_start:rf_end] = rf_unblanking
 
             if block.adc is not None:  # ADC event
                 adc_count += 1
@@ -560,19 +560,24 @@ class SequenceProvider(Sequence):
                 ref_signal = adc_events[event[5] - 1][2]  # Pulseq is 1 indexed, shift idx by -1 for correct event
 
                 # Calculate ADC start and end positions according to block position
-                adc_start = block_pos[event_idx] * 4
-                adc_end = (block_pos[event_idx] + np.size(adc_waveform)) * 4
+                adc_start = block_pos[event_idx]
+                adc_end = (block_pos[event_idx] + np.size(adc_waveform))
 
-                # Add ADC gate to X gradient
-                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
+                # Fill adc gate array
+                _adc[adc_start:adc_end] = adc_waveform
 
                 # Create ref signal in ADC waveform
                 time_offset = block_pos[event_idx] * self.spcm_dwell_time
                 ref_signal = ref_signal * np.exp(2j * np.pi * time_offset)
                 ref_waveform = (ref_signal.real > 0) * (2**15)
 
-                # Add ref signal to Y gradient
-                _seq[adc_start + 2:adc_end + 2:4] = _seq[adc_start + 2:adc_end + 2:4] | ref_waveform
+                # Fill reference signal array
+                _ref[adc_start:adc_end] = ref_waveform
+
+        # Assemble digital signals to gradients
+        _seq[1::4] = _seq[1::4].view(np.uint16) >> 1 | _adc
+        _seq[2::4] = _seq[2::4].view(np.uint16) >> 1 | _ref
+        _seq[3::4] = _seq[3::4].view(np.uint16) >> 1 | _unblanking
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
