@@ -332,12 +332,11 @@ class TxCard(SpectrumDevice):
         self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 
         # Calculate notify size is set to 1/16 of the replay buffer size
-        notify_size = min(
+        # Ensure that minimum notify size is 4096 bytes
+        notify_size = spcm.int32(max(4096, min(
             int(((self.data_buffer_size / self.notify_rate) // 4096) * 4096),
             int(((self.max_ring_buffer_size.value / self.notify_rate) // 4096) * 4096),
-        )
-        # Ensure that minimum notify size is 4096 bytes
-        notify_size = spcm.int32(max(notify_size, 4096))
+        )))
 
         # >> Define software buffer
         # Setup replay data buffer
@@ -385,7 +384,6 @@ class TxCard(SpectrumDevice):
         except RuntimeError as err:
             self.log.exception(err, exc_info=True)
             raise err
-
 
         # Perform initial data transfer to completely fill continuous buffer
         spcm.spcm_dwDefTransfer_i64(

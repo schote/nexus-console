@@ -5,7 +5,7 @@ from ctypes import _SimpleCData, byref, c_char_p, create_string_buffer
 from logging import Logger
 
 import console.spcm_control.spcm.pyspcm as sp
-from console.spcm_control.spcm.tools import translate_error, type_to_name, translate_status
+from console.spcm_control.spcm.tools import translate_error, translate_status, type_to_name
 
 
 class SpectrumDevice(ABC):
@@ -109,7 +109,6 @@ class SpectrumDevice(ABC):
                 )
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
                 raise RuntimeError
-
 
     def get_status(self) -> int:
         """Get and log current card status.
