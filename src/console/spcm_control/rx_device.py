@@ -442,7 +442,7 @@ class RxCard(SpectrumDevice):
                         # "sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)"
                         # ERROR: The value for this register is not in a valid range
                         # Solution :A time delay seem to solve the problem.
-                        time.sleep(1000e-6)
+                        time.sleep(2000e-6)
                         error = sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         self.handle_error(error)
                         break
