@@ -229,7 +229,7 @@ class AcquisitionControl:
 
             # Start masurement card operations
             self.rx_card.start_operation()
-            time.sleep(0.01)
+            time.sleep(1)
             self.tx_card.start_operation(self.unrolled_seq)
 
             # Get start time of acquisition
