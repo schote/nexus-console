@@ -3,8 +3,6 @@ import argparse
 import atexit
 import logging
 import os
-import signal
-import sys
 from pathlib import Path
 
 from console.service.acquisition_manager import AcquisitionControlManager
@@ -88,6 +86,7 @@ def main():
 
     print(f"\n[neXus] AcquisitionControlManager >> Server started on port {args.port}...\n")
     server.serve_forever()
+
 
 if __name__ == '__main__':
     main()
