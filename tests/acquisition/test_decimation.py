@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from console.utilities.ddc import filter_cic_fir_comp, filter_moving_average
+from scipy import signal
 
 
 @pytest.mark.parametrize("coils", [1, 2, 4])
@@ -41,3 +42,18 @@ def test_cic_fir_comp(coils, phase_encoding, num_samples, decimation, filter_sta
     assert proc_pe == phase_encoding
     assert proc_samples == num_samples // decimation
     assert np.iscomplex(processed).all()
+
+@pytest.mark.parametrize("num_raw_samples", [80640, 128000])
+def test_decimated_shapes(num_raw_samples, random_acquisition_data):
+    """Test shape of decimated signals.
+
+    It is tested if two random signals have the same shape after decimation
+    with moving average filter and scipy's fir filter for a range of
+    decimation factors from 200 ... 1000.
+    """
+    input_data = random_acquisition_data(1, 1, 1, num_raw_samples)
+    decimation_factors = np.arange(200, 1000, 1)
+    for d in decimation_factors:
+        data_avg = filter_moving_average(input_data, decimation=d, overlap=8)
+        data_fir = signal.decimate(input_data, q=d, ftype="fir")
+        assert data_fir.shape == data_avg.shape
