@@ -501,6 +501,9 @@ class SequenceProvider(Sequence):
         # Count the total number of sample points and gate signals
         adc_count: int = 0
         rf_start_sample_pos: int | None = None
+        _seq[1::4] = np.int16(console.parameter.gradient_offset.x * INT16_MAX / self.output_limits[1])
+        _seq[2::4] = np.int16(console.parameter.gradient_offset.y * INT16_MAX / self.output_limits[2])
+        _seq[3::4] = np.int16(console.parameter.gradient_offset.z * INT16_MAX / self.output_limits[3])
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
@@ -511,19 +514,19 @@ class SequenceProvider(Sequence):
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 1:waveform_start + 4 * waveform_samples + 1:4] = waveform
+                _seq[waveform_start + 1:waveform_start + 4 * waveform_samples + 1:4] += waveform
             if block.gy is not None:  # Gy event
                 waveform = self.calculate_gradient(
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 2:waveform_start + 4 * waveform_samples + 2:4] = waveform
+                _seq[waveform_start + 2:waveform_start + 4 * waveform_samples + 2:4] += waveform
             if block.gz is not None:  # Gz event
                 waveform = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 3:waveform_start + 4 * waveform_samples + 3:4] = waveform
+                _seq[waveform_start + 3:waveform_start + 4 * waveform_samples + 3:4] += waveform
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block

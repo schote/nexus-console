@@ -17,7 +17,6 @@ from scipy import signal
 import console
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
-from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
@@ -227,9 +226,6 @@ class AcquisitionControl:
         )
         processing_thread.start()
 
-        # Set gradient offset values
-        self.tx_card.set_gradient_offsets(console.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
-
         for k in range(console.parameter.num_averages):
             self.log.info("Acquisition %s/%s", k + 1, console.parameter.num_averages)
 
@@ -265,9 +261,6 @@ class AcquisitionControl:
 
             if console.parameter.averaging_delay > 0:
                 time.sleep(console.parameter.averaging_delay)
-
-        # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         return AcquisitionData(
             _raw=self._raw,
