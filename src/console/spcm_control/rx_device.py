@@ -6,6 +6,7 @@ from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
 from itertools import compress
+from queue import Queue
 
 import numpy as np
 
@@ -59,6 +60,7 @@ class RxCard(SpectrumDevice):
     channel_enable: list[int]
     max_amplitude: list[int]
     impedance_50_ohms: list[int]
+    queue: Queue
 
     __name__: str = "RxCard"
 
@@ -78,7 +80,7 @@ class RxCard(SpectrumDevice):
         self.post_trigger = 4096
         self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
-        self.rx_data = []
+        self.gates_received = 0
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     def dict(self) -> dict:
@@ -222,7 +224,7 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
-        self.rx_data = []
+        self.gates_received = 0
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
@@ -418,7 +420,8 @@ class RxCard(SpectrumDevice):
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
                         rep_data = gate_data.reshape((self.num_channels.value, gate_sample), order="F")
-                        self.rx_data.append(rep_data.copy())
+                        self.queue.put(rep_data.copy())
+                        self.gates_received += 1
 
                         # Most probably we have not filled the whole page.
                         # There should be some bytes in the buffer, which are not readable yet.

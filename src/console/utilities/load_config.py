@@ -7,6 +7,7 @@ from pypulseq.opts import Opts
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
+from console.utilities import QUEUE
 
 
 def tx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> TxCard:
@@ -42,7 +43,9 @@ def rx_card_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -
         RxCard object
     """
     # Ignore type checking here since mypy requires keywords to be strings
-    return RxCard(**loader.construct_mapping(node, deep=True))  # type: ignore
+    params = loader.construct_mapping(node, deep=True)
+    params["queue"] = QUEUE
+    return RxCard(**params)  # type: ignore
 
 
 def sequence_provider_constructor(loader: yaml.SafeLoader, node: yaml.nodes.MappingNode) -> SequenceProvider:

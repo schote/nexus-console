@@ -3,11 +3,15 @@
 import logging
 import logging.config
 import os
+import threading
 import time
 from datetime import datetime
+from multiprocessing import Pool
 from pathlib import Path
+from queue import Queue
 
 import numpy as np
+from numpy.fft import fft, fftshift, ifft, ifftshift
 from scipy import signal
 
 import console
@@ -18,7 +22,8 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
+from console.utilities import QUEUE, ddc
+from console.utilities.filter import filter_function
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -107,6 +112,8 @@ class AcquisitionControl:
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
         self._unproc: list[np.ndarray] = []
+        self.acq_finished = False
+        self.queue = QUEUE
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -177,7 +184,7 @@ class AcquisitionControl:
         self.unrolled_seq = self.seq_provider.unroll_sequence(num_repetitions=num_repetitions)
         self.log.info("Sequence duration: %s s", self.unrolled_seq.duration)
 
-    def run(self) -> AcquisitionData:
+    def run(self, return_unprocessed: bool = False) -> AcquisitionData:
         """Run an acquisition job.
 
         Raises
@@ -211,8 +218,14 @@ class AcquisitionControl:
         # Define timeout for acquisition process: 10 sec + sequence duration
         timeout = 10 + self.unrolled_seq.duration
 
+        # Initialize variables
         self._unproc = []
         self._raw = []
+
+        processing_thread = threading.Thread(
+            target=self.post_processing, args=(console.parameter, self.queue, return_unprocessed)
+        )
+        processing_thread.start()
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(console.parameter.gradient_offset, self.seq_provider.high_impedance[1:])
@@ -228,7 +241,7 @@ class AcquisitionControl:
             # Get start time of acquisition
             time_start = time.time()
 
-            while (num_gates := len(self.rx_card.rx_data)) < self.unrolled_seq.adc_count or num_gates == 0:
+            while (num_gates := self.rx_card.gates_received) < self.unrolled_seq.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
@@ -243,29 +256,18 @@ class AcquisitionControl:
                 if num_gates >= self.unrolled_seq.adc_count and num_gates > 0:
                     break
 
-            if num_gates > 0:
-                self.post_processing(console.parameter)
-
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
+
+            # Wait for end of processing
+            self.acq_finished = True
+            processing_thread.join()
 
             if console.parameter.averaging_delay > 0:
                 time.sleep(console.parameter.averaging_delay)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
-
-        try:
-            # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == console.parameter.num_averages for gate in self._raw):
-                raise ValueError(
-                    "Missing averages: %s/%s",
-                    [gate.shape[0] for gate in self._raw],
-                    console.parameter.num_averages,
-                )
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
 
         return AcquisitionData(
             _raw=self._raw,
@@ -281,10 +283,66 @@ class AcquisitionControl:
             acquisition_parameters=console.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
+    @staticmethod
+    def process_channels(
+        data: np.ndarray,
+        ref_dec: np.ndarray,
+        scaling: np.float64,
+        f_spcm: float,
+        parameter: AcquisitionParameter
+    ):
+        """Process a channel's data.
+
+        Parameters
+        ----------
+        data
+            Channel's data as an np.ndarray()
+        ref_dec
+            Decimated reference data.
+        scaling
+            Scaling factor of the channel. Allow to convert RxCard data to mV
+        f_spcm
+            RxCard sampling frequency
+        parameter
+            Acquisition parameter object
+
+        Returns
+        -------
+            Processed channel data.
+        """
+        # Convert data to mV
+        data = data.astype(np.int16) * scaling
+
+        # Demodulation
+        data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / f_spcm)
+
+        # Decimation
+        match console.parameter.ddc_method:
+            case DDCMethod.CIC:
+                data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
+            case DDCMethod.AVG:
+                data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
+            case _:
+                data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+
+        # Apply phase correction with mean value
+        # A factor 2 is added to compensate for the halving due to the processing.
+        data = data * 2 * np.exp(-1j * np.angle(ref_dec))
+
+        data = np.conj(data)
+
+        # Filter data in the frequential domain
+        data_fft = fftshift(fft(data))
+        filter = filter_function(data.shape[-1])  # creating filter reponse
+        data_fft = data_fft * filter  # filtering
+        data = ifft(ifftshift(data_fft))
+
+        return data
+
+    def post_processing(self, parameter: AcquisitionParameter, queue: Queue, return_unprocessed: bool) -> None:
         """Proces acquired NMR data.
 
-        Data is sorted according to readout size which might vary between different reout windows.
+        Data is sorted according to readout size which might vary between different readout windows.
         Unprocessed and raw data are stored in class attributes _raw and _unproc.
         Both attributes are list, which store numpy arrays of readout data with the same number
         of readout sample points.
@@ -298,71 +356,75 @@ class AcquisitionControl:
 
         Dimensions: [averages, coils, phase encoding, readout]
 
-        Reference signal is stored in the last entry of the coil dimension.
+        Reference signal is stored in the last entry of the coil dimension of unprocessed data.
 
         Parameters
         ----------
         parameter
             Acquisition parameter
         """
-        readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {
-            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
-        }
-        for data in self.rx_card.rx_data:
-            grouped_gates[data.shape[-1]].append(data)
+        self._raw = []
+        gate_sizes = []
+        gates_received = 0
+        with Pool(processes=8) as pool:
+            while True:
+                # Stop processing if everything processed and acquisition finished
+                if gates_received >= self.rx_card.gates_received and self.acq_finished is True:
+                    break
 
-        gate_lengths = [np.stack(group, axis=1) for group in grouped_gates.values()]
-        raw_size = len(self._raw)
+                if not queue.empty():
+                    # Get gate data
+                    gate_data = queue.get()
+                    gate_length = gate_data.shape[-1]
+                    gates_received += 1
 
-        # Define channel dependent scaling
-        scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
+                    # Extract and decimate reference signal
+                    _ref = (gate_data[1, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
+                    ref_dec = signal.decimate(_ref, q=parameter.decimation, ftype="fir")[None, ...]
 
-        for k, data in enumerate(gate_lengths):
-            # Extract digital reference signal from channel 0
-            _ref = (data[1, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
+                    # Remove digital signal from channel 1
+                    gate_data[1, ...] = gate_data[1, ...] << 1
 
-            # Remove digital signal from channel 1
-            # channel 1 has been chosen to allow channel 0 to have max resolution for Rx readouts.
-            data[1, ...] = data[1, ...] << 1 
-            data = data.astype(np.int16) * scaling
+                    # Define channel dependent scaling
+                    scaling = np.array(self.rx_card.rx_scaling[:self.rx_card.num_channels.value])
 
-            # Stack signal and reference in coil dimension
-            data = np.concatenate((data, _ref), axis=0)
+                    # Prepare arguments for parallel processing
+                    args = [
+                        (gate_data[ch, ...], ref_dec, scaling[ch], self.f_spcm, parameter)
+                        for ch in range(gate_data.shape[0])
+                    ]
 
-            # Append unprocessed data without post processing (last coil dimension entry contains reference)
-            if raw_size > 0:
-                self._unproc[k] = np.concatenate((self._unproc[k], data[None, ...]), axis=0)
-            else:
-                self._unproc.append(data[None, ...])
+                    # Parallel processing with starmap
+                    data = pool.starmap(self.process_channels, args)
 
-            print("Demodulation at freq.:", parameter.larmor_frequency)
+                    # Concatenate data together
+                    data = np.concatenate(data, axis=0)
+                    data_array = np.asarray(data)
 
-            # Demodulation and decimation
-            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
+                    # Prepare unprocessed data if needed
+                    if return_unprocessed:
+                        gate_data = gate_data.astype(np.int16) * np.expand_dims(scaling, axis=-1)
+                        gate_data = np.concatenate((gate_data, _ref), axis=0)
+                        gate_data = np.expand_dims(gate_data, 1)
 
-            # Always decimate the reference signal with moving average filter
-            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
-            # Extract the demodulated signal data
-            data = data[:-1, ...]
+                    # If the data has a new gate_length
+                    if gate_length not in gate_sizes:
+                        gate_sizes.append(gate_length)
+                        self._raw.append(data_array[None, ...])
 
-            # Switch case for DDC function
-            match console.parameter.ddc_method:
-                case DDCMethod.CIC:
-                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-                case DDCMethod.AVG:
-                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-                case _:
-                    # Default case is FIR decimation
-                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+                        if return_unprocessed:
+                            self._unproc.append(gate_data[None, ...])
 
-            # Apply phase correction with mean value
-            # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
-            # a factor 2 is added to compensate for the halving due to the processing.
-            data = data * 2 * np.exp(-1j * np.angle(ref_dec))
+                    else:  # If data with this gate_length has already been received
+                        # Get index of this gate_length
+                        _gate_index = gate_sizes.index(gate_length)
 
-            # Append to global raw data list
-            if raw_size > 0:
-                self._raw[k] = np.concatenate((self._raw[k], data[None, ...]), axis=0)
-            else:
-                self._raw.append(data[None, ...])
+                        # Concatenate the data to the _raw object at the right gate_length index
+                        self._raw[_gate_index] = np.concatenate((self._raw[_gate_index], data_array[None, ...]), axis=2)
+
+                        # If return processed is true, also add unprocessed data at the right index
+                        if return_unprocessed:
+                            self._unproc[_gate_index] = np.concatenate(
+                                (self._unproc[_gate_index], gate_data[None, ...]),
+                                axis=2
+                                )
