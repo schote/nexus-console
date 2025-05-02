@@ -160,6 +160,8 @@ class TxCard(SpectrumDevice):
             spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3,
         )
 
+        self.log.info("Setup max. output amplitude: %s.", self.max_amplitude)
+
         # Use loop to enable and setup active channels
         # Channel 0: RF
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT0, 1)

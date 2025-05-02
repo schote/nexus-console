@@ -15,13 +15,12 @@ authors = [
     {name="Berk Silemek", email="berk.silemek@ptb.de"}
 ]
 readme = "README.md"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.10,<3.13"
 license = { file = "LICENSE" }
 keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
 
 classifiers = [
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3 :: Only",
 ]
 
@@ -43,6 +42,8 @@ lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
+[project.scripts]
+nexus = "console.service.start_manager:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

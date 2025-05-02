@@ -11,7 +11,9 @@ from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
-import console
+from console.interfaces.acquisition_parameter import AcquisitionParameter
+
+# import console
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
@@ -236,7 +238,9 @@ class SequenceProvider(Sequence):
         return (waveform_rf, rf_unblanking)
 
     @profile
-    def calculate_gradient(self, block: SimpleNamespace, fov_scaling: float) -> np.ndarray:
+    def calculate_gradient(
+        self, block: SimpleNamespace, fov_scaling: float, offset: float | int
+    ) -> np.ndarray:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
         Parameters
@@ -272,7 +276,7 @@ class SequenceProvider(Sequence):
                 # This function requires float input => cast to int16 afterwards
                 if np.amax(waveform := block.waveform * scaling) > self.output_limits[idx + 1]:
                     raise ValueError(
-                        "Amplitude of %s (%s) gradient exceeded output limit (%s)"
+                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
                         % (
                             block.channel,
                             np.amax(waveform),
@@ -296,7 +300,12 @@ class SequenceProvider(Sequence):
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 if np.amax(flat_amp := block.amplitude * scaling) > self.output_limits[idx + 1]:
                     raise ValueError(
-                        f"Amplitude of {block.channel} gradient exceeded max. amplitude {self.output_limits[idx + 1]}."
+                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
+                        % (
+                            block.channel,
+                            flat_amp,
+                            self.output_limits[idx + 1],
+                        )
                     )
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp = flat_amp * INT16_MAX / self.output_limits[idx + 1]
@@ -324,7 +333,6 @@ class SequenceProvider(Sequence):
             # Calculate gradient offset int16 value from mV
             # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
             # Gradient offset is used for calculating output limits but is not added to the waveform
-            offset = getattr(console.parameter.gradient_offset, block.channel)
             offset *= INT16_MAX / self.output_limits[idx + 1]
 
             if np.amax(gradient + offset) > INT16_MAX:
@@ -381,7 +389,7 @@ class SequenceProvider(Sequence):
         return [(rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in rf_waveforms.data.items()]
 
     @profile
-    def unroll_sequence(self) -> UnrolledSequence:
+    def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -447,10 +455,10 @@ class SequenceProvider(Sequence):
 
         try:
             # Check larmor frequency
-            if console.parameter.larmor_frequency > 10e6:
+            if parameter.larmor_frequency > 10e6:
                 raise ValueError("Larmor frequency is above 10 MHz: %s MHz",
-                                 console.parameter.larmor_frequency * 1e-6)
-            self.larmor_freq = console.parameter.larmor_frequency
+                                 parameter.larmor_frequency * 1e-6)
+            self.larmor_freq = parameter.larmor_frequency
 
             # Check if sequence has block events
             if not len(self.block_events) > 0:
@@ -476,15 +484,17 @@ class SequenceProvider(Sequence):
         for rf_event in rf_events:
             rf_pulses[rf_event[0]] = self.calculate_rf(
                 block=rf_event[1],
-                b1_scaling=console.parameter.b1_scaling
+                b1_scaling=parameter.b1_scaling
             )
 
         seq_duration, _, _ = self.duration()
         seq_samples = int(round(seq_duration * self.spcm_freq))
 
         # Calculate the start time (and sample position) and duration of each block
-        block_durations = [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
-        block_durations = np.round(np.array(block_durations) * self.spcm_freq).astype(int)
+        block_durations = np.array(
+            [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
+        )
+        block_durations = np.round(block_durations * self.spcm_freq).astype(int)
         block_pos = np.cumsum(block_durations, dtype=np.int64)
         block_pos = np.insert(block_pos, 0, 0)
 
@@ -508,19 +518,19 @@ class SequenceProvider(Sequence):
             waveform_start = block_pos[event_idx] * 4
             if block.gx is not None:  # Gx event
                 waveform = self.calculate_gradient(
-                    block=block.gx, fov_scaling=console.parameter.fov_scaling.x
+                    block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x
                 )
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start + 1:waveform_start + 4 * waveform_samples + 1:4] = waveform
             if block.gy is not None:  # Gy event
                 waveform = self.calculate_gradient(
-                    block=block.gy, fov_scaling=console.parameter.fov_scaling.y
+                    block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y
                 )
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start + 2:waveform_start + 4 * waveform_samples + 2:4] = waveform
             if block.gz is not None:  # Gz event
                 waveform = self.calculate_gradient(
-                    block=block.gz, fov_scaling=console.parameter.fov_scaling.z
+                    block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z
                 )
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start + 3:waveform_start + 4 * waveform_samples + 3:4] = waveform
@@ -590,9 +600,9 @@ class SequenceProvider(Sequence):
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
-            larmor_frequency=self.larmor_freq,
             duration=self.duration()[0],
             adc_count=adc_count,
+            parameter=parameter,
         )
 
     def plot_unrolled(

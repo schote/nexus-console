@@ -23,7 +23,7 @@ seq = sequences.se_spectrum.constructor(**params)
 console.parameter.larmor_frequency = 2.0395e6
 
 # Run the acquisition
-acq.set_sequence(sequence=seq)
+acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run()
 
 # Get decimated data from acquisition data object

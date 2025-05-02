@@ -25,7 +25,7 @@ console.parameter.larmor_frequency = 2038550.0
 console.parameter.b1_scaling = 2.43
 
 # Perform acquisition
-acq.set_sequence(sequence=seq)
+acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run()
 data = np.mean(acq_data.raw, axis=0).squeeze()
 

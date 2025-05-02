@@ -85,5 +85,5 @@ def acquisition_parameter() -> AcquisitionParameter:
         gradient_offset=Dimensions(0, 100, 500),
         fov_scaling=Dimensions(0.5, 0.0, 0.9),
         averaging_delay=1.01,
-        default_state_file_path=".",
+        state_filepath=".",
     )

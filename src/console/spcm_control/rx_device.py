@@ -71,11 +71,9 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
 
-        # Define pre and post trigger time.
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
         self.post_trigger = 4096
-        self.post_trigger_size = 0  # TODO: only use one variable for post trigger
 
         self.rx_data = []
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
@@ -190,9 +188,9 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
-        # TODO: Double check, why is the post trigger divided by number of channels and multiplied by 2?
+        # Calculate actual post trigger size depending on the number of active channels
         self.post_trigger = 4096 // self.num_channels.value
-        self.post_trigger_size = self.post_trigger * 2
+
         # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
@@ -210,7 +208,7 @@ class RxCard(SpectrumDevice):
         # Setup gated fifo mode
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CARDMODE, sp.SPC_REC_FIFO_GATE)
 
-        # Set timeout to 10ms (used for DMA wait)
+        # Set timeout used for DMA wait to 10 ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         self.log.debug("Device setup completed")
@@ -287,115 +285,118 @@ class RxCard(SpectrumDevice):
         rx_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
 
         # Setup polling mode
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL)
+        self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL))
 
-        # TODO: Move all the stuff up to here to setup function?
-
-        # >> Start everything
-        err = sp.spcm_dwSetParam_i32(
+        # Start DMA
+        self.handle_error(sp.spcm_dwSetParam_i32(
             self.card,
             sp.SPC_M2CMD,
             sp.M2CMD_CARD_START | sp.M2CMD_CARD_ENABLETRIGGER | sp.M2CMD_DATA_STARTDMA,
-        )
-        self.handle_error(err)
+        ))
 
+        # Define helpers/buffer to read card parameter
         available_timestamp_bytes = sp.int32(0)
         available_timestamp_postion = sp.int32(0)
-        available_user_databytes = sp.int32(0)
-        data_user_position = sp.int32(0)
+        available_data_bytes = sp.int32(0)
+        available_data_position = sp.int32(0)
         total_gates = 0
-        bytes_leftover = 0
         total_leftover = 0
 
         # Start receiver
         self.log.debug("Starting receive")
 
         while not self.is_running.is_set():
-            sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
+
+            try:
+                self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
+            except RuntimeError:  # Reraise error for traceability
+                raise RuntimeError
+
+            # Read the available timestamp buffer size
+            available_timestamp_bytes = sp.int32(0)
             sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
+
+            # Process, if buffer size is greater or equal 32 (corresponds to 2 timestamps)
             if available_timestamp_bytes.value >= 32:
-                # read position
-                sp.spcm_dwGetParam_i64(
+                # Read timestamp position
+                sp.spcm_dwGetParam_i32(
                     self.card,
                     sp.SPC_TS_AVAIL_USER_POS,
                     byref(available_timestamp_postion),
                 )
 
-                # Read two timestamps
+                # self.log.info("Timestamp buffer position: %s", available_timestamp_postion.value)
+
+                # Read exactly two timestamps
                 timestamp_0 = pll_data[int(available_timestamp_postion.value / 8)] / (self.sample_rate * 1e6)
                 timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2] / (self.sample_rate * 1e6)
 
-                # Calculate gate duration
+                # Calculate gate duration and the number of adc gate sample points (per channel)
                 gate_length = Decimal(str(timestamp_1)) - Decimal(str(timestamp_0))
-
-                # Calculate the number of adc gate sample points (per channel)
                 gate_sample = int(round(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6"))))
-
                 self.log.info(
-                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: % s",
+                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
                     timestamp_0,
                     timestamp_1,
                     float(gate_length) * 1e3,  # Can be trimmed.
                     gate_sample,
                 )
 
-                sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32)
-                sp.spcm_dwGetParam_i64(
-                    self.card,
-                    sp.SPC_TS_AVAIL_USER_LEN,
-                    byref(available_timestamp_bytes),
-                )
+                # Free timestamp buffer by writing available timestamp card length
+                try:
+                    self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32))
+                except RuntimeError:  # Reraise error for traceability
+                    raise RuntimeError
+                sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
+
+                # self.log.info("Available timestamp user length: %s", available_timestamp_bytes.value)
 
                 # Check for rounding errors
-                total_bytes = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
+                total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 bytes_sequence = (gate_sample + self.pre_trigger + self.post_trigger) * 2 * self.num_channels.value
 
-                # Read/update available user bytes
-                sp.spcm_dwGetParam_i32(
-                    self.card,
-                    sp.SPC_DATA_AVAIL_USER_LEN,
-                    byref(available_user_databytes),
-                )
-                sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(data_user_position))
+                # Read available data length and position
+                # TODO: Double-check, why is this required? Values are read again after wait dma command.
+                sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
+                sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(available_data_position))
 
-                # Debug log statements
+                # # Debug log statements
                 # self.log.debug("Available timestamp buffer size: %s", available_timestamp_bytes.value)
-                self.log.debug("Expected adc data in bytes: %s", total_bytes)
-                self.log.debug("User position (adc buffer): %s", data_user_position.value)
-                self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
-                self.log.debug("Left over in bytes: %s", bytes_leftover)
+                # self.log.debug("Expected adc data in bytes: %s", total_bytes)
+                # self.log.debug("User position (adc buffer): %s", data_user_position.value)
+                # self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
 
                 while not self.is_running.is_set():
-                    # Read/update available user bytes
-                    sp.spcm_dwGetParam_i32(
-                        self.card,
-                        sp.SPC_DATA_AVAIL_USER_LEN,
-                        byref(available_user_databytes),
-                    )
-                    self.log.debug("Available user length in bytes (adc buffer): %s", available_user_databytes.value)
 
-                    if available_user_databytes.value >= total_bytes:
+                    # sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)
+                    try:
+                        self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
+                    except RuntimeError:  # Reraise error for traceability
+                        raise RuntimeError
+
+                    # Read/update available user bytes
+                    sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
+                    sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_POS, byref(available_data_position))
+
+                    if available_data_bytes.value >= total_bytes_gate:
+
+                        # self.log.info("Available data length: %s", available_data_bytes.value)
+                        # self.log.info("Available data position: %s", available_data_position.value)
+
                         total_gates += 1
 
-                        sp.spcm_dwGetParam_i32(
-                            self.card,
-                            sp.SPC_DATA_AVAIL_USER_POS,
-                            byref(data_user_position),
-                        )
+                        byte_position = available_data_position.value // 2
+                        # total_bytes_to_read = available_data_bytes.value
+                        index_0 = byte_position + (total_leftover // 2)
 
-                        byte_position = data_user_position.value // 2
-                        total_bytes_to_read = available_user_databytes.value
-                        index_0 = byte_position + total_leftover // 2
-
-                        if total_bytes_to_read + data_user_position.value >= rx_size:
+                        if available_data_bytes.value + available_data_position.value >= rx_size:
                             # >> We need two indices in case of memory position overflows the total memory length
                             # Get the last position available and subtract it from current byte position
                             index_1 = rx_size // 2 - index_0
-
                             # Get the remaining length after overflow. Then subtract it from the total bytes.
-                            index_2 = total_bytes // 2 - index_1
+                            index_2 = total_bytes_gate // 2 - index_1
 
-                            # Numpy array conversation. Get the first part of the slice
+                            # Get the first part of the slice
                             offset_bytes_1 = index_1 * sizeof(c_short)
                             ptr_to_slice_1 = cast(addressof(rx_data.contents) + offset_bytes_1, POINTER(c_short))
                             slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, ((index_1),))
@@ -412,30 +413,28 @@ class RxCard(SpectrumDevice):
                             # If there is no memory position overflow, just get the data.
                             offset_bytes = index_0 * sizeof(c_short)
                             ptr_to_slice = cast(addressof(rx_data.contents) + offset_bytes, POINTER(c_short))
-                            gate_data = np.ctypeslib.as_array(ptr_to_slice, ((total_bytes // 2),))
+                            gate_data = np.ctypeslib.as_array(ptr_to_slice, ((total_bytes_gate // 2),))
 
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
                         self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
 
-                        # Most probably we have not filled the whole page.
-                        # There should be some bytes in the buffer, which are not readable yet.
-                        bytes_leftover = (total_bytes + self.post_trigger_size * self.num_channels.value) \
-                            % rx_notify.value
+                        # The accumulation of the leftover bytes is positive,
+                        # if if the post-trigger event was not fully captured (accumulated sum increases),
+                        # or negative if more then the expected data could be read due to lefter bytes
+                        # from a previous acquisition (accumulated sum decreases).
+                        total_leftover += (bytes_sequence - available_data_bytes.value)
 
-                        # Calculate the accumulation of the leftover bytes.
-                        # If it is bigger than the notify value read the page.
-                        total_leftover += bytes_leftover
-                        if total_leftover >= rx_notify.value:
-                            total_leftover = total_leftover - rx_notify.value
-                            available_card_len = bytes_sequence - (bytes_leftover) + rx_notify.value
-                        else:
-                            available_card_len = bytes_sequence - (bytes_leftover)
+                        # Tell the card that data has been read and the buffer can be reused.
+                        # Using the size of available data bytes prevents invalid values.
+                        try:
+                            self.handle_error(
+                                sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_data_bytes)
+                            )
+                        except RuntimeError:  # Reraise error for traceability
+                            raise RuntimeError
 
-                        # Tell the card that we have read the data.
-                        # It is better for tracking if the card length is in the order of notify (page) size.
-                        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_card_len)
                         break
 
         self.log.debug("Card operation stopped")

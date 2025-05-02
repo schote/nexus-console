@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from console.interfaces.acquisition_parameter import AcquisitionParameter
+
 
 @dataclass(slots=True, frozen=True)
 class UnrolledSequence:
@@ -44,11 +46,11 @@ class UnrolledSequence:
     Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem
     `dwell_time < 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen."""
 
-    larmor_frequency: float
-    """Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal."""
-
     duration: float
     """Total duration of the unrolled sequence in s."""
 
     adc_count: int
     """Number of adc events in the sequence."""
+
+    parameter: AcquisitionParameter
+    """Hash of acquisition parameters used to calculate the sequence."""
