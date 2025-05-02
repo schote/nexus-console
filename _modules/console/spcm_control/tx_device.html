@@ -579,6 +579,8 @@
             <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL0</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL3</span><span class="p">,</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setup max. output amplitude: </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">)</span>
+
         <span class="c1"># Use loop to enable and setup active channels</span>
         <span class="c1"># Channel 0: RF</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_ENABLEOUT0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>

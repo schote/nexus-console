@@ -485,11 +485,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
 
-        <span class="c1"># Define pre and post trigger time.</span>
         <span class="c1"># Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="o">=</span> <span class="mi">8</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">4096</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># TODO: only use one variable for post trigger</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
@@ -609,9 +607,9 @@
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_X2_MODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGIN</span><span class="p">)</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DIGMODE0</span><span class="p">,</span> <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">DIGMODEMASK_BIT15</span> <span class="o">&amp;</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_DIGMODE_X2</span><span class="p">))</span>
 
-        <span class="c1"># TODO: Double check, why is the post trigger divided by number of channels and multiplied by 2?</span>
+        <span class="c1"># Calculate actual post trigger size depending on the number of active channels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">4096</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">*</span> <span class="mi">2</span>
+
         <span class="c1"># Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 =&gt; runs infinitely long</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_POSTTRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span><span class="p">)</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_PRETRIGGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span>
@@ -629,7 +627,7 @@
         <span class="c1"># Setup gated fifo mode</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_CARDMODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_REC_FIFO_GATE</span><span class="p">)</span>
 
-        <span class="c1"># Set timeout to 10ms (used for DMA wait)</span>
+        <span class="c1"># Set timeout used for DMA wait to 10 ms</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TIMEOUT</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Device setup completed&quot;</span><span class="p">)</span>
@@ -713,115 +711,118 @@
         <span class="n">rx_data</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">rx_buffer</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">ptr16</span><span class="p">)</span>  <span class="c1"># cast to pointer to 16bit integer</span>
 
         <span class="c1"># Setup polling mode</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_EXTRA_POLL</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_EXTRA_POLL</span><span class="p">))</span>
 
-        <span class="c1"># TODO: Move all the stuff up to here to setup function?</span>
-
-        <span class="c1"># &gt;&gt; Start everything</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
+        <span class="c1"># Start DMA</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_START</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_ENABLETRIGGER</span> <span class="o">|</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_STARTDMA</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+        <span class="p">))</span>
 
+        <span class="c1"># Define helpers/buffer to read card parameter</span>
         <span class="n">available_timestamp_bytes</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">available_timestamp_postion</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">available_user_databytes</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">data_user_position</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">available_data_bytes</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">available_data_position</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">total_gates</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">total_leftover</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># Start receiver</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Starting receive&quot;</span><span class="p">)</span>
 
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
-            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>  <span class="c1"># Reraise error for traceability</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span>
+
+            <span class="c1"># Read the available timestamp buffer size</span>
+            <span class="n">available_timestamp_bytes</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">))</span>
+
+            <span class="c1"># Process, if buffer size is greater or equal 32 (corresponds to 2 timestamps)</span>
             <span class="k">if</span> <span class="n">available_timestamp_bytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="mi">32</span><span class="p">:</span>
-                <span class="c1"># read position</span>
-                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span>
+                <span class="c1"># Read timestamp position</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
                     <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_POS</span><span class="p">,</span>
                     <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="p">),</span>
                 <span class="p">)</span>
 
-                <span class="c1"># Read two timestamps</span>
+                <span class="c1"># self.log.info(&quot;Timestamp buffer position: %s&quot;, available_timestamp_postion.value)</span>
+
+                <span class="c1"># Read exactly two timestamps</span>
                 <span class="n">timestamp_0</span> <span class="o">=</span> <span class="n">pll_data</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)]</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
                 <span class="n">timestamp_1</span> <span class="o">=</span> <span class="n">pll_data</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">available_timestamp_postion</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
 
-                <span class="c1"># Calculate gate duration</span>
+                <span class="c1"># Calculate gate duration and the number of adc gate sample points (per channel)</span>
                 <span class="n">gate_length</span> <span class="o">=</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">timestamp_1</span><span class="p">))</span> <span class="o">-</span> <span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">timestamp_0</span><span class="p">))</span>
-
-                <span class="c1"># Calculate the number of adc gate sample points (per channel)</span>
                 <span class="n">gate_sample</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">gate_length</span> <span class="o">*</span> <span class="p">(</span><span class="n">Decimal</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">))</span> <span class="o">*</span> <span class="n">Decimal</span><span class="p">(</span><span class="s2">&quot;1e6&quot;</span><span class="p">))))</span>
-
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;Gate: (</span><span class="si">%s</span><span class="s2"> s, </span><span class="si">%s</span><span class="s2"> s); ADC duration: </span><span class="si">%s</span><span class="s2"> ms ; Samples/gate/channel: </span><span class="si">% s</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;Gate: (</span><span class="si">%s</span><span class="s2"> s, </span><span class="si">%s</span><span class="s2"> s); ADC duration: </span><span class="si">%s</span><span class="s2"> ms ; Samples/gate/channel: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">timestamp_0</span><span class="p">,</span>
                     <span class="n">timestamp_1</span><span class="p">,</span>
                     <span class="nb">float</span><span class="p">(</span><span class="n">gate_length</span><span class="p">)</span> <span class="o">*</span> <span class="mf">1e3</span><span class="p">,</span>  <span class="c1"># Can be trimmed.</span>
                     <span class="n">gate_sample</span><span class="p">,</span>
                 <span class="p">)</span>
 
-                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
-                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-                    <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span>
-                    <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">),</span>
-                <span class="p">)</span>
+                <span class="c1"># Free timestamp buffer by writing available timestamp card length</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="mi">32</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>  <span class="c1"># Reraise error for traceability</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_TS_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_timestamp_bytes</span><span class="p">))</span>
+
+                <span class="c1"># self.log.info(&quot;Available timestamp user length: %s&quot;, available_timestamp_bytes.value)</span>
 
                 <span class="c1"># Check for rounding errors</span>
-                <span class="n">total_bytes</span> <span class="o">=</span> <span class="p">(</span><span class="n">gate_sample</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>
+                <span class="n">total_bytes_gate</span> <span class="o">=</span> <span class="p">(</span><span class="n">gate_sample</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>
                 <span class="n">bytes_sequence</span> <span class="o">=</span> <span class="p">(</span><span class="n">gate_sample</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>
 
-                <span class="c1"># Read/update available user bytes</span>
-                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-                    <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span>
-                    <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">),</span>
-                <span class="p">)</span>
-                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">data_user_position</span><span class="p">))</span>
+                <span class="c1"># Read available data length and position</span>
+                <span class="c1"># TODO: Double-check, why is this required? Values are read again after wait dma command.</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_data_bytes</span><span class="p">))</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_data_position</span><span class="p">))</span>
 
-                <span class="c1"># Debug log statements</span>
+                <span class="c1"># # Debug log statements</span>
                 <span class="c1"># self.log.debug(&quot;Available timestamp buffer size: %s&quot;, available_timestamp_bytes.value)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Expected adc data in bytes: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">total_bytes</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;User position (adc buffer): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Number of segments in notify size: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">total_bytes</span> <span class="o">//</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Left over in bytes: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">bytes_leftover</span><span class="p">)</span>
+                <span class="c1"># self.log.debug(&quot;Expected adc data in bytes: %s&quot;, total_bytes)</span>
+                <span class="c1"># self.log.debug(&quot;User position (adc buffer): %s&quot;, data_user_position.value)</span>
+                <span class="c1"># self.log.debug(&quot;Number of segments in notify size: %s&quot;, total_bytes // rx_notify.value)</span>
 
                 <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
-                    <span class="c1"># Read/update available user bytes</span>
-                    <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-                        <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span>
-                        <span class="n">byref</span><span class="p">(</span><span class="n">available_user_databytes</span><span class="p">),</span>
-                    <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Available user length in bytes (adc buffer): </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 
-                    <span class="k">if</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">total_bytes</span><span class="p">:</span>
+                    <span class="c1"># sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">))</span>
+                    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>  <span class="c1"># Reraise error for traceability</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span>
+
+                    <span class="c1"># Read/update available user bytes</span>
+                    <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_LEN</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_data_bytes</span><span class="p">))</span>
+                    <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">available_data_position</span><span class="p">))</span>
+
+                    <span class="k">if</span> <span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">total_bytes_gate</span><span class="p">:</span>
+
+                        <span class="c1"># self.log.info(&quot;Available data length: %s&quot;, available_data_bytes.value)</span>
+                        <span class="c1"># self.log.info(&quot;Available data position: %s&quot;, available_data_position.value)</span>
+
                         <span class="n">total_gates</span> <span class="o">+=</span> <span class="mi">1</span>
 
-                        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
-                            <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_USER_POS</span><span class="p">,</span>
-                            <span class="n">byref</span><span class="p">(</span><span class="n">data_user_position</span><span class="p">),</span>
-                        <span class="p">)</span>
+                        <span class="n">byte_position</span> <span class="o">=</span> <span class="n">available_data_position</span><span class="o">.</span><span class="n">value</span> <span class="o">//</span> <span class="mi">2</span>
+                        <span class="c1"># total_bytes_to_read = available_data_bytes.value</span>
+                        <span class="n">index_0</span> <span class="o">=</span> <span class="n">byte_position</span> <span class="o">+</span> <span class="p">(</span><span class="n">total_leftover</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
 
-                        <span class="n">byte_position</span> <span class="o">=</span> <span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span> <span class="o">//</span> <span class="mi">2</span>
-                        <span class="n">total_bytes_to_read</span> <span class="o">=</span> <span class="n">available_user_databytes</span><span class="o">.</span><span class="n">value</span>
-                        <span class="n">index_0</span> <span class="o">=</span> <span class="n">byte_position</span> <span class="o">+</span> <span class="n">total_leftover</span> <span class="o">//</span> <span class="mi">2</span>
-
-                        <span class="k">if</span> <span class="n">total_bytes_to_read</span> <span class="o">+</span> <span class="n">data_user_position</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">rx_size</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">available_data_position</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;=</span> <span class="n">rx_size</span><span class="p">:</span>
                             <span class="c1"># &gt;&gt; We need two indices in case of memory position overflows the total memory length</span>
                             <span class="c1"># Get the last position available and subtract it from current byte position</span>
                             <span class="n">index_1</span> <span class="o">=</span> <span class="n">rx_size</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">index_0</span>
-
                             <span class="c1"># Get the remaining length after overflow. Then subtract it from the total bytes.</span>
-                            <span class="n">index_2</span> <span class="o">=</span> <span class="n">total_bytes</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">index_1</span>
+                            <span class="n">index_2</span> <span class="o">=</span> <span class="n">total_bytes_gate</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">index_1</span>
 
-                            <span class="c1"># Numpy array conversation. Get the first part of the slice</span>
+                            <span class="c1"># Get the first part of the slice</span>
                             <span class="n">offset_bytes_1</span> <span class="o">=</span> <span class="n">index_1</span> <span class="o">*</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">c_short</span><span class="p">)</span>
                             <span class="n">ptr_to_slice_1</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">addressof</span><span class="p">(</span><span class="n">rx_data</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset_bytes_1</span><span class="p">,</span> <span class="n">POINTER</span><span class="p">(</span><span class="n">c_short</span><span class="p">))</span>
                             <span class="n">slice_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ctypeslib</span><span class="o">.</span><span class="n">as_array</span><span class="p">(</span><span class="n">ptr_to_slice_1</span><span class="p">,</span> <span class="p">((</span><span class="n">index_1</span><span class="p">),))</span>
@@ -838,30 +839,28 @@
                             <span class="c1"># If there is no memory position overflow, just get the data.</span>
                             <span class="n">offset_bytes</span> <span class="o">=</span> <span class="n">index_0</span> <span class="o">*</span> <span class="n">sizeof</span><span class="p">(</span><span class="n">c_short</span><span class="p">)</span>
                             <span class="n">ptr_to_slice</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">addressof</span><span class="p">(</span><span class="n">rx_data</span><span class="o">.</span><span class="n">contents</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset_bytes</span><span class="p">,</span> <span class="n">POINTER</span><span class="p">(</span><span class="n">c_short</span><span class="p">))</span>
-                            <span class="n">gate_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ctypeslib</span><span class="o">.</span><span class="n">as_array</span><span class="p">(</span><span class="n">ptr_to_slice</span><span class="p">,</span> <span class="p">((</span><span class="n">total_bytes</span> <span class="o">//</span> <span class="mi">2</span><span class="p">),))</span>
+                            <span class="n">gate_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ctypeslib</span><span class="o">.</span><span class="n">as_array</span><span class="p">(</span><span class="n">ptr_to_slice</span><span class="p">,</span> <span class="p">((</span><span class="n">total_bytes_gate</span> <span class="o">//</span> <span class="mi">2</span><span class="p">),))</span>
 
                         <span class="c1"># Cut the pretrigger, we do not need it.</span>
                         <span class="n">pre_trigger_cut</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>
                         <span class="n">gate_data</span> <span class="o">=</span> <span class="n">gate_data</span><span class="p">[</span><span class="n">pre_trigger_cut</span><span class="p">:]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gate_data</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">gate_sample</span><span class="p">),</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;F&quot;</span><span class="p">))</span>
 
-                        <span class="c1"># Most probably we have not filled the whole page.</span>
-                        <span class="c1"># There should be some bytes in the buffer, which are not readable yet.</span>
-                        <span class="n">bytes_leftover</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_bytes</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger_size</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> \
-                            <span class="o">%</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
+                        <span class="c1"># The accumulation of the leftover bytes is positive,</span>
+                        <span class="c1"># if if the post-trigger event was not fully captured (accumulated sum increases),</span>
+                        <span class="c1"># or negative if more then the expected data could be read due to lefter bytes</span>
+                        <span class="c1"># from a previous acquisition (accumulated sum decreases).</span>
+                        <span class="n">total_leftover</span> <span class="o">+=</span> <span class="p">(</span><span class="n">bytes_sequence</span> <span class="o">-</span> <span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
 
-                        <span class="c1"># Calculate the accumulation of the leftover bytes.</span>
-                        <span class="c1"># If it is bigger than the notify value read the page.</span>
-                        <span class="n">total_leftover</span> <span class="o">+=</span> <span class="n">bytes_leftover</span>
-                        <span class="k">if</span> <span class="n">total_leftover</span> <span class="o">&gt;=</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
-                            <span class="n">total_leftover</span> <span class="o">=</span> <span class="n">total_leftover</span> <span class="o">-</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
-                            <span class="n">available_card_len</span> <span class="o">=</span> <span class="n">bytes_sequence</span> <span class="o">-</span> <span class="p">(</span><span class="n">bytes_leftover</span><span class="p">)</span> <span class="o">+</span> <span class="n">rx_notify</span><span class="o">.</span><span class="n">value</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">available_card_len</span> <span class="o">=</span> <span class="n">bytes_sequence</span> <span class="o">-</span> <span class="p">(</span><span class="n">bytes_leftover</span><span class="p">)</span>
+                        <span class="c1"># Tell the card that data has been read and the buffer can be reused.</span>
+                        <span class="c1"># Using the size of available data bytes prevents invalid values.</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span>
+                                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">available_data_bytes</span><span class="p">)</span>
+                            <span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>  <span class="c1"># Reraise error for traceability</span>
+                            <span class="k">raise</span> <span class="ne">RuntimeError</span>
 
-                        <span class="c1"># Tell the card that we have read the data.</span>
-                        <span class="c1"># It is better for tracking if the card length is in the order of notify (page) size.</span>
-                        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">available_card_len</span><span class="p">)</span>
                         <span class="k">break</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Card operation stopped&quot;</span><span class="p">)</span>

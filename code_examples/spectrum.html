@@ -471,7 +471,7 @@ They are saved on mutation and the latest state is loaded at <code class="docuti
 <span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">=</span> <span class="mf">2.0395e6</span>
 
 <span class="c1"># Run the acquisition</span>
-<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">,</span> <span class="n">parameter</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
 <span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <span class="c1"># Get decimated data from acquisition data object</span>

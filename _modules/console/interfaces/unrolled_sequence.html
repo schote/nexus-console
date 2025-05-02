@@ -416,6 +416,8 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
+
 
 <div class="viewcode-block" id="UnrolledSequence">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.interfaces.unrolled_sequence.UnrolledSequence">[docs]</a>
@@ -458,14 +460,14 @@
 <span class="sd">    Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem</span>
 <span class="sd">    `dwell_time &lt; 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen.&quot;&quot;&quot;</span>
 
-    <span class="n">larmor_frequency</span><span class="p">:</span> <span class="nb">float</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Larmor frequency of the MR scanner which defines the frequency of the RF pulse carrier signal.&quot;&quot;&quot;</span>
-
     <span class="n">duration</span><span class="p">:</span> <span class="nb">float</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Total duration of the unrolled sequence in s.&quot;&quot;&quot;</span>
 
     <span class="n">adc_count</span><span class="p">:</span> <span class="nb">int</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of adc events in the sequence.&quot;&quot;&quot;</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of adc events in the sequence.&quot;&quot;&quot;</span>
+
+    <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hash of acquisition parameters used to calculate the sequence.&quot;&quot;&quot;</span></div>
 
 </pre></div>
 

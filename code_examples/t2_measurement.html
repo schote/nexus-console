@@ -473,7 +473,7 @@ E.g. if <code class="docutils literal notranslate"><span class="pre">num_steps</
 <span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span> <span class="o">=</span> <span class="mf">2.43</span>
 
 <span class="c1"># Perform acquisition</span>
-<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">)</span>
+<span class="n">acq</span><span class="o">.</span><span class="n">set_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="o">=</span><span class="n">seq</span><span class="p">,</span> <span class="n">parameter</span><span class="o">=</span><span class="n">console</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
 <span class="n">acq_data</span><span class="p">:</span> <span class="n">AcquisitionData</span> <span class="o">=</span> <span class="n">acq</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">acq_data</span><span class="o">.</span><span class="n">raw</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
 
