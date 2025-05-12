@@ -220,6 +220,7 @@ class AcquisitionControl:
         # Initialize variables
         self._unproc = []
         self._raw = []
+        self.acq_finished = False
 
         processing_thread = threading.Thread(
             target=self.post_processing, args=(console.parameter, self.queue, return_unprocessed)
