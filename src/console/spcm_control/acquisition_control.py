@@ -196,6 +196,8 @@ class AcquisitionControl:
         self._unproc = []
         self._raw = []
 
+        self.rx_data = self.sequence.rx_data.copy()
+
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
             self.sequence.parameter.gradient_offset, self.seq_provider.high_impedance[1:]
@@ -205,7 +207,7 @@ class AcquisitionControl:
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
-            self.rx_card.start_operation()
+            self.rx_card.start_operation(self.sequence.parameter.larmor_frequency, self.rx_data)
             time.sleep(0.01)
             self.tx_card.start_operation(self.sequence)
 

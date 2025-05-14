@@ -1,6 +1,7 @@
 """Implementation of receive card."""
 import logging
 import threading
+import queue
 from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
@@ -11,6 +12,8 @@ import numpy as np
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
+from console.interfaces.acquisition_parameter import DDCMethod
+from console.interfaces.rx_data import RxData
 
 # Define registers lists
 CH_SELECT = [
@@ -48,6 +51,69 @@ IMP_SELECT = [
 # Set precision for precise gate samples calculation
 getcontext().prec = 28
 
+class RxDataHandling:
+    """Class for handeling simultaneous and parallel processing of Rx data."""
+
+    def __init__(self, larmor_freq: float,
+                 store_unprocessed: bool = False,
+                 max_workers: int = 4):
+        """Init for the RxDataHandling class used to process the incoming data in real time.
+
+        Args:
+            larmor_freq (float): Larmor frequency used for demodulating the data as it comes in
+            store_unprocessed (bool, optional): Flag for keeping the unprocessed data, not wanted in the
+            vast majority of cases so better to dismiss it ASAP
+            max_workers (int, optional): Set maximum number of parallel workers, can probably get away with 1
+        """
+        self.larmor_freq = larmor_freq
+        self.store_unprocessed = store_unprocessed
+        # Appears to be no performance benefit to havinng more than 4 workers
+        self.max_workers = max_workers
+        self.workers = []
+        self.proc_queue = queue.Queue
+
+    def _proc_loop(self) -> None:
+        """Worker thread function that continuously processes items."""
+        while self.running:
+            try:
+                # Block with timeout to periodically check if still running
+                # Should have a better way of handling this timeout (what happens with very long TRs?)
+                obj = self.proc_queue.get(timeout=5.0)
+                if obj is None:  # Sentinel value to signal shutdown of parallel process
+                    self.proc_queue.put(None)  # Put back the None objecy for other workers
+                    break
+                obj.process_data(self.larmor_freq, store_unprocessed = self.store_unprocessed)
+
+                # Mark as done
+                self.proc_queue.task_done()
+            except queue.Empty:
+                # Empty queue exception is fine since more data may be coming
+                continue
+
+    def start_workers(self) -> None:
+        """Start the parallel processing workers."""
+        self.running = True
+        for _ in range(self.max_workers):
+            worker = threading.Thread(target=self.proc_loop)
+            self.workers.append(worker)
+            worker.start()
+
+    def wait_for_completion(self) -> None:
+        """Wait for all current items to be processed."""
+        self.proc_queue.join()
+
+    def shutdown(self, wait=True):
+        """Shutdown the processor."""
+        self.running = False
+        # Signal workers to stop using sentinel value
+        self.proc_queue.put(None)
+
+        if wait:
+            # Wait for all workers to finish
+            for worker in self.workers:
+                if worker.is_alive():
+                    worker.join()
+
 
 @dataclass
 class RxCard(SpectrumDevice):
@@ -55,6 +121,9 @@ class RxCard(SpectrumDevice):
 
     path: str
     sample_rate: int
+    larmor_freq: float | None = None
+    rx_data: list[RxData] | None = None
+    store_unprocessed: bool = False
     channel_enable: list[int]
     max_amplitude: list[int]
     impedance_50_ohms: list[int]
@@ -71,11 +140,14 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
 
+        # Initialize data processing handler
+        self.rxdata_handler = RxDataHandling(larmor_freq=self.larmor_freq,
+                                           store_unprocessed=self.store_unprocessed)
+
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
         self.post_trigger = 4096
 
-        self.rx_data = []
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     def dict(self) -> dict:
@@ -214,14 +286,16 @@ class RxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         self.log_card_status()
 
-    def start_operation(self):
+    def start_operation(self, larmor_freq: float, rx_data: list[RxData]):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
-        self.rx_data = []
+        self.rx_data = rx_data
+        self.larmor_freq = larmor_freq
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
+        self.rxdata_handler.start_workers()
 
     def stop_operation(self):
         """Stop card thread."""
@@ -240,6 +314,7 @@ class RxCard(SpectrumDevice):
             )
             self.handle_error(error)
             self.worker = None
+            self.rxdata_handler.shutdown()
         else:
             # No thread is running
             self.log.error("No active process found")
@@ -383,8 +458,6 @@ class RxCard(SpectrumDevice):
                         # self.log.info("Available data length: %s", available_data_bytes.value)
                         # self.log.info("Available data position: %s", available_data_position.value)
 
-                        total_gates += 1
-
                         byte_position = available_data_position.value // 2
                         # total_bytes_to_read = available_data_bytes.value
                         index_0 = byte_position + (total_leftover // 2)
@@ -418,13 +491,16 @@ class RxCard(SpectrumDevice):
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-                        self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
+                        self.rx_data[total_gates].raw_data(gate_data.reshape((self.num_channels.value, gate_sample),
+                                                                             order="F"))
 
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),
                         # or negative if more then the expected data could be read due to lefter bytes
                         # from a previous acquisition (accumulated sum decreases).
                         total_leftover += (bytes_sequence - available_data_bytes.value)
+
+                        total_gates += 1
 
                         # Tell the card that data has been read and the buffer can be reused.
                         # Using the size of available data bytes prevents invalid values.

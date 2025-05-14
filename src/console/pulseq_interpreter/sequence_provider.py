@@ -15,6 +15,7 @@ from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 # import console
 from console.interfaces.dimensions import Dimensions
+from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
 try:
@@ -375,7 +376,7 @@ class SequenceProvider(Sequence):
             waveform[delay_samples:] = 2**15
             time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
             ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
-            adc_list.append((adc_waveform[0], waveform, ref_signal))
+            adc_list.append((adc_waveform[0], waveform, ref_signal, num_samples, dwell_time))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -507,6 +508,7 @@ class SequenceProvider(Sequence):
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
         _adc = np.zeros(seq_samples, dtype=np.uint16)
         _unblanking = np.zeros(seq_samples, dtype=np.uint16)
+        _rx_data = [] #list containing rx data objects for each ADC event
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
@@ -565,9 +567,11 @@ class SequenceProvider(Sequence):
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
             if block.adc is not None:  # ADC event
-                adc_count += 1
-                adc_waveform = adc_events[event[5] - 1][1]  # Grab the ADC event from the pre-calculated list
-                ref_signal = adc_events[event[5] - 1][2]  # Pulseq is 1 indexed, shift idx by -1 for correct event
+                # Grab the ADC event from the pre-calculated list
+                # Pulseq is 1 indexed, shift idx by -1 for correct event
+                adc_event  = adc_events[[5] -1]
+                adc_waveform = adc_event[1]
+                ref_signal = adc_event[2]
 
                 # Calculate ADC start and end positions according to block position
                 adc_start = block_pos[event_idx] * 4
@@ -576,6 +580,13 @@ class SequenceProvider(Sequence):
                 # Add ADC gate to X gradient
                 _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
 
+                _rx_data.append(RxData(index=adc_count,
+                                       num_pnts=block.adc.num_samples,
+                                       dwell_time=block.adc.dwell,
+                                       dwell_time_raw=self.spcm_dwell_time,
+                                       phase_offset=block.adc.phase_offset,
+                                       freq_offset=block.adc.freq_offset))
+
                 # Create ref signal in ADC waveform
                 time_offset = block_pos[event_idx] * self.spcm_dwell_time
                 ref_signal = ref_signal * np.exp(2j * np.pi * time_offset)
@@ -583,12 +594,26 @@ class SequenceProvider(Sequence):
 
                 # Add ref signal to Y gradient
                 _seq[adc_start + 2:adc_end + 2:4] = _seq[adc_start + 2:adc_end + 2:4] | ref_waveform
+                adc_count += 1
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
             seq_samples,
             len(block_durations),
         )
+
+        # add labels for ADC events
+        labels = self.evaluate_labels(evolution="adc")
+
+        for label in labels:
+            if len(labels[label]) != len(_rx_data):
+                self.logging("Label list and rx_data list are not equal in length for label %s"%(label))
+            else:
+                for rx_event in _rx_data:
+                    label_dict = {}
+                    for label in labels:
+                        label_dict[label] = labels[label][rx_event.index]
+                    rx_event.labels = label_dict
 
         # Save unrolled sequence in class
         self._sqnc_cache = _seq

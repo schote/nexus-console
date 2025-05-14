@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.rx_data import RxData
 
 
 @dataclass(slots=True, frozen=True)
@@ -23,6 +24,9 @@ class UnrolledSequence:
 
     sample_count: int
     """Total number of samples per channel."""
+
+    rx_data: list[RxData]
+    """List containing the data and metadata of all receive events"""
 
     gpa_gain: list[float]
     """The gradient waveforms in pulseq are defined in Hz/m.
