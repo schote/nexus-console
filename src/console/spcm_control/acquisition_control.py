@@ -237,7 +237,7 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(self.sequence.parameter)
+                self.post_processing(self.sequence.parameter, self.sequence.rx_phase_offset)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -274,7 +274,7 @@ class AcquisitionControl:
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
+    def post_processing(self, parameter: AcquisitionParameter, rx_phase_offset: list[float]) -> None:
         """Proces acquired NMR data.
 
         Data is sorted according to readout size which might vary between different reout windows.
@@ -338,7 +338,7 @@ class AcquisitionControl:
                     data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Correct for Rx phase
-            data = data * np.exp(-1j * np.array(self.sequence.rx_phase_offset))[:,np.newaxis]
+            data = data * np.exp(-1j * np.array(rx_phase_offset))[:, np.newaxis]
 
             # Append to global raw data list
             if raw_size > 0:
