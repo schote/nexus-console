@@ -338,7 +338,7 @@ class AcquisitionControl:
                     data = signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Correct for Rx phase
-            data = data * np.exp(-1j * np.array(self.unrolled_seq.rx_phase_offset))[:,np.newaxis]
+            data = data * np.exp(-1j * np.array(self.sequence.rx_phase_offset))[:,np.newaxis]
 
             # Append to global raw data list
             if raw_size > 0:
