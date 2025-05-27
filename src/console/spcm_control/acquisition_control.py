@@ -357,13 +357,18 @@ class AcquisitionControl:
         parameter
             Acquisition parameter
         """
-        self._raw = []
         gate_sizes = []
         gates_received = 0
+        raw_list: list = []
+        unproc_list: list = []
+
         with Pool(processes=8) as pool:
             while True:
                 # Stop processing if everything processed and acquisition finished
                 if gates_received >= self.rx_card.gates_received and self.acq_finished is True:
+                    self._raw = [np.concatenate(r, axis=2) for r in raw_list]
+                    if return_unprocessed:
+                        self._unproc = [np.concatenate(r, axis=2) for r in unproc_list]
                     break
 
                 if not queue.empty():
@@ -404,21 +409,18 @@ class AcquisitionControl:
                     # If the data has a new gate_length
                     if gate_length not in gate_sizes:
                         gate_sizes.append(gate_length)
-                        self._raw.append(data_array[None, ...])
+                        raw_list.append([data_array[None, ...]])
 
                         if return_unprocessed:
-                            self._unproc.append(gate_data[None, ...])
+                            unproc_list.append([gate_data[None, ...]])
 
                     else:  # If data with this gate_length has already been received
                         # Get index of this gate_length
                         _gate_index = gate_sizes.index(gate_length)
 
                         # Concatenate the data to the _raw object at the right gate_length index
-                        self._raw[_gate_index] = np.concatenate((self._raw[_gate_index], data_array[None, ...]), axis=2)
+                        raw_list[_gate_index].append(data_array[None, ...])
 
                         # If return processed is true, also add unprocessed data at the right index
                         if return_unprocessed:
-                            self._unproc[_gate_index] = np.concatenate(
-                                (self._unproc[_gate_index], gate_data[None, ...]),
-                                axis=2
-                                )
+                            unproc_list[_gate_index].append(gate_data[None, ...])
