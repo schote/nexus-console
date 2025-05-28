@@ -51,70 +51,6 @@ IMP_SELECT = [
 # Set precision for precise gate samples calculation
 getcontext().prec = 28
 
-class RxDataHandling:
-    """Class for handeling simultaneous and parallel processing of Rx data."""
-
-    def __init__(self, larmor_freq: float,
-                 store_unprocessed: bool = False,
-                 max_workers: int = 4):
-        """Init for the RxDataHandling class used to process the incoming data in real time.
-
-        Args:
-            larmor_freq (float): Larmor frequency used for demodulating the data as it comes in
-            store_unprocessed (bool, optional): Flag for keeping the unprocessed data, not wanted in the
-            vast majority of cases so better to dismiss it ASAP
-            max_workers (int, optional): Set maximum number of parallel workers, can probably get away with 1
-        """
-        self.larmor_freq = larmor_freq
-        self.store_unprocessed = store_unprocessed
-        # Appears to be no performance benefit to havinng more than 4 workers
-        self.max_workers = max_workers
-        self.workers = []
-        self.proc_queue = queue.Queue
-
-    def _proc_loop(self) -> None:
-        """Worker thread function that continuously processes items."""
-        while self.running:
-            try:
-                # Block with timeout to periodically check if still running
-                # Should have a better way of handling this timeout (what happens with very long TRs?)
-                obj = self.proc_queue.get(timeout=5.0)
-                if obj is None:  # Sentinel value to signal shutdown of parallel process
-                    self.proc_queue.put(None)  # Put back the None objecy for other workers
-                    break
-                obj.process_data(self.larmor_freq, store_unprocessed = self.store_unprocessed)
-
-                # Mark as done
-                self.proc_queue.task_done()
-            except queue.Empty:
-                # Empty queue exception is fine since more data may be coming
-                continue
-
-    def start_workers(self) -> None:
-        """Start the parallel processing workers."""
-        self.running = True
-        for _ in range(self.max_workers):
-            worker = threading.Thread(target=self.proc_loop)
-            self.workers.append(worker)
-            worker.start()
-
-    def wait_for_completion(self) -> None:
-        """Wait for all current items to be processed."""
-        self.proc_queue.join()
-
-    def shutdown(self, wait=True):
-        """Shutdown the processor."""
-        self.running = False
-        # Signal workers to stop using sentinel value
-        self.proc_queue.put(None)
-
-        if wait:
-            # Wait for all workers to finish
-            for worker in self.workers:
-                if worker.is_alive():
-                    worker.join()
-
-
 @dataclass
 class RxCard(SpectrumDevice):
     """Implementation of RX device."""
@@ -491,6 +427,8 @@ class RxCard(SpectrumDevice):
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
+                        # Store raw data in RxData object
+                        # TODO: handle differently for the multiprocessing implementation
                         self.rx_data[total_gates].raw_data(gate_data.reshape((self.num_channels.value, gate_sample),
                                                                              order="F"))
 

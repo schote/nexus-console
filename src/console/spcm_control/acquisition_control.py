@@ -170,8 +170,17 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self) -> AcquisitionData:
+    def run(self, store_unprocessed: bool = True,
+            realtime_proccessing: bool = False) -> AcquisitionData:
         """Run an acquisition job.
+
+        Parameters
+        ----------
+        store_unprocessed
+            Flag for whether to keep the raw, undecimated data after decimation
+        realtime_proccessing
+            flag for processing the data in real time using the multiprocessing or
+            using threading to process the data after it has all been acquired.
 
         Raises
         ------
@@ -196,7 +205,8 @@ class AcquisitionControl:
         self._unproc = []
         self._raw = []
 
-        self.rx_data = self.sequence.rx_data.copy()
+        # Create a list to store rx_data for all averages
+        self.receive_data = []
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -204,10 +214,15 @@ class AcquisitionControl:
         )
 
         for k in range(self.sequence.parameter.num_averages):
+            # Create a copy of rx_data to store the current acquisition in
+            self.receive_data.append(self.sequence.rx_data.copy())
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
-            self.rx_card.start_operation(self.sequence.parameter.larmor_frequency, self.rx_data)
+            self.rx_card.start_operation(larmor_freq=self.sequence.parameter.larmor_frequency,
+                                         rx_data=self.receive_data[k],
+                                         store_unprocessed=store_unprocessed,
+                                         realtime_proccessing=realtime_proccessing)
             time.sleep(0.01)
             self.tx_card.start_operation(self.sequence)
 
@@ -291,62 +306,13 @@ class AcquisitionControl:
         parameter
             Acquisition parameter
         """
-        readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {
-            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
-        }
-        for data in self.rx_card.rx_data:
-            grouped_gates[data.shape[-1]].append(data)
 
-        gate_lengths = [np.stack(group, axis=1) for group in grouped_gates.values()]
-        raw_size = len(self._raw)
-
+        for rx_data in self.receive_data:
+            for data in range(rx_data):
+                data.process_data(larmor_freq=self.sequence.parameter.larmor_frequency,
+                                  save_unprocessed=True)
+                
+        #TODO: scale the data
+        
         # Define channel dependent scaling
         scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
-
-        for k, data in enumerate(gate_lengths):
-            # Extract digital reference signal from channel 0
-            _ref = (data[0, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
-
-            # Remove digital signal from channel 0
-            data[0, ...] = data[0, ...] << 1
-            data = data.astype(np.int16) * scaling
-
-            # Stack signal and reference in coil dimension
-            data = np.concatenate((data, _ref), axis=0)
-
-            # Append unprocessed data without post processing (last coil dimension entry contains reference)
-            if raw_size > 0:
-                self._unproc[k] = np.concatenate((self._unproc[k], data[None, ...]), axis=0)
-            else:
-                self._unproc.append(data[None, ...])
-
-            print("Demodulation at freq.:", parameter.larmor_frequency)
-
-            # Demodulation and decimation
-            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
-
-            # Always decimate the reference signal with moving average filter
-            ref_dec = ddc.filter_moving_average(data[-1, ...], decimation=parameter.decimation, overlap=8)[None, ...]
-            # Extract the demodulated signal data
-            data = data[:-1, ...]
-
-            # Switch case for DDC function
-            match parameter.ddc_method:
-                case DDCMethod.CIC:
-                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-                case DDCMethod.AVG:
-                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-                case _:
-                    # Default case is FIR decimation
-                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
-
-            # Apply phase correction with mean value
-            # data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]
-            data = data * np.exp(-1j * np.angle(ref_dec))
-
-            # Append to global raw data list
-            if raw_size > 0:
-                self._raw[k] = np.concatenate((self._raw[k], data[None, ...]), axis=0)
-            else:
-                self._raw.append(data[None, ...])
