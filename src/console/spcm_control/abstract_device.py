@@ -5,13 +5,19 @@ from ctypes import _SimpleCData, byref, c_char_p, create_string_buffer
 from logging import Logger
 
 import console.spcm_control.spcm.pyspcm as sp
-from console.spcm_control.spcm.tools import translate_error, type_to_name
+from console.spcm_control.spcm.tools import translate_error, translate_status, type_to_name
 
 
 class SpectrumDevice(ABC):
     """Spectrum device abstract base class."""
 
-    def __init__(self, path: str, log: Logger):
+    card: c_char_p | None
+    card_type: sp.int32
+    name: str | None
+    path: str
+    log: Logger
+
+    def __init__(self, path: str, log: Logger) -> None:
         """Init function of spectrum device.
 
         Parameters
@@ -20,12 +26,12 @@ class SpectrumDevice(ABC):
             Path of the spectrum card device, e.g. /dev/spcm1
         """
         super().__init__()
-        self.card: c_char_p | None = None
-        self.name: str | None = None
+        self.card = None
+        self.card_type = sp.int32(0)
+        self.name = None
         self.path = path
         self.log = log
 
-    @abstractmethod
     def dict(self) -> dict:
         """Abstract method which returns variables for logging in dictionary."""
         attributes = {}
@@ -46,12 +52,13 @@ class SpectrumDevice(ABC):
                 attributes[key] = var
         return attributes
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """Disconnect card."""
         # Closing the card
         if self.card:
             self.log.info(f"Stopping and closing card {self.name}...")
             sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
+            sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_RESET)
             sp.spcm_vClose(self.card)
             # Reset card information
             self.card = None
@@ -76,9 +83,8 @@ class SpectrumDevice(ABC):
         self.card = sp.spcm_hOpen(create_string_buffer(str.encode(self.path)))
         if self.card:
             # Read card information
-            card_type = sp.int32(0)
-            sp.spcm_dwGetParam_i32(self.card, sp.SPC_PCITYP, byref(card_type))
-            self.name = type_to_name(card_type.value)
+            sp.spcm_dwGetParam_i32(self.card, sp.SPC_PCITYP, byref(self.card_type))
+            self.name = type_to_name(self.card_type.value)
             self.log.debug(f"Connection to card {self.name} established!")
             self.setup_card()
         else:
@@ -86,34 +92,51 @@ class SpectrumDevice(ABC):
             raise ConnectionError("Could not connect to card")
         return True
 
-    def handle_error(self, error: int):
+    def handle_error(self, error: int) -> None:
         """General error handling function."""
         if error != sp.ERR_OK:
             # sp.ERR_OK = 0, this corresponds to "if error:"
             if error == sp.ERR_TIMEOUT:
-                # Check for timeout
-                self.log.debug("Timeout")
-            else:
-                # Read error message from card
-                err_msg = create_string_buffer(sp.ERRORTEXTLEN)
-                if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
-                    # double check if error is not ERR_OK, disconnect and raise error
-                    self.log.critical(
-                        f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
-                    )
-                    sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
-                    raise RuntimeError
+                # Check for timeout, could be logged but occurs in normal operation
+                # self.log.debug("Received timeout")
+                return
+            # Read error message from card
+            err_msg = create_string_buffer(sp.ERRORTEXTLEN)
+            if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
+                # double check if error is not ERR_OK, disconnect and raise error
+                self.log.critical(
+                    f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
+                )
+                sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
+                raise RuntimeError
 
-    @abstractmethod
     def get_status(self) -> int:
-        """Abstract method to obtain card status."""
+        """Get and log current card status.
+
+        The status is represented by a list. Each entry represents a possible card status in form
+        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
+        instrumentation manual.
+
+        Returns
+        -------
+            String with status description.
+        """
+        try:
+            status = sp.int32(0)
+            sp.spcm_dwGetParam_i32(self.card, sp.SPC_M2STATUS, byref(status))
+            if self.log:
+                msg, _ = translate_status(status.value, include_desc=False)
+                self.log.debug("Card status:\n%s", {key: val for val, key in msg.values()})
+        except Exception:
+            self.log.exception("Error getting card status.")
+        return status.value
 
     @abstractmethod
-    def setup_card(self):
+    def setup_card(self) -> None:
         """Abstract method to setup the card."""
 
     @abstractmethod
-    def start_operation(self):
+    def start_operation(self) -> None:
         """Abstract method to start card operation.
 
         Parameters
@@ -123,5 +146,5 @@ class SpectrumDevice(ABC):
         """
 
     @abstractmethod
-    def stop_operation(self):
+    def stop_operation(self) -> None:
         """Abstract method to stop card operation."""
