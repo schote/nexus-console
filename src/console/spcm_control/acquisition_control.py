@@ -308,8 +308,7 @@ class AcquisitionControl:
         """
         # Currently only threaded handling of the RxData is implemented
         data_processor = MultiThreadingProcessor(max_workers=4)
-        for rx_data in self.receive_data:
-            data_processor.add_items(rx_data, larmor_freq=parameter.larmor_frequency)
+        data_processor.add_items(self.receive_data[-1], larmor_freq=parameter.larmor_frequency)
         data_processor.shutdown()
 
         #TODO: scale the data
