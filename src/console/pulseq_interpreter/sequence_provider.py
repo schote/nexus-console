@@ -18,6 +18,7 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 try:
     from line_profiler import profile
 except ImportError:
+
     def profile(func: Callable[..., Any]) -> Callable[..., Any]:
         """Define placeholder for profile decorator."""
         return func
@@ -510,23 +511,26 @@ class SequenceProvider(Sequence):
             # Calculate gradient waveform start and end positions according to block position
             waveform_start = block_pos[event_idx] * 4
             if block.gx is not None:  # Gx event
+                start_x = waveform_start + round(block.gx.delay * self.spcm_freq) * 4
                 waveform = self.calculate_gradient(
                     block=block.gx, fov_scaling=console.parameter.fov_scaling.x
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 1:waveform_start + 4 * waveform_samples + 1:4] += waveform
+                _seq[start_x + 1 : start_x + 4 * waveform_samples + 1 : 4] += waveform
             if block.gy is not None:  # Gy event
+                start_y = waveform_start + round(block.gy.delay * self.spcm_freq) * 4
                 waveform = self.calculate_gradient(
                     block=block.gy, fov_scaling=console.parameter.fov_scaling.y
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 2:waveform_start + 4 * waveform_samples + 2:4] += waveform
+                _seq[start_y + 2 : start_y + 4 * waveform_samples + 2 : 4] += waveform
             if block.gz is not None:  # Gz event
+                start_z = waveform_start + round(block.gz.delay * self.spcm_freq) * 4
                 waveform = self.calculate_gradient(
                     block=block.gz, fov_scaling=console.parameter.fov_scaling.z
                 )
                 waveform_samples = np.size(waveform)
-                _seq[waveform_start + 3:waveform_start + 4 * waveform_samples + 3:4] += waveform
+                _seq[start_z + 3 : start_z + 4 * waveform_samples + 3 : 4] += waveform
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
