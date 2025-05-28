@@ -628,6 +628,7 @@ class SequenceProvider(Sequence):
             duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
+            rx_data=_rx_data
         )
 
     def plot_unrolled(
