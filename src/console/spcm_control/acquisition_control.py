@@ -19,6 +19,7 @@ from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities import ddc
 from console.utilities.load_config import get_instances
+from console.interfaces.rx_data import RxData, MultiThreadingProcessor
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -269,8 +270,7 @@ class AcquisitionControl:
             raise err
 
         return AcquisitionData(
-            _raw=self._raw,
-            unprocessed_data=self._unproc,
+            receive_data=self.receive_data,
             sequence=self.seq_provider,
             session_path=self.session_path,
             meta={
@@ -306,13 +306,12 @@ class AcquisitionControl:
         parameter
             Acquisition parameter
         """
-
+        # Currently only threaded handling of the RxData is implemented
+        data_processor = MultiThreadingProcessor(max_workers=4)
         for rx_data in self.receive_data:
-            for data in range(rx_data):
-                data.process_data(larmor_freq=self.sequence.parameter.larmor_frequency,
-                                  save_unprocessed=True)
-                
+            data_processor.add_items(rx_data, larmor_freq=parameter.larmor_frequency)
+        data_processor.shutdown()
+
         #TODO: scale the data
-        
         # Define channel dependent scaling
         scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))

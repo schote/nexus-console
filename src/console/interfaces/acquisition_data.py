@@ -11,6 +11,7 @@ import ismrmrd
 import numpy as np
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.utilities.json_encoder import JSONEncoder
 
@@ -19,9 +20,9 @@ from console.utilities.json_encoder import JSONEncoder
 class AcquisitionData:
     """Parameters which define an acquisition."""
 
-    _raw: list[np.ndarray]
-    """Demodulated, down-sampled and filtered complex-valued raw MRI data.
-    The raw data array has following dimensions:[averages, coils, phase encoding, readout]"""
+    receive_data: list[list[RxData]]
+    """ A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer
+    list contains the list of RxData for each average."""
 
     acquisition_parameters: AcquisitionParameter
     """Acquisition parameters."""
@@ -39,11 +40,6 @@ class AcquisitionData:
     meta: dict[str, Any] = field(default_factory=dict)
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
-
-    unprocessed_data: list[np.ndarray] = field(default_factory=list)
-    """Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).
-    The first entry of the coil dimension also contains the reference signal (16th bit).
-    The data array has the following dimensions: [averages, coils, phase encoding, readout]"""
 
     _additional_data: dict = field(default_factory=dict)
     """Dictionarz containing addition (numpy) data.
