@@ -498,12 +498,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">4096</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">rx_data</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
 
 <div class="viewcode-block" id="RxCard.setup_card">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.setup_card">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up spectrum card in transmit (TX) mode.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up spectrum card in transmit (Rx) mode.</span>
 
 <span class="sd">        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,</span>
 <span class="sd">        defined by the class attribute.</span>
@@ -598,10 +598,6 @@
 
         <span class="c1"># Digital filter setting for receiver, 0 = disable digital bandwidth filter</span>
         <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DIGITALBWFILTER</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-
-        <span class="c1"># Setup digital input channels for reference signal</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_X2_MODE</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGIN</span><span class="p">)</span>
-        <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_DIGMODE0</span><span class="p">,</span> <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">DIGMODEMASK_BIT15</span> <span class="o">&amp;</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPCM_DIGMODE_X2</span><span class="p">))</span>
 
         <span class="c1"># Calculate actual post trigger size depending on the number of active channels</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span> <span class="o">=</span> <span class="mi">4096</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span>

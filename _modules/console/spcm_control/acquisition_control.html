@@ -656,7 +656,7 @@
                     <span class="k">break</span>
 
             <span class="k">if</span> <span class="n">num_gates</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">rx_phase_offset</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
@@ -696,7 +696,7 @@
 
 <div class="viewcode-block" id="AcquisitionControl.post_processing">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.post_processing">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">rx_phase_offset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Proces acquired NMR data.</span>
 
 <span class="sd">        Data is sorted according to readout size which might vary between different reout windows.</span>
@@ -734,15 +734,9 @@
         <span class="n">scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_scaling</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gate_lengths</span><span class="p">):</span>
-            <span class="c1"># Extract digital reference signal from channel 0</span>
-            <span class="n">_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 
             <span class="c1"># Remove digital signal from channel 0</span>
-            <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">*</span> <span class="n">scaling</span>
-
-            <span class="c1"># Stack signal and reference in coil dimension</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">data</span><span class="p">,</span> <span class="n">_ref</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">scaling</span>
 
             <span class="c1"># Append unprocessed data without post processing (last coil dimension entry contains reference)</span>
             <span class="k">if</span> <span class="n">raw_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -755,11 +749,6 @@
             <span class="c1"># Demodulation and decimation</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
 
-            <span class="c1"># Always decimate the reference signal with moving average filter</span>
-            <span class="n">ref_dec</span> <span class="o">=</span> <span class="n">ddc</span><span class="o">.</span><span class="n">filter_moving_average</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">decimation</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-            <span class="c1"># Extract the demodulated signal data</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
-
             <span class="c1"># Switch case for DDC function</span>
             <span class="k">match</span> <span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">:</span>
                 <span class="k">case</span> <span class="n">DDCMethod</span><span class="o">.</span><span class="n">CIC</span><span class="p">:</span>
@@ -770,9 +759,8 @@
                     <span class="c1"># Default case is FIR decimation</span>
                     <span class="n">data</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">decimate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">)</span>
 
-            <span class="c1"># Apply phase correction with mean value</span>
-            <span class="c1"># data = data * np.exp(-1j * np.mean(np.angle(ref_dec), axis = -1))[..., None]</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">ref_dec</span><span class="p">))</span>
+            <span class="c1"># Correct for Rx phase</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rx_phase_offset</span><span class="p">))[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
 
             <span class="c1"># Append to global raw data list</span>
             <span class="k">if</span> <span class="n">raw_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
