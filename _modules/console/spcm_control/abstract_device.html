@@ -417,7 +417,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.pyspcm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sp</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">translate_error</span><span class="p">,</span> <span class="n">type_to_name</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">translate_error</span><span class="p">,</span> <span class="n">translate_status</span><span class="p">,</span> <span class="n">type_to_name</span>
 
 
 <div class="viewcode-block" id="SpectrumDevice">
@@ -425,7 +425,13 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">SpectrumDevice</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Spectrum device abstract base class.&quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="n">Logger</span><span class="p">):</span>
+    <span class="n">card</span><span class="p">:</span> <span class="n">c_char_p</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">card_type</span><span class="p">:</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">log</span><span class="p">:</span> <span class="n">Logger</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">log</span><span class="p">:</span> <span class="n">Logger</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Init function of spectrum device.</span>
 
 <span class="sd">        Parameters</span>
@@ -434,14 +440,14 @@
 <span class="sd">            Path of the spectrum card device, e.g. /dev/spcm1</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span> <span class="n">c_char_p</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">card_type</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
 
 <div class="viewcode-block" id="SpectrumDevice.dict">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.dict">[docs]</a>
-    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method which returns variables for logging in dictionary.&quot;&quot;&quot;</span>
         <span class="n">attributes</span> <span class="o">=</span> <span class="p">{}</span>
@@ -465,12 +471,13 @@
 
 <div class="viewcode-block" id="SpectrumDevice.disconnect">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.disconnect">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">disconnect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Disconnect card.&quot;&quot;&quot;</span>
         <span class="c1"># Closing the card</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Stopping and closing card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_RESET</span><span class="p">)</span>
             <span class="n">sp</span><span class="o">.</span><span class="n">spcm_vClose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">)</span>
             <span class="c1"># Reset card information</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="kc">None</span>
@@ -498,9 +505,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">card</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">spcm_hOpen</span><span class="p">(</span><span class="n">create_string_buffer</span><span class="p">(</span><span class="nb">str</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
             <span class="c1"># Read card information</span>
-            <span class="n">card_type</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">card_type</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Connection to card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> established!&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">setup_card</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -511,43 +517,60 @@
 
 <div class="viewcode-block" id="SpectrumDevice.handle_error">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.handle_error">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">error</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;General error handling function.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">error</span> <span class="o">!=</span> <span class="n">sp</span><span class="o">.</span><span class="n">ERR_OK</span><span class="p">:</span>
             <span class="c1"># sp.ERR_OK = 0, this corresponds to &quot;if error:&quot;</span>
             <span class="k">if</span> <span class="n">error</span> <span class="o">==</span> <span class="n">sp</span><span class="o">.</span><span class="n">ERR_TIMEOUT</span><span class="p">:</span>
-                <span class="c1"># Check for timeout</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Timeout&quot;</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># Read error message from card</span>
-                <span class="n">err_msg</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">ERRORTEXTLEN</span><span class="p">)</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetErrorInfo_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span> <span class="o">!=</span> <span class="n">sp</span><span class="o">.</span><span class="n">ERR_OK</span><span class="p">):</span>
-                    <span class="c1"># double check if error is not ERR_OK, disconnect and raise error</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Catched error ( </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2"> ): </span><span class="si">{</span><span class="n">err_msg</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">translate_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">; Stopping card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
-                    <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span></div>
+                <span class="c1"># Check for timeout, could be logged but occurs in normal operation</span>
+                <span class="c1"># self.log.debug(&quot;Received timeout&quot;)</span>
+                <span class="k">return</span>
+            <span class="c1"># Read error message from card</span>
+            <span class="n">err_msg</span> <span class="o">=</span> <span class="n">create_string_buffer</span><span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">ERRORTEXTLEN</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetErrorInfo_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">err_msg</span><span class="p">)</span> <span class="o">!=</span> <span class="n">sp</span><span class="o">.</span><span class="n">ERR_OK</span><span class="p">):</span>
+                <span class="c1"># double check if error is not ERR_OK, disconnect and raise error</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Catched error ( </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2"> ): </span><span class="si">{</span><span class="n">err_msg</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">translate_error</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">; Stopping card </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+                <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">M2CMD_CARD_STOP</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.get_status">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.get_status">[docs]</a>
-    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to obtain card status.&quot;&quot;&quot;</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get and log current card status.</span>
+
+<span class="sd">        The status is represented by a list. Each entry represents a possible card status in form</span>
+<span class="sd">        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum</span>
+<span class="sd">        instrumentation manual.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">            String with status description.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">sp</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">sp</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">sp</span><span class="o">.</span><span class="n">SPC_M2STATUS</span><span class="p">,</span> <span class="n">byref</span><span class="p">(</span><span class="n">status</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">:</span>
+                <span class="n">msg</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">translate_status</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">include_desc</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Card status:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">val</span> <span class="k">for</span> <span class="n">val</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">msg</span><span class="o">.</span><span class="n">values</span><span class="p">()})</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error getting card status.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">status</span><span class="o">.</span><span class="n">value</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.setup_card">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.setup_card">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to setup the card.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="SpectrumDevice.start_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.start_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to start card operation.</span>
 
 <span class="sd">        Parameters</span>
@@ -560,7 +583,7 @@
 <div class="viewcode-block" id="SpectrumDevice.stop_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.stop_operation">[docs]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method to stop card operation.&quot;&quot;&quot;</span></div>
 </div>
 

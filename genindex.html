@@ -393,7 +393,6 @@
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
- | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -448,7 +447,9 @@
 </li>
       <li><a href="api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.calculate_rf">calculate_rf() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.channel_enable">channel_enable (console.spcm_control.rx_device.RxCard attribute)</a>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.card">card (console.spcm_control.abstract_device.SpectrumDevice attribute)</a>
+</li>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.card_type">card_type (console.spcm_control.abstract_device.SpectrumDevice attribute)</a>
 </li>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.enums.DDCMethod.CIC">CIC (console.interfaces.enums.DDCMethod attribute)</a>
 </li>
@@ -561,10 +562,6 @@
 </li>
         <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.dict">(console.spcm_control.abstract_device.SpectrumDevice method)</a>
 </li>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.dict">(console.spcm_control.rx_device.RxCard method)</a>
-</li>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.dict">(console.spcm_control.tx_device.TxCard method)</a>
-</li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -590,12 +587,10 @@
 </li>
       <li><a href="api_reference/utilities.html#console.utilities.ddc.filter_moving_average">filter_moving_average() (in module console.utilities.ddc)</a>
 </li>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.filter_type">filter_type (console.spcm_control.tx_device.TxCard attribute)</a>
+      <li><a href="api_reference/acquisition_control.html#console.interfaces.enums.DDCMethod.FIR">FIR (console.interfaces.enums.DDCMethod attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api_reference/acquisition_control.html#console.interfaces.enums.DDCMethod.FIR">FIR (console.interfaces.enums.DDCMethod attribute)</a>
-</li>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.fov_scaling">fov_scaling (console.interfaces.acquisition_parameter.AcquisitionParameter attribute)</a>
 </li>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.dimensions.Dimensions.from_dict">from_dict() (console.interfaces.dimensions.Dimensions class method)</a>
@@ -614,16 +609,10 @@
 </li>
       <li><a href="api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.get_rf_events">get_rf_events() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
 </li>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.get_status">get_status() (console.spcm_control.abstract_device.SpectrumDevice method)</a>
-
-      <ul>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.get_status">(console.spcm_control.rx_device.RxCard method)</a>
-</li>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.get_status">(console.spcm_control.tx_device.TxCard method)</a>
-</li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.get_status">get_status() (console.spcm_control.abstract_device.SpectrumDevice method)</a>
+</li>
       <li><a href="api_reference/pulseq_interpreter.html#console.interfaces.unrolled_sequence.UnrolledSequence.gpa_gain">gpa_gain (console.interfaces.unrolled_sequence.UnrolledSequence attribute)</a>
 </li>
       <li><a href="api_reference/pulseq_interpreter.html#console.interfaces.unrolled_sequence.UnrolledSequence.gradient_efficiency">gradient_efficiency (console.interfaces.unrolled_sequence.UnrolledSequence attribute)</a>
@@ -645,41 +634,23 @@
   </ul></td>
 </tr></table>
 
-<h2 id="I">I</h2>
-<table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.impedance_50_ohms">impedance_50_ohms (console.spcm_control.rx_device.RxCard attribute)</a>
-</li>
-  </ul></td>
-</tr></table>
-
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.larmor_frequency">larmor_frequency (console.interfaces.acquisition_parameter.AcquisitionParameter attribute)</a>
 </li>
-      <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.load">load() (console.interfaces.acquisition_parameter.AcquisitionParameter class method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.log_card_status">log_card_status() (console.spcm_control.rx_device.RxCard method)</a>
-
-      <ul>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.log_card_status">(console.spcm_control.tx_device.TxCard method)</a>
+      <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.load">load() (console.interfaces.acquisition_parameter.AcquisitionParameter class method)</a>
 </li>
-      </ul></li>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.log">log (console.spcm_control.abstract_device.SpectrumDevice attribute)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.max_amplitude">max_amplitude (console.spcm_control.rx_device.RxCard attribute)</a>
-
-      <ul>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.max_amplitude">(console.spcm_control.tx_device.TxCard attribute)</a>
-</li>
-      </ul></li>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.meta">meta (console.interfaces.acquisition_data.AcquisitionData attribute)</a>
 </li>
       <li>
@@ -717,7 +688,7 @@
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.notify_rate">notify_rate (console.spcm_control.tx_device.TxCard attribute)</a>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.name">name (console.spcm_control.abstract_device.SpectrumDevice attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -731,12 +702,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/pulseq_interpreter.html#console.interfaces.unrolled_sequence.UnrolledSequence.parameter">parameter (console.interfaces.unrolled_sequence.UnrolledSequence attribute)</a>
 </li>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.path">path (console.spcm_control.rx_device.RxCard attribute)</a>
-
-      <ul>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.path">(console.spcm_control.tx_device.TxCard attribute)</a>
+      <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.path">path (console.spcm_control.abstract_device.SpectrumDevice attribute)</a>
 </li>
-      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.plot_unrolled">plot_unrolled() (console.pulseq_interpreter.sequence_provider.SequenceProvider method)</a>
@@ -769,12 +736,6 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/pulseq_interpreter.html#console.interfaces.unrolled_sequence.UnrolledSequence.sample_count">sample_count (console.interfaces.unrolled_sequence.UnrolledSequence attribute)</a>
 </li>
-      <li><a href="api_reference/spcm_control.html#console.spcm_control.rx_device.RxCard.sample_rate">sample_rate (console.spcm_control.rx_device.RxCard attribute)</a>
-
-      <ul>
-        <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.sample_rate">(console.spcm_control.tx_device.TxCard attribute)</a>
-</li>
-      </ul></li>
       <li><a href="api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.save">save() (console.interfaces.acquisition_data.AcquisitionData method)</a>
 
       <ul>
@@ -795,8 +756,6 @@
 </li>
       <li><a href="api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.set_sequence">set_sequence() (console.spcm_control.acquisition_control.AcquisitionControl method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice.setup_card">setup_card() (console.spcm_control.abstract_device.SpectrumDevice method)</a>
 
       <ul>
@@ -805,6 +764,8 @@
         <li><a href="api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">(console.spcm_control.tx_device.TxCard method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api_reference/utilities.html#console.utilities.snr.signal_to_noise_ratio">signal_to_noise_ratio() (in module console.utilities.snr)</a>
 </li>
       <li><a href="api_reference/spcm_control.html#console.spcm_control.abstract_device.SpectrumDevice">SpectrumDevice (class in console.spcm_control.abstract_device)</a>

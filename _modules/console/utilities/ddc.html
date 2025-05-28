@@ -506,7 +506,7 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        Uneven decimation factor.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">cic_samples</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">decimation</span><span class="p">)</span>
+    <span class="n">cic_samples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">decimation</span><span class="p">))</span>
     <span class="n">cic_decimation</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">cic_samples</span>
 
     <span class="c1"># CIC integrator Stages</span>
