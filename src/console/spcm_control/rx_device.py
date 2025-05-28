@@ -84,10 +84,10 @@ class RxCard(SpectrumDevice):
         self.post_trigger = 4096
 
         self.rx_data: list = []
-        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
+        self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
 
     def setup_card(self):
-        """Set up spectrum card in transmit (TX) mode.
+        """Set up spectrum card in transmit (Rx) mode.
 
         At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
         defined by the class attribute.
@@ -182,10 +182,6 @@ class RxCard(SpectrumDevice):
 
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
-
-        # Setup digital input channels for reference signal
-        sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
         # Calculate actual post trigger size depending on the number of active channels
         self.post_trigger = 4096 // self.num_channels.value

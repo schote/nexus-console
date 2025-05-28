@@ -21,6 +21,14 @@ class UnrolledSequence:
     """Replay data as int16 values in a list of numpy arrays. The sequence data already
     contains the digital adc and unblanking signals in the channels gx and gy."""
 
+    rx_phase_offset: list[float]
+    """List of the phase offsets for each of the adc events. This is used to retrospectively
+    correct the phase of the received adc events"""
+
+    rx_freq_offset: list[float]
+    """List of the frequency offsets for each of the adc events. This is used to retrospectively
+    correct the frequency of the received adc events"""
+
     sample_count: int
     """Total number of samples per channel."""
 
