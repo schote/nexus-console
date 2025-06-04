@@ -13,7 +13,7 @@ import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
 from console.interfaces.acquisition_parameter import DDCMethod
-from console.interfaces.rx_data import RxData
+from console.interfaces.rx_data import RxData, MultiThreadingProcessor
 
 # Define registers lists
 CH_SELECT = [
@@ -57,12 +57,12 @@ class RxCard(SpectrumDevice):
 
     path: str
     sample_rate: int
-    larmor_freq: float | None = None
-    rx_data: list[RxData] | None = None
-    store_unprocessed: bool = False
     channel_enable: list[int]
     max_amplitude: list[int]
     impedance_50_ohms: list[int]
+    larmor_freq: float | None = None
+    rx_data: list[RxData] | None = None
+    store_unprocessed: bool = False
 
     __name__: str = "RxCard"
 
@@ -77,8 +77,7 @@ class RxCard(SpectrumDevice):
         self.is_running = threading.Event()
 
         # Initialize data processing handler
-        self.rxdata_handler = RxDataHandling(larmor_freq=self.larmor_freq,
-                                           store_unprocessed=self.store_unprocessed)
+        self.rxdata_handler = MultiThreadingProcessor(max_workers=4)
 
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
@@ -231,8 +230,7 @@ class RxCard(SpectrumDevice):
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
-        self.rxdata_handler.start_workers()
-
+        
     def stop_operation(self):
         """Stop card thread."""
         # Check if thread is running
