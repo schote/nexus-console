@@ -1,10 +1,11 @@
+""""Define the dataclass and processing of receiver data."""
+import multiprocessing as mp
+import queue
+import threading
 from dataclasses import dataclass
 
 import numpy as np
 from scipy import signal
-import multiprocessing as mp
-import queue
-import threading
 
 from console.interfaces.acquisition_parameter import DDCMethod
 from console.utilities import ddc
@@ -49,17 +50,19 @@ class RxData:
     # Proc data is the demodulated and decimated data
     proc_data: None | np.ndarray = None
 
-
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
-        self.decimation_factor = round(self.dwell_time/self.dwell_time_raw)
+        self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
     def demod_and_phase_data(self):
         """Demodulate and phase the data contained in raw_data."""
         if self.raw_data is None:
             raise RuntimeError("No raw data found")
-        time_axis = np.arange(np.size(self.raw_data,-1)) * self.dwell_time_raw
-        self.raw_data = np.exp(1j*self.phase_offset) * self.raw_data * np.exp(2j * np.pi * time_axis * self.demod_frequency)
+        # Demodulate data
+        time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
+        self.raw_data = self.raw_data * np.exp(2j * np.pi * time_axis * self.demod_frequency)
+        # Apply receive phase correction to data
+        self.raw_data *= np.exp(1j * self.phase_offset)
 
     def decimate_data(self) -> np.ndarray:
         """Decimate the data using the passed method."""
@@ -75,7 +78,7 @@ class RxData:
                 return ddc.filter_moving_average(self.raw_data, decimation=self.decimation_factor, overlap=8)
             case _:
                 # Default case is FIR decimation
-                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="iir", axis = -1)
+                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="iir", axis=-1)
 
     def process_data(self, store_unprocessed: bool = True) -> None:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
@@ -87,28 +90,29 @@ class RxData:
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
         output_shape = list(np.shape(self.raw_data))
-        output_shape[-1] = round(output_shape[-1]/self.decimation_factor)
-        self.proc_data = np.zeros(output_shape, dtype = complex)
+        output_shape[-1] = round(output_shape[-1] / self.decimation_factor)
+        self.proc_data = np.zeros(output_shape, dtype=complex)
         self.proc_data[:] = self.decimate_data()[:]
 
         if not store_unprocessed:
             self.raw_data = None
 
-    def set_and_process_data(self, raw_data: np.ndarray, 
+    def set_and_process_data(self, raw_data: np.ndarray,
                              store_unprocessed: bool = True) -> None:
-        """Sets the raw data and processes it within a function, used for the multiprocessing implementation."""
+        """Set the raw data and processes it within a function, used for the multiprocessing implementation."""
         self.raw_data = raw_data
         self.process_data(store_unprocessed=store_unprocessed)
 
 
 class MultiprocessingProcessor:
-    """Multiproc way of processing data concurrently on multiple processors"""
+    """Multiproc way of processing data concurrently on multiple processors."""
+
     def __init__(self, max_workers=4):
         self.pool = mp.Pool(processes=max_workers)
         self.results = []
 
     def add_item(self, item: RxData, raw_data: np.ndarray, larmor_freq: float) -> None:
-        """Add and immediately submit item for processing"""
+        """Add and immediately submit item for processing."""
         result = self.pool.apply_async(RxData.set_and_process_data, (item,raw_data))
         self.results.append(result)
 
@@ -124,14 +128,15 @@ class MultiprocessingProcessor:
         return processed_items
 
     def shutdown(self) -> None:
-        """Shutdown the processor"""
+        """Shutdown the processor."""
         self.pool.close()
         self.pool.join()
         self.pool = None
         self.results.clear()
 
 class MultiThreadingProcessor:
-    """Multi threading way or processing data."""
+    """Multi threading way of processing data."""
+
     def __init__(self, max_workers=4):
         self.data_queue = queue.Queue()
         self.workers = []
@@ -144,7 +149,7 @@ class MultiThreadingProcessor:
             t.start()
 
     def _worker_loop(self):
-        """Worker thread function that continuously processes items"""
+        """Worker thread function that continuously processes items."""
         while self.running:
             try:
                 # Block with timeout to periodically check if still running
@@ -165,7 +170,7 @@ class MultiThreadingProcessor:
         if isinstance(larmor_freq, list):
             if len(list) != len(rx_data):
                 raise IndexError("rx_data and larmor frequency list are not the same length")
-            else: 
+            else:
                 for rx_object, freq in zip(rx_data, larmor_freq):
                     rx_object.larmor_frequency=freq
                     self.data_queue.put(rx_object)
@@ -178,7 +183,7 @@ class MultiThreadingProcessor:
 
 
     def shutdown(self):
-        """Cleanly handle waiting for data processing to finish."""
+        """Clean handling of worker shutdown and waiting for data processing to finish."""
         # Wait for queue to empty
         self.data_queue.join()
         self.running = False

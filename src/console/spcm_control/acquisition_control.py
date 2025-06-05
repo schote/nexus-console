@@ -295,21 +295,11 @@ class AcquisitionControl:
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.
 
-        Data is sorted according to readout size which might vary between different reout windows.
-        Unprocessed and raw data are stored in class attributes _raw and _unproc.
-        Both attributes are list, which store numpy arrays of readout data with the same number
-        of readout sample points.
-
         Post processing contains the following steps (per readout sample size):
-        (1) Extraction of reference signal and scaling to float values [mV]
-        (2) Concatenate reference data and signal data in coil dimensions
-        (3) Demodulation along readout dimensions
-        (4) Decimation along readout dimension
-        (5) Phase correction with reference signal
+        (1) Demodulation along readout dimensions
+        (2) Decimation along readout dimension
 
         Dimensions: [averages, coils, phase encoding, readout]
-
-        Reference signal is stored in the last entry of the coil dimension.
 
         Parameters
         ----------

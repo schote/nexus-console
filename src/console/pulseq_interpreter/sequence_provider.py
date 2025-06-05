@@ -369,17 +369,12 @@ class SequenceProvider(Sequence):
             num_samples = adc_waveform[1][0]
             dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
-            freq_offset = adc_waveform[1][3]
-            phase_offset = adc_waveform[1][4]
             delay_samples = int(round(delay * self.spcm_freq))
             gate_duration = num_samples * dwell_time
             gate_samples = int(round(gate_duration * self.spcm_freq))
             waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
             waveform[delay_samples:] = 2**15
-            time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
-            ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
-            adc_list.append((adc_waveform[0], waveform, ref_signal, num_samples, dwell_time))
-            adc_list.append((adc_waveform[0], waveform, ref_signal, freq_offset, phase_offset))
+            adc_list.append((adc_waveform[0], waveform))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -509,9 +504,7 @@ class SequenceProvider(Sequence):
 
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
-        _adc = np.zeros(seq_samples, dtype=np.uint16)
-        _unblanking = np.zeros(seq_samples, dtype=np.uint16)
-        _rx_data = [] #list containing rx data objects for each ADC event
+        _rx_data = [] # list containing rx data objects for each ADC event
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
