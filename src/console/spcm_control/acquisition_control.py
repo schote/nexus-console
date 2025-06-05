@@ -230,9 +230,8 @@ class AcquisitionControl:
             self.rx_card.start_operation(larmor_freq=self.sequence.parameter.larmor_frequency,
                                          rx_data=self.receive_data[k],
                                          store_unprocessed=store_unprocessed,
-                                         realtime_proccessing=realtime_proccessing)
+                                         realtime_processing=realtime_proccessing)
             time.sleep(0.01)
-            self.rx_card.start_operation()
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
                 # self.log.debug("Waiting for RX card to start receiving...")
@@ -241,7 +240,7 @@ class AcquisitionControl:
             # Get start time of acquisition
             time_start = time.time()
 
-            while (num_gates := len(self.rx_card.rx_data)) < self.sequence.adc_count or num_gates == 0:
+            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
@@ -257,7 +256,7 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(self.sequence.parameter, self.sequence.rx_phase_offset)
+                self.post_processing(self.sequence.parameter)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -293,7 +292,7 @@ class AcquisitionControl:
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter, rx_phase_offset: list[float]) -> None:
+    def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.
 
         Data is sorted according to readout size which might vary between different reout windows.
@@ -317,11 +316,15 @@ class AcquisitionControl:
         parameter
             Acquisition parameter
         """
+        # Scale the data
+        for rx_data in self.receive_data[-1]:
+            rx_data.raw_data = rx_data.raw_data.astype(np.int16) \
+                * np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis = -1)
+
         # Currently only threaded handling of the RxData is implemented
         data_processor = MultiThreadingProcessor(max_workers=4)
-        data_processor.add_items(self.receive_data[-1], larmor_freq=parameter.larmor_frequency)
+        data_processor.add_items(self.receive_data[-1], 
+                                 larmor_freq=parameter.larmor_frequency)
+        # Wait for the data to finish processing and shutdown the workers
         data_processor.shutdown()
 
-        #TODO: scale the data
-        # Define channel dependent scaling
-        scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))

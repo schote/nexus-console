@@ -11,8 +11,7 @@ import numpy as np
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
-from console.interfaces.acquisition_parameter import DDCMethod
-from console.interfaces.rx_data import RxData, MultiThreadingProcessor
+from console.interfaces.rx_data import RxData
 
 # Define registers lists
 CH_SELECT = [
@@ -62,10 +61,7 @@ class RxCard(SpectrumDevice):
         sample_rate: int,
         channel_enable: list[int],
         max_amplitude: list[int],
-        impedance_50_ohms: list[int],    
-        larmor_freq: float | None = None,
-        rx_data: list[RxData] | None = None,
-        store_unprocessed: bool = False
+        impedance_50_ohms: list[int]
     ) -> None:
         """Execute after init function to do further class setup."""
         self.log = logging.getLogger(self.__name__)
@@ -75,9 +71,6 @@ class RxCard(SpectrumDevice):
         self.channel_enable = channel_enable
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = impedance_50_ohms
-        self.larmor_freq = larmor_freq
-        self.rx_data = rx_data
-        self.store_unprocessed = store_unprocessed
 
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
@@ -85,9 +78,6 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
         self.is_receiving = threading.Event()
-
-        # Initialize data processing handler
-        self.rxdata_handler = MultiThreadingProcessor(max_workers=4)
 
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
@@ -227,13 +217,23 @@ class RxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         # _ = self.get_status()
 
-    def start_operation(self, larmor_freq: float, rx_data: list[RxData]):
+    def start_operation(self, 
+                        larmor_freq: float, 
+                        rx_data: list[RxData],
+                        store_unprocessed: bool = True,
+                        realtime_processing: bool = False
+                        ):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
 
         self.rx_data = rx_data
         self.larmor_freq = larmor_freq
+        self.store_unprocessed = store_unprocessed
+        self.realtime_processing = realtime_processing
+
+        if realtime_processing:
+            self.log.debug("Real time processing will be supported but is not implemented yet")
 
         self.is_receiving.clear()
         # Start card thread. if time stamp mode is not available use the example function.
@@ -295,7 +295,8 @@ class RxCard(SpectrumDevice):
             sp.uint64(0),
             ts_buffer_size,
         )
-
+        # TODO: rx_data is also used to colect receive data,
+        # rename this instance to adc_data?
         pll_data = cast(ts_buffer, sp.ptr64)  # cast to pointer to 64bit integer
         rx_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
 
@@ -314,7 +315,7 @@ class RxCard(SpectrumDevice):
         available_timestamp_postion = sp.int32(0)
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
-        total_gates = 0
+        self.total_gates = 0
         total_leftover = 0
 
         # Start receiver
@@ -434,8 +435,9 @@ class RxCard(SpectrumDevice):
                         gate_data = gate_data[pre_trigger_cut:]
                         # Store raw data in RxData object
                         # TODO: handle differently for the multiprocessing implementation
-                        self.rx_data[total_gates].raw_data(gate_data.reshape((self.num_channels.value, gate_sample),
-                                                                             order="F"))
+                        self.rx_data[self.total_gates].raw_data = gate_data.reshape((self.num_channels.value,
+                                                                                gate_sample),
+                                                                                order="F")
 
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),
@@ -443,7 +445,7 @@ class RxCard(SpectrumDevice):
                         # from a previous acquisition (accumulated sum decreases).
                         total_leftover += (bytes_sequence - available_data_bytes.value)
 
-                        total_gates += 1
+                        self.total_gates += 1
 
                         # Tell the card that data has been read and the buffer can be reused.
                         # Using the size of available data bytes prevents invalid values.

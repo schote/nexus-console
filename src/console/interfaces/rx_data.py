@@ -31,6 +31,9 @@ class RxData:
     # Raw dwell time of the receive cards
     dwell_time_raw: None | float = None
 
+    # Set the larmor frequency for each object
+    larmor_frequency: None | float = None
+
     # Frequency with which the data are demodulated
     demod_frequency: None | float = None
 
@@ -55,8 +58,8 @@ class RxData:
         """Demodulate and phase the data contained in raw_data."""
         if self.raw_data is None:
             raise RuntimeError("No raw data found")
-        time_axis = np.arange(np.size(self.raw_data)) * self.dwell_time_raw
-        self.raw_data = np.exp(1j*self.phase_offset) * self.raw_data * np.exp(2j * np.pi * time_axis * self.demod_freq)
+        time_axis = np.arange(np.size(self.raw_data,-1)) * self.dwell_time_raw
+        self.raw_data = np.exp(1j*self.phase_offset) * self.raw_data * np.exp(2j * np.pi * time_axis * self.demod_frequency)
 
     def decimate_data(self) -> np.ndarray:
         """Decimate the data using the passed method."""
@@ -72,26 +75,30 @@ class RxData:
                 return ddc.filter_moving_average(self.raw_data, decimation=self.decimation_factor, overlap=8)
             case _:
                 # Default case is FIR decimation
-                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="iir")
+                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="iir", axis = -1)
 
-    def process_data(self, larmor_freq: int | float, store_unprocessed: bool = True) -> None:
+    def process_data(self, store_unprocessed: bool = True) -> None:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
-        self.demod_freq = larmor_freq + self.freq_offset
+        if self.larmor_frequency is None:
+            raise RuntimeError("Larmor frequency not set, please set prior to processing data")
+        self.demod_frequency = self.larmor_frequency + self.freq_offset
         self.demod_and_phase_data()
 
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
-        self.proc_data = np.zeros(round(np.size(self.raw_data)/self.decimation_factor), dtype = complex)
+        output_shape = list(np.shape(self.raw_data))
+        output_shape[-1] = round(output_shape[-1]/self.decimation_factor)
+        self.proc_data = np.zeros(output_shape, dtype = complex)
         self.proc_data[:] = self.decimate_data()[:]
 
         if not store_unprocessed:
             self.raw_data = None
 
     def set_and_process_data(self, raw_data: np.ndarray, 
-                             larmor_freq: int | float, store_unprocessed: bool = True) -> None:
+                             store_unprocessed: bool = True) -> None:
         """Sets the raw data and processes it within a function, used for the multiprocessing implementation."""
         self.raw_data = raw_data
-        self.process_data(larmor_freq=larmor_freq, store_unprocessed=store_unprocessed)
+        self.process_data(store_unprocessed=store_unprocessed)
 
 
 class MultiprocessingProcessor:
@@ -102,7 +109,7 @@ class MultiprocessingProcessor:
 
     def add_item(self, item: RxData, raw_data: np.ndarray, larmor_freq: float) -> None:
         """Add and immediately submit item for processing"""
-        result = self.pool.apply_async(RxData.set_and_process_data, (item,raw_data, larmor_freq))
+        result = self.pool.apply_async(RxData.set_and_process_data, (item,raw_data))
         self.results.append(result)
 
     def wait_completion(self, timeout=None) -> list[RxData]:
@@ -145,7 +152,7 @@ class MultiThreadingProcessor:
                 if obj is None:  # Sentinel value to handle shut down
                     self.data_queue.put(None)  # Put back for other workers
                     break
-                obj.process_data(2e6, store_unprocessed = False)
+                obj.process_data(store_unprocessed = True)
 
                 # Mark as done
                 self.data_queue.task_done()
@@ -160,10 +167,12 @@ class MultiThreadingProcessor:
                 raise IndexError("rx_data and larmor frequency list are not the same length")
             else: 
                 for rx_object, freq in zip(rx_data, larmor_freq):
-                    self.data_queue.put(rx_object, freq)
+                    rx_object.larmor_frequency=freq
+                    self.data_queue.put(rx_object)
         elif isinstance(larmor_freq, (float, int)):
             for rx_object in rx_data:
-                self.data_queue.put(rx_object, larmor_freq)
+                rx_object.larmor_frequency=larmor_freq
+                self.data_queue.put(rx_object)
         else:
             raise TypeError("Invalid data type for larmor freq")
 

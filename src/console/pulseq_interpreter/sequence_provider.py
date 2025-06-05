@@ -563,7 +563,6 @@ class SequenceProvider(Sequence):
                 # Pulseq is 1 indexed, shift idx by -1 for correct event
                 adc_event  = adc_events[event[5] -1]
                 adc_waveform = adc_event[1]
-                ref_signal = adc_event[2]
 
                 # Calculate ADC start and end positions according to block position
                 adc_start = block_pos[event_idx] * 4
@@ -578,6 +577,7 @@ class SequenceProvider(Sequence):
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,
                                        freq_offset=block.adc.freq_offset))
+                adc_count +=1
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
@@ -608,7 +608,7 @@ class SequenceProvider(Sequence):
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
-            duration=self.duration()[0],
+            duration=round(self.duration()[0],3),
             adc_count=adc_count,
             parameter=parameter,
             rx_data=_rx_data
