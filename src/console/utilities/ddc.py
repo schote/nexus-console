@@ -89,7 +89,7 @@ def filter_cic_fir_comp(signal, decimation, number_of_stages):
     ValueError
         Uneven decimation factor.
     """
-    cic_samples = 2 * (signal.shape[-1] // decimation)
+    cic_samples = int(2 * np.ceil(signal.shape[-1] / decimation))
     cic_decimation = signal.shape[-1] // cic_samples
 
     # CIC integrator Stages

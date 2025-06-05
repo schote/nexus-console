@@ -81,9 +81,16 @@ class AcquisitionControl:
 
         # Setup the cards
         self.is_setup: bool = False
-        if self.tx_card.connect() and self.rx_card.connect():
-            self.log.info("Setup of measurement cards successful.")
-            self.is_setup = True
+        try:
+            if self.tx_card.connect() and self.rx_card.connect():
+                self.log.info("Setup of measurement cards successful.")
+                self.is_setup = True
+        except Exception:
+            self.log.exception("Error during card connection.")
+            if self.tx_card:
+                self.tx_card.disconnect()
+            if self.rx_card:
+                self.rx_card.disconnect()
 
         # Get the rx sampling rate for DDC
         self.f_spcm = self.rx_card.sample_rate * 1e6
@@ -225,6 +232,10 @@ class AcquisitionControl:
                                          store_unprocessed=store_unprocessed,
                                          realtime_proccessing=realtime_proccessing)
             time.sleep(0.01)
+            self.rx_card.start_operation()
+            while not self.rx_card.is_receiving.is_set():
+                time.sleep(0.01)
+                # self.log.debug("Waiting for RX card to start receiving...")
             self.tx_card.start_operation(self.sequence)
 
             # Get start time of acquisition
@@ -246,7 +257,7 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(self.sequence.parameter)
+                self.post_processing(self.sequence.parameter, self.sequence.rx_phase_offset)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -282,7 +293,7 @@ class AcquisitionControl:
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
+    def post_processing(self, parameter: AcquisitionParameter, rx_phase_offset: list[float]) -> None:
         """Proces acquired NMR data.
 
         Data is sorted according to readout size which might vary between different reout windows.

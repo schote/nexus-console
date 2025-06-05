@@ -366,9 +366,11 @@ class SequenceProvider(Sequence):
         adc_waveforms = self.adc_library
         adc_list = []
         for adc_waveform in adc_waveforms.data.items():
-            dwell_time = adc_waveform[1][0]
-            num_samples = adc_waveform[1][1]
+            num_samples = adc_waveform[1][0]
+            dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
+            freq_offset = adc_waveform[1][3]
+            phase_offset = adc_waveform[1][4]
             delay_samples = int(round(delay * self.spcm_freq))
             gate_duration = num_samples * dwell_time
             gate_samples = int(round(gate_duration * self.spcm_freq))
@@ -377,6 +379,7 @@ class SequenceProvider(Sequence):
             time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
             ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
             adc_list.append((adc_waveform[0], waveform, ref_signal, num_samples, dwell_time))
+            adc_list.append((adc_waveform[0], waveform, ref_signal, freq_offset, phase_offset))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -512,7 +515,6 @@ class SequenceProvider(Sequence):
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
-        rf_start_sample_pos: int | None = None
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
@@ -540,18 +542,8 @@ class SequenceProvider(Sequence):
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
-                rf_waveform = rf_pulses[event[1]][0]
+                rf_waveform = rf_pulses[event[1]][0].real.astype(np.int16)
                 rf_unblanking = rf_pulses[event[1]][1]
-
-                if rf_start_sample_pos is None:
-                    rf_start_sample_pos = block_pos[event_idx]  # Store location of first RF event for ref offset
-
-                # Get the delay before the RF pulse starts
-                start_delay = round(max(block.rf.dead_time, block.rf.delay) * self.spcm_freq)
-                # Calculate phase offset of RF according to total sample count
-                carrier_sample_offset = block_pos[event_idx] + start_delay - rf_start_sample_pos
-                carrier_phase_offset = carrier_sample_offset * self.spcm_dwell_time
-                rf_waveform = (rf_waveform * np.exp(2j * np.pi * carrier_phase_offset)).real.astype(np.int16)
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[event_idx + 1] - block_pos[event_idx]):
@@ -569,7 +561,7 @@ class SequenceProvider(Sequence):
             if block.adc is not None:  # ADC event
                 # Grab the ADC event from the pre-calculated list
                 # Pulseq is 1 indexed, shift idx by -1 for correct event
-                adc_event  = adc_events[[5] -1]
+                adc_event  = adc_events[event[5] -1]
                 adc_waveform = adc_event[1]
                 ref_signal = adc_event[2]
 
@@ -586,15 +578,6 @@ class SequenceProvider(Sequence):
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,
                                        freq_offset=block.adc.freq_offset))
-
-                # Create ref signal in ADC waveform
-                time_offset = block_pos[event_idx] * self.spcm_dwell_time
-                ref_signal = ref_signal * np.exp(2j * np.pi * time_offset)
-                ref_waveform = (ref_signal.real > 0) * (2**15)
-
-                # Add ref signal to Y gradient
-                _seq[adc_start + 2:adc_end + 2:4] = _seq[adc_start + 2:adc_end + 2:4] | ref_waveform
-                adc_count += 1
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",

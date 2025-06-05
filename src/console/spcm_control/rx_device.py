@@ -1,7 +1,6 @@
 """Implementation of receive card."""
 import logging
 import threading
-import queue
 from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
 from dataclasses import dataclass
 from decimal import Decimal, getcontext
@@ -11,7 +10,7 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.spcm_control.abstract_device import SpectrumDevice
-from console.spcm_control.spcm.tools import create_dma_buffer, translate_status, type_to_name
+from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 from console.interfaces.acquisition_parameter import DDCMethod
 from console.interfaces.rx_data import RxData, MultiThreadingProcessor
 
@@ -55,26 +54,37 @@ getcontext().prec = 28
 class RxCard(SpectrumDevice):
     """Implementation of RX device."""
 
-    path: str
-    sample_rate: int
-    channel_enable: list[int]
-    max_amplitude: list[int]
-    impedance_50_ohms: list[int]
-    larmor_freq: float | None = None
-    rx_data: list[RxData] | None = None
-    store_unprocessed: bool = False
-
     __name__: str = "RxCard"
 
-    def __post_init__(self):
+    def __init__(
+        self,
+        path: str,
+        sample_rate: int,
+        channel_enable: list[int],
+        max_amplitude: list[int],
+        impedance_50_ohms: list[int],    
+        larmor_freq: float | None = None,
+        rx_data: list[RxData] | None = None,
+        store_unprocessed: bool = False
+    ) -> None:
         """Execute after init function to do further class setup."""
         self.log = logging.getLogger(self.__name__)
-        super().__init__(self.path, log=self.log)
+        super().__init__(path, log=self.log)
+
+        self.sample_rate = sample_rate
+        self.channel_enable = channel_enable
+        self.max_amplitude = max_amplitude
+        self.impedance_50_ohms = impedance_50_ohms
+        self.larmor_freq = larmor_freq
+        self.rx_data = rx_data
+        self.store_unprocessed = store_unprocessed
+
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
 
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
+        self.is_receiving = threading.Event()
 
         # Initialize data processing handler
         self.rxdata_handler = MultiThreadingProcessor(max_workers=4)
@@ -95,7 +105,7 @@ class RxCard(SpectrumDevice):
         return super().dict()
 
     def setup_card(self):
-        """Set up spectrum card in transmit (TX) mode.
+        """Set up spectrum card in transmit (Rx) mode.
 
         At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
         defined by the class attribute.
@@ -191,10 +201,6 @@ class RxCard(SpectrumDevice):
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
-        # Setup digital input channels for reference signal
-        sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
-        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
-
         # Calculate actual post trigger size depending on the number of active channels
         self.post_trigger = 4096 // self.num_channels.value
 
@@ -219,14 +225,17 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         self.log.debug("Device setup completed")
-        self.log_card_status()
+        # _ = self.get_status()
 
     def start_operation(self, larmor_freq: float, rx_data: list[RxData]):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
+
         self.rx_data = rx_data
         self.larmor_freq = larmor_freq
+
+        self.is_receiving.clear()
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
@@ -241,14 +250,11 @@ class RxCard(SpectrumDevice):
             # Stop the card. We will stop the card in two steps.
             # First we will stop the data transfer and then we will stop the card.
             # If time stamp mode is enabled, we need to stop the extra data transfer as well.
-            error = sp.spcm_dwSetParam_i32(
+            self.handle_error(sp.spcm_dwSetParam_i32(
                 self.card,
                 sp.SPC_M2CMD,
                 sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA,
-            )
-            self.handle_error(error)
-            self.worker = None
-            self.rxdata_handler.shutdown()
+            ))
         else:
             # No thread is running
             self.log.error("No active process found")
@@ -313,6 +319,7 @@ class RxCard(SpectrumDevice):
 
         # Start receiver
         self.log.debug("Starting receive")
+        self.is_receiving.set()
 
         while not self.is_running.is_set():
 
@@ -450,36 +457,3 @@ class RxCard(SpectrumDevice):
                         break
 
         self.log.debug("Card operation stopped")
-
-    def get_status(self) -> int:
-        """Get the current card status.
-
-        Returns
-        -------
-            String with status description.
-        """
-        try:
-            if not self.card:
-                raise ConnectionError("No device found")
-        except ConnectionError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-        status = sp.int32(0)
-        sp.spcm_dwGetParam_i32(self.card, sp.SPC_M2STATUS, byref(status))
-        return status.value
-
-    def log_card_status(self, include_desc: bool = False) -> None:
-        """Log current card status.
-
-        The status is represented by a list. Each entry represents a possible card status in form
-        of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
-        instrumentation manual.
-
-        Parameters
-        ----------
-        include_desc, optional
-            Flag which indicates if description string should be contained in status entry, by default False
-        """
-        msg, _ = translate_status(self.get_status(), include_desc=include_desc)
-        status = {key: val for val, key in msg.values()}
-        self.log.debug("Card status:\n%s", status)

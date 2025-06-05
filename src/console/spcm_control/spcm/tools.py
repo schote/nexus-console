@@ -119,4 +119,10 @@ def create_dma_buffer(buffer_size: int):
         dwOffset = dwAlignment - misalignment
     else:
         dwOffset = 0
-    return (c_char * buffer_size).from_buffer(pvNonAlignedBuf, dwOffset)
+
+    aligned_buffer = (c_char * buffer_size).from_buffer(pvNonAlignedBuf, dwOffset)
+
+    # zero the aligned buffer explicitly
+    memset(addressof(aligned_buffer), 0, buffer_size)
+
+    return aligned_buffer
