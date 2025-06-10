@@ -78,7 +78,7 @@ class RxData:
                 return ddc.filter_moving_average(self.raw_data, decimation=self.decimation_factor, overlap=8)
             case _:
                 # Default case is FIR decimation
-                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="iir", axis=-1)
+                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="fir", axis=-1)
 
     def process_data(self, store_unprocessed: bool = True) -> None:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
@@ -113,7 +113,7 @@ class MultiprocessingProcessor:
 
     def add_item(self, item: RxData, raw_data: np.ndarray, larmor_freq: float) -> None:
         """Add and immediately submit item for processing."""
-        result = self.pool.apply_async(RxData.set_and_process_data, (item,raw_data))
+        result = self.pool.apply_async(RxData.set_and_process_data, (item, raw_data))
         self.results.append(result)
 
     def wait_completion(self, timeout=None) -> list[RxData]:
@@ -133,6 +133,7 @@ class MultiprocessingProcessor:
         self.pool.join()
         self.pool = None
         self.results.clear()
+
 
 class MultiThreadingProcessor:
     """Multi threading way of processing data."""
@@ -157,7 +158,7 @@ class MultiThreadingProcessor:
                 if obj is None:  # Sentinel value to handle shut down
                     self.data_queue.put(None)  # Put back for other workers
                     break
-                obj.process_data(store_unprocessed = True)
+                obj.process_data(store_unprocessed=True)
 
                 # Mark as done
                 self.data_queue.task_done()
@@ -172,15 +173,14 @@ class MultiThreadingProcessor:
                 raise IndexError("rx_data and larmor frequency list are not the same length")
             else:
                 for rx_object, freq in zip(rx_data, larmor_freq):
-                    rx_object.larmor_frequency=freq
+                    rx_object.larmor_frequency = freq
                     self.data_queue.put(rx_object)
         elif isinstance(larmor_freq, (float, int)):
             for rx_object in rx_data:
-                rx_object.larmor_frequency=larmor_freq
+                rx_object.larmor_frequency = larmor_freq
                 self.data_queue.put(rx_object)
         else:
             raise TypeError("Invalid data type for larmor freq")
-
 
     def shutdown(self):
         """Clean handling of worker shutdown and waiting for data processing to finish."""

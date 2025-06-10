@@ -8,18 +8,16 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-from scipy import signal
 
 from console.interfaces.acquisition_data import AcquisitionData
-from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
-from console.interfaces.rx_data import RxData, MultiThreadingProcessor
+from console.interfaces.rx_data import MultiThreadingProcessor
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -309,12 +307,11 @@ class AcquisitionControl:
         # Scale the data
         for rx_data in self.receive_data[-1]:
             rx_data.raw_data = rx_data.raw_data.astype(np.int16) \
-                * np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis = -1)
+                * np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=-1)
 
         # Currently only threaded handling of the RxData is implemented
         data_processor = MultiThreadingProcessor(max_workers=4)
-        data_processor.add_items(self.receive_data[-1], 
+        data_processor.add_items(self.receive_data[-1],
                                  larmor_freq=parameter.larmor_frequency)
         # Wait for the data to finish processing and shutdown the workers
         data_processor.shutdown()
-

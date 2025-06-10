@@ -504,7 +504,7 @@ class SequenceProvider(Sequence):
 
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
-        _rx_data = [] # list containing rx data objects for each ADC event
+        _rx_data = []  # list containing rx data objects for each ADC event
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
@@ -554,7 +554,7 @@ class SequenceProvider(Sequence):
             if block.adc is not None:  # ADC event
                 # Grab the ADC event from the pre-calculated list
                 # Pulseq is 1 indexed, shift idx by -1 for correct event
-                adc_event  = adc_events[event[5] -1]
+                adc_event = adc_events[event[5] - 1]
                 adc_waveform = adc_event[1]
 
                 # Calculate ADC start and end positions according to block position
@@ -570,7 +570,7 @@ class SequenceProvider(Sequence):
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,
                                        freq_offset=block.adc.freq_offset))
-                adc_count +=1
+                adc_count += 1
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
@@ -583,7 +583,7 @@ class SequenceProvider(Sequence):
 
         for label in labels:
             if len(labels[label]) != len(_rx_data):
-                self.logging("Label list and rx_data list are not equal in length for label %s"%(label))
+                self.logging("Label list and rx_data list are not equal in length for label %s" % (label))
             else:
                 for rx_event in _rx_data:
                     label_dict = {}
@@ -601,7 +601,7 @@ class SequenceProvider(Sequence):
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
-            duration=round(self.duration()[0],3),
+            duration=round(self.duration()[0], 3),
             adc_count=adc_count,
             parameter=parameter,
             rx_data=_rx_data

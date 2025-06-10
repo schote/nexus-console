@@ -256,7 +256,7 @@ def constructor(
             flip_angle=inversion_angle,
             phase_offset=refocussing_phase,
             duration=rf_duration,
-            use="refocusing"
+            use="inversion"
         )
 
     # ADC duration
@@ -376,7 +376,8 @@ def constructor(
             # Cast index values from int32 to int, otherwise make_label function complains
             label_pe1 = pp.make_label(type="SET", label="LIN", value=int(pe_indices[0]))
             label_pe2 = pp.make_label(type="SET", label="PAR", value=int(pe_indices[1]))
-            seq.add_block(grad_ro, adc, label_pe1, label_pe2)
+            label_img = pp.make_label(type="INC", label="IMA", value=True)
+            seq.add_block(grad_ro, adc, label_pe1, label_pe2, label_img)
 
             seq.add_block(
                 pp.make_trapezoid(
@@ -515,7 +516,7 @@ def constructor(
     return (seq, header)
 
 
-def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
+def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
@@ -528,15 +529,19 @@ def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     dim
         dimensions of kspace
     """
-    n_avg, n_coil, _, _ = raw_data.shape
+    n_avg = len(receive_data)
+    n_coil = np.size(receive_data[0][0].proc_data, 0)
     enc_dim = np.array(seq.get_definition("encoding_dim")).astype(int)
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
     # Get k-space sorting from sequence labels
     labels = seq.evaluate_labels(evolution="adc")
-
-    for idx, (pe_1, pe_2) in enumerate(zip(labels["LIN"], labels["PAR"])):
-        ksp[..., pe_2, pe_1, :] = raw_data[:, :, idx, :]
+    for avg in range(n_avg):
+        for idx, (pe_1, pe_2, image_data) in enumerate(zip(labels["LIN"], labels["PAR"], labels["IMA"])):
+            if receive_data[avg][idx].index != idx:
+                raise IndexError("Sequence and data indices are not alligned, the receive data is out of order.")
+            if image_data:
+                ksp[avg, ..., pe_2, pe_1, :] = receive_data[avg][idx].proc_data
 
     return ksp
 

@@ -1,23 +1,26 @@
 """3D turbo spin echo sequence."""
-
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 
 import console
+import logging
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance
-acq = AcquisitionControl(configuration_file="example_device_config.yaml")
+config_file = r"examples/example_device_config.yaml"
+acq = AcquisitionControl(configuration_file="example_device_config.yaml",
+                         file_log_level=logging.DEBUG,
+                         console_log_level=logging.DEBUG)
 
 # Create sequence
 params = {
-    "echo_time": 14e-3,
+    "echo_time": 20e-3,
     "repetition_time": 600e-3,
     "etl": 7,
-    "trajectory": "in-out",
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
     "fov": Dimensions(x=180e-3, y=180e-3, z=180e-3),
@@ -29,20 +32,31 @@ params = {
 }
 seq, header = tse_3d.constructor(**params)
 
-# Calculate decimation:
-decimation = int(acq.rx_card.sample_rate * 1e6 / params["ro_bandwidth"])
-console.parameter.decimation = decimation
-
-
 # Calculate sequence and perform acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 
+#%%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
-ksp = tse_3d.sort_kspace(acq_data.raw, seq).squeeze()
+ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
 
 # Image reconstruction with FFT
-img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
+img = np.zeros(np.shape(ksp), dtype = complex)
+
+for idx_avg in range(np.size(ksp, 0)):
+    for idx_coil in range(np.size(ksp, 1)):
+        img[idx_avg, idx_coil, ...] = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp[idx_avg, idx_coil,...])))
+
+img = img.squeeze()
+ksp = ksp.squeeze()
+
+# Just grab the 0th coil/avg data
+if np.size(np.shape(img)) == 4:
+    img = img[1,...]
+    ksp = ksp[1,...]
+elif np.size(np.shape(img)) == 5:
+    img = img[0,0,...]
+    ksp = ksp[0,0,...]
 
 
 # 3D magnitude plot of image slices
@@ -74,3 +88,5 @@ acq_data.add_data({
 acq_data.save()
 
 del acq
+
+# %%
