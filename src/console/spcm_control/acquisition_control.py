@@ -325,7 +325,7 @@ class AcquisitionControl:
             print("Demodulation at freq.:", parameter.larmor_frequency)
 
             # Demodulation and decimation
-            data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
+            data = data * np.exp(-2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
 
             # Switch case for DDC function
             match parameter.ddc_method:
@@ -335,7 +335,7 @@ class AcquisitionControl:
                     data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
                 case _:
                     # Default case is FIR decimation
-                    data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+                    data = 2 * signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Correct for Rx phase
             data = data * np.exp(-1j * np.array(rx_phase_offset))[:, np.newaxis]
