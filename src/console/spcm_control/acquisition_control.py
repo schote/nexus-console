@@ -335,7 +335,7 @@ class AcquisitionControl:
                     data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
                 case _:
                     # Default case is FIR decimation
-                    data = 2*signal.decimate(data, q=parameter.decimation, ftype="fir")
+                    data = 2 * signal.decimate(data, q=parameter.decimation, ftype="fir")
 
             # Correct for Rx phase
             data = data * np.exp(-1j * np.array(rx_phase_offset))[:, np.newaxis]
