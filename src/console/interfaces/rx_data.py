@@ -48,7 +48,7 @@ class RxData:
     raw_data: None | np.ndarray = None
 
     # Proc data is the demodulated and decimated data
-    proc_data: None | np.ndarray = None
+    processed_data: None | np.ndarray = None
 
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
@@ -60,7 +60,7 @@ class RxData:
             raise RuntimeError("No raw data found")
         # Demodulate data
         time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
-        self.raw_data = self.raw_data * np.exp(2j * np.pi * time_axis * self.demod_frequency)
+        self.raw_data = self.raw_data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)
         # Apply receive phase correction to data
         self.raw_data *= np.exp(1j * self.phase_offset)
 
@@ -91,8 +91,8 @@ class RxData:
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
         output_shape = list(np.shape(self.raw_data))
         output_shape[-1] = round(output_shape[-1] / self.decimation_factor)
-        self.proc_data = np.zeros(output_shape, dtype=complex)
-        self.proc_data[:] = self.decimate_data()[:]
+        self.processed_data = np.zeros(output_shape, dtype=complex)
+        self.processed_data[:] = self.decimate_data()[:]
 
         if not store_unprocessed:
             self.raw_data = None
