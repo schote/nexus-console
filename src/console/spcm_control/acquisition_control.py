@@ -12,12 +12,12 @@ import numpy as np
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
+from console.interfaces.rx_data import MultiThreadingProcessor
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_config import get_instances
-from console.interfaces.rx_data import MultiThreadingProcessor
 
 LOG_LEVELS = [
     logging.DEBUG,

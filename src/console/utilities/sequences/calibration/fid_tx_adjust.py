@@ -14,7 +14,9 @@ def constructor(
     repetition_time: float = 4,
     rf_duration: float = 200e-6,
     use_sinc: bool = False,
-    adc_duration: float = 4e-3,
+    num_adc_samples: int = 256,
+    acq_bandwidth: float | int = 20e3,
+    ring_down_time: float = 2e-3
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -38,11 +40,11 @@ def constructor(
     """
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "tx_adjust_fid")
-    seq.system.rf_ringdown_time = 2e-3
+    seq.system.rf_ringdown_time = ring_down_time
 
     adc = pp.make_adc(
-        num_samples=1000,  # Is not taken into account atm
-        duration=adc_duration,
+        num_samples=num_adc_samples,
+        dwell=1/acq_bandwidth,
         system=system,
     )
 

@@ -530,7 +530,7 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
         dimensions of kspace
     """
     n_avg = len(receive_data)
-    n_coil = np.size(receive_data[0][0].proc_data, 0)
+    n_coil = np.size(receive_data[0][0].processed_data, 0)
     enc_dim = np.array(seq.get_definition("encoding_dim")).astype(int)
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
@@ -541,7 +541,7 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
             if receive_data[avg][idx].index != idx:
                 raise IndexError("Sequence and data indices are not alligned, the receive data is out of order.")
             if image_data:
-                ksp[avg, ..., pe_2, pe_1, :] = receive_data[avg][idx].proc_data
+                ksp[avg, ..., pe_2, pe_1, :] = receive_data[avg][idx].processed_data
 
     return ksp
 

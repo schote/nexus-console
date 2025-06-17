@@ -1,10 +1,11 @@
 """3D turbo spin echo sequence."""
 # %%
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 
 import console
-import logging
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
@@ -12,10 +13,10 @@ from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance
 config_file = r"examples/example_device_config.yaml"
-acq = AcquisitionControl(configuration_file="example_device_config.yaml",
+acq = AcquisitionControl(configuration_file=config_file,
                          file_log_level=logging.DEBUG,
                          console_log_level=logging.DEBUG)
-
+# %%
 # Create sequence
 params = {
     "echo_time": 20e-3,
@@ -23,12 +24,12 @@ params = {
     "etl": 7,
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
-    "fov": Dimensions(x=180e-3, y=180e-3, z=180e-3),
-    "channel_ro": "z",
-    "channel_pe1": "y",
+    "fov": Dimensions(x=240e-3, y=240e-3, z=240e-3),
+    "channel_ro": "y",
+    "channel_pe1": "z",
     "channel_pe2": "x",
     "ro_bandwidth": 20e3,
-    "n_enc": Dimensions(x=30, y=60, z=60),
+    "n_enc": Dimensions(x=13, y=120, z=120),
 }
 seq, header = tse_3d.constructor(**params)
 
@@ -39,7 +40,7 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
 ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
-
+print(np.shape(ksp))
 # Image reconstruction with FFT
 img = np.zeros(np.shape(ksp), dtype = complex)
 
@@ -52,8 +53,8 @@ ksp = ksp.squeeze()
 
 # Just grab the 0th coil/avg data
 if np.size(np.shape(img)) == 4:
-    img = img[1,...]
-    ksp = ksp[1,...]
+    img = img[0,...]
+    ksp = ksp[0,...]
 elif np.size(np.shape(img)) == 5:
     img = img[0,0,...]
     ksp = ksp[0,0,...]
