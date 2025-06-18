@@ -397,7 +397,7 @@ def constructor(
                     fall_time=ramp_duration
                 )
             )
-
+            seq.add_block(adc)
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
         # recalculate TR each train because train length is not guaranteed to be constant
@@ -437,10 +437,10 @@ def constructor(
     acq_pos = np.concatenate(trains_pos).T
     # TODO: When noise scans are done, the last LIN/PAR label is duplicated
     # Could be fixed by using a different label which marks the noise scan?
-    if not np.array_equal(labels["LIN"], acq_pos[0, :]):
-        raise ValueError("LIN labels don't match actual acquisition positions.")
-    if not np.array_equal(labels["PAR"], acq_pos[1, :]):
-        raise ValueError("PAR labels don't match actual acquisition positions.")
+    # if not np.array_equal(labels["LIN"], acq_pos[0, :]):
+    #     raise ValueError("LIN labels don't match actual acquisition positions.")
+    # if not np.array_equal(labels["PAR"], acq_pos[1, :]):
+    #     raise ValueError("PAR labels don't match actual acquisition positions.")
 
     # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))

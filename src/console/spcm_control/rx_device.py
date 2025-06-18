@@ -9,9 +9,9 @@ from itertools import compress
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
+from console.interfaces.rx_data import RxData
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
-from console.interfaces.rx_data import RxData
 
 # Define registers lists
 CH_SELECT = [
@@ -49,6 +49,7 @@ IMP_SELECT = [
 # Set precision for precise gate samples calculation
 getcontext().prec = 28
 
+
 @dataclass
 class RxCard(SpectrumDevice):
     """Implementation of RX device."""
@@ -71,6 +72,7 @@ class RxCard(SpectrumDevice):
         self.channel_enable = channel_enable
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = impedance_50_ohms
+        self.rx_data = None
 
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
@@ -83,7 +85,7 @@ class RxCard(SpectrumDevice):
         self.pre_trigger = 8
         self.post_trigger = 4096
 
-        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
+        self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
 
     def dict(self) -> dict:
         """Returnt class variables which are json serializable as dictionary.
@@ -217,8 +219,8 @@ class RxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         # _ = self.get_status()
 
-    def start_operation(self, 
-                        larmor_freq: float, 
+    def start_operation(self,
+                        larmor_freq: float,
                         rx_data: list[RxData],
                         store_unprocessed: bool = True,
                         realtime_processing: bool = False
@@ -230,7 +232,6 @@ class RxCard(SpectrumDevice):
         self.rx_data = rx_data
         self.larmor_freq = larmor_freq
         self.store_unprocessed = store_unprocessed
-        self.realtime_processing = realtime_processing
 
         if realtime_processing:
             self.log.debug("Real time processing will be supported but is not implemented yet")
@@ -239,7 +240,7 @@ class RxCard(SpectrumDevice):
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
-        
+
     def stop_operation(self):
         """Stop card thread."""
         # Check if thread is running
@@ -438,6 +439,7 @@ class RxCard(SpectrumDevice):
                         self.rx_data[self.total_gates].raw_data = gate_data.reshape((self.num_channels.value,
                                                                                 gate_sample),
                                                                                 order="F")
+                        self.rx_data[self.total_gates].time_stamp = timestamp_0
 
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),

@@ -55,7 +55,6 @@ class AcquisitionData:
                 "version": version("nexus-console"),
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
-                #"dimensions": [r.shape for r in self._raw],
                 "dwell_time": self.dwell_time,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {

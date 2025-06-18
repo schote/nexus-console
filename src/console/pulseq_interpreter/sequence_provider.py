@@ -486,6 +486,9 @@ class SequenceProvider(Sequence):
                 b1_scaling=parameter.b1_scaling
             )
 
+        # Read labels for ADC events
+        labels = self.evaluate_labels(evolution="adc")
+
         seq_duration, _, _ = self.duration()
         seq_samples = int(round(seq_duration * self.spcm_freq))
 
@@ -569,7 +572,8 @@ class SequenceProvider(Sequence):
                                        dwell_time=block.adc.dwell,
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,
-                                       freq_offset=block.adc.freq_offset))
+                                       freq_offset=block.adc.freq_offset,
+                                       labels={label:labels[label][adc_count] for label in labels}))
                 adc_count += 1
 
         self.log.debug(
@@ -577,19 +581,6 @@ class SequenceProvider(Sequence):
             seq_samples,
             len(block_durations),
         )
-
-        # add labels for ADC events
-        labels = self.evaluate_labels(evolution="adc")
-
-        for label in labels:
-            if len(labels[label]) != len(_rx_data):
-                self.logging("Label list and rx_data list are not equal in length for label %s" % (label))
-            else:
-                for rx_event in _rx_data:
-                    label_dict = {}
-                    for label in labels:
-                        label_dict[label] = labels[label][rx_event.index]
-                    rx_event.labels = label_dict
 
         # Save unrolled sequence in class
         self._sqnc_cache = _seq

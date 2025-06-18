@@ -41,13 +41,16 @@ class RxData:
     # Used for demodulation, value set in post init
     decimation_factor: None | int = None
 
-    # Set the default demod method to FIR (though technically its IIR)
+    # Set the default demod method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
 
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     raw_data: None | np.ndarray = None
 
-    # Proc data is the demodulated and decimated data
+    # Timestamp of start of data acquisition
+    time_stamp: None | float = None
+
+    # Proc data is the demodulated, phased and decimated data
     processed_data: None | np.ndarray = None
 
     def __post_init__(self) -> None:
@@ -102,38 +105,6 @@ class RxData:
         """Set the raw data and processes it within a function, used for the multiprocessing implementation."""
         self.raw_data = raw_data
         self.process_data(store_unprocessed=store_unprocessed)
-
-
-class MultiprocessingProcessor:
-    """Multiproc way of processing data concurrently on multiple processors."""
-
-    def __init__(self, max_workers=4):
-        self.pool = mp.Pool(processes=max_workers)
-        self.results = []
-
-    def add_item(self, item: RxData, raw_data: np.ndarray, larmor_freq: float) -> None:
-        """Add and immediately submit item for processing."""
-        result = self.pool.apply_async(RxData.set_and_process_data, (item, raw_data))
-        self.results.append(result)
-
-    def wait_completion(self, timeout=None) -> list[RxData]:
-        """Wait for all items to complete."""
-        processed_items = []
-        for result in self.results:
-            try:
-                processed_item = result.get(timeout=timeout)
-                processed_items.append(processed_item)
-            except Exception as e:
-                print(f"Error processing item: {e}")
-        return processed_items
-
-    def shutdown(self) -> None:
-        """Shutdown the processor."""
-        self.pool.close()
-        self.pool.join()
-        self.pool = None
-        self.results.clear()
-
 
 class MultiThreadingProcessor:
     """Multi threading way of processing data."""

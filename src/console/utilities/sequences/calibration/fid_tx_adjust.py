@@ -44,7 +44,7 @@ def constructor(
 
     adc = pp.make_adc(
         num_samples=num_adc_samples,
-        dwell=1/acq_bandwidth,
+        dwell=1 / acq_bandwidth,
         system=system,
     )
 
