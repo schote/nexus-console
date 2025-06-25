@@ -69,8 +69,11 @@ class AcquisitionControl:
         """
         # Create session path (contains all acquisitions of one day)
         session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
-        self.session_path = os.path.join(nexus_data_dir, session_folder_name)
-        os.makedirs(self.session_path, exist_ok=True)
+        self.session_path = Path(nexus_data_dir) / session_folder_name
+        self.session_path.mkdir(exist_ok=True)
+        if not self.session_path.is_dir():
+            self.session_path.mkdir(parents=True)
+            self.session_path.chmod(0o775)  # noqa: S103
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
@@ -270,7 +273,7 @@ class AcquisitionControl:
             _raw=self._raw,
             unprocessed_data=self._unproc,
             sequence=self.seq_provider,
-            session_path=self.session_path,
+            session_path=str(self.session_path),
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
                 self.rx_card.__name__: self.rx_card.dict(),
