@@ -314,7 +314,7 @@ class AcquisitionControl:
         data = data.astype(np.int16) * scaling
 
         # Demodulation
-        data = data * np.exp(2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / f_spcm)
+        data = data * np.exp(-2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / f_spcm)
 
         # Decimation
         match console.parameter.ddc_method:
@@ -328,8 +328,6 @@ class AcquisitionControl:
         # Apply phase correction with mean value
         # A factor 2 is added to compensate for the halving due to the processing.
         data = data * 2 * np.exp(-1j * np.angle(ref_dec))
-
-        data = np.conj(data)
 
         # Filter data in the frequential domain
         data_fft = fftshift(fft(data))
