@@ -397,8 +397,6 @@ def constructor(
                     fall_time=ramp_duration
                 )
             )
-            print("Remove extra ADC event, used for testing")
-            seq.add_block(adc)
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
         # recalculate TR each train because train length is not guaranteed to be constant
