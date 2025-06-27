@@ -397,6 +397,7 @@ def constructor(
                     fall_time=ramp_duration
                 )
             )
+            print("Remove extra ADC event, used for testing")
             seq.add_block(adc)
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
@@ -535,13 +536,11 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
     # Get k-space sorting from sequence labels
-    labels = seq.evaluate_labels(evolution="adc")
     for avg in range(n_avg):
-        for idx, (pe_1, pe_2, image_data) in enumerate(zip(labels["LIN"], labels["PAR"], labels["IMA"])):
-            if receive_data[avg][idx].index != idx:
-                raise IndexError("Sequence and data indices are not alligned, the receive data is out of order.")
-            if image_data:
-                ksp[avg, ..., pe_2, pe_1, :] = receive_data[avg][idx].processed_data
+        for idx, rx_data in enumerate(receive_data[avg]):
+            if rx_data.labels is not None and 'IMA' in  rx_data.labels:
+                if rx_data.labels['IMA']: # check that it is imaging data, not navigator or noise
+                    ksp[avg,:,rx_data.labels['PAR'],rx_data.labels['LIN'],:] = rx_data.processed_data
 
     return ksp
 

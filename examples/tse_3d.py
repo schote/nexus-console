@@ -12,7 +12,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance
-config_file = r"examples/example_device_config.yaml"
+config_file = r"example_device_config.yaml"
 acq = AcquisitionControl(configuration_file=config_file,
                          file_log_level=logging.DEBUG,
                          console_log_level=logging.DEBUG)
@@ -39,8 +39,8 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 #%%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
-ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
-print(np.shape(ksp))
+ksp = tse_3d.sort_kspace(acq_data.receive_data, acq.seq_provider)
+
 # Image reconstruction with FFT
 img = np.zeros(np.shape(ksp), dtype = complex)
 
