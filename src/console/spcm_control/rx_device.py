@@ -425,7 +425,6 @@ class RxCard(SpectrumDevice):
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
                         # Store raw data in RxData object
-                        # TODO: handle differently for the multiprocessing implementation
                         self.rx_data[self.total_gates].raw_data = gate_data.reshape((self.num_channels.value,
                                                                                 gate_sample),
                                                                                 order="F")
