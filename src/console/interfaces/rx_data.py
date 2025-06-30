@@ -44,6 +44,9 @@ class RxData:
     # Set the default demod method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
 
+    # Scaling factor for each receive channel
+    scaling_factor: None | np.ndarray = None
+
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     raw_data: None | np.ndarray = None
 
