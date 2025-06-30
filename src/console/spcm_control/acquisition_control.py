@@ -6,13 +6,13 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
-from console.interfaces.rx_data import MultiThreadingProcessor
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
@@ -225,11 +225,10 @@ class AcquisitionControl:
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
-            self.rx_card.start_operation(larmor_freq=self.sequence.parameter.larmor_frequency,
-                                         rx_data=self.receive_data[k],
-                                         store_unprocessed=store_unprocessed,
-                                         realtime_processing=realtime_proccessing)
+            self.rx_card.start_operation(rx_data=self.receive_data[k])
+
             time.sleep(0.01)
+
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
                 # self.log.debug("Waiting for RX card to start receiving...")
@@ -255,7 +254,7 @@ class AcquisitionControl:
 
             if num_gates > 0:
                 self.post_processing(self.sequence.parameter)
-
+            print("This actually happened")
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
@@ -294,10 +293,9 @@ class AcquisitionControl:
         """Proces acquired NMR data.
 
         Post processing contains the following steps (per readout sample size):
-        (1) Demodulation along readout dimensions
-        (2) Decimation along readout dimension
-
-        Dimensions: [averages, coils, phase encoding, readout]
+        (1) Scaling of receive data
+        (2) Demodulation along readout dimensions
+        (3) Decimation along readout dimension
 
         Parameters
         ----------
@@ -308,10 +306,10 @@ class AcquisitionControl:
         for rx_data in self.receive_data[-1]:
             rx_data.raw_data = rx_data.raw_data.astype(np.int16) \
                 * np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=-1)
+            rx_data.larmor_frequency = parameter.larmor_frequency
 
-        # Currently only threaded handling of the RxData is implemented
-        data_processor = MultiThreadingProcessor(max_workers=4)
-        data_processor.add_items(self.receive_data[-1],
-                                 larmor_freq=parameter.larmor_frequency)
-        # Wait for the data to finish processing and shutdown the workers
-        data_processor.shutdown()
+        # Process the data in parallel
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            executor.map(lambda rx_data_obj: \
+                rx_data_obj.process_data(store_unprocessed=True)
+                , self.receive_data[-1])

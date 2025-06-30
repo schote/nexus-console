@@ -219,22 +219,12 @@ class RxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         # _ = self.get_status()
 
-    def start_operation(self,
-                        larmor_freq: float,
-                        rx_data: list[RxData],
-                        store_unprocessed: bool = True,
-                        realtime_processing: bool = False
-                        ):
+    def start_operation(self, rx_data: list[RxData]):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
 
         self.rx_data = rx_data
-        self.larmor_freq = larmor_freq
-        self.store_unprocessed = store_unprocessed
-
-        if realtime_processing:
-            self.log.debug("Real time processing will be supported but is not implemented yet")
 
         self.is_receiving.clear()
         # Start card thread. if time stamp mode is not available use the example function.
