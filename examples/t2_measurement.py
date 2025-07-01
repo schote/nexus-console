@@ -27,7 +27,18 @@ console.parameter.b1_scaling = 2.43
 # Perform acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run()
-data = np.mean(acq_data.raw, axis=0).squeeze()
+
+num_avg = len(acq_data.receive_data)
+num_echos = len(acq_data.receive_data[0])
+num_coils = np.size(acq_data.receive_data[0][0].processed_data, 0)
+num_pnts = np.size(acq_data.receive_data[0][0].processed_data, 1)
+
+data = np.zeros((num_avg, num_coils, num_echos, num_pnts), dtype=complex)
+for avg in range(num_avg):
+    for echo in range(num_echos):
+        data[avg, :, echo, :] = acq_data.receive_data[avg][echo].processed_data
+
+data = np.mean(data, axis=0).squeeze()
 
 peaks = np.max(data, axis=-1)
 
@@ -65,3 +76,5 @@ acq_data.add_info({
 acq_data.save()
 
 del acq
+
+# %%

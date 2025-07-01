@@ -83,7 +83,7 @@ class RxData:
     def scale_data(self, data) -> np.ndarray:
         """Scale the receive data to go from ADC units to mV."""
         if self.scaling_factor is not None:
-            return data * np.expand_dims(self.scaling_factor, axis = -1)
+            return data * np.expand_dims(self.scaling_factor, axis=-1)
         else:
             return data
 

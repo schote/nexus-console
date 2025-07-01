@@ -20,7 +20,7 @@ acq = AcquisitionControl(configuration_file=config_file,
 # Create sequence
 params = {
     "echo_time": 20e-3,
-    "repetition_time": 600e-3,
+    "repetition_time": 300e-3,
     "etl": 7,
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
@@ -36,7 +36,7 @@ seq, header = tse_3d.constructor(**params)
 # Calculate sequence and perform acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 
-#%%
+# %%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
 ksp = tse_3d.sort_kspace(acq_data.receive_data, acq.seq_provider)

@@ -9,7 +9,8 @@ from console.utilities.sequences.system_settings import raster, system
 def constructor(
     echo_time: float = 12e-3,
     rf_duration: float = 400e-6,
-    adc_duration: float = 4e-3,
+    num_samples: int = 256,
+    acq_bandwidth: float | int = 20e3,
     use_sinc: bool = False,
     time_bw_product: float = 4,
     use_fid: bool = True,
@@ -20,6 +21,11 @@ def constructor(
     ----------
     te, optional
         Echo time in s, by default 12e-3
+    num_samples, optional
+        Number of data points to acquire
+    acq_bandwidth, optional
+        bandwidth of the acquisition in Hz, inverse of the dwell time.
+        total data acquisition time is num_samples/acq_bandwidth
     rf_duration, optional
         RF duration in s, by default 400e-6
     use_sinc, optional
@@ -43,18 +49,20 @@ def constructor(
 
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
-            system=system, flip_angle=pi / 2, duration=rf_duration, time_bw_product=time_bw_product
+            system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration, time_bw_product=time_bw_product
         )
         rf_180 = pp.make_sinc_pulse(
-            system=system, flip_angle=pi, duration=rf_duration, time_bw_product=time_bw_product
+            system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration, time_bw_product=time_bw_product
         )
     else:
-        rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
-        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
+        rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration)
+        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration)
 
+    adc_duration = raster(val=num_samples/acq_bandwidth, precision=system.adc_raster_time)
     adc = pp.make_adc(
-        num_samples=int(adc_duration / system.adc_raster_time),  # Is not taken into account atm
-        duration=adc_duration,
+        num_samples=num_samples,  # Is not taken into account atm
+        duration = adc_duration,
+        #dwell=1/acq_bandwidth,
         system=system,
     )
 

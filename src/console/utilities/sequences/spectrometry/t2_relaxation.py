@@ -12,7 +12,8 @@ def constructor(
     num_steps: int = 10,
     repetition_time: float = 600e-3,
     rf_duration: float = 400e-6,
-    adc_duration: float = 4e-3
+    num_samples: int = 128,
+    acq_bandwidth: float | int = 20e3
     ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct spin echo spectrum sequence.
 
@@ -37,8 +38,10 @@ def constructor(
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "te-variation")
 
-    rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
-    rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
+    rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration)
+    rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration)
+
+    adc_duration = raster(val=num_samples/acq_bandwidth, precision=system.adc_raster_time)
 
     # num_samples = int(adc_duration/system.adc_raster_time)
     adc = pp.make_adc(

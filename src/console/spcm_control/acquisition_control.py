@@ -176,7 +176,7 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self, store_unprocessed: bool=False) -> AcquisitionData:
+    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -301,11 +301,11 @@ class AcquisitionControl:
         parameter
             Acquisition parameter
         """
-        # Scale the data
+        # Set the larmor frequency for all data to the defined larmor_frequency
         for rx_data in self.receive_data[-1]:
-            rx_data.scaling_factor = self.rx_card.rx_scaling[:np.size(rx_data.raw_data,0)]
             rx_data.larmor_frequency = parameter.larmor_frequency
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(), self.receive_data[-1])
+            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=store_unprocessed)
+                         , self.receive_data[-1])
