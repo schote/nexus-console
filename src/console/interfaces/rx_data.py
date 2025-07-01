@@ -71,6 +71,8 @@ class RxData:
 
     def demod_and_phase_data(self, data) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data."""
+        if self.demod_frequency is None:
+            raise RuntimeError("Demodulation frequency not set")
         # Demodulate the data
         time_axis = np.arange(np.size(data, -1)) * self.dwell_time_raw
         data_demod = data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)

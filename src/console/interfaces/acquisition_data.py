@@ -150,7 +150,8 @@ class AcquisitionData:
             raise ValueError("Labels not found. A labeled sequence is required to export ismrmrd.")
 
         # Get dimensions of raw data
-        _, num_coils, num_pe, num_ro = self.raw.shape
+        num_coils, num_ro = self.receive_data[0][0].processed_data.shape
+        num_pe = len(self.receive_data[0])
         enc_dim = [
             header.encoding[0].encodedSpace.matrixSize.x,
             header.encoding[0].encodedSpace.matrixSize.y,
@@ -196,7 +197,7 @@ class AcquisitionData:
                 acq.idx.slice = labels[key][k]
 
             # Set the data and append
-            acq.data[:] = self.raw[0, :, k, :]
+            acq.data[:] = self.receive_data[0][0].processed_data
 
             dataset.append_acquisition(acq)
 

@@ -9,6 +9,7 @@ from itertools import compress
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
+from console.interfaces.rx_data import RxData
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
@@ -71,7 +72,7 @@ class RxCard(SpectrumDevice):
         self.channel_enable = channel_enable
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = impedance_50_ohms
-        self.rx_data = None
+        self.rx_data: None | list[RxData] = None
 
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
