@@ -9,7 +9,6 @@ from itertools import compress
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
-from console.interfaces.rx_data import RxData
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
