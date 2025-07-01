@@ -224,7 +224,8 @@ class AcquisitionControl:
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
-            self.rx_card.start_operation(rx_data=self.receive_data[k])
+            self.rx_card.rx_data = self.receive_data[k]
+            self.rx_card.start_operation()
 
             time.sleep(0.01)
 

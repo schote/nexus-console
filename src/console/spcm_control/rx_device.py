@@ -219,12 +219,10 @@ class RxCard(SpectrumDevice):
         self.log.debug("Device setup completed")
         # _ = self.get_status()
 
-    def start_operation(self, rx_data: list[RxData]):
+    def start_operation(self):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
-
-        self.rx_data = rx_data
 
         self.is_receiving.clear()
         # Start card thread. if time stamp mode is not available use the example function.
@@ -428,6 +426,7 @@ class RxCard(SpectrumDevice):
                         self.rx_data[self.total_gates].raw_data = gate_data.reshape((self.num_channels.value,
                                                                                 gate_sample),
                                                                                 order="F")
+                        self.rx_data[self.total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
                         self.rx_data[self.total_gates].time_stamp = timestamp_0
 
                         # The accumulation of the leftover bytes is positive,

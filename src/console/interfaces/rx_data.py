@@ -18,6 +18,7 @@ class RxData:
     # Data characteristics, defined by the ADC event in sequence defintion
     num_pnts: int
     dwell_time: float
+    dwell_time_raw: float
 
     # Data offsets from sequence definition
     phase_offset: float
@@ -25,9 +26,6 @@ class RxData:
 
     # ADC labels
     labels: dict | None = None
-
-    # Raw dwell time of the receive cards
-    dwell_time_raw: None | float = None
 
     # Set the larmor frequency for each object
     larmor_frequency: None | float = None
@@ -91,6 +89,9 @@ class RxData:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
         if self.larmor_frequency is None:
             raise RuntimeError("Larmor frequency not set, please set prior to processing data")
+
+        if self.raw_data is None:
+            raise RuntimeError("Can't process data; No raw data present in RxData object")
 
         self.demod_frequency = self.larmor_frequency + self.freq_offset
 
