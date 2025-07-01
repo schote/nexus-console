@@ -171,7 +171,6 @@ class AcquisitionParameter:
         log = logging.getLogger("AcqParam")
         filepath = Path(filepath) if isinstance(filepath, str) else filepath
         state = None
-        instance = None
         try:
             with filepath.open("rb") as state_file:
                 state = pickle.load(state_file)  # noqa: S301
@@ -181,7 +180,6 @@ class AcquisitionParameter:
                 exc_info=exc,
                 args=(str(filepath),),
             )
-            return None
         except EOFError as exc:
             log.exception(
                 msg="EOFError: AcquisitionParameter state file '%s' is empty or corrupted. \
@@ -189,21 +187,23 @@ class AcquisitionParameter:
                 exc_info=exc,
                 args=(str(filepath),),
             )
-            return None
         except Exception as exc:
             log.exception(
                 msg="Error loading AcquisitionParameter state file '%s'.",
                 exc_info=exc,
                 args=(str(filepath),),
             )
-            return None
-        try:
-            instance = cls(**state)
-            instance._initialized = True
-        except Exception as exc:
-            log.exception(
-                msg="Error creating AcquisitionParameter instance.",
-                exc_info=exc,
-                args=(str(filepath),),
-            )
-        return instance
+        if state is not None:
+            try:
+                instance = cls(**state)
+                instance._initialized = True
+            except Exception as exc:
+                log.exception(
+                    msg="Error creating AcquisitionParameter instance.",
+                    exc_info=exc,
+                    args=(str(filepath),),
+                )
+            else:
+                return instance
+        log.warning("AcquisitionParameter instance is created using default parameter.")
+        return cls()
