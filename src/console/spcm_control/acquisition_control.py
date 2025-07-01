@@ -308,4 +308,4 @@ class AcquisitionControl:
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed), self.receive_data[-1])
+            executor.map(lambda rx_obj: rx_obj.process_data(), self.receive_data[-1])

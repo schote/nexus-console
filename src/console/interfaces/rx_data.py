@@ -71,7 +71,7 @@ class RxData:
                 # Default case is FIR decimation
                 return signal.decimate(data, q=self.decimation_factor, ftype="fir", axis=-1)
 
-    def demod_and_phase_data(self, data) -> np.nd.array:
+    def demod_and_phase_data(self, data) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data."""
         # Demodulate the data
         time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
@@ -83,7 +83,7 @@ class RxData:
     def scale_data(self, data) -> np.ndarray:
         """Scale the receive data to go from ADC units to mV."""
         if self.scaling_factor is not None:
-            return data * np.expand_dims(self)
+            return data * np.expand_dims(self.scaling_factor, axis = -1)
         else:
             return data
 
@@ -91,9 +91,10 @@ class RxData:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
         if self.larmor_frequency is None:
             raise RuntimeError("Larmor frequency not set, please set prior to processing data")
-        scaled_data = self.scale_data(self.raw_data)
 
         self.demod_frequency = self.larmor_frequency + self.freq_offset
+
+        scaled_data = self.scale_data(self.raw_data)
 
         demod_data = self.demod_and_phase_data(scaled_data)
 
