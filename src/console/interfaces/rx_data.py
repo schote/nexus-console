@@ -40,7 +40,7 @@ class RxData:
     ddc_method: DDCMethod = DDCMethod.FIR
 
     # Scaling factor for each receive channel
-    scaling_factor: None | np.ndarray = None
+    scaling_factor: None | np.ndarray | list[float] = None
 
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     raw_data: None | np.ndarray = None
