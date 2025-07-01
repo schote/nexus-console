@@ -4,7 +4,7 @@ import logging
 import pickle  # noqa: S403
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.enums import DDCMethod
@@ -63,17 +63,12 @@ class AcquisitionParameter:
 
     _initialized: bool = field(default=False, init=True, repr=False, compare=False, hash=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Post initialization method."""
         if isinstance(self.state_filepath, str):
             self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):
             self.state_filepath = self.state_filepath / "acquisition-parameter.state"
-        # Load state file if it already exists
-        if self.state_filepath.exists():
-            with self.state_filepath.open(mode="rb") as state_file:
-                state = pickle.load(state_file)  # noqa: S301
-            self.__dict__.update(**state)
         self._initialized = True
         self.save()
 
@@ -115,8 +110,8 @@ class AcquisitionParameter:
             Acquisition parameter dictionary
         """
         if use_strings:
-            return {k: str(v) for k, v in asdict(self).items() if not k.startswith("_")}
-        data = {k: v for k, v in asdict(self).items() if not k.startswith("_")}
+            return {key: str(value) for key, value in asdict(self).items() if not key.startswith("_")}
+        data = {key: value for key, value in asdict(self).items() if not key.startswith("_")}
         # Make state filepath a str (Path variable)
         data["state_filepath"] = str(data["state_filepath"])
         return data
@@ -138,7 +133,7 @@ class AcquisitionParameter:
             _filepath = _filepath / "acquisition-parameter.state"
         _filepath.parent.mkdir(parents=True, exist_ok=True)
         data = {key: value for key, value in self.__dict__.items() if not key.startswith("_")}
-        with open(_filepath, "wb") as file:
+        with _filepath.open("wb") as file:
             pickle.dump(data, file)
 
     def hash(self) -> int:
@@ -146,7 +141,7 @@ class AcquisitionParameter:
         return self.__hash__()
 
     @classmethod
-    def load(cls, filepath: Path | str) -> "AcquisitionParameter":
+    def load(cls, filepath: Path | str | None = None) -> Optional["AcquisitionParameter"]:
         """
         Load acquisition parameter state from state file in-place.
 
@@ -169,41 +164,39 @@ class AcquisitionParameter:
             Provided state file is corrupted
         """
         log = logging.getLogger("AcqParam")
+        filepath = cls.state_filepath if filepath is None else filepath
         filepath = Path(filepath) if isinstance(filepath, str) else filepath
         state = None
         try:
             with filepath.open("rb") as state_file:
                 state = pickle.load(state_file)  # noqa: S301
-        except FileNotFoundError as exc:
+        except FileNotFoundError:
             log.exception(
-                msg="FileNotFoundError: AcquisitionParameter state file '%s' does not exist.",
-                exc_info=exc,
-                args=(str(filepath),),
+                "FileNotFoundError: AcquisitionParameter state file '%s' does not exist.",
+                str(filepath),
             )
-        except EOFError as exc:
+        except EOFError:
             log.exception(
-                msg="EOFError: AcquisitionParameter state file '%s' is empty or corrupted. \
+                "EOFError: AcquisitionParameter state file '%s' is empty or corrupted. \
                     Please delete the existing state file so that a new one can be generated.",
-                exc_info=exc,
-                args=(str(filepath),),
+                str(filepath),
             )
-        except Exception as exc:
+        except Exception:
             log.exception(
-                msg="Error loading AcquisitionParameter state file '%s'.",
-                exc_info=exc,
-                args=(str(filepath),),
+                "Error loading AcquisitionParameter state file '%s'.",
+                str(filepath),
             )
         if state is not None:
             try:
                 instance = cls(**state)
                 instance._initialized = True
-            except Exception as exc:
+                if isinstance(instance, str):
+                    instance.state_filepath = Path(instance.state_filepath)
+            except Exception:
                 log.exception(
-                    msg="Error creating AcquisitionParameter instance.",
-                    exc_info=exc,
-                    args=(str(filepath),),
+                    "Error creating AcquisitionParameter instance from file '%s'.",
+                    str(filepath),
                 )
             else:
                 return instance
-        log.warning("AcquisitionParameter instance is created using default parameter.")
-        return cls()
+        return None
