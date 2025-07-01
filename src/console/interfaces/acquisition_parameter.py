@@ -1,5 +1,6 @@
 """Interface class for acquisition parameters."""
 
+import logging
 import pickle  # noqa: S403
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -146,7 +147,8 @@ class AcquisitionParameter:
 
     @classmethod
     def load(cls, filepath: Path | str) -> "AcquisitionParameter":
-        """Load acquisition parameter state from state file in-place.
+        """
+        Load acquisition parameter state from state file in-place.
 
         Parameters
         ----------
@@ -163,12 +165,45 @@ class AcquisitionParameter:
         ------
         FileNotFoundError
             Provided file_path is not a pickle file or does not exist.
+        EOFError
+            Provided state file is corrupted
         """
+        log = logging.getLogger("AcqParam")
         filepath = Path(filepath) if isinstance(filepath, str) else filepath
-        if not filepath.exists():
-            raise FileNotFoundError("Acquisition parameter state file not found: ", filepath)
-        with open(filepath, "rb") as state_file:
-            state = pickle.load(state_file)  # noqa: S301
-        instance = cls(**state)
-        instance._initialized = True
+        state = None
+        instance = None
+        try:
+            with filepath.open("rb") as state_file:
+                state = pickle.load(state_file)  # noqa: S301
+        except FileNotFoundError as exc:
+            log.exception(
+                msg="FileNotFoundError: AcquisitionParameter state file '%s' does not exist.",
+                exc_info=exc,
+                args=(str(filepath),),
+            )
+            return None
+        except EOFError as exc:
+            log.exception(
+                msg="EOFError: AcquisitionParameter state file '%s' is empty or corrupted. \
+                    Please delete the existing state file so that a new one can be generated.",
+                exc_info=exc,
+                args=(str(filepath),),
+            )
+            return None
+        except Exception as exc:
+            log.exception(
+                msg="Error loading AcquisitionParameter state file '%s'.",
+                exc_info=exc,
+                args=(str(filepath),),
+            )
+            return None
+        try:
+            instance = cls(**state)
+            instance._initialized = True
+        except Exception as exc:
+            log.exception(
+                msg="Error creating AcquisitionParameter instance.",
+                exc_info=exc,
+                args=(str(filepath),),
+            )
         return instance
