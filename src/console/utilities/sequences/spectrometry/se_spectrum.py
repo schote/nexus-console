@@ -58,11 +58,10 @@ def constructor(
         rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration)
 
-    adc_duration = raster(val=num_samples/acq_bandwidth, precision=system.adc_raster_time)
+    adc_duration = raster(val=num_samples / acq_bandwidth, precision=system.adc_raster_time)
     adc = pp.make_adc(
-        num_samples=num_samples,  # Is not taken into account atm
-        duration = adc_duration,
-        #dwell=1/acq_bandwidth,
+        num_samples=num_samples,
+        duration=adc_duration,
         system=system,
     )
 
