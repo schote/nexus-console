@@ -1,7 +1,4 @@
 """"Define the dataclass and processing of receiver data."""
-import multiprocessing as mp
-import queue
-import threading
 from dataclasses import dataclass
 
 import numpy as np
@@ -60,46 +57,52 @@ class RxData:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
-    def demod_and_phase_data(self):
-        """Demodulate and phase the data contained in raw_data."""
-        if self.raw_data is None:
-            raise RuntimeError("No raw data found")
-        # Demodulate data
-        time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
-        self.raw_data = self.raw_data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)
-        # Apply receive phase correction to data
-        self.raw_data *= np.exp(1j * self.phase_offset)
-
-    def decimate_data(self) -> np.ndarray:
+    def decimate_data(self, data) -> np.ndarray:
         """Decimate the data using the passed method."""
-        if self.raw_data is None:
-            raise RuntimeError("No raw data found")
-        elif self.decimation_factor <= 1 or not isinstance(self.decimation_factor, int):
+        if self.decimation_factor <= 1 or not isinstance(self.decimation_factor, int):
             raise ValueError(f"Invalid decimation factor {self.decimation_factor}")
 
         match self.ddc_method:
             case DDCMethod.CIC:
-                return ddc.filter_cic_fir_comp(self.raw_data, decimation=self.decimation_factor, number_of_stages=5)
+                return ddc.filter_cic_fir_comp(data, decimation=self.decimation_factor, number_of_stages=5)
             case DDCMethod.AVG:
-                return ddc.filter_moving_average(self.raw_data, decimation=self.decimation_factor, overlap=8)
+                return ddc.filter_moving_average(data, decimation=self.decimation_factor, overlap=8)
             case _:
                 # Default case is FIR decimation
-                return signal.decimate(self.raw_data, q=self.decimation_factor, ftype="fir", axis=-1)
+                return signal.decimate(data, q=self.decimation_factor, ftype="fir", axis=-1)
+
+    def demod_and_phase_data(self, data) -> np.nd.array:
+        """Demodulate and phase the data contained in raw_data."""
+        # Demodulate the data
+        time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
+        data_demod = data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)
+
+        # Apply receive phase correction to data and return data
+        return data_demod * np.exp(1j * self.phase_offset)
+
+    def scale_data(self, data) -> np.ndarray:
+        """Scale the receive data to go from ADC units to mV."""
+        if self.scaling_factor is not None:
+            return data * np.expand_dims(self)
+        else:
+            return data
 
     def process_data(self, store_unprocessed: bool = True) -> None:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
         if self.larmor_frequency is None:
             raise RuntimeError("Larmor frequency not set, please set prior to processing data")
+        scaled_data = self.scale_data(self.raw_data)
+
         self.demod_frequency = self.larmor_frequency + self.freq_offset
-        self.demod_and_phase_data()
+
+        demod_data = self.demod_and_phase_data(scaled_data)
 
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
         output_shape = list(np.shape(self.raw_data))
         output_shape[-1] = round(output_shape[-1] / self.decimation_factor)
         self.processed_data = np.zeros(output_shape, dtype=complex)
-        self.processed_data[:] = self.decimate_data()[:]
+        self.processed_data[:] = self.decimate_data(demod_data)[:]
 
         if not store_unprocessed:
             self.raw_data = None
-

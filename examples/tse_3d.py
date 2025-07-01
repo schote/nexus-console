@@ -42,22 +42,22 @@ acq_data: AcquisitionData = acq.run()
 ksp = tse_3d.sort_kspace(acq_data.receive_data, acq.seq_provider)
 
 # Image reconstruction with FFT
-img = np.zeros(np.shape(ksp), dtype = complex)
+img = np.zeros(np.shape(ksp), dtype=complex)
 
 for idx_avg in range(np.size(ksp, 0)):
     for idx_coil in range(np.size(ksp, 1)):
-        img[idx_avg, idx_coil, ...] = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp[idx_avg, idx_coil,...])))
+        img[idx_avg, idx_coil, ...] = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp[idx_avg, idx_coil, ...])))
 
 img = img.squeeze()
 ksp = ksp.squeeze()
 
 # Just grab the 0th coil/avg data
 if np.size(np.shape(img)) == 4:
-    img = img[0,...]
-    ksp = ksp[0,...]
+    img = img[0, ...]
+    ksp = ksp[0, ...]
 elif np.size(np.shape(img)) == 5:
-    img = img[0,0,...]
-    ksp = ksp[0,0,...]
+    img = img[0, 0, ...]
+    ksp = ksp[0, 0, ...]
 
 
 # 3D magnitude plot of image slices

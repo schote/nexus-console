@@ -432,8 +432,7 @@ def constructor(
     train_duration = train_duration_tr - tr_delay
 
     # Check labels
-    labels = seq.evaluate_labels(evolution="adc")
-    acq_pos = np.concatenate(trains_pos).T
+    # labels = seq.evaluate_labels(evolution="adc")
     # TODO: When noise scans are done, the last LIN/PAR label is duplicated
     # Could be fixed by using a different label which marks the noise scan?
     # if not np.array_equal(labels["LIN"], acq_pos[0, :]):
@@ -535,10 +534,10 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
 
     # Get k-space sorting from sequence labels
     for avg in range(n_avg):
-        for idx, rx_data in enumerate(receive_data[avg]):
-            if rx_data.labels is not None and 'IMA' in  rx_data.labels:
-                if rx_data.labels['IMA']: # check that it is imaging data, not navigator or noise
-                    ksp[avg,:,rx_data.labels['PAR'],rx_data.labels['LIN'],:] = rx_data.processed_data
+        for rx_data in receive_data[avg]:
+            if rx_data.labels is not None and 'IMA' in rx_data.labels:
+                if rx_data.labels['IMA']:  # check that it is imaging data, not navigator or noise
+                    ksp[avg, :, rx_data.labels['PAR'], rx_data.labels['LIN'], :] = rx_data.processed_data
 
     return ksp
 

@@ -4,9 +4,9 @@ import logging
 import logging.config
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
@@ -176,7 +176,7 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
+    def run(self, store_unprocessed: bool=False) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -253,7 +253,7 @@ class AcquisitionControl:
 
             if num_gates > 0:
                 self.post_processing(self.sequence.parameter,
-                                     store_unprocessed = store_unprocessed)
+                                     store_unprocessed=store_unprocessed)
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
@@ -288,7 +288,7 @@ class AcquisitionControl:
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter, store_unprocessed = False) -> None:
+    def post_processing(self, parameter: AcquisitionParameter, store_unprocessed=False) -> None:
         """Proces acquired NMR data.
 
         Post processing contains the following steps (per readout sample size):
@@ -303,12 +303,9 @@ class AcquisitionControl:
         """
         # Scale the data
         for rx_data in self.receive_data[-1]:
-            rx_data.raw_data = rx_data.raw_data.astype(np.int16) \
-                * np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=-1)
+            rx_data.scaling_factor = self.rx_card.rx_scaling[:np.size(rx_data.raw_data,0)]
             rx_data.larmor_frequency = parameter.larmor_frequency
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_data_obj: \
-                rx_data_obj.process_data(store_unprocessed)
-                , self.receive_data[-1])
+            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed), self.receive_data[-1])
