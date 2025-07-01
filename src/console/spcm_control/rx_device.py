@@ -306,6 +306,10 @@ class RxCard(SpectrumDevice):
         self.total_gates = 0
         total_leftover = 0
 
+        if self.rx_data is None:
+            self.log.critical("No RxData objects found for storing ADC data")
+            raise RuntimeError("No RxData objects found for storing ADC data")
+
         # Start receiver
         self.log.debug("Starting receive")
         self.is_receiving.set()

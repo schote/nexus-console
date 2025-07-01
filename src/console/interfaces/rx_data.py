@@ -1,5 +1,5 @@
 """"Define the dataclass and processing of receiver data."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 from scipy import signal
@@ -27,14 +27,14 @@ class RxData:
     # ADC labels
     labels: dict | None = None
 
+    # Used for demodulation, value set in post init
+    decimation_factor: int = field(init=False)
+
     # Set the larmor frequency for each object
     larmor_frequency: None | float = None
 
     # Frequency with which the data are demodulated
     demod_frequency: None | float = None
-
-    # Used for demodulation, value set in post init
-    decimation_factor: None | int = None
 
     # Set the default demod method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
@@ -72,7 +72,7 @@ class RxData:
     def demod_and_phase_data(self, data) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data."""
         # Demodulate the data
-        time_axis = np.arange(np.size(self.raw_data, -1)) * self.dwell_time_raw
+        time_axis = np.arange(np.size(data, -1)) * self.dwell_time_raw
         data_demod = data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)
 
         # Apply receive phase correction to data and return data
@@ -83,7 +83,8 @@ class RxData:
         if self.scaling_factor is not None:
             return data * np.expand_dims(self.scaling_factor, axis=-1)
         else:
-            return data
+            # If no scaling data is provided then just return the array as an array of floats for consistency
+            return data.astype(float)
 
     def process_data(self, store_unprocessed: bool = True) -> None:
         """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
@@ -101,7 +102,7 @@ class RxData:
 
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
-        output_shape = list(np.shape(self.raw_data))
+        output_shape = list(np.shape(demod_data))
         output_shape[-1] = round(output_shape[-1] / self.decimation_factor)
         self.processed_data = np.zeros(output_shape, dtype=complex)
         self.processed_data[:] = self.decimate_data(demod_data)[:]
