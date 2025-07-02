@@ -80,6 +80,7 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
         self.is_receiving = threading.Event()
+        self._total_gates: int = 0
 
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
@@ -87,8 +88,13 @@ class RxCard(SpectrumDevice):
 
         self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
 
+    @property
+    def total_gates(self) -> int:
+        """"Helper function to return the number of gates that have been collected by the Rx Card."""
+        return self._total_gates
+
     def dict(self) -> dict:
-        """Returnt class variables which are json serializable as dictionary.
+        """Return class variables which are json serializable as dictionary.
 
         Returns
         -------
@@ -304,7 +310,7 @@ class RxCard(SpectrumDevice):
         available_timestamp_postion = sp.int32(0)
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
-        self.total_gates = 0
+        self._total_gates = 0
         total_leftover = 0
 
         if self.rx_data is None:
@@ -427,11 +433,11 @@ class RxCard(SpectrumDevice):
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
                         # Store raw data in RxData object
-                        self.rx_data[self.total_gates].raw_data = gate_data.reshape((self.num_channels.value,
+                        self.rx_data[self._total_gates].raw_data = gate_data.reshape((self.num_channels.value,
                                                                                 gate_sample),
                                                                                 order="F")
-                        self.rx_data[self.total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
-                        self.rx_data[self.total_gates].time_stamp = timestamp_0
+                        self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
+                        self.rx_data[self._total_gates].time_stamp = timestamp_0
 
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),
@@ -439,7 +445,7 @@ class RxCard(SpectrumDevice):
                         # from a previous acquisition (accumulated sum decreases).
                         total_leftover += (bytes_sequence - available_data_bytes.value)
 
-                        self.total_gates += 1
+                        self._total_gates += 1
 
                         # Tell the card that data has been read and the buffer can be reused.
                         # Using the size of available data bytes prevents invalid values.
