@@ -93,15 +93,6 @@ class RxCard(SpectrumDevice):
         """"Helper function to return the number of gates that have been collected by the Rx Card."""
         return self._total_gates
 
-    def dict(self) -> dict:
-        """Return class variables which are json serializable as dictionary.
-
-        Returns
-        -------
-            Dictionary containing class variables.
-        """
-        return super().dict()
-
     def setup_card(self):
         """Set up spectrum card in transmit (Rx) mode.
 
