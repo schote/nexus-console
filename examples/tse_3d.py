@@ -42,7 +42,7 @@ acq_data: AcquisitionData = acq.run()
 ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
 
 # Image reconstruction with FFT
-img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp, axes=(2,3,4)), axes=(2,3,4)), axes=(2,3,4))
+img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp, axes=(2, 3, 4)), axes=(2, 3, 4)), axes=(2, 3, 4))
 
 # Just grab the 0th coil/avg data
 img = img[0, 0, ...]
