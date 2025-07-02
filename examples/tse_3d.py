@@ -20,7 +20,7 @@ acq = AcquisitionControl(configuration_file=config_file,
 # Create sequence
 params = {
     "echo_time": 20e-3,
-    "repetition_time": 300e-3,
+    "repetition_time": 600e-3,
     "etl": 7,
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
@@ -42,11 +42,7 @@ acq_data: AcquisitionData = acq.run()
 ksp = tse_3d.sort_kspace(acq_data.receive_data, acq.seq_provider)
 
 # Image reconstruction with FFT
-img = np.zeros(np.shape(ksp), dtype=complex)
-
-for idx_avg in range(np.size(ksp, 0)):
-    for idx_coil in range(np.size(ksp, 1)):
-        img[idx_avg, idx_coil, ...] = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp[idx_avg, idx_coil, ...])))
+img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp, axes=(2,3,4)), axes=(2,3,4)), axes=(2,3,4))
 
 img = img.squeeze()
 ksp = ksp.squeeze()
