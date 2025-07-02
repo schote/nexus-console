@@ -210,6 +210,8 @@ class AcquisitionControl:
         self._unproc = []
         self._raw = []
 
+        self.store_unprocessed = store_unprocessed
+
         # Create a list to store rx_data for all averages
         self.receive_data = []
 
@@ -253,8 +255,7 @@ class AcquisitionControl:
                     break
 
             if num_gates > 0:
-                self.post_processing(self.sequence.parameter,
-                                     store_unprocessed=store_unprocessed)
+                self.post_processing(self.sequence.parameter)
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
@@ -289,7 +290,7 @@ class AcquisitionControl:
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter, store_unprocessed=False) -> None:
+    def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.
 
         Post processing contains the following steps (per readout sample size):
@@ -308,5 +309,5 @@ class AcquisitionControl:
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=store_unprocessed)
+            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
                          , self.receive_data[-1])

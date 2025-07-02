@@ -39,22 +39,14 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 # %%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
-ksp = tse_3d.sort_kspace(acq_data.receive_data, acq.seq_provider)
+ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
 
 # Image reconstruction with FFT
 img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp, axes=(2,3,4)), axes=(2,3,4)), axes=(2,3,4))
 
-img = img.squeeze()
-ksp = ksp.squeeze()
-
 # Just grab the 0th coil/avg data
-if np.size(np.shape(img)) == 4:
-    img = img[0, ...]
-    ksp = ksp[0, ...]
-elif np.size(np.shape(img)) == 5:
-    img = img[0, 0, ...]
-    ksp = ksp[0, 0, ...]
-
+img = img[0, 0, ...]
+ksp = ksp[0, 0, ...]
 
 # 3D magnitude plot of image slices
 num_slices = img.shape[0]
