@@ -14,7 +14,6 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
     assert isinstance(params.dict(), dict)
 
     acq_data = AcquisitionData(
-        _raw=[random_acquisition_data(1, 1, 1, 128)],
         acquisition_parameters=params,
         sequence=test_sequence,
         dwell_time=1e-5,

@@ -12,7 +12,7 @@ def constructor(
     num_steps: int = 10,
     repetition_time: float = 600e-3,
     rf_duration: float = 400e-6,
-    num_samples: int = 128,
+    num_samples: int = 64,
     acq_bandwidth: float | int = 20e3
     ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct spin echo spectrum sequence.
