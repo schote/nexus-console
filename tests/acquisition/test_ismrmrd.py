@@ -5,6 +5,7 @@ import pytest
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.rx_data import RxData
 from console.utilities import sequences
 
 
@@ -19,8 +20,30 @@ def test_tse_3d(fov, dim, random_acquisition_data):
     )
 
     f0 = 2.0123e6
+    receive_data = []
+    receive_data.append([
+        RxData(
+            index=1,
+            num_pnts=120,
+            dwell_time=1/(20e3),
+            dwell_time_raw=1/(20e6),
+            phase_offset=0,
+            freq_offset=0,
+            total_scans=1,
+        ),
+        RxData(
+            index=1,
+            num_pnts=120,
+            dwell_time=1/(20e3),
+            dwell_time_raw=1/(20e6),
+            phase_offset=0,
+            freq_offset=0,
+            total_scans=1,
+        )
+    ])
 
     acq_data = AcquisitionData(
+        receive_data=receive_data,
         acquisition_parameters=AcquisitionParameter(larmor_frequency=f0),
         sequence=seq,
         dwell_time=1e-5,
