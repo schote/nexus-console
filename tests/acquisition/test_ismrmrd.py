@@ -19,29 +19,31 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         fov=fov,
         trajectory=sequences.tse_3d.Trajectory.INOUT
     )
-
+    dummy_data = np.zeros((1,128), dtype=complex)
+    dummy_data[0,:] = (np.random.default_rng().random(128) + 1j * np.random.default_rng().random(128))
+    
     f0 = 2.0123e6
     receive_data = []
     receive_data.append([
         RxData(
             index=1,
             num_pnts=120,
-            dwell_time=1/(20e3),
-            dwell_time_raw=1/(20e6),
+            dwell_time=1 / (20e3),
+            dwell_time_raw=1 / (20e6),
             phase_offset=0,
             freq_offset=0,
             larmor_frequency=f0,
-            processed_data=(np.random.default_rng().random(120) +1j*np.random.default_rng().random(120))
+            processed_data=dummy_data
         ),
         RxData(
             index=1,
             num_pnts=120,
-            dwell_time=1/(20e3),
-            dwell_time_raw=1/(20e6),
+            dwell_time=1 / (20e3),
+            dwell_time_raw=1 / (20e6),
             phase_offset=0,
             freq_offset=0,
             larmor_frequency=f0,
-            processed_data=(np.random.default_rng().random(120) +1j*np.random.default_rng().random(120))
+            processed_data=dummy_data
         )
     ])
 
