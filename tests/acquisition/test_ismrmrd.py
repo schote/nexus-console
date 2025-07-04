@@ -28,8 +28,8 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         RxData(
             index=1,
             num_pnts=128,
-            dwell_time_raw=(1 / 20e6),
-            dwell_time=(1 / 20e3),
+            dwell_time_raw=1 / 20e6,
+            dwell_time=1 / 20e3,
             phase_offset=0,
             freq_offset=0,
             larmor_frequency=f0,
@@ -38,8 +38,8 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         RxData(
             index=1,
             num_pnts=128,
-            dwell_time_raw=(1 / 20e6),
-            dwell_time=(1 / 20e3),
+            dwell_time_raw=1 / 20e6,
+            dwell_time=1 / 20e3,
             phase_offset=0,
             freq_offset=0,
             larmor_frequency=f0,
