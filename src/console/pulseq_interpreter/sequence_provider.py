@@ -602,7 +602,7 @@ class SequenceProvider(Sequence):
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
-            duration=round(self.duration()[0], 3),
+            duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
             rx_data=_rx_data
