@@ -1,6 +1,7 @@
 """Test (ISMR)MRD export."""
 import os
 
+import numpy as np
 import pytest
 
 from console.interfaces.acquisition_data import AcquisitionData
@@ -28,7 +29,9 @@ def test_tse_3d(fov, dim, random_acquisition_data):
             dwell_time=1/(20e3),
             dwell_time_raw=1/(20e6),
             phase_offset=0,
-            freq_offset=0
+            freq_offset=0,
+            larmor_frequency=f0,
+            processed_data=(np.random.default_rng().random(120) +1j*np.random.default_rng().random(120))
         ),
         RxData(
             index=1,
@@ -36,7 +39,9 @@ def test_tse_3d(fov, dim, random_acquisition_data):
             dwell_time=1/(20e3),
             dwell_time_raw=1/(20e6),
             phase_offset=0,
-            freq_offset=0
+            freq_offset=0,
+            larmor_frequency=f0,
+            processed_data=(np.random.default_rng().random(120) +1j*np.random.default_rng().random(120))
         )
     ])
 

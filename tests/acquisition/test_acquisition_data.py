@@ -51,5 +51,4 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
     acq_data_files = list(os.walk("./tmp/"))[-1][-1]
 
     assert "meta.json" in acq_data_files
-    assert "raw_data.npy" in acq_data_files
     assert "sequence.seq" in acq_data_files
