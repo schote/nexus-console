@@ -28,15 +28,14 @@ console.parameter.b1_scaling = 2.43
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run()
 
-num_avg = len(acq_data.receive_data)
-num_echos = len(acq_data.receive_data[0])
-num_coils = np.size(acq_data.receive_data[0][0].processed_data, 0)
-num_pnts = np.size(acq_data.receive_data[0][0].processed_data, 1)
+num_avg = acq_data.receive_data[0].total_scans
+num_echos = int(len(acq_data.receive_data)/num_avg)
+num_coils = np.size(acq_data.receive_data[0].processed_data, 0)
+num_pnts = np.size(acq_data.receive_data[0].processed_data, 1)
 
 data = np.zeros((num_avg, num_coils, num_echos, num_pnts), dtype=complex)
-for avg in range(num_avg):
-    for echo in range(num_echos):
-        data[avg, :, echo, :] = acq_data.receive_data[avg][echo].processed_data
+for idx, echo in acq_data.receive_data:
+    data[echo.scan_number, :, idx % num_echos, :] = echo.processed_data
 
 data = np.mean(data, axis=0).squeeze()
 

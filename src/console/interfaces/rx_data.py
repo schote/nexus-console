@@ -24,6 +24,10 @@ class RxData:
     phase_offset: float
     freq_offset: float
 
+    # Averages tracking
+    total_scans: int
+    scan_number: int = field(init=False)
+
     # ADC labels
     labels: dict | None = None
 

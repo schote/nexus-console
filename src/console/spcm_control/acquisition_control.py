@@ -214,6 +214,7 @@ class AcquisitionControl:
 
         # Create a list to store rx_data for all averages
         self.receive_data = []
+        self.num_adc_events = len(self.sequence.rx_data)
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -221,12 +222,15 @@ class AcquisitionControl:
         )
 
         for k in range(self.sequence.parameter.num_averages):
-            # Create a copy of rx_data to store the current acquisition in
-            self.receive_data.append(self.sequence.rx_data.copy())
+            # Create a copy of rx_data to store the current acquisition in and label scan number.
+            self.receive_data.extend(self.sequence.rx_data.copy())
+            for rx_data in self.receive_data[-self.num_adc_events:]:
+                rx_data.scan_number = k
+
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
-            self.rx_card.rx_data = self.receive_data[k]
+            self.rx_card.rx_data = self.receive_data[k * self.num_adc_events:]
             self.rx_card.start_operation()
 
             time.sleep(0.01)
@@ -254,13 +258,16 @@ class AcquisitionControl:
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            if num_gates > 0:
-                self.post_processing(self.sequence.parameter)
+
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
             if self.sequence.parameter.averaging_delay > 0:
                 time.sleep(self.sequence.parameter.averaging_delay)
+
+        if num_gates > 0:
+            # Process all the data at the end of the acquisition
+            self.post_processing(self.sequence.parameter)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
@@ -304,10 +311,10 @@ class AcquisitionControl:
             Acquisition parameter
         """
         # Set the larmor frequency for all data to the defined larmor_frequency
-        for rx_data in self.receive_data[-1]:
+        for rx_data in self.receive_data:
             rx_data.larmor_frequency = parameter.larmor_frequency
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
             executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
-                         , self.receive_data[-1])
+                         , self.receive_data)

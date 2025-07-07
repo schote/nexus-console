@@ -23,6 +23,8 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
             dwell_time_raw=1 / 20e6,
             phase_offset=0,
             freq_offset=0,
+            total_scans=2,
+            scan_number=0,
         ),
         RxData(
             index=1,
@@ -31,6 +33,8 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
             dwell_time_raw=1 / 20e6,
             phase_offset=0,
             freq_offset=0,
+            total_scans=2,
+            scan_number=1,
         )
     ])
 

@@ -20,7 +20,7 @@ from console.utilities.json_encoder import JSONEncoder
 class AcquisitionData:
     """Parameters which define an acquisition."""
 
-    receive_data: list[list[RxData]]
+    receive_data: list[RxData]
     """ A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer
     list contains the list of RxData for each average."""
 

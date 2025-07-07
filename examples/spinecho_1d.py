@@ -28,7 +28,7 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run(store_unprocessed=True)
 
 # Get decimated data from acquisition data object
-data = acq_data.receive_data[0][0].processed_data.squeeze()
+data = acq_data.receive_data[0].processed_data.squeeze()
 
 # Calculate FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))

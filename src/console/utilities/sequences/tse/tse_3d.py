@@ -527,17 +527,16 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
     dim
         dimensions of kspace
     """
-    n_avg = len(receive_data)
-    n_coil = np.size(receive_data[0][0].processed_data, 0)
+    n_avg = receive_data[0].total_scans
+    n_coil = np.size(receive_data[0].processed_data, 0)
     enc_dim = np.array(seq.get_definition("encoding_dim")).astype(int)
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
     # Get k-space sorting from sequence labels
-    for avg in range(n_avg):
-        for rx_data in receive_data[avg]:
-            if rx_data.labels is not None and 'IMA' in rx_data.labels:
-                if rx_data.labels['IMA']:  # check that it is imaging data, not navigator or noise
-                    ksp[avg, :, rx_data.labels['PAR'], rx_data.labels['LIN'], :] = rx_data.processed_data
+    for rx_data in receive_data:
+        if rx_data.labels is not None and 'IMA' in rx_data.labels:
+            if rx_data.labels['IMA']:  # check that it is imaging data, not navigator or noise
+                ksp[rx_data.scan_number, :, rx_data.labels['PAR'], rx_data.labels['LIN'], :] = rx_data.processed_data
 
     return ksp
 
