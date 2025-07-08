@@ -23,8 +23,7 @@ def test_tse_3d(fov, dim, random_acquisition_data):
     dummy_data[0, :] = (np.random.default_rng().random(128) + 1j * np.random.default_rng().random(128))
 
     f0 = 2.0123e6
-    receive_data = []
-    receive_data.append([
+    receive_data = [
         RxData(
             index=1,
             num_pnts=128,
@@ -48,8 +47,7 @@ def test_tse_3d(fov, dim, random_acquisition_data):
             processed_data=dummy_data,
             total_scans=1,
             scan_number=0,
-        )
-    ])
+        )]
 
     acq_data = AcquisitionData(
         receive_data=receive_data,

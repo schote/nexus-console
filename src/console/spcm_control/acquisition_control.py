@@ -273,7 +273,7 @@ class AcquisitionControl:
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
         if num_gates > 0:
-            self.log.debug("Total amount of ADC events: %d"%(len(self.receive_data)))
+            self.log.debug(f"Total amount of ADC events: {len(self.receive_data)}")
             # Process all the data at the end of the acquisition
             self.post_processing(self.sequence.parameter)
 

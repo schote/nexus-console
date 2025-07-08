@@ -153,7 +153,7 @@ class AcquisitionData:
         if self.receive_data[0].processed_data is None:
             raise RuntimeError("No processed data found")
         num_coils, num_ro = self.receive_data[0].processed_data.shape
-        num_pe = len(self.receive_data[0])
+        num_pe = int(len(self.receive_data) / self.receive_data[0].total_scans)
         enc_dim = [
             header.encoding[0].encodedSpace.matrixSize.x,
             header.encoding[0].encodedSpace.matrixSize.y,
