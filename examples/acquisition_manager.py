@@ -36,8 +36,10 @@ with AcquisitionControlManager() as mngr:
 
 # %%
 
+scan_data = [rx_data.receive_data.processed_data for rx_data in data.receive_data]
+
 fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-_ = ax.plot(np.abs(data.raw.squeeze().T))
+_ = ax.plot(np.abs(data.receive_data.squeeze().T))
 
 
 # %%

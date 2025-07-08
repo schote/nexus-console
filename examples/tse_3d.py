@@ -29,16 +29,18 @@ params = {
     "channel_pe1": "z",
     "channel_pe2": "x",
     "ro_bandwidth": 20e3,
-    "n_enc": Dimensions(x=13, y=120, z=120),
+    "n_enc": Dimensions(x=13, y=120, z=14),
 }
 seq, header = tse_3d.constructor(**params)
 
+console.parameter.num_averages = 2
 # Calculate sequence and perform acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 
 # %%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
+# %%
 ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
 
 # Image reconstruction with FFT

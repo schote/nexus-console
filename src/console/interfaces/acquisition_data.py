@@ -150,9 +150,9 @@ class AcquisitionData:
             raise ValueError("Labels not found. A labeled sequence is required to export ismrmrd.")
 
         # Get dimensions of raw data
-        if self.receive_data[0][0].processed_data is None:
+        if self.receive_data[0].processed_data is None:
             raise RuntimeError("No processed data found")
-        num_coils, num_ro = self.receive_data[0][0].processed_data.shape
+        num_coils, num_ro = self.receive_data[0].processed_data.shape
         num_pe = len(self.receive_data[0])
         enc_dim = [
             header.encoding[0].encodedSpace.matrixSize.x,

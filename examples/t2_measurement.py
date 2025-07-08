@@ -1,5 +1,5 @@
 """Spin-echo spectrum."""
-
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -29,12 +29,12 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run()
 
 num_avg = acq_data.receive_data[0].total_scans
-num_echos = int(len(acq_data.receive_data)/num_avg)
+num_echos = int(len(acq_data.receive_data) / num_avg)
 num_coils = np.size(acq_data.receive_data[0].processed_data, 0)
 num_pnts = np.size(acq_data.receive_data[0].processed_data, 1)
 
 data = np.zeros((num_avg, num_coils, num_echos, num_pnts), dtype=complex)
-for idx, echo in acq_data.receive_data:
+for idx, echo in enumerate(acq_data.receive_data):
     data[echo.scan_number, :, idx % num_echos, :] = echo.processed_data
 
 data = np.mean(data, axis=0).squeeze()

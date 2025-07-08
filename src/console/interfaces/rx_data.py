@@ -26,7 +26,7 @@ class RxData:
 
     # Averages tracking
     total_scans: int
-    scan_number: int = field(init=False)
+    scan_number: int = 0
 
     # ADC labels
     labels: dict | None = None
