@@ -336,7 +336,7 @@ def constructor(
                 precision=system.grad_raster_time
             )))
 
-    for train, position in zip(trains, trains_pos):
+    for train_num, (train, position) in enumerate(zip(trains, trains_pos)):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(
@@ -347,7 +347,7 @@ def constructor(
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-        for echo, pe_indices in zip(train, position):
+        for echo_num, (echo, pe_indices) in enumerate(zip(train, position)):
             pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
@@ -376,8 +376,10 @@ def constructor(
             # Cast index values from int32 to int, otherwise make_label function complains
             label_pe1 = pp.make_label(type="SET", label="LIN", value=int(pe_indices[0]))
             label_pe2 = pp.make_label(type="SET", label="PAR", value=int(pe_indices[1]))
+            label_echo = pp.make_label(type='SET', label="ECO", value=int(echo_num + 1))
+            label_tr = pp.make_label(type='SET', label="REP", value=int(train_num + 1))
             label_img = pp.make_label(type="INC", label="IMA", value=True)
-            seq.add_block(grad_ro, adc, label_pe1, label_pe2, label_img)
+            seq.add_block(grad_ro, adc, label_pe1, label_pe2, label_tr, label_echo, label_img)
 
             seq.add_block(
                 pp.make_trapezoid(
