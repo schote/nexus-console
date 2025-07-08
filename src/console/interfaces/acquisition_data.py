@@ -199,7 +199,7 @@ class AcquisitionData:
                 acq.idx.slice = labels[key][k]
 
             # Set the data and append
-            acq.data[:] = self.receive_data[0][0].processed_data
+            acq.data[:] = self.receive_data[0].processed_data
 
             dataset.append_acquisition(acq)
 
