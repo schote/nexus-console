@@ -486,9 +486,6 @@ class SequenceProvider(Sequence):
                 b1_scaling=parameter.b1_scaling
             )
 
-        # Read labels for ADC events
-        labels = self.evaluate_labels(evolution="adc")
-
         seq_duration, _, _ = self.duration()
         seq_samples = int(round(seq_duration * self.spcm_freq))
 
