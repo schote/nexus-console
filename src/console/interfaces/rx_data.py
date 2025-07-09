@@ -1,5 +1,5 @@
 """"Define the dataclass and processing of receiver data."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 
 import numpy as np
 from scipy import signal
@@ -59,6 +59,21 @@ class RxData:
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
+
+    def __str__(self) -> str:
+        """Return string representation of information contained within RxData class."""
+        lines = ["RxData:"]
+        lines.append("-" * 30)
+        for field_data in fields(self):
+            value = getattr(self, field_data.name)
+            if field_data.name != "raw_data" and field_data.name != "processed_data":
+                lines.append(f"{field_data.name.title():<20}: {value}")
+            else:
+                if value is not None:
+                    lines.append(f"{field_data.name.title():<20}: {np.shape(value)}")
+                else:
+                    lines.append(f"{field_data.name.title():<20}: None")
+        return "\n".join(lines)
 
     def decimate_data(self, data) -> np.ndarray:
         """Decimate the data using the passed method."""
