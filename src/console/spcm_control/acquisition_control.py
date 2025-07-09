@@ -278,13 +278,11 @@ class AcquisitionControl:
             self.post_processing(self.sequence.parameter)
 
         try:
-            # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == self.sequence.parameter.num_averages for gate in self._raw):
-                raise ValueError(
-                    "Missing averages: %s/%s",
-                    [gate.shape[0] for gate in self._raw],
-                    self.sequence.parameter.num_averages,
-                )
+            averages = [data.scan_number for data in self.receive_data]
+            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
+                averages_idc = np.arange(self.sequence.parameter.num_averages)
+                missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
+                raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
