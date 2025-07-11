@@ -387,7 +387,8 @@ class TxCard(SpectrumDevice):
             if self.data_buffer_size < ring_buffer_size.value:
                 ctypes.memmove(ring_buffer_addr, data_buffer_addr, self.data_buffer_size)
                 transferred_bytes = self.data_buffer_size
-            else: # Otherwise fill the ring buffer completely with data
+            else:
+                # Otherwise fill the ring buffer completely with data
                 ctypes.memmove(ring_buffer_addr, data_buffer_addr, ring_buffer_size.value)
                 transferred_bytes = ring_buffer_size.value
         except RuntimeError as err:
@@ -438,7 +439,7 @@ class TxCard(SpectrumDevice):
             if avail_bytes.value >= notify_size.value:
                 transfer_count += 1
 
-                # Calculate position withing ring buffer
+                # Calculate position within ring buffer
                 ring_buffer_position = ring_buffer_addr + usr_position.value
 
                 # Get new buffer positions
