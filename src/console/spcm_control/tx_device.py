@@ -438,10 +438,8 @@ class TxCard(SpectrumDevice):
             if avail_bytes.value >= notify_size.value:
                 transfer_count += 1
 
-                ring_buffer_position = ctypes.cast((
-                    ctypes.c_char * (self.max_ring_buffer_size.value - usr_position.value)).from_buffer(
-                        ring_buffer, usr_position.value), ctypes.c_void_p
-                    ).value
+                # Calculate position withing ring buffer
+                ring_buffer_position = ring_buffer_addr + usr_position.value
 
                 # Get new buffer positions
                 if ring_buffer_position and data_buffer_addr:
