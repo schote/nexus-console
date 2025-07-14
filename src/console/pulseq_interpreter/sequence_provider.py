@@ -575,7 +575,7 @@ class SequenceProvider(Sequence):
                             labels[label.label] = label.value
 
                 _rx_data.append(RxData(index=adc_count,
-                                       num_pnts=block.adc.num_samples,
+                                       num_points=block.adc.num_samples,
                                        dwell_time=block.adc.dwell,
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,

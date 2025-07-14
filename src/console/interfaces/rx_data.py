@@ -16,7 +16,7 @@ class RxData:
     index: int
 
     # Data characteristics, defined by the ADC event in sequence defintion
-    num_pnts: int
+    num_points: int
     dwell_time: float
     dwell_time_raw: float
 
