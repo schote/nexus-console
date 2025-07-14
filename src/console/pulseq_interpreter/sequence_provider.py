@@ -581,6 +581,7 @@ class SequenceProvider(Sequence):
                                        phase_offset=block.adc.phase_offset,
                                        freq_offset=block.adc.freq_offset,
                                        total_scans=parameter.num_averages,
+                                       ddc_method=parameter.ddc_method,
                                        labels=labels))
                 adc_count += 1
 
