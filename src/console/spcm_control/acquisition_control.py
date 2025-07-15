@@ -296,7 +296,6 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=self.sequence.parameter.decimation / self.f_spcm,
             acquisition_parameters=self.sequence.parameter,
         )
 
