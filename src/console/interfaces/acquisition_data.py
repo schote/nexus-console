@@ -30,9 +30,6 @@ class AcquisitionData:
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
 
-    dwell_time: float
-    """Dwell time of down-sampled raw data in seconds."""
-
     session_path: str
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
@@ -55,7 +52,6 @@ class AcquisitionData:
                 "version": version("nexus-console"),
                 "date_time": datetime_now.strftime("%d/%m/%Y, %H:%M:%S"),
                 "folder_name": datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name,
-                "dwell_time": self.dwell_time,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": seq_name,
