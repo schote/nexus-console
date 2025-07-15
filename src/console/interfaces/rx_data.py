@@ -119,7 +119,7 @@ class RxData:
 
         if np.size(self.raw_data, axis=-1) != self.num_samples_raw:
             raise ValueError(f"Number of collected samples is different from expected: "
-                             f"{np.size(self.raw_data,axis = -1)} collected vs {self.num_samples_raw} expected")
+                             f"{np.size(self.raw_data, axis = -1)} collected vs {self.num_samples_raw} expected")
 
         self.demod_frequency = self.larmor_frequency + self.freq_offset
 
