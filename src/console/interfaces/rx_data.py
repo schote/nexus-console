@@ -16,7 +16,8 @@ class RxData:
     index: int
 
     # Data characteristics, defined by the ADC event in sequence defintion
-    num_points: int
+    num_samples: int
+    num_samples_raw: int
     dwell_time: float
     dwell_time_raw: float
 
@@ -116,6 +117,10 @@ class RxData:
         if self.raw_data is None:
             raise RuntimeError("Can't process data; No raw data present in RxData object")
 
+        if np.size(self.raw_data, axis = -1) != self.num_samples_raw:
+            raise ValueError(f"Number of collected samples is different from expected: {np.size(self.raw_data,
+                             axis = -1)} collected vs {self.num_samples_raw} expected")
+
         self.demod_frequency = self.larmor_frequency + self.freq_offset
 
         scaled_data = self.scale_data(self.raw_data)
@@ -125,7 +130,7 @@ class RxData:
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
         output_shape = list(np.shape(demod_data))
-        output_shape[-1] = round(output_shape[-1] / self.decimation_factor)
+        output_shape[-1] = self.num_samples
         self.processed_data = np.zeros(output_shape, dtype=complex)
         self.processed_data[:] = self.decimate_data(demod_data)[:]
 

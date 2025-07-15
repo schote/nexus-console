@@ -374,7 +374,7 @@ class SequenceProvider(Sequence):
             gate_samples = int(round(gate_duration * self.spcm_freq))
             waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
             waveform[delay_samples:] = 2**15
-            adc_list.append((adc_waveform[0], waveform))
+            adc_list.append((adc_waveform[0], waveform, gate_samples))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -575,7 +575,8 @@ class SequenceProvider(Sequence):
                             labels[label.label] = label.value
 
                 _rx_data.append(RxData(index=adc_count,
-                                       num_points=block.adc.num_samples,
+                                       num_samples=block.adc.num_samples,
+                                       num_samples_raw=adc_event[2],
                                        dwell_time=block.adc.dwell,
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,

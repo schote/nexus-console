@@ -27,6 +27,7 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         RxData(
             index=1,
             num_points=128,
+            num_samples_raw=128000,
             dwell_time_raw=1 / 20e6,
             dwell_time=1 / 20e3,
             phase_offset=0,
@@ -39,6 +40,7 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         RxData(
             index=1,
             num_points=128,
+            num_samples_raw=128000,
             dwell_time_raw=1 / 20e6,
             dwell_time=1 / 20e3,
             phase_offset=0,

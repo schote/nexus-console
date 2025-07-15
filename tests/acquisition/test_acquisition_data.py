@@ -19,6 +19,7 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
         RxData(
             index=1,
             num_points=120,
+            num_samples_raw=120000,
             dwell_time=1 / 20e3,
             dwell_time_raw=1 / 20e6,
             phase_offset=0,
@@ -28,7 +29,8 @@ def test_acquisition_data(test_sequence, random_acquisition_data):
         ),
         RxData(
             index=1,
-            num_points=120,
+            num_samples=120,
+            num_samples_raw=120000,
             dwell_time=1 / 20e3,
             dwell_time_raw=1 / 20e6,
             phase_offset=0,
