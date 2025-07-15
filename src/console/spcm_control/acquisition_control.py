@@ -231,8 +231,6 @@ class AcquisitionControl:
             # Start masurement card operations
             self.rx_card.start_operation()
 
-            time.sleep(0.01)
-
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
                 # self.log.debug("Waiting for RX card to start receiving...")
@@ -272,10 +270,12 @@ class AcquisitionControl:
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
-        if num_gates > 0:
-            self.log.debug(f"Total amount of ADC events: {len(self.receive_data)}")
+        if len(self.receive_data) > 0:
+            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
             # Process all the data at the end of the acquisition
             self.post_processing(self.sequence.parameter)
+        else:
+            raise RuntimeError("No ADC events present")
 
         try:
             averages = [data.scan_number for data in self.receive_data]
