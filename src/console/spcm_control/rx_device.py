@@ -426,7 +426,7 @@ class RxCard(SpectrumDevice):
                         # Store raw data in RxData object
                         self.rx_data[self._total_gates].raw_data = gate_data.reshape((self.num_channels.value,
                                                                                 gate_sample),
-                                                                                order="F")
+                                                                                order="F").copy()
                         self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
                         self.rx_data[self._total_gates].time_stamp = timestamp_0
 

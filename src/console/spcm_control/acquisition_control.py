@@ -255,7 +255,8 @@ class AcquisitionControl:
                     break
 
             # Append the receive data with current scan data
-            scan_data = copy.deepcopy(self.rx_card.rx_data)
+            scan_data = np.copy(self.rx_card.rx_data)
+            self.rx_card.rx_data = None
 
             for data in scan_data:
                 data.scan_number = k
