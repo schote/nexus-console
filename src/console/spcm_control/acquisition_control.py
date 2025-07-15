@@ -208,13 +208,10 @@ class AcquisitionControl:
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + self.sequence.duration
 
-        self._unproc = []
-        self._raw = []
-
         self.store_unprocessed = store_unprocessed
 
         # Create a list to store rx_data for all averages
-        self.receive_data = []
+        self.receive_data: list = []
         self.num_adc_events = len(self.sequence.rx_data)
 
         # Set gradient offset values
@@ -255,7 +252,7 @@ class AcquisitionControl:
                     break
 
             # Append the receive data with current scan data
-            scan_data = np.copy(self.rx_card.rx_data)
+            scan_data: list = self.rx_card.rx_data.copy()
             self.rx_card.rx_data = None
 
             for data in scan_data:
