@@ -117,7 +117,7 @@ class RxData:
         if self.raw_data is None:
             raise RuntimeError("Can't process data; No raw data present in RxData object")
 
-        if np.size(self.raw_data, axis = -1) != self.num_samples_raw:
+        if np.size(self.raw_data, axis=-1) != self.num_samples_raw:
             raise ValueError(f"Number of collected samples is different from expected: {np.size(self.raw_data,
                              axis = -1)} collected vs {self.num_samples_raw} expected")
 
