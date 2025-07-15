@@ -370,7 +370,6 @@ class TxCard(SpectrumDevice):
                 raise MemoryError(
                     "Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
                 )
-
         except MemoryError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -381,19 +380,15 @@ class TxCard(SpectrumDevice):
             notify_size.value,
         )
 
-        try:
-            # Perform initial memory transfer
-            # If the data buffer fits in the ring buffer, copy the entire data buffer
-            if self.data_buffer_size < ring_buffer_size.value:
-                ctypes.memmove(ring_buffer_addr, data_buffer_addr, self.data_buffer_size)
-                transferred_bytes = self.data_buffer_size
-            else:
-                # Otherwise fill the ring buffer completely with data
-                ctypes.memmove(ring_buffer_addr, data_buffer_addr, ring_buffer_size.value)
-                transferred_bytes = ring_buffer_size.value
-        except RuntimeError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        # Perform initial memory transfer
+        # If the data buffer fits in the ring buffer, copy the entire data buffer
+        if self.data_buffer_size < ring_buffer_size.value:
+            ctypes.memmove(ring_buffer_addr, data_buffer_addr, self.data_buffer_size)
+            transferred_bytes = self.data_buffer_size
+        else:
+            # Otherwise fill the ring buffer completely with data
+            ctypes.memmove(ring_buffer_addr, data_buffer_addr, ring_buffer_size.value)
+            transferred_bytes = ring_buffer_size.value
 
         # Define the transfer buffer
         spcm.spcm_dwDefTransfer_i64(
@@ -474,6 +469,7 @@ class TxCard(SpectrumDevice):
                     transferred_bytes += notify_size.value
                 # Wait for data transfer to complete
                 self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
-        # Wait for data transfer to complete, redundant?
+
+        # Wait for data transfer to complete
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
         self.log.debug("Card operation stopped")
