@@ -53,7 +53,6 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         receive_data=receive_data,
         acquisition_parameters=AcquisitionParameter(larmor_frequency=f0),
         sequence=seq,
-        dwell_time=1e-5,
         session_path=os.path.join("tmp", "")
     )
 
