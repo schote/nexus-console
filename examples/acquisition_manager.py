@@ -36,11 +36,11 @@ with AcquisitionControlManager() as mngr:
 # %%
 
 scan_data = np.array([rx_data.processed_data for rx_data in data.receive_data])
-num_coils = np.size(scan_data,1)
+num_coils = np.size(scan_data, 1)
 
-fig, ax = plt.subplots(1, num_coils, figsize=(5*num_coils,5))
+fig, ax = plt.subplots(1, num_coils, figsize=(5*num_coils, 5))
 for coil in range(num_coils):
-    ax[coil].plot(np.abs(scan_data[:,coil,:]).T)
+    ax[coil].plot(np.abs(scan_data[:, coil, :]).T)
     ax[coil].set_xlabel("Sample")
     ax[coil].set_ylabel("Signal [mV]")
     ax[coil].set_title(f"Rx channel: {coil}")
