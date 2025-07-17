@@ -256,7 +256,7 @@ class AcquisitionControl:
             self.rx_card.rx_data = None
 
             for data in scan_data:
-                data.scan_number = k
+                data.average_index = k
             self.receive_data.extend(scan_data)
 
             self.tx_card.stop_operation()
@@ -276,7 +276,7 @@ class AcquisitionControl:
             raise RuntimeError("No ADC events present")
 
         try:
-            averages = [data.scan_number for data in self.receive_data]
+            averages = [data.average_index for data in self.receive_data]
             if not (np.unique(averages).size == self.sequence.parameter.num_averages):
                 averages_idc = np.arange(self.sequence.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]

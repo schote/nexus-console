@@ -32,7 +32,7 @@ data = acq_data.receive_data[0].processed_data.squeeze()
 
 # Calculate FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
-fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
+fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, data.dwell_time))
 
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))

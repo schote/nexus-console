@@ -581,7 +581,7 @@ class SequenceProvider(Sequence):
                                        dwell_time_raw=self.spcm_dwell_time,
                                        phase_offset=block.adc.phase_offset,
                                        freq_offset=block.adc.freq_offset,
-                                       total_scans=parameter.num_averages,
+                                       total_averages=parameter.num_averages,
                                        ddc_method=parameter.ddc_method,
                                        labels=labels))
                 adc_count += 1

@@ -26,8 +26,8 @@ class RxData:
     freq_offset: float
 
     # Averages tracking
-    total_scans: int
-    scan_number: int = 0
+    total_averages: int
+    average_index: int = 0
 
     # ADC labels
     labels: dict | None = None
