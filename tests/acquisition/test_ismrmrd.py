@@ -34,8 +34,8 @@ def test_tse_3d(fov, dim, random_acquisition_data):
             freq_offset=0,
             larmor_frequency=f0,
             processed_data=dummy_data,
-            total_scans=1,
-            scan_number=0,
+            total_averages=1,
+            average_index=0,
         ),
         RxData(
             index=1,
@@ -47,8 +47,8 @@ def test_tse_3d(fov, dim, random_acquisition_data):
             freq_offset=0,
             larmor_frequency=f0,
             processed_data=dummy_data,
-            total_scans=1,
-            scan_number=0,
+            total_averages=1,
+            average_index=0,
         )]
 
     acq_data = AcquisitionData(
