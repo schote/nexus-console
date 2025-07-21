@@ -27,17 +27,24 @@ seq, _ = tse_3d.constructor(
 with AcquisitionControlManager() as mngr:
 
     console.parameter.larmor_frequency = 1.995e6
-    console.parameter.gradient_offset = Dimensions(x=1, y=10, z=100)
+    console.parameter.gradient_offset = Dimensions(x=0, y=0, z=0)
     print(console.parameter)
 
-    # # acq_control.set_sequence("/home/schote01/code/spectrum-console-experiments/service/2d_tse.seq")
     mngr.acquisition.set_sequence(sequence=seq, parameter=console.parameter)
     data = mngr.acquisition.run()
 
 # %%
 
-fig, ax = plt.subplots(1, 1, figsize=(5, 5))
-_ = ax.plot(np.abs(data.raw.squeeze().T))
+scan_data = np.array([rx_data.processed_data for rx_data in data.receive_data])
+num_coils = np.size(scan_data, 1)
+
+fig, ax = plt.subplots(1, num_coils, figsize=(5 * num_coils, 5))
+for coil in range(num_coils):
+    ax[coil].plot(np.abs(scan_data[:, coil, :]).T)
+    ax[coil].set_xlabel("Sample")
+    ax[coil].set_ylabel("Signal [mV]")
+    ax[coil].set_title(f"Rx channel: {coil}")
+fig.set_layout_engine('tight')
 
 
 # %%

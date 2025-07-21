@@ -46,9 +46,6 @@ class AcquisitionParameter:
     fov_scaling: Dimensions = field(default_factory=_fov_factory)
     """Field of view scaling for Gx, Gy and Gz."""
 
-    decimation: int = 200
-    """Decimation rate for initial down-sampling step."""
-
     ddc_method: DDCMethod = DDCMethod.FIR
 
     num_averages: int = 1

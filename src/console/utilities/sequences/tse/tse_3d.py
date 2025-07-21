@@ -256,7 +256,7 @@ def constructor(
             flip_angle=inversion_angle,
             phase_offset=refocussing_phase,
             duration=rf_duration,
-            use="refocusing"
+            use="inversion"
         )
 
     # ADC duration
@@ -336,7 +336,7 @@ def constructor(
                 precision=system.grad_raster_time
             )))
 
-    for train, position in zip(trains, trains_pos):
+    for train_num, (train, position) in enumerate(zip(trains, trains_pos)):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(
@@ -347,7 +347,7 @@ def constructor(
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-        for echo, pe_indices in zip(train, position):
+        for echo_num, (echo, pe_indices) in enumerate(zip(train, position)):
             pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
@@ -376,7 +376,10 @@ def constructor(
             # Cast index values from int32 to int, otherwise make_label function complains
             label_pe1 = pp.make_label(type="SET", label="LIN", value=int(pe_indices[0]))
             label_pe2 = pp.make_label(type="SET", label="PAR", value=int(pe_indices[1]))
-            seq.add_block(grad_ro, adc, label_pe1, label_pe2)
+            label_echo = pp.make_label(type='SET', label="ECO", value=int(echo_num + 1))
+            label_tr = pp.make_label(type='SET', label="REP", value=int(train_num + 1))
+            label_img = pp.make_label(type="INC", label="IMA", value=True)
+            seq.add_block(grad_ro, adc, label_pe1, label_pe2, label_tr, label_echo, label_img)
 
             seq.add_block(
                 pp.make_trapezoid(
@@ -396,7 +399,6 @@ def constructor(
                     fall_time=ramp_duration
                 )
             )
-
             seq.add_block(pp.make_delay(raster(val=tau_3, precision=system.grad_raster_time)))
 
         # recalculate TR each train because train length is not guaranteed to be constant
@@ -432,14 +434,13 @@ def constructor(
     train_duration = train_duration_tr - tr_delay
 
     # Check labels
-    labels = seq.evaluate_labels(evolution="adc")
-    acq_pos = np.concatenate(trains_pos).T
+    # labels = seq.evaluate_labels(evolution="adc")
     # TODO: When noise scans are done, the last LIN/PAR label is duplicated
     # Could be fixed by using a different label which marks the noise scan?
-    if not np.array_equal(labels["LIN"], acq_pos[0, :]):
-        raise ValueError("LIN labels don't match actual acquisition positions.")
-    if not np.array_equal(labels["PAR"], acq_pos[1, :]):
-        raise ValueError("PAR labels don't match actual acquisition positions.")
+    # if not np.array_equal(labels["LIN"], acq_pos[0, :]):
+    #     raise ValueError("LIN labels don't match actual acquisition positions.")
+    # if not np.array_equal(labels["PAR"], acq_pos[1, :]):
+    #     raise ValueError("PAR labels don't match actual acquisition positions.")
 
     # Add measures and definitions to sequence definition
     seq.set_definition("n_total_trains", len(trains))
@@ -515,7 +516,7 @@ def constructor(
     return (seq, header)
 
 
-def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
+def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
     """
     Sort acquired k-space lines.
 
@@ -528,15 +529,16 @@ def sort_kspace(raw_data: np.ndarray, seq: pp.Sequence) -> np.ndarray:
     dim
         dimensions of kspace
     """
-    n_avg, n_coil, _, _ = raw_data.shape
+    n_avg = receive_data[0].total_averages
+    n_coil = np.size(receive_data[0].processed_data, 0)
     enc_dim = np.array(seq.get_definition("encoding_dim")).astype(int)
     ksp = np.zeros((n_avg, n_coil, enc_dim[2], enc_dim[1], enc_dim[0]), dtype=complex)
 
     # Get k-space sorting from sequence labels
-    labels = seq.evaluate_labels(evolution="adc")
-
-    for idx, (pe_1, pe_2) in enumerate(zip(labels["LIN"], labels["PAR"])):
-        ksp[..., pe_2, pe_1, :] = raw_data[:, :, idx, :]
+    for rx_data in receive_data:
+        if rx_data.labels is not None and 'IMA' in rx_data.labels:
+            if rx_data.labels['IMA']:  # check that it is imaging data, not navigator or noise
+                ksp[rx_data.average_index, :, rx_data.labels['PAR'], rx_data.labels['LIN'], :] = rx_data.processed_data
 
     return ksp
 

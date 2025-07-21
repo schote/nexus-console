@@ -9,6 +9,7 @@ from itertools import compress
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
+from console.interfaces.rx_data import RxData
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
@@ -61,7 +62,7 @@ class RxCard(SpectrumDevice):
         sample_rate: int,
         channel_enable: list[int],
         max_amplitude: list[int],
-        impedance_50_ohms: list[int],
+        impedance_50_ohms: list[int]
     ) -> None:
         """Execute after init function to do further class setup."""
         self.log = logging.getLogger(self.__name__)
@@ -71,6 +72,7 @@ class RxCard(SpectrumDevice):
         self.channel_enable = channel_enable
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = impedance_50_ohms
+        self.rx_data: None | list[RxData] = None
 
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
@@ -78,13 +80,18 @@ class RxCard(SpectrumDevice):
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
         self.is_receiving = threading.Event()
+        self._total_gates: int = 0
 
         # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
         self.pre_trigger = 8
         self.post_trigger = 4096
 
-        self.rx_data: list = []
         self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
+
+    @property
+    def total_gates(self) -> int:
+        """"Helper function to return the number of gates that have been collected by the Rx Card."""
+        return self._total_gates
 
     def setup_card(self):
         """Set up spectrum card in transmit (Rx) mode.
@@ -213,8 +220,8 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
+
         self.is_receiving.clear()
-        self.rx_data = []
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
@@ -274,7 +281,8 @@ class RxCard(SpectrumDevice):
             sp.uint64(0),
             ts_buffer_size,
         )
-
+        # TODO: rx_data is also used to colect receive data,
+        # rename this instance to adc_data?
         pll_data = cast(ts_buffer, sp.ptr64)  # cast to pointer to 64bit integer
         rx_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
 
@@ -293,8 +301,12 @@ class RxCard(SpectrumDevice):
         available_timestamp_postion = sp.int32(0)
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
-        total_gates = 0
+        self._total_gates = 0
         total_leftover = 0
+
+        if self.rx_data is None:
+            self.log.critical("No RxData objects found for storing ADC data")
+            raise RuntimeError("No RxData objects found for storing ADC data")
 
         # Start receiver
         self.log.debug("Starting receive")
@@ -378,8 +390,6 @@ class RxCard(SpectrumDevice):
                         # self.log.info("Available data length: %s", available_data_bytes.value)
                         # self.log.info("Available data position: %s", available_data_position.value)
 
-                        total_gates += 1
-
                         byte_position = available_data_position.value // 2
                         # total_bytes_to_read = available_data_bytes.value
                         index_0 = byte_position + (total_leftover // 2)
@@ -413,13 +423,20 @@ class RxCard(SpectrumDevice):
                         # Cut the pretrigger, we do not need it.
                         pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                         gate_data = gate_data[pre_trigger_cut:]
-                        self.rx_data.append(gate_data.reshape((self.num_channels.value, gate_sample), order="F"))
+                        # Store raw data in RxData object
+                        self.rx_data[self._total_gates].raw_data = gate_data.reshape((self.num_channels.value,
+                                                                                gate_sample),
+                                                                                order="F").copy()
+                        self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
+                        self.rx_data[self._total_gates].time_stamp = timestamp_0
 
                         # The accumulation of the leftover bytes is positive,
                         # if if the post-trigger event was not fully captured (accumulated sum increases),
                         # or negative if more then the expected data could be read due to lefter bytes
                         # from a previous acquisition (accumulated sum decreases).
                         total_leftover += (bytes_sequence - available_data_bytes.value)
+
+                        self._total_gates += 1
 
                         # Tell the card that data has been read and the buffer can be reused.
                         # Using the size of available data bytes prevents invalid values.

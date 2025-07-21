@@ -1,5 +1,5 @@
 """Experiment to acquire a spin echo spectrum."""
-
+# %%
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -9,29 +9,30 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities import sequences
 
 # Create acquisition control instance
-acq = AcquisitionControl(configuration_file="example_device_config.yaml")
+config_file = r"C:\Users\Tom\code\spectrum-console\examples\example_device_config.yaml"
+acq = AcquisitionControl(configuration_file=config_file)
 
 # Construct a spin echo based spectrum sequence
 params = {
-    "echo_time": 12e-3,
+    "echo_time": 250e-3,
     "rf_duration": 200e-6,
     "use_sinc": False,
 }
 seq = sequences.se_spectrum.constructor(**params)
 
 # Update global acquisition parameters
-console.parameter.larmor_frequency = 2.0395e6
+console.parameter.larmor_frequency = 2.0e6
 
 # Run the acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
-acq_data: AcquisitionData = acq.run()
+acq_data: AcquisitionData = acq.run(store_unprocessed=True)
 
 # Get decimated data from acquisition data object
-data = acq_data.raw.squeeze()
+data = acq_data.receive_data[0].processed_data.squeeze()
 
 # Calculate FFT
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
-fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, acq_data.dwell_time))
+fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, data.dwell_time))
 
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
@@ -49,3 +50,5 @@ acq_data.save()
 
 # Delete the acquisition control, which disconnects from the measurement cards
 del acq
+
+# %%

@@ -1,4 +1,6 @@
 """3D turbo spin echo sequence."""
+# %%
+import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,40 +12,43 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance
-acq = AcquisitionControl(configuration_file="example_device_config.yaml")
-
+config_file = r"example_device_config.yaml"
+acq = AcquisitionControl(configuration_file=config_file,
+                         file_log_level=logging.DEBUG,
+                         console_log_level=logging.DEBUG)
+# %%
 # Create sequence
 params = {
-    "echo_time": 14e-3,
+    "echo_time": 20e-3,
     "repetition_time": 600e-3,
     "etl": 7,
-    "trajectory": "in-out",
     "gradient_correction": 80e-6,
     "rf_duration": 200e-6,
-    "fov": Dimensions(x=180e-3, y=180e-3, z=180e-3),
-    "channel_ro": "z",
-    "channel_pe1": "y",
+    "fov": Dimensions(x=240e-3, y=240e-3, z=240e-3),
+    "channel_ro": "y",
+    "channel_pe1": "z",
     "channel_pe2": "x",
     "ro_bandwidth": 20e3,
-    "n_enc": Dimensions(x=30, y=60, z=60),
+    "n_enc": Dimensions(x=13, y=120, z=14),
 }
 seq, header = tse_3d.constructor(**params)
 
-# Calculate decimation:
-decimation = int(acq.rx_card.sample_rate * 1e6 / params["ro_bandwidth"])
-console.parameter.decimation = decimation
-
-
+console.parameter.num_averages = 2
 # Calculate sequence and perform acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
 
+# %%
 # Execute the sequence and sort kspace array
 acq_data: AcquisitionData = acq.run()
-ksp = tse_3d.sort_kspace(acq_data.raw, seq).squeeze()
+# %%
+ksp = tse_3d.sort_kspace(acq_data.receive_data, seq)
 
 # Image reconstruction with FFT
-img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp)))
+img = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(ksp, axes=(2, 3, 4)), axes=(2, 3, 4)), axes=(2, 3, 4))
 
+# Just grab the 0th coil/avg data
+img = img[0, 0, ...]
+ksp = ksp[0, 0, ...]
 
 # 3D magnitude plot of image slices
 num_slices = img.shape[0]
@@ -74,3 +79,5 @@ acq_data.add_data({
 acq_data.save()
 
 del acq
+
+# %%

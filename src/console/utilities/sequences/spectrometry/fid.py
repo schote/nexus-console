@@ -9,7 +9,8 @@ from console.utilities.sequences.system_settings import system
 def constructor(
     rf_duration: float = 200e-6,
     dead_time: float = 2e-3,
-    adc_duration: float = 4e-3,
+    num_samples: int = 256,
+    acq_bandwidth: float | int = 20e3,
     use_sinc: bool = False,
     time_bw_product: float = 4,
     flip_angle: float = pi / 2,
@@ -37,16 +38,24 @@ def constructor(
 
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
-            system=system, flip_angle=flip_angle, duration=rf_duration, time_bw_product=time_bw_product
+            system=system,
+            flip_angle=flip_angle,
+            duration=rf_duration,
+            phase_offset=0,
+            time_bw_product=time_bw_product
         )
     else:
         rf_90 = pp.make_block_pulse(
-            system=system, flip_angle=flip_angle, duration=rf_duration
+            system=system,
+            flip_angle=flip_angle,
+            duration=rf_duration,
+            phase_offset=0
         )
 
     adc = pp.make_adc(
-        num_samples=int(adc_duration / system.adc_raster_time),
-        duration=adc_duration,
+        num_samples=num_samples,
+        dwell=1 / acq_bandwidth,
+        phase_offset=0,
         system=system,
     )
 

@@ -1,23 +1,23 @@
 """Acquisition Control Class."""
 
+import copy
 import logging
 import logging.config
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-from scipy import signal
 
 from console.interfaces.acquisition_data import AcquisitionData
-from console.interfaces.acquisition_parameter import AcquisitionParameter, DDCMethod
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities import ddc
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -177,8 +177,16 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self) -> AcquisitionData:
+    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
         """Run an acquisition job.
+
+        Parameters
+        ----------
+        store_unprocessed
+            Flag for whether to keep the raw, undecimated data after decimation
+        realtime_proccessing
+            flag for processing the data in real time using the multiprocessing or
+            using threading to process the data after it has all been acquired.
 
         Raises
         ------
@@ -200,8 +208,11 @@ class AcquisitionControl:
         # Define timeout for acquisition process: 5 sec + sequence duration
         timeout = 5 + self.sequence.duration
 
-        self._unproc = []
-        self._raw = []
+        self.store_unprocessed = store_unprocessed
+
+        # Create a list to store rx_data for all averages
+        self.receive_data: list = []
+        self.num_adc_events = len(self.sequence.rx_data)
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -209,10 +220,14 @@ class AcquisitionControl:
         )
 
         for k in range(self.sequence.parameter.num_averages):
+            # Create a copy of rx_data to store the current acquisition in and label scan number.
+            self.rx_card.rx_data = copy.deepcopy(self.sequence.rx_data)
+
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
             # Start masurement card operations
             self.rx_card.start_operation()
+
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
                 # self.log.debug("Waiting for RX card to start receiving...")
@@ -221,7 +236,7 @@ class AcquisitionControl:
             # Get start time of acquisition
             time_start = time.time()
 
-            while (num_gates := len(self.rx_card.rx_data)) < self.sequence.adc_count or num_gates == 0:
+            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
@@ -236,8 +251,13 @@ class AcquisitionControl:
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            if num_gates > 0:
-                self.post_processing(self.sequence.parameter, self.sequence.rx_phase_offset)
+            # Append the receive data with current scan data
+            scan_data: list = self.rx_card.rx_data.copy()
+            self.rx_card.rx_data = None
+
+            for data in scan_data:
+                data.average_index = k
+            self.receive_data.extend(scan_data)
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -248,21 +268,25 @@ class AcquisitionControl:
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
 
+        if len(self.receive_data) > 0:
+            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
+            # Process all the data at the end of the acquisition
+            self.post_processing(self.sequence.parameter)
+        else:
+            raise RuntimeError("No ADC events present")
+
         try:
-            # if len(self._raw) != parameter.num_averages:
-            if not all(gate.shape[0] == self.sequence.parameter.num_averages for gate in self._raw):
-                raise ValueError(
-                    "Missing averages: %s/%s",
-                    [gate.shape[0] for gate in self._raw],
-                    self.sequence.parameter.num_averages,
-                )
+            averages = [data.average_index for data in self.receive_data]
+            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
+                averages_idc = np.arange(self.sequence.parameter.num_averages)
+                missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
+                raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
 
         return AcquisitionData(
-            _raw=self._raw,
-            unprocessed_data=self._unproc,
+            receive_data=self.receive_data,
             sequence=self.seq_provider,
             session_path=self.session_path,
             meta={
@@ -270,78 +294,27 @@ class AcquisitionControl:
                 self.rx_card.__name__: self.rx_card.dict(),
                 self.seq_provider.__name__: self.seq_provider.dict()
             },
-            dwell_time=self.sequence.parameter.decimation / self.f_spcm,
             acquisition_parameters=self.sequence.parameter,
         )
 
-    def post_processing(self, parameter: AcquisitionParameter, rx_phase_offset: list[float]) -> None:
+    def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.
 
-        Data is sorted according to readout size which might vary between different reout windows.
-        Unprocessed and raw data are stored in class attributes _raw and _unproc.
-        Both attributes are list, which store numpy arrays of readout data with the same number
-        of readout sample points.
-
         Post processing contains the following steps (per readout sample size):
-        (1) Extraction of reference signal and scaling to float values [mV]
-        (2) Concatenate reference data and signal data in coil dimensions
-        (3) Demodulation along readout dimensions
-        (4) Decimation along readout dimension
-        (5) Phase correction with reference signal
-
-        Dimensions: [averages, coils, phase encoding, readout]
-
-        Reference signal is stored in the last entry of the coil dimension.
+        (1) Scaling of receive data
+        (2) Demodulation along readout dimensions
+        (3) Decimation along readout dimension
 
         Parameters
         ----------
         parameter
             Acquisition parameter
         """
-        readout_sizes = [data.shape[-1] for data in self.rx_card.rx_data]
-        grouped_gates: dict[int, list] = {
-            readout_sizes[k]: [] for k in sorted(np.unique(readout_sizes, return_index=True)[1])
-        }
-        for data in self.rx_card.rx_data:
-            grouped_gates[data.shape[-1]].append(data)
+        # Set the larmor frequency for all data to the defined larmor_frequency
+        for rx_data in self.receive_data:
+            rx_data.larmor_frequency = parameter.larmor_frequency
 
-        gate_lengths = [np.stack(group, axis=1) for group in grouped_gates.values()]
-        raw_size = len(self._raw)
-
-        # Define channel dependent scaling
-        scaling = np.expand_dims(self.rx_card.rx_scaling[:self.rx_card.num_channels.value], axis=(-1, -2))
-
-        for k, data in enumerate(gate_lengths):
-
-            # Remove digital signal from channel 0
-            data = data * scaling
-
-            # Append unprocessed data without post processing (last coil dimension entry contains reference)
-            if raw_size > 0:
-                self._unproc[k] = np.concatenate((self._unproc[k], data[None, ...]), axis=0)
-            else:
-                self._unproc.append(data[None, ...])
-
-            print("Demodulation at freq.:", parameter.larmor_frequency)
-
-            # Demodulation and decimation
-            data = data * np.exp(-2j * np.pi * np.arange(data.shape[-1]) * parameter.larmor_frequency / self.f_spcm)
-
-            # Switch case for DDC function
-            match parameter.ddc_method:
-                case DDCMethod.CIC:
-                    data = ddc.filter_cic_fir_comp(data, decimation=parameter.decimation, number_of_stages=5)
-                case DDCMethod.AVG:
-                    data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
-                case _:
-                    # Default case is FIR decimation
-                    data = 2 * signal.decimate(data, q=parameter.decimation, ftype="fir")
-
-            # Correct for Rx phase
-            data = data * np.exp(-1j * np.array(rx_phase_offset))[:, np.newaxis]
-
-            # Append to global raw data list
-            if raw_size > 0:
-                self._raw[k] = np.concatenate((self._raw[k], data[None, ...]), axis=0)
-            else:
-                self._raw.append(data[None, ...])
+        # Process the data in parallel
+        with ThreadPoolExecutor() as executor:
+            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
+                         , self.receive_data)

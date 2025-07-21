@@ -15,6 +15,7 @@ from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 # import console
 from console.interfaces.dimensions import Dimensions
+from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
 try:
@@ -368,16 +369,12 @@ class SequenceProvider(Sequence):
             num_samples = adc_waveform[1][0]
             dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
-            freq_offset = adc_waveform[1][3]
-            phase_offset = adc_waveform[1][4]
             delay_samples = int(round(delay * self.spcm_freq))
             gate_duration = num_samples * dwell_time
             gate_samples = int(round(gate_duration * self.spcm_freq))
             waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
             waveform[delay_samples:] = 2**15
-            time_scale = np.arange(gate_samples + delay_samples) / self.spcm_freq
-            ref_signal = np.exp(2j * np.pi * time_scale * self.larmor_freq)
-            adc_list.append((adc_waveform[0], waveform, ref_signal, freq_offset, phase_offset))
+            adc_list.append((adc_waveform[0], waveform, gate_samples))
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -507,8 +504,7 @@ class SequenceProvider(Sequence):
 
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
-        _rx_freq_offset = []
-        _rx_phase_offset = []
+        _rx_data = []  # list containing rx data objects for each ADC event
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
@@ -565,11 +561,10 @@ class SequenceProvider(Sequence):
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
             if block.adc is not None:  # ADC event
-                adc_count += 1
-                adc_waveform = adc_events[event[5] - 1][1]  # Grab the ADC event from the pre-calculated list
-
-                _rx_freq_offset.append(adc_events[event[5] - 1][3])
-                _rx_phase_offset.append(adc_events[event[5] - 1][4])
+                # Grab the ADC event from the pre-calculated list
+                # Pulseq is 1 indexed, shift idx by -1 for correct event
+                adc_event = adc_events[event[5] - 1]
+                adc_waveform = adc_event[1]
 
                 # Calculate ADC start and end positions according to block position
                 adc_start = block_pos[event_idx] * 4
@@ -577,6 +572,28 @@ class SequenceProvider(Sequence):
 
                 # Add ADC gate to X gradient
                 _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
+
+                # Convert labels from namespace to dict
+                labels = {}
+                if block.label is not None:
+                    for label in block.label.values():
+                        if label.type == 'labelinc':
+                            # Store labelinc as booleans since they should be handled as flags
+                            labels[label.label] = bool(label.value)
+                        elif label.type == 'labelset':
+                            labels[label.label] = label.value
+
+                _rx_data.append(RxData(index=adc_count,
+                                       num_samples=block.adc.num_samples,
+                                       num_samples_raw=adc_event[2],
+                                       dwell_time=block.adc.dwell,
+                                       dwell_time_raw=self.spcm_dwell_time,
+                                       phase_offset=block.adc.phase_offset,
+                                       freq_offset=block.adc.freq_offset,
+                                       total_averages=parameter.num_averages,
+                                       ddc_method=parameter.ddc_method,
+                                       labels=labels))
+                adc_count += 1
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
@@ -589,8 +606,6 @@ class SequenceProvider(Sequence):
 
         return UnrolledSequence(
             seq=_seq,
-            rx_phase_offset=_rx_phase_offset,
-            rx_freq_offset=_rx_freq_offset,
             sample_count=seq_samples,
             gpa_gain=self.gpa_gain,
             gradient_efficiency=self.grad_eff,
@@ -599,6 +614,7 @@ class SequenceProvider(Sequence):
             duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
+            rx_data=_rx_data
         )
 
     def plot_unrolled(

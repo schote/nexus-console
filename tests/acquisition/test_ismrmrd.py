@@ -1,10 +1,12 @@
 """Test (ISMR)MRD export."""
 import os
 
+import numpy as np
 import pytest
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.rx_data import RxData
 from console.utilities import sequences
 
 
@@ -17,14 +19,42 @@ def test_tse_3d(fov, dim, random_acquisition_data):
         fov=fov,
         trajectory=sequences.tse_3d.Trajectory.INOUT
     )
+    dummy_data = np.zeros((1, 128), dtype=complex)
+    dummy_data[0, :] = (np.random.default_rng().random(128) + 1j * np.random.default_rng().random(128))
 
     f0 = 2.0123e6
+    receive_data = [
+        RxData(
+            index=1,
+            num_samples=128,
+            num_samples_raw=128000,
+            dwell_time_raw=1 / 20e6,
+            dwell_time=1 / 20e3,
+            phase_offset=0,
+            freq_offset=0,
+            larmor_frequency=f0,
+            processed_data=dummy_data,
+            total_averages=1,
+            average_index=0,
+        ),
+        RxData(
+            index=1,
+            num_samples=128,
+            num_samples_raw=128000,
+            dwell_time_raw=1 / 20e6,
+            dwell_time=1 / 20e3,
+            phase_offset=0,
+            freq_offset=0,
+            larmor_frequency=f0,
+            processed_data=dummy_data,
+            total_averages=1,
+            average_index=0,
+        )]
 
     acq_data = AcquisitionData(
-        _raw=[random_acquisition_data(1, 1, dim.x * dim.z, dim.y)],
+        receive_data=receive_data,
         acquisition_parameters=AcquisitionParameter(larmor_frequency=f0),
         sequence=seq,
-        dwell_time=1e-5,
         session_path=os.path.join("tmp", "")
     )
 
