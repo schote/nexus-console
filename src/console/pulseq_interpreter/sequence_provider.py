@@ -559,35 +559,33 @@ class SequenceProvider(Sequence):
             # Calculate gradient waveform start and end positions according to block position
             waveform_start = block_pos[event_idx] * 4
 
+
             if block.gx is not None:  # Gx event
                 waveform = self.calculate_gradient(
-                    block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x
+                    block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x,
                 )
-                delay = block.gx.delay
-                delay_samples = round(delay * self.spcm_freq)
-                waveform_start_gx = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gx + 1:waveform_start_gx + 4 * waveform_samples + 1:4] = waveform
+                delay_samples = round(block.gx.delay * self.spcm_freq)
+                waveform_start_gx = waveform_start + 4 * delay_samples + 1
+                gx_slice = slice(waveform_start_gx, waveform_start_gx + 4 * waveform.size, 4)
+                _seq[gx_slice] = waveform
 
             if block.gy is not None:  # Gy event
                 waveform = self.calculate_gradient(
-                    block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y
+                    block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y,
                 )
-                delay = block.gy.delay
-                delay_samples = round(delay * self.spcm_freq)
-                waveform_start_gy = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gy + 2:waveform_start_gy + 4 * waveform_samples + 2:4] = waveform
+                delay_samples = round(block.gy.delay * self.spcm_freq)
+                waveform_start_gy = waveform_start + 4 * delay_samples + 2
+                gy_slice = slice(waveform_start_gy, waveform_start_gy + 4 * waveform.size, 4)
+                _seq[gy_slice] = waveform
 
             if block.gz is not None:  # Gz event
                 waveform = self.calculate_gradient(
-                    block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z
+                    block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z,
                 )
-                delay = block.gz.delay
-                delay_samples = round(delay * self.spcm_freq)
-                waveform_start_gz = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gz + 3:waveform_start_gz + 4 * waveform_samples + 3:4] = waveform
+                delay_samples = round(block.gz.delay * self.spcm_freq)
+                waveform_start_gz = waveform_start + 4 * delay_samples + 3
+                gz_slice = slice(waveform_start_gz, waveform_start_gz + 4 * waveform.size, 4)
+                _seq[gz_slice] = waveform
 
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
@@ -647,6 +645,11 @@ class SequenceProvider(Sequence):
             seq_samples,
             len(block_durations),
         )
+
+        # Transform waveform
+
+
+
 
         # Save unrolled sequence in class
         self._sqnc_cache = _seq
