@@ -150,7 +150,7 @@ class RxCard(SpectrumDevice):
                 raise ValueError("Channel impedance list is incomplete: %s/8" % num_imp)
             if (num_amp := len(self.max_amplitude)) != num_enable:
                 raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
-            if not np.log2(num_enable).is_integer():
+            if not np.log2(sum(num_enable)).is_integer():
                 raise ValueError("Invalid number of enabled channels, must be power of 2.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
