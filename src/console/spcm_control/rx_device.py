@@ -151,7 +151,7 @@ class RxCard(SpectrumDevice):
                 raise ValueError("Channel impedance list is incomplete: %s/8" % num_imp)
             if (num_amp := len(self.max_amplitude)) != num_enable:
                 raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
-            if not np.log2(sum(num_enable)).is_integer():
+            if not np.log2(sum(self.channel_enable)).is_integer():
                 raise ValueError("Invalid number of enabled channels, must be power of 2.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -199,12 +199,6 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
 
-        # Get gate length alignment, number of samples must be integer multiple of this
-        gate_alignment = sp.int64(0)
-        sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
-        self.gate_alignment = gate_alignment.value
-        self.log.debug(f"Alignment samples: {self.gate_alignment} samples")
-
         # Setup timestamp mode to read number of samples per gate if available
         sp.spcm_dwSetParam_i32(
             self.card,
@@ -217,6 +211,12 @@ class RxCard(SpectrumDevice):
         # Setup gated fifo mode
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CARDMODE, sp.SPC_REC_FIFO_GATE)
 
+        # Get gate length alignment, number of samples must be integer multiple of this
+        gate_alignment = sp.int64(0)
+        sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
+        self.gate_alignment = gate_alignment.value
+        self.log.debug(f"Alignment samples: {self.gate_alignment} samples")
+
         # Set timeout used for DMA wait to 10 ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
@@ -227,8 +227,8 @@ class RxCard(SpectrumDevice):
         """Start card operation."""
         # Clear the emergency stop flag
         self.is_running.clear()
-
         self.is_receiving.clear()
+
         # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
@@ -257,7 +257,7 @@ class RxCard(SpectrumDevice):
         # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
 
-        # Buffer size set to maximum. Todo check one ADC window is not exceeding the limit
+        # Buffer size set to maximum.
         rx_size = 1024**3
         rx_buffer_size = sp.uint64(rx_size)
 
@@ -382,16 +382,16 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
 
                 # # Debug log statements
-                # self.log.debug("Available timestamp buffer size: %s", available_timestamp_bytes.value)
-                # self.log.debug("Expected adc data in bytes: %s", total_bytes)
-                # self.log.debug("User position (adc buffer): %s", data_user_position.value)
-                # self.log.debug("Number of segments in notify size: %s", total_bytes // rx_notify.value)
+                self.log.info("Available data position: %s", available_data_position.value - remaining_bytes)
+                self.log.info("Available data length: %s", available_data_bytes.value)
+                self.log.info(f"total_bytes_gate: {total_bytes_gate} bytes")
+                self.log.info(f"bytes_sequence: {bytes_sequence} bytes")
 
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < bytes_sequence):
-                    # self.log.debug(f"Waiting for: {bytes_sequence - (available_data_bytes.value + remaining_bytes)} bytes")
+                    self.log.debug(f"Waiting for: {bytes_sequence - (available_data_bytes.value + remaining_bytes)} bytes")
                     # wait_start = time.time()
-                    # wait for sufficient data to come in
+                    # Wait for sufficient data to come in
                     while (available_data_bytes.value + remaining_bytes < bytes_sequence) and not self.is_running.is_set():
                         try:
                             self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
