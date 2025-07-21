@@ -17,6 +17,7 @@ from console.utilities.json_encoder import JSONEncoder
 
 log = logging.getLogger("AcqData")
 
+
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
     """Parameters which define an acquisition."""
