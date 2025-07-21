@@ -412,24 +412,24 @@
   <h1>Source code for console.spcm_control.acquisition_control</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Acquisition Control Class.&quot;&quot;&quot;</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging.config</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">signal</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionData</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">DDCMethod</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.dimensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimensions</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.unrolled_sequence</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.pulseq_interpreter.sequence_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">SequenceProvider</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.rx_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.tx_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">TxCard</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">ddc</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.load_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_instances</span>
 
 <span class="n">LOG_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
@@ -596,8 +596,16 @@
 
 <div class="viewcode-block" id="AcquisitionControl.run">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.run">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AcquisitionData</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store_unprocessed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AcquisitionData</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run an acquisition job.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        store_unprocessed</span>
+<span class="sd">            Flag for whether to keep the raw, undecimated data after decimation</span>
+<span class="sd">        realtime_proccessing</span>
+<span class="sd">            flag for processing the data in real time using the multiprocessing or</span>
+<span class="sd">            using threading to process the data after it has all been acquired.</span>
 
 <span class="sd">        Raises</span>
 <span class="sd">        ------</span>
@@ -619,8 +627,11 @@
         <span class="c1"># Define timeout for acquisition process: 5 sec + sequence duration</span>
         <span class="n">timeout</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">duration</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store_unprocessed</span> <span class="o">=</span> <span class="n">store_unprocessed</span>
+
+        <span class="c1"># Create a list to store rx_data for all averages</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_adc_events</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span>
 
         <span class="c1"># Set gradient offset values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span>
@@ -628,10 +639,14 @@
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">):</span>
+            <span class="c1"># Create a copy of rx_data to store the current acquisition in and label scan number.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">rx_data</span><span class="p">)</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquisition </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">)</span>
 
             <span class="c1"># Start masurement card operations</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">()</span>
+
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">is_receiving</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
                 <span class="c1"># self.log.debug(&quot;Waiting for RX card to start receiving...&quot;)</span>
@@ -640,7 +655,7 @@
             <span class="c1"># Get start time of acquisition</span>
             <span class="n">time_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
-            <span class="k">while</span> <span class="p">(</span><span class="n">num_gates</span> <span class="o">:=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">adc_count</span> <span class="ow">or</span> <span class="n">num_gates</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">num_gates</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">total_gates</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">adc_count</span> <span class="ow">or</span> <span class="n">num_gates</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="c1"># Delay poll by 10 ms</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.01</span><span class="p">)</span>
 
@@ -655,8 +670,13 @@
                 <span class="k">if</span> <span class="n">num_gates</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">adc_count</span> <span class="ow">and</span> <span class="n">num_gates</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">break</span>
 
-            <span class="k">if</span> <span class="n">num_gates</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">rx_phase_offset</span><span class="p">)</span>
+            <span class="c1"># Append the receive data with current scan data</span>
+            <span class="n">scan_data</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">scan_data</span><span class="p">:</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">average_index</span> <span class="o">=</span> <span class="n">k</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">scan_data</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">stop_operation</span><span class="p">()</span>
@@ -667,21 +687,25 @@
         <span class="c1"># Reset gradient offset values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span><span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">high_impedance</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
 
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of ADC events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="c1"># Process all the data at the end of the acquisition</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No ADC events present&quot;</span><span class="p">)</span>
+
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># if len(self._raw) != parameter.num_averages:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">gate</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span> <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Missing averages: </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="p">[</span><span class="n">gate</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">gate</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">],</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
-                <span class="p">)</span>
+            <span class="n">averages</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">average_index</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">averages</span><span class="p">)</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">):</span>
+                <span class="n">averages_idc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">)</span>
+                <span class="n">missing_averages</span> <span class="o">=</span> <span class="p">[</span><span class="n">avg</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">avg</span> <span class="ow">in</span> <span class="n">averages_idc</span> <span class="k">if</span> <span class="n">avg</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">averages</span><span class="p">]</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing averages: </span><span class="si">{</span><span class="n">missing_averages</span><span class="si">}</span><span class="s2"> out of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
         <span class="k">return</span> <span class="n">AcquisitionData</span><span class="p">(</span>
-            <span class="n">_raw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">,</span>
-            <span class="n">unprocessed_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">,</span>
+            <span class="n">receive_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">,</span>
             <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">,</span>
             <span class="n">session_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">,</span>
             <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
@@ -689,84 +713,33 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">dict</span><span class="p">(),</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">dict</span><span class="p">()</span>
             <span class="p">},</span>
-            <span class="n">dwell_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">,</span>
             <span class="n">acquisition_parameters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="p">,</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AcquisitionControl.post_processing">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.post_processing">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">,</span> <span class="n">rx_phase_offset</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Proces acquired NMR data.</span>
 
-<span class="sd">        Data is sorted according to readout size which might vary between different reout windows.</span>
-<span class="sd">        Unprocessed and raw data are stored in class attributes _raw and _unproc.</span>
-<span class="sd">        Both attributes are list, which store numpy arrays of readout data with the same number</span>
-<span class="sd">        of readout sample points.</span>
-
 <span class="sd">        Post processing contains the following steps (per readout sample size):</span>
-<span class="sd">        (1) Extraction of reference signal and scaling to float values [mV]</span>
-<span class="sd">        (2) Concatenate reference data and signal data in coil dimensions</span>
-<span class="sd">        (3) Demodulation along readout dimensions</span>
-<span class="sd">        (4) Decimation along readout dimension</span>
-<span class="sd">        (5) Phase correction with reference signal</span>
-
-<span class="sd">        Dimensions: [averages, coils, phase encoding, readout]</span>
-
-<span class="sd">        Reference signal is stored in the last entry of the coil dimension.</span>
+<span class="sd">        (1) Scaling of receive data</span>
+<span class="sd">        (2) Demodulation along readout dimensions</span>
+<span class="sd">        (3) Decimation along readout dimension</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        parameter</span>
 <span class="sd">            Acquisition parameter</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">readout_sizes</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">]</span>
-        <span class="n">grouped_gates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">readout_sizes</span><span class="p">[</span><span class="n">k</span><span class="p">]:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">readout_sizes</span><span class="p">,</span> <span class="n">return_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="p">}</span>
-        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_data</span><span class="p">:</span>
-            <span class="n">grouped_gates</span><span class="p">[</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="c1"># Set the larmor frequency for all data to the defined larmor_frequency</span>
+        <span class="k">for</span> <span class="n">rx_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">:</span>
+            <span class="n">rx_data</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span>
 
-        <span class="n">gate_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">grouped_gates</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
-        <span class="n">raw_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span>
-
-        <span class="c1"># Define channel dependent scaling</span>
-        <span class="n">scaling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">rx_scaling</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">num_channels</span><span class="o">.</span><span class="n">value</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">))</span>
-
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gate_lengths</span><span class="p">):</span>
-
-            <span class="c1"># Remove digital signal from channel 0</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">scaling</span>
-
-            <span class="c1"># Append unprocessed data without post processing (last coil dimension entry contains reference)</span>
-            <span class="k">if</span> <span class="n">raw_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_unproc</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span>
-
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Demodulation at freq.:&quot;</span><span class="p">,</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">)</span>
-
-            <span class="c1"># Demodulation and decimation</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">*</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">f_spcm</span><span class="p">)</span>
-
-            <span class="c1"># Switch case for DDC function</span>
-            <span class="k">match</span> <span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">:</span>
-                <span class="k">case</span> <span class="n">DDCMethod</span><span class="o">.</span><span class="n">CIC</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">ddc</span><span class="o">.</span><span class="n">filter_cic_fir_comp</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">decimation</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">number_of_stages</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-                <span class="k">case</span> <span class="n">DDCMethod</span><span class="o">.</span><span class="n">AVG</span><span class="p">:</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="n">ddc</span><span class="o">.</span><span class="n">filter_moving_average</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">decimation</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
-                <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                    <span class="c1"># Default case is FIR decimation</span>
-                    <span class="n">data</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">signal</span><span class="o">.</span><span class="n">decimate</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">decimation</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s2">&quot;fir&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Correct for Rx phase</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rx_phase_offset</span><span class="p">))[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-
-            <span class="c1"># Append to global raw data list</span>
-            <span class="k">if</span> <span class="n">raw_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span></div>
+        <span class="c1"># Process the data in parallel</span>
+        <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
+            <span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rx_obj</span><span class="p">:</span> <span class="n">rx_obj</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">store_unprocessed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">store_unprocessed</span><span class="p">)</span>
+                         <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

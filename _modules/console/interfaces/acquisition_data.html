@@ -423,6 +423,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.rx_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">RxData</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.pulseq_interpreter.sequence_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">SequenceProvider</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.json_encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONEncoder</span>
 
@@ -433,18 +434,15 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">AcquisitionData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameters which define an acquisition.&quot;&quot;&quot;</span>
 
-    <span class="n">_raw</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Demodulated, down-sampled and filtered complex-valued raw MRI data.</span>
-<span class="sd">    The raw data array has following dimensions:[averages, coils, phase encoding, readout]&quot;&quot;&quot;</span>
+    <span class="n">receive_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RxData</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer</span>
+<span class="sd">    list contains the list of RxData for each average.&quot;&quot;&quot;</span>
 
     <span class="n">acquisition_parameters</span><span class="p">:</span> <span class="n">AcquisitionParameter</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition parameters.&quot;&quot;&quot;</span>
 
     <span class="n">sequence</span><span class="p">:</span> <span class="n">SequenceProvider</span> <span class="o">|</span> <span class="n">Sequence</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence object used for the acquisition acquisition.&quot;&quot;&quot;</span>
-
-    <span class="n">dwell_time</span><span class="p">:</span> <span class="nb">float</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dwell time of down-sampled raw data in seconds.&quot;&quot;&quot;</span>
 
     <span class="n">session_path</span><span class="p">:</span> <span class="nb">str</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Directory the acquisition data will be stored in.</span>
@@ -453,11 +451,6 @@
     <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Meta data dictionary for additional acquisition info.</span>
 <span class="sd">    Dictionary is updated (extended) by post-init method with some general information.&quot;&quot;&quot;</span>
-
-    <span class="n">unprocessed_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unprocessed real-valued MRI frequency (without demodulation, filtering, down-sampling).</span>
-<span class="sd">    The first entry of the coil dimension also contains the reference signal (16th bit).</span>
-<span class="sd">    The data array has the following dimensions: [averages, coils, phase encoding, readout]&quot;&quot;&quot;</span>
 
     <span class="n">_additional_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionarz containing addition (numpy) data.</span>
@@ -473,8 +466,6 @@
                 <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">(</span><span class="s2">&quot;nexus-console&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;date_time&quot;</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">/%m/%Y, %H:%M:%S&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;folder_name&quot;</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">-%H%M%S-&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">seq_name</span><span class="p">,</span>
-                <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">],</span>
-                <span class="s2">&quot;dwell_time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwell_time</span><span class="p">,</span>
                 <span class="s2">&quot;acquisition_parameter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">dict</span><span class="p">(),</span>
                 <span class="s2">&quot;sequence&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">seq_name</span><span class="p">,</span>
@@ -484,41 +475,9 @@
             <span class="p">}</span>
         <span class="p">)</span>
 
-<div class="viewcode-block" id="AcquisitionData.get_data">
-<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.get_data">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gate_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get a single raw data array from raw data list.</span>
-
-<span class="sd">        During the acquisition, ADC gate events with different durations might occure.</span>
-<span class="sd">        The data from the different ADC gate sizes is stored in separate arrays which</span>
-<span class="sd">        are gathered in a list.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        gate_size_index, optional</span>
-<span class="sd">            Index of the raw data array to be returned.</span>
-<span class="sd">            Raw data from different ADC gate length are stored in separate arrays.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            Raw data array.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="n">gate_index</span><span class="p">]</span></div>
-
-
-    <span class="nd">@property</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the default raw data array.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            Returns the first entry in raw data list.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="n">gate_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
 <div class="viewcode-block" id="AcquisitionData.save">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.save">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">save_unprocessed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save all the acquisition data to a given data path.</span>
 
 <span class="sd">        Parameters</span>
@@ -560,24 +519,9 @@
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Could not save sequence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
 
-        <span class="c1"># Save raw data as numpy array</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">acq_folder_path</span><span class="si">}</span><span class="s2">raw_data.npy&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">):</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">acq_folder_path</span><span class="si">}</span><span class="s2">raw_data_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_additional_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_additional_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">acq_folder_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">save_unprocessed</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">unprocessed_data</span><span class="p">:</span>
-            <span class="c1"># Save raw data as numpy array(s)</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unprocessed_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unprocessed_data</span><span class="p">):</span>
-                    <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">acq_folder_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;unprocessed_data_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">unprocessed_data</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">acq_folder_path</span><span class="p">,</span> <span class="s2">&quot;unprocessed_data.npy&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">unprocessed_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
         <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saved acquisition data to: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">acq_folder_path</span><span class="p">)</span></div>
 
@@ -627,7 +571,10 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Labels not found. A labeled sequence is required to export ismrmrd.&quot;</span><span class="p">)</span>
 
         <span class="c1"># Get dimensions of raw data</span>
-        <span class="n">_</span><span class="p">,</span> <span class="n">num_coils</span><span class="p">,</span> <span class="n">num_pe</span><span class="p">,</span> <span class="n">num_ro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;No processed data found&quot;</span><span class="p">)</span>
+        <span class="n">num_coils</span><span class="p">,</span> <span class="n">num_ro</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">num_pe</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">total_averages</span><span class="p">)</span>
         <span class="n">enc_dim</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
             <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
@@ -673,7 +620,7 @@
                 <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">slice</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
 
             <span class="c1"># Set the data and append</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="n">k</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">acq</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span>
 
             <span class="n">dataset</span><span class="o">.</span><span class="n">append_acquisition</span><span class="p">(</span><span class="n">acq</span><span class="p">)</span>
 
