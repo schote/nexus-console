@@ -148,11 +148,6 @@ class AcquisitionData:
 
     def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader, user_path: str | None = None):
         """Store acquisition data in (ISMR)MRD format."""
-        # Get and check sequence labels (required to create acquisition headers)
-        # if not (labels := self.sequence.evaluate_labels(evolution="adc")):
-        #     detail = "Sequence labels not found. A labeled sequence is required to export ismrmrd."
-        #     raise AttributeError(detail)
-
         # Get dimensions of raw data
         if self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."
@@ -220,7 +215,7 @@ class AcquisitionData:
             acq.scan_counter = k
             # Resize each acquisition to the individual number of sample points and active channels
             num_coils = data.processed_data.shape[0]
-            acq.resize(number_of_samples=data.num_pnts, active_channels=num_coils, trajectory_dimensions=n_dims)
+            acq.resize(number_of_samples=data.num_samples, active_channels=num_coils, trajectory_dimensions=n_dims)
             # Assume the center sample is the middle of the data
             acq.center_sample = round(data.num_pnts / 2)
             # Readout bandwidth, as time between samples in microseconds
@@ -229,10 +224,10 @@ class AcquisitionData:
             acq.acquisition_time_stamp = int(data.time_stamp * 1e6)  # timestamp in us
 
             # Set averaging counters and flags
-            acq.idx.average = data.scan_number
+            acq.idx.average = data.average_index
             if data.scan_number == 0:
                 acq.setFlag(ismrmrd.ACQ_FIRST_IN_AVERAGE)
-            if data.scan_number == data.total_scans - 1:
+            if data.scan_number == data.total_averages - 1:
                 acq.setFlag(ismrmrd.ACQ_LAST_IN_AVERAGE)
 
             # Set encoding step 1 counters and flags
@@ -284,7 +279,7 @@ class AcquisitionData:
         # Log warning if unlabeled acquisitions were found
         if count_unlabeled > 0:
             self.log.warning(
-                "%i/%i acquisitions were not labeled and thus not exported.",
+                "%i/%i acquisitions are unlabeled and could not be exported.",
                 count_unlabeled,
                 len(self.receive_data),
             )
