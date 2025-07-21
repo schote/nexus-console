@@ -1,10 +1,10 @@
 """Interface class for acquisition data."""
 import json
 import logging
-import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from importlib.metadata import version
+from pathlib import Path
 from typing import Any
 
 import ismrmrd
@@ -15,6 +15,7 @@ from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.utilities.json_encoder import JSONEncoder
 
+log = logging.getLogger("AcqData")
 
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
@@ -58,7 +59,6 @@ class AcquisitionData:
                 "time": datetime_now.strftime("%H:%M:%S"),
                 "acquisition_id": acquisition_id,
                 "folder_name": acquisition_id,
-                "dwell_time": self.dwell_time,
                 "acquisition_parameter": self.acquisition_parameters.dict(),
                 "sequence": {
                     "name": seq_name,
@@ -83,20 +83,17 @@ class AcquisitionData:
             Flag which indicates whether the acquisition data should be overwritten
             in case it already exists from a previous call to this function, default is False.
         """
-        log = logging.getLogger("AcqData")
         # Add trailing slash and make dir
-        base_path = self.session_path if user_path is None else os.path.join(user_path, "")
-        os.makedirs(base_path, exist_ok=True)
-
-        acq_folder = self.meta["folder_name"]
-        acq_folder_path = base_path + acq_folder + "/"
+        base_path = Path(user_path) if user_path is not None else Path(self.session_path)
+        base_path.mkdir(parents=True, exist_ok=True)
 
         try:
-            os.makedirs(acq_folder_path, exist_ok=overwrite)
+            acq_folder_path = base_path / self.meta["folder_name"]
+            acq_folder_path.mkdir(parents=True, exist_ok=overwrite)
         except Exception as exc:
             log.exception(
                 msg="This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
-                exc_info=exc
+                exc_info=exc,
             )
             return
 
@@ -112,7 +109,7 @@ class AcquisitionData:
 
         if len(self._additional_data) > 0:
             for key, value in self._additional_data.items():
-                np.save(os.path.join(acq_folder_path, f"{key}.npy"), value)
+                np.save(acq_folder_path / f"{key}.npy", value)
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
 
@@ -124,7 +121,6 @@ class AcquisitionData:
         info
             Information as dictionary to be added.
         """
-        log = logging.getLogger("AcqData")
         try:
             json.dumps(info, cls=JSONEncoder)
         except TypeError as exc:
@@ -139,19 +135,27 @@ class AcquisitionData:
         data
             Data which is to be added to acquisition data.
         """
-        log = logging.getLogger("AcqData")
         for val in data.values():
             if not hasattr(val, "shape"):
                 log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
                 return
         self._additional_data.update(data)
 
-    def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader, user_path: str | None = None):
+    def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader | str | Path, user_path: str | None = None):
         """Store acquisition data in (ISMR)MRD format."""
         # Get dimensions of raw data
         if self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."
             raise AttributeError(detail)
+
+        if not isinstance(header, ismrmrd.xsd.ismrmrdHeader):
+            header_path = Path(header) if isinstance(header, str) else header
+            # Open the dataset
+            dataset = ismrmrd.Dataset(header_path, 'dataset')
+            # Read the XML header as a string
+            xml_header = dataset.read_xml_header()
+            # Parse it into a structured object (optional, see below)
+            header = ismrmrd.xsd.CreateFromDocument(xml_header)
 
         enc_dim = [
             header.encoding[0].encodedSpace.matrixSize.x,
@@ -181,10 +185,10 @@ class AcquisitionData:
         header.acquisitionSystemInformation = system_info
 
         # Get folder path and create (ismr)mrd header
-        base_path = os.path.join(user_path, "") if user_path else self.session_path
-        base_path = os.path.join(base_path, self.meta["folder_name"])
-        os.makedirs(base_path, exist_ok=True)
-        dataset_path = os.path.join(base_path, "ismrmrd.h5")
+        base_path = Path(user_path) if user_path else Path(self.session_path)
+        base_path = base_path / self.meta["folder_name"]
+        base_path.mkdir(parents=True, exist_ok=True)
+        dataset_path = base_path / "data.mrd"
         dataset = ismrmrd.Dataset(dataset_path)
         dataset.write_xml_header(header.toXML('utf-8'))
 
@@ -195,39 +199,42 @@ class AcquisitionData:
         acq.phase_dir[1] = 1.0
         acq.slice_dir[2] = 1.0
 
-        count_unlabeled = 0
+        count_unsaved = 0
 
         # Parse label limits:
         labels_max = {}
         for data in self.receive_data:
-            for label, count in data.labels.items():
-                if label not in labels_max:
-                    labels_max[label] = count
-                    continue
-                labels_max[label] = max(labels_max[label], count)
+            if data.labels is not None:
+                for label, count in data.labels.items():
+                    if label not in labels_max:
+                        labels_max[label] = count
+                        continue
+                    labels_max[label] = max(labels_max[label], count)
 
         for k, data in enumerate(self.receive_data):
 
-            if data.labels is None:
-                count_unlabeled += 1
+            if data.labels is None or data.processed_data is None:
+                count_unsaved += 1
                 continue
+
             acq.clear_all_flags()
             acq.scan_counter = k
             # Resize each acquisition to the individual number of sample points and active channels
             num_coils = data.processed_data.shape[0]
             acq.resize(number_of_samples=data.num_samples, active_channels=num_coils, trajectory_dimensions=n_dims)
             # Assume the center sample is the middle of the data
-            acq.center_sample = round(data.num_pnts / 2)
+            acq.center_sample = round(data.num_samples / 2)
             # Readout bandwidth, as time between samples in microseconds
             acq.sample_time_us = data.dwell_time * 1e6
             # Timestamp of readout
-            acq.acquisition_time_stamp = int(data.time_stamp * 1e6)  # timestamp in us
+            if data.time_stamp is not None:
+                acq.acquisition_time_stamp = int(data.time_stamp * 1e6)  # timestamp in us
 
             # Set averaging counters and flags
             acq.idx.average = data.average_index
-            if data.scan_number == 0:
+            if data.average_index == 0:
                 acq.setFlag(ismrmrd.ACQ_FIRST_IN_AVERAGE)
-            if data.scan_number == data.total_averages - 1:
+            if data.average_index == data.total_averages - 1:
                 acq.setFlag(ismrmrd.ACQ_LAST_IN_AVERAGE)
 
             # Set encoding step 1 counters and flags
@@ -277,13 +284,12 @@ class AcquisitionData:
             dataset.append_acquisition(acq)
 
         # Log warning if unlabeled acquisitions were found
-        if count_unlabeled > 0:
-            self.log.warning(
-                "%i/%i acquisitions are unlabeled and could not be exported.",
-                count_unlabeled,
+        if count_unsaved > 0:
+            log.warning(
+                "%i/%i acquisitions are unlabeled/none and could not be exported.",
+                count_unsaved,
                 len(self.receive_data),
             )
 
         dataset.close()
-        log = logging.getLogger("AcqData")
         log.info("ISMRMRD exported: %s", dataset_path)
