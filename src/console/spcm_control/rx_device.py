@@ -199,6 +199,12 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
 
+        # Get gate length alignment, number of samples must be integer multiple of this
+        gate_alignment = sp.int64(0)
+        sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
+        self.gate_alignment = gate_alignment.value
+        self.log.debug(f"Alignment samples: {self.gate_alignment} samples")
+
         # Setup timestamp mode to read number of samples per gate if available
         sp.spcm_dwSetParam_i32(
             self.card,
@@ -351,9 +357,12 @@ class RxCard(SpectrumDevice):
 
                 # self.log.info("Available timestamp user length: %s", available_timestamp_bytes.value)
 
-                # Check for rounding errors
+                # Calculate data size and ensure proper gate alignment of data.
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
-                bytes_sequence = (gate_sample + self.pre_trigger + self.post_trigger) * 2 * self.num_channels.value
+                samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
+                alignment_samples = samples_sequence % self.gate_alignment
+                samples_sequence += alignment_samples
+                bytes_sequence = samples_sequence * 2 * self.num_channels.value
 
                 # Wait for ADC data to arrive in DMA buffer
                 try:
