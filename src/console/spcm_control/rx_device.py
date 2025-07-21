@@ -364,6 +364,12 @@ class RxCard(SpectrumDevice):
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value
 
+                # Check if total gate data does not exceed buffer size:
+                if bytes_sequence > rx_size:
+                    self.log.critical("ADC gate data exceeds available buffer"
+                                      "reduce gate length, sample rate or channel count")
+                    break
+
                 # Wait for ADC data to arrive in DMA buffer
                 try:
                     self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
