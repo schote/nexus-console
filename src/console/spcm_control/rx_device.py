@@ -314,13 +314,7 @@ class RxCard(SpectrumDevice):
 
         while not self.is_running.is_set():
 
-            try:
-                self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
-            except RuntimeError:  # Reraise error for traceability
-                raise RuntimeError
-
             # Read the available timestamp buffer size
-            available_timestamp_bytes = sp.int32(0)
             sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
 
             # Process, if buffer size is greater or equal 32 (corresponds to 2 timestamps)
@@ -332,19 +326,18 @@ class RxCard(SpectrumDevice):
                     byref(available_timestamp_postion),
                 )
 
-                # self.log.info("Timestamp buffer position: %s", available_timestamp_postion.value)
-
                 # Read exactly two timestamps
-                timestamp_0 = pll_data[int(available_timestamp_postion.value / 8)] / (self.sample_rate * 1e6)
-                timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2] / (self.sample_rate * 1e6)
+                timestamp_0 = pll_data[int(available_timestamp_postion.value / 8)]
+                timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2]
 
                 # Calculate gate duration and the number of adc gate sample points (per channel)
-                gate_length = Decimal(str(timestamp_1)) - Decimal(str(timestamp_0))
-                gate_sample = int(round(gate_length * (Decimal(str(self.sample_rate)) * Decimal("1e6"))))
+                gate_sample = timestamp_1 - timestamp_0
+                gate_length = gate_sample / (self.sample_rate * 1e6)
+
                 self.log.info(
                     "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
-                    timestamp_0,
-                    timestamp_1,
+                    timestamp_0 / (self.sample_rate * 1e6),
+                    timestamp_1 / (self.sample_rate * 1e6),
                     float(gate_length) * 1e3,  # Can be trimmed.
                     gate_sample,
                 )
