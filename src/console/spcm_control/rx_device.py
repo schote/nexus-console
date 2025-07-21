@@ -1,13 +1,11 @@
 """Implementation of receive card."""
 import logging
 import threading
-from ctypes import POINTER, addressof, byref, c_short, cast, sizeof
+from ctypes import POINTER, addressof, byref, c_short, cast
 from dataclasses import dataclass
-from decimal import Decimal, getcontext
 from itertools import compress
 
 import numpy as np
-import time
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.interfaces.rx_data import RxData
@@ -45,11 +43,6 @@ IMP_SELECT = [
     sp.SPC_50OHM6,
     sp.SPC_50OHM7,
 ]
-
-
-# Set precision for precise gate samples calculation
-getcontext().prec = 28
-
 
 @dataclass
 class RxCard(SpectrumDevice):
@@ -398,10 +391,13 @@ class RxCard(SpectrumDevice):
 
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
-                    self.log.debug(f"Waiting for: {total_bytes_gate - (available_data_bytes.value + remaining_bytes)} bytes")
+                    missing_bytes = total_bytes_gate -(available_data_bytes.value + remaining_bytes)
+                    self.log.debug(f"Waiting for: {missing_bytes} bytes")
                     # wait_start = time.time()
                     # Wait for sufficient data to come in
-                    while (available_data_bytes.value + remaining_bytes < total_bytes_gate) and not self.is_running.is_set():
+                    while (available_data_bytes.value + remaining_bytes < total_bytes_gate) \
+                        and not self.is_running.is_set():
+
                         try:
                             self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
                         except RuntimeError as e:  # Reraise error for traceability
@@ -426,10 +422,8 @@ class RxCard(SpectrumDevice):
 
                         # Get the first part of the data
                         # Handle edge case when memory position is exactly at end
-
                         if samples_to_end == 0:
-                        # Get the first part of the slice
-                            slice_1 = np.array([], dtype = np.int16)
+                            slice_1 = np.array([], dtype=np.int16)
                         else:
                             ptr_to_slice_1 = cast(addressof(rx_data.contents) + byte_position, POINTER(c_short))
                             slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, (samples_to_end,))
