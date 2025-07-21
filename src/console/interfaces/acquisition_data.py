@@ -269,7 +269,7 @@ class AcquisitionData:
                 if acq.idx.contrast == labels_max[key]:
                     acq.setFlag(ismrmrd.ACQ_LAST_IN_CONTRAST)
 
-            # Set echo position/contrast counters and flags
+            # Set repetition counters and flags
             if (key := "REP") in data.labels:
                 acq.idx.repetition = data.labels[key]
                 if acq.idx.repetition == 0:
