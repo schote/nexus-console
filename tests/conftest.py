@@ -30,6 +30,7 @@ def seq_provider() -> SequenceProvider:
 def random_complex_data() -> Callable:
     """Return random complex valued numpy array with given shape."""
     rng = np.random.default_rng(seed=0)
+
     def _factory(shape: tuple) -> np.ndarray:
         re = rng.random(size=shape)
         im = rng.random(size=shape)
