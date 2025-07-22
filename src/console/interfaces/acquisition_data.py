@@ -56,7 +56,7 @@ class AcquisitionData:
         self.meta.update(
             {
                 "version": version("nexus-console"),
-                "date": datetime_now.strftime("%d/%m/%Y"),
+                "date": datetime_now.strftime("%Y-%m-%d"),
                 "time": datetime_now.strftime("%H:%M:%S"),
                 "acquisition_id": acquisition_id,
                 "folder_name": acquisition_id,
@@ -168,6 +168,8 @@ class AcquisitionData:
         ]
         n_dims = sum([int(d > 0) for d in enc_dim])
 
+        sequence_trajectory = self.sequence.calculate_kspace()[0]
+
         # Update larmor frequency with exact frequency
         header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency * 1e6)
 
@@ -175,15 +177,14 @@ class AcquisitionData:
         measurement_info = ismrmrd.xsd.measurementInformationType()
         measurement_info.measurementID = self.meta["acquisition_id"]
         measurement_info.seriesDate = self.meta["date"]
-        measurement_info.seriesDate = self.meta["time"]
+        measurement_info.seriesTime = self.meta["time"]
         header.measurementInformation = measurement_info
 
         # Set receive channels, required by gadgetron
         system_info = ismrmrd.xsd.acquisitionSystemInformationType()
-        # Todo: Get the number of system channels from RX device
         num_coils = self.receive_data[0].processed_data.shape[0]
         system_info.receiverChannels = num_coils
-        system_info.systemVendor = "OSII"
+        system_info.systemVendor = "osi2"
         system_info.systemModel = "Nexus"
         system_info.systemFieldStrength_T = round(self.acquisition_parameters.larmor_frequency / 42.58, 4)
         header.acquisitionSystemInformation = system_info
@@ -203,17 +204,8 @@ class AcquisitionData:
         acq.phase_dir[1] = 1.0
         acq.slice_dir[2] = 1.0
 
+        trajectory_position = 0
         count_unsaved = 0
-
-        # Parse label limits:
-        labels_max = {}
-        for data in self.receive_data:
-            if data.labels is not None:
-                for label, count in data.labels.items():
-                    if label not in labels_max:
-                        labels_max[label] = count
-                        continue
-                    labels_max[label] = max(labels_max[label], count)
 
         for k, data in enumerate(self.receive_data):
 
@@ -234,56 +226,28 @@ class AcquisitionData:
             if data.time_stamp is not None:
                 acq.acquisition_time_stamp = int(data.time_stamp * 1e6)  # timestamp in us
 
-            # Set averaging counters and flags
+            # Set counter
             acq.idx.average = data.average_index
-            if data.average_index == 0:
-                acq.setFlag(ismrmrd.ACQ_FIRST_IN_AVERAGE)
-            if data.average_index == data.total_averages - 1:
-                acq.setFlag(ismrmrd.ACQ_LAST_IN_AVERAGE)
-
             # Set encoding step 1 counters and flags
             if (key := "LIN") in data.labels:
                 acq.idx.kspace_encode_step_1 = data.labels[key]
-                if acq.idx.kspace_encode_step_1 == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP1)
-                if acq.idx.kspace_encode_step_1 == labels_max[key]:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP1)
-
             # Set encoding step 2 counters and flags
             if (key := "PAR") in data.labels:
                 acq.idx.kspace_encode_step_2 = data.labels[key]
-                if acq.idx.kspace_encode_step_2 == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_ENCODE_STEP2)
-                if acq.idx.kspace_encode_step_2 == labels_max[key]:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_ENCODE_STEP2)
-
             # Set slice encoding counters and flags
             if (key := "SLC") in data.labels:
                 acq.idx.slice = data.labels[key]
-                if acq.idx.slice == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_SLICE)
-                if acq.idx.slice == labels_max[key]:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_SLICE)
-
             # Set echo position/contrast counters and flags
             if (key := "ECO") in data.labels:
                 acq.idx.contrast = data.labels[key]
-                if acq.idx.contrast == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_CONTRAST)
-                if acq.idx.contrast == labels_max[key]:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_CONTRAST)
-
             # Set repetition counters and flags
             if (key := "REP") in data.labels:
                 acq.idx.repetition = data.labels[key]
-                if acq.idx.repetition == 0:
-                    acq.setFlag(ismrmrd.ACQ_FIRST_IN_REPETITION)
-                if acq.idx.repetition == labels_max[key]:
-                    acq.setFlag(ismrmrd.ACQ_LAST_IN_REPETITION)
 
             # Set the data and append
             acq.data[:] = data.processed_data
-            # TODO: Set trajectory calculated from pypulseq sequence
+            acq.traj[:] = sequence_trajectory[..., :data.processed_data.shape[-1]].T
+            trajectory_position += data.processed_data.shape[-1]
 
             dataset.append_acquisition(acq)
 
