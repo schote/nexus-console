@@ -44,6 +44,7 @@ IMP_SELECT = [
     sp.SPC_50OHM7,
 ]
 
+
 @dataclass
 class RxCard(SpectrumDevice):
     """Implementation of RX device."""
@@ -213,7 +214,7 @@ class RxCard(SpectrumDevice):
         gate_alignment = sp.int64(0)
         sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
         self.gate_alignment = gate_alignment.value
-        self.log.debug(f"Alignment samples: {self.gate_alignment} samples")
+        self.log.debug("Alignment samples: %d samples"%(self.gate_alignment))
 
         # Set timeout used for DMA wait to 10 ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
@@ -406,7 +407,7 @@ class RxCard(SpectrumDevice):
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
                     missing_bytes = total_bytes_gate - (available_data_bytes.value + remaining_bytes)
-                    self.log.debug(f"Waiting for: {missing_bytes} bytes")
+                    self.log.debug("Waiting for: %d bytes"%(missing_bytes))
                     # wait_start = time.time()
                     # Wait for sufficient data to come in
                     while (available_data_bytes.value + remaining_bytes < total_bytes_gate) \
@@ -485,7 +486,8 @@ class RxCard(SpectrumDevice):
                         raise RuntimeError
 
                 else:
-                    self.log.error(f"Needed at least {total_bytes_gate} bytes "
-                                   f"but only {available_data_bytes.value} bytes available")
+                    self.log.error("Needed at least %d bytes but only %d bytes available"%(
+                        total_bytes_gate,
+                        available_data_bytes.value))
 
         self.log.debug("Card operation stopped")
