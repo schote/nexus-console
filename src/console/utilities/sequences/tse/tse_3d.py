@@ -238,17 +238,19 @@ def constructor(
     # Definition of RF pulses
     rf_90 = pp.make_block_pulse(
         system=system,
+        delay=max(0, system.rf_dead_time),
         flip_angle=excitation_angle,
         phase_offset=excitation_phase,
         duration=rf_duration,
-        use="excitation"
+        use="excitation",
     )
     rf_180 = pp.make_block_pulse(
         system=system,
+        delay=max(0, system.rf_dead_time),
         flip_angle=refocussing_angle,
         phase_offset=refocussing_phase,
         duration=rf_duration,
-        use="refocusing"
+        use="refocusing",
     )
     if inversion_pulse:
         rf_inversion = pp.make_block_pulse(
