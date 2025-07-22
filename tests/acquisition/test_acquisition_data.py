@@ -16,8 +16,6 @@ def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisiti
         num_acquisitions=3,
         num_averages=2,
     )
-    for rx_data in receive_data:
-        rx_data.larmor_frequency = acquisition_parameter.larmor_frequency
 
     # Process receive data
     with ThreadPoolExecutor() as executor:

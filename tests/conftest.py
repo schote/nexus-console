@@ -54,11 +54,13 @@ def random_acquisition_data() -> Callable:
     """
     rng = np.random.default_rng(seed=0)
 
-    def _factory(num_coils: int, num_samples: int, num_acquisitions: int, num_averages: int) -> list[RxData]:
+    def _factory(num_samples: int, num_acquisitions: int, num_averages: int = 1, num_coils: int = 1) -> list[RxData]:
         num_raw_samples = num_samples * 1000
         rx_data = []
         for k_average in range(num_averages):
             for k_acquisition in range(num_acquisitions):
+                processed_re = rng.random(size=(num_coils, num_samples))
+                processed_im = rng.random(size=(num_coils, num_samples))
                 rx_data.append(
                     RxData(
                         index=int(k_average * num_averages + k_acquisition),
@@ -70,7 +72,10 @@ def random_acquisition_data() -> Callable:
                         dwell_time_raw=1 / 20e6,
                         phase_offset=0,
                         freq_offset=0,
+                        larmor_frequency=2.0123e6,
+                        demod_frequency=2.0123e6,
                         raw_data=rng.random(size=(num_coils, num_raw_samples)),
+                        processed_data=processed_re + 1j * processed_im,
                         time_stamp=np.datetime64('now'),
                     )
                 )
