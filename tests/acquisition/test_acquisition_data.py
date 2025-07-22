@@ -1,11 +1,11 @@
 """Test functions for interface classes."""
-from concurrent.futures import ThreadPoolExecutor
-from console.interfaces.acquisition_data import AcquisitionData, RxData
-from console.interfaces.acquisition_parameter import AcquisitionParameter
 import tempfile
-import numpy as np
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+import numpy as np
+
+from console.interfaces.acquisition_data import AcquisitionData
 
 
 def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisition_data):
@@ -17,7 +17,7 @@ def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisiti
         num_averages=2,
     )
     for rx_data in receive_data:
-            rx_data.larmor_frequency = acquisition_parameter.larmor_frequency
+        rx_data.larmor_frequency = acquisition_parameter.larmor_frequency
 
     # Process receive data
     with ThreadPoolExecutor() as executor:
@@ -39,7 +39,7 @@ def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisiti
     info = {"test": "test"}
     acq_data.add_info(info)
     assert info == acq_data.meta["info"]
-    
+
     rng = np.random.default_rng(seed=0)
     additional_data_key = "test-data"
     acq_data.add_data({additional_data_key: rng.random(size=(1, 10, 100))})

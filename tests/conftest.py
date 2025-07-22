@@ -7,9 +7,9 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
-from console.interfaces.rx_data import RxData
 
 
 @pytest.fixture()

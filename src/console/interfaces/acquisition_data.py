@@ -140,7 +140,8 @@ class AcquisitionData:
             if isinstance(key, str) and isinstance(val, np.ndarray) and hasattr(val, "shape"):
                 self._additional_numpy_data.update(data)
             else:
-                detail = f"Could not add `{key}` to acquisition data...\nKey-value pairs of str: np.ndarray are required."
+                detail = f"Could not add `{key}` to acquisition data...\n\
+                    Key-value pairs of str: np.ndarray are required."
                 log.error(detail)
                 continue
 
