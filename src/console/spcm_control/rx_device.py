@@ -136,14 +136,16 @@ class RxCard(SpectrumDevice):
 
         # Check channel enable, max. amplitude per channel and impedance values
         try:
-            # if (num_enable := len(self.channel_enable)) < 1 or num_enable > 8:
+            # Check that the length of the channel enable list is 8
+            # this has to be true for cards with fewer channels too
             if (num_enable := len(self.channel_enable)) != 8:
                 raise ValueError("Channel enable list is incomplete: %s/8" % num_enable)
-            # Impedance and amplitude configuration lists must match the channel enable list len
-            if (num_imp := len(self.impedance_50_ohms)) != num_enable:
+            # Impedance and amplitude configuration lists must also be of length 8
+            if (num_imp := len(self.impedance_50_ohms)) != 8:
                 raise ValueError("Channel impedance list is incomplete: %s/8" % num_imp)
-            if (num_amp := len(self.max_amplitude)) != num_enable:
+            if (num_amp := len(self.max_amplitude)) != 8:
                 raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
+            # Number of enabled channels must be either 1, 2, 4 or 8
             if not np.log2(sum(self.channel_enable)).is_integer():
                 raise ValueError("Invalid number of enabled channels, must be power of 2.")
         except ValueError as err:
@@ -185,7 +187,9 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
         # Calculate actual post trigger size depending on the number of active channels
-        self.post_trigger = 4096 // self.num_channels.value
+        # Since data can only be gathered in notify size chunks, post_trigger // channel_count should be at least one
+        # notify size to ensure that we can always access the full gate data.
+        self.post_trigger = self.post_trigger // self.num_channels.value
 
         # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
@@ -198,10 +202,11 @@ class RxCard(SpectrumDevice):
             sp.SPC_TIMESTAMP_CMD,
             sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL,
         )
+        # Configure trigger on EXT1 channe; and trigger on positive edge
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_EXT1_MODE, sp.SPC_TM_POS)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_ORMASK, sp.SPC_TMASK_EXT1)
 
-        # Setup gated fifo mode
+        # Setup gated FIFO mode
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_CARDMODE, sp.SPC_REC_FIFO_GATE)
 
         # Get gate length alignment, number of samples must be integer multiple of this
@@ -214,7 +219,6 @@ class RxCard(SpectrumDevice):
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
 
         self.log.debug("Device setup completed")
-        # _ = self.get_status()
 
     def start_operation(self):
         """Start card operation."""
@@ -230,12 +234,15 @@ class RxCard(SpectrumDevice):
         """Stop card thread."""
         # Check if thread is running
         if self.worker is not None:
+            # Signal thread to stop
             self.is_running.set()
+            # Wait for thread to complete
             self.worker.join()
 
-            # Stop the card. We will stop the card in two steps.
-            # First we will stop the data transfer and then we will stop the card.
-            # If time stamp mode is enabled, we need to stop the extra data transfer as well.
+            # Stop card operation with the following steps:
+            # 1. Stop card acquisition
+            # 2. Stop data DMA transfer
+            # 3. Stop timestamp DMA transfer
             self.handle_error(sp.spcm_dwSetParam_i32(
                 self.card,
                 sp.SPC_M2CMD,
@@ -246,14 +253,14 @@ class RxCard(SpectrumDevice):
             self.log.error("No active process found")
 
     def _gated_timestamps_stream(self):
-        # >> Define RX data buffer
-        # RX buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
+        # Rx buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
 
         # Buffer size set to maximum.
         rx_size = 1024**3
         rx_buffer_size = sp.uint64(rx_size)
 
+        # Create DMA buffer for receive data and tell the card to use it
         rx_buffer = create_dma_buffer(rx_buffer_size.value)
         sp.spcm_dwDefTransfer_i64(
             self.card,
@@ -265,12 +272,12 @@ class RxCard(SpectrumDevice):
             rx_buffer_size,
         )
 
-        # >> Define TS buffer
         # Define the timestamps notify size. Min. notify size is 4096 bytes.
         ts_notify = sp.int32(sp.KILO_B(4))
-        # Define timestamp buffer, must be multiple of timestamps notify size
+        # Define timestamp buffer size, must be multiple of timestamps notify size
         ts_buffer_size = sp.uint64(2 * 4096)
 
+        # Create DMA buffer for timestamp data and tell the card to use it
         ts_buffer = create_dma_buffer(ts_buffer_size.value)
         sp.spcm_dwDefTransfer_i64(
             self.card,
@@ -281,15 +288,14 @@ class RxCard(SpectrumDevice):
             sp.uint64(0),
             ts_buffer_size,
         )
-        # TODO: rx_data is also used to colect receive data,
-        # rename this instance to adc_data?
-        pll_data = cast(ts_buffer, sp.ptr64)  # cast to pointer to 64bit integer
-        rx_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
 
-        # Setup polling mode
+        pll_data = cast(ts_buffer, sp.ptr64)  # cast to pointer to 64bit integer
+        adc_data = cast(rx_buffer, sp.ptr16)  # cast to pointer to 16bit integer
+
+        # Setup polling mode for timestamp data
         self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL))
 
-        # Start DMA
+        # Start card acquistion and DMA usage
         self.handle_error(sp.spcm_dwSetParam_i32(
             self.card,
             sp.SPC_M2CMD,
@@ -301,14 +307,18 @@ class RxCard(SpectrumDevice):
         available_timestamp_postion = sp.int32(0)
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
+
+        # Track bytes from incomplete gate reads for next iteration
         remaining_bytes = 0
+        # Track the amount of gate events recorded
         self._total_gates = 0
 
+        # Check that the list of RxData objects has been passed
         if self.rx_data is None:
             self.log.critical("No RxData objects found for storing ADC data")
             raise RuntimeError("No RxData objects found for storing ADC data")
 
-        # Start receiver
+        # Signal that acquisition has started
         self.log.debug("Starting receive")
         self.is_receiving.set()
 
@@ -342,7 +352,7 @@ class RxCard(SpectrumDevice):
                 #     gate_sample,
                 # )
 
-                # Tell buffer 32 samples were read from timestamp buffer
+                # Tell buffer 32 bytes were read from timestamp buffer
                 try:
                     self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32))
                 except RuntimeError:  # Reraise error for traceability
@@ -350,9 +360,13 @@ class RxCard(SpectrumDevice):
 
                 # self.log.info("Available timestamp user length: %s", available_timestamp_bytes.value)
 
-                # Calculate data size and ensure proper gate alignment of data.
+                # Calculate data size for extraction from buffer.
+                # Calculate size of relevant data (pre_trigger needed to get position of start of gate)
+                # This is the minimum amount of data  must be available t0 get full gate data
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
+                # Get the total data duration, including post trigger, to accurately track buffer position
                 samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
+                # Ensure data aligmment
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value
@@ -391,7 +405,7 @@ class RxCard(SpectrumDevice):
 
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
-                    missing_bytes = total_bytes_gate -(available_data_bytes.value + remaining_bytes)
+                    missing_bytes = total_bytes_gate - (available_data_bytes.value + remaining_bytes)
                     self.log.debug(f"Waiting for: {missing_bytes} bytes")
                     # wait_start = time.time()
                     # Wait for sufficient data to come in
@@ -412,6 +426,7 @@ class RxCard(SpectrumDevice):
                     # Adjust memory position to account for bytes remaining after previous acquisition
                     byte_position = available_data_position.value - remaining_bytes
 
+                    # Handle buffer wraparound
                     if byte_position + total_bytes_gate >= rx_size:
                         # Calculate number of bytes to end of buffer
                         bytes_to_end = rx_size - byte_position
@@ -425,11 +440,11 @@ class RxCard(SpectrumDevice):
                         if samples_to_end == 0:
                             slice_1 = np.array([], dtype=np.int16)
                         else:
-                            ptr_to_slice_1 = cast(addressof(rx_data.contents) + byte_position, POINTER(c_short))
+                            ptr_to_slice_1 = cast(addressof(adc_data.contents) + byte_position, POINTER(c_short))
                             slice_1 = np.ctypeslib.as_array(ptr_to_slice_1, (samples_to_end,))
 
                         # Get the second part of the numpy slice
-                        ptr_to_slice_2 = cast(addressof(rx_data.contents), POINTER(c_short))
+                        ptr_to_slice_2 = cast(addressof(adc_data.contents), POINTER(c_short))
                         slice_2 = np.ctypeslib.as_array(ptr_to_slice_2, (samples_leftover,))
 
                         # Combine the slices
@@ -437,7 +452,7 @@ class RxCard(SpectrumDevice):
 
                     else:
                         # If there is no memory position overflow, just get the data.
-                        ptr_to_slice = cast(addressof(rx_data.contents) + byte_position, POINTER(c_short))
+                        ptr_to_slice = cast(addressof(adc_data.contents) + byte_position, POINTER(c_short))
                         gate_data = np.ctypeslib.as_array(ptr_to_slice, ((total_bytes_gate // 2),))
 
                     # Cut the pretrigger, we do not need it.
