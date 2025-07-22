@@ -1,5 +1,6 @@
 """Test configuration file."""
 
+import tempfile
 from collections.abc import Callable
 
 import numpy as np
@@ -123,5 +124,5 @@ def acquisition_parameter() -> AcquisitionParameter:
         gradient_offset=Dimensions(0, 100, 500),
         fov_scaling=Dimensions(0.5, 0.0, 0.9),
         averaging_delay=1.01,
-        state_filepath=".",
+        state_filepath=tempfile.mkdtemp(),
     )
