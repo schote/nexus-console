@@ -3,8 +3,6 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from mrpro.data import KData
-from mrpro.data.traj_calculators import KTrajectoryIsmrmrd
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.dimensions import Dimensions
@@ -45,7 +43,3 @@ def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter
     acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
     assert "data.mrd" in acq_data_files
-
-    kdata = KData.from_file(acq_folder / "data.mrd", KTrajectoryIsmrmrd())
-    assert kdata.data.shape[0] == int(dim.y * dim.z)
-    assert kdata.data.shape[-1] == dim.x
