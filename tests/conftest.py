@@ -27,6 +27,17 @@ def seq_provider() -> SequenceProvider:
 
 
 @pytest.fixture()
+def random_complex_data() -> Callable:
+    """Return random complex valued numpy array with given shape."""
+    rng = np.random.default_rng(seed=0)
+    def _factory(shape: tuple) -> np.ndarray:
+        re = rng.random(size=shape)
+        im = rng.random(size=shape)
+        return re + 1j * im
+    return _factory
+
+
+@pytest.fixture()
 def random_acquisition_data() -> Callable:
     """Construct random acquisition data using factory function.
 
