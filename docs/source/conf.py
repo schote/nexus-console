@@ -12,18 +12,28 @@
 import os
 import sys
 
-from sphinx_pyproject import SphinxConfig
-
-config = SphinxConfig('../../pyproject.toml', globalns=globals())
 sys.path.insert(0, os.path.abspath('../../src/'))  # Source code dir relative to this file
+
+
+# -- Dynamically get version using importlib.metadata -------------------------
+
+from importlib.metadata import version as get_version
+
+try:
+    release = get_version('nexus-console')
+    version = '.'.join(release.split('.')[:2])  # Short version: X.Y
+except Exception:
+    release = version = 'unknown'
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+from importlib.metadata import version as get_version
+
 project = 'Nexus-Console'
-author = author
-version = version
 copyright = '2024, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
+author = 'David Schote, Thomas O\'Reilly, Berk Silemek'
+
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -31,21 +41,17 @@ copyright = '2024, Physikalisch-Technische Bundesanstalt (PTB) Berlin'
 extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
-    # 'sphinx.ext.autosummary',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'sphinx_design',
 ]
 
-# templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
 autodoc_mock_imports = ["console.spcm_control.spcm"]
 
-# autosummary_imported_members = True
-# autosummary_generate = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -67,8 +73,6 @@ html_sidebars = {
     "code_examples/index": [],
     "**": ["search-field", "sidebar-nav-bs.html"],
 }
-
-
 
 numfig = True   # use numbered figures
 html_theme_options = {
