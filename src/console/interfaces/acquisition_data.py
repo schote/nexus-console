@@ -43,7 +43,7 @@ class AcquisitionData:
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
 
-    _additional_data: dict = field(default_factory=dict)
+    _additional_numpy_data: dict = field(default_factory=dict)
     """Dictionarz containing addition (numpy) data.
     Use the function add_data to update this dictionarz before saving.
     They key of each entry is used as filename."""
@@ -99,17 +99,17 @@ class AcquisitionData:
             return
 
         # Save meta data
-        with open(f"{acq_folder_path}meta.json", "w", encoding="utf-8") as outfile:
+        with open(acq_folder_path / "meta.json", "w", encoding="utf-8") as outfile:
             json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
 
         try:
             # Write sequence .seq file
-            self.sequence.write(f"{acq_folder_path}sequence.seq")
+            self.sequence.write(acq_folder_path / "sequence.seq")
         except Exception as exc:
             log.warning("Could not save sequence: %s", exc)
 
-        if len(self._additional_data) > 0:
-            for key, value in self._additional_data.items():
+        if len(self._additional_numpy_data) > 0:
+            for key, value in self._additional_numpy_data.items():
                 np.save(acq_folder_path / f"{key}.npy", value)
 
         log.info("Saved acquisition data to: %s", acq_folder_path)
@@ -136,11 +136,13 @@ class AcquisitionData:
         data
             Data which is to be added to acquisition data.
         """
-        for val in data.values():
-            if not hasattr(val, "shape"):
-                log.error("Could not add data to acquisition data, pairs of (str, numpy array) required.")
-                return
-        self._additional_data.update(data)
+        for key, val in data.items():
+            if isinstance(key, str) and isinstance(val, np.ndarray) and hasattr(val, "shape"):
+                self._additional_numpy_data.update(data)
+            else:
+                detail = f"Could not add `{key}` to acquisition data...\nKey-value pairs of str: np.ndarray are required."
+                log.error(detail)
+                continue
 
     def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader | str | Path, user_path: str | None = None):
         """Store acquisition data in (ISMR)MRD format."""
