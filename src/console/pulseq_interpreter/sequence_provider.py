@@ -432,7 +432,7 @@ class SequenceProvider(Sequence):
         return [(rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in rf_waveforms.data.items()]
 
     @profile
-    def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
+    def unroll_sequence(self, parameter: AcquisitionParameter, rotate_basis=False) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -587,23 +587,26 @@ class SequenceProvider(Sequence):
                 gz_slice = slice(waveform_start_gz, waveform_start_gz + 4 * waveform.size, 4)
                 _seq[gz_slice] = waveform
 
+
             # Add transformation for A4IM gradients (optional)
             # TODO: Make this optional and improve performance (this is just for testing)
             # x = sqrt(2)/2 (x + y)
             # y = sqrt(2)/2 (x - y)
             # z = z
-            x_slice = slice(waveform_start + 1, waveform_start + 1 + 4 * block_durations[event_idx], 4)
-            y_slice = slice(waveform_start + 2, waveform_start + 2 + 4 * block_durations[event_idx], 4)
-            x = (_seq[x_slice] << 1).view(np.int16) / INT16_MAX
-            y = (_seq[y_slice] << 1).view(np.int16) / INT16_MAX
-            x_rot = np.sqrt(2)/2 * (x + y)
-            y_rot = np.sqrt(2)/2 * (x - y)
-            if np.max(x_rot) > 1.:
-                raise ValueError("X gradient exceeds maximum after rotation.")
-            if np.max(y_rot) > 1.:
-                raise ValueError("Y gradient exceeds maximum after rotation.")
-            _seq[x_slice] = ((x_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
-            _seq[y_slice] = ((y_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
+            if rotate_basis:
+                x_slice = slice(waveform_start + 1, waveform_start + 1 + 4 * block_durations[event_idx], 4)
+                y_slice = slice(waveform_start + 2, waveform_start + 2 + 4 * block_durations[event_idx], 4)
+                x = (_seq[x_slice] << 1).astype(np.int16) / INT16_MAX
+                y = (_seq[y_slice] << 1).astype(np.int16) / INT16_MAX
+                x_rot = np.sqrt(2)/2 * (x + y)
+                y_rot = np.sqrt(2)/2 * (x - y)
+                if np.max(x_rot) > 1.:
+                    raise ValueError("X gradient exceeds maximum after rotation.")
+                if np.max(y_rot) > 1.:
+                    raise ValueError("Y gradient exceeds maximum after rotation.")
+                _seq[x_slice] = ((x_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
+                _seq[y_slice] = ((y_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
+
 
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
@@ -721,9 +724,9 @@ class SequenceProvider(Sequence):
 
         # Get gradient waveforms
         rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
-        gx_signal = np.array((np.uint16(gx_signal) << 1).astype(np.int16) / 2**15)
-        gy_signal = np.array((np.uint16(gy_signal) << 1).astype(np.int16) / 2**15)
-        gz_signal = np.array((np.uint16(gz_signal) << 1).astype(np.int16) / 2**15)
+        gx_signal = np.array((np.uint16(gx_signal) << 1).astype(np.int16) / INT16_MAX)
+        gy_signal = np.array((np.uint16(gy_signal) << 1).astype(np.int16) / INT16_MAX)
+        gz_signal = np.array((np.uint16(gz_signal) << 1).astype(np.int16) / INT16_MAX)
 
         axis[0].plot(samples, self.output_limits[0] * rf_signal / self.imp_scaling[0])
         axis[1].plot(samples, self.output_limits[1] * gx_signal / self.imp_scaling[1])
