@@ -43,7 +43,7 @@ dependencies = [
 
 # Dependency groupds (optional)
 [project.optional-dependencies]
-test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
+test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov", "mrpro"]
 lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
