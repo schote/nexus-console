@@ -30,6 +30,7 @@ except ImportError:
 
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
+SQRT2BY2 = np.sqrt(2)/2
 
 
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
@@ -91,7 +92,11 @@ class SequenceProvider(Sequence):
             )
         )
         self.log = logging.getLogger("SeqProv")
-        # Check list values
+        self.rf_to_mvolt = rf_to_mvolt
+        self.spcm_freq = 1 / spcm_dwell_time
+        self.spcm_dwell_time = spcm_dwell_time
+        self.rotate_basis: bool = False
+
         try:
             if len(gradient_efficiency) != 3:
                 raise ValueError("Invalid number of gradient efficiency values, 3 values must be provided")
@@ -328,8 +333,10 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
+                if self.rotate_basis:
+                    waveform *= SQRT2BY2    # scale waveform by sqrt(2)/2
                 # Transfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx + 1]
+                waveform *= (INT16_MAX / self.output_limits[idx + 1])
 
                 gradient = np.interp(
                     x=np.linspace(
@@ -352,8 +359,10 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
+                if self.rotate_basis:
+                    flat_amp *= SQRT2BY2    # scale waveform by sqrt(2)/2
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = flat_amp * INT16_MAX / self.output_limits[idx + 1]
+                flat_amp *= (INT16_MAX / self.output_limits[idx + 1])
 
                 rise = np.linspace(
                     0,
@@ -432,7 +441,7 @@ class SequenceProvider(Sequence):
         return [(rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in rf_waveforms.data.items()]
 
     @profile
-    def unroll_sequence(self, parameter: AcquisitionParameter, rotate_basis=False) -> UnrolledSequence:
+    def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
         TODO: Update this docstring
@@ -554,6 +563,11 @@ class SequenceProvider(Sequence):
         adc_count: int = 0
         labels = {}
 
+        if self.rotate_basis:
+            self.log.info(
+                "Rotating gradient basis: x = sqrt(2)/2 (x + y); y = sqrt(2)/2 (x - y); z = z",
+            )
+
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             # Calculate gradient waveform start and end positions according to block position
@@ -587,26 +601,27 @@ class SequenceProvider(Sequence):
                 gz_slice = slice(waveform_start_gz, waveform_start_gz + 4 * waveform.size, 4)
                 _seq[gz_slice] = waveform
 
-
-            # Add transformation for A4IM gradients (optional)
-            # TODO: Make this optional and improve performance (this is just for testing)
-            # x = sqrt(2)/2 (x + y)
-            # y = sqrt(2)/2 (x - y)
-            # z = z
-            if rotate_basis:
+            if self.rotate_basis:
+                # Add transformation for A4IM gradients (optional)
+                # x = sqrt(2)/2 (x + y)
+                # y = sqrt(2)/2 (x - y)
+                # z = z
                 x_slice = slice(waveform_start + 1, waveform_start + 1 + 4 * block_durations[event_idx], 4)
                 y_slice = slice(waveform_start + 2, waveform_start + 2 + 4 * block_durations[event_idx], 4)
-                x = (_seq[x_slice] << 1).astype(np.int16) / INT16_MAX
-                y = (_seq[y_slice] << 1).astype(np.int16) / INT16_MAX
-                x_rot = np.sqrt(2)/2 * (x + y)
-                y_rot = np.sqrt(2)/2 * (x - y)
-                if np.max(x_rot) > 1.:
+                x = (_seq[x_slice] << 1).astype(np.int16)
+                y = (_seq[y_slice] << 1).astype(np.int16)
+                x_max = np.max(x)/INT16_MAX
+                x_min = np.min(x)/INT16_MAX
+                y_max = np.max(y)/INT16_MAX
+                y_min = np.min(y)/INT16_MAX
+                if np.abs(x_max + y_max) > 1. or np.abs(x_min + y_min) > 1.:
                     raise ValueError("X gradient exceeds maximum after rotation.")
-                if np.max(y_rot) > 1.:
-                    raise ValueError("Y gradient exceeds maximum after rotation.")
-                _seq[x_slice] = ((x_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
-                _seq[y_slice] = ((y_rot * INT16_MAX).astype(np.int16).view(np.uint16)) >> 1
-
+                if np.abs(x_max - y_max) > 1. or np.abs(x_min - y_min) > 1.:
+                    raise ValueError("X gradient exceeds maximum after rotation.")
+                x_rot = (x + y)
+                y_rot = (x - y)
+                _seq[x_slice] = (x_rot.astype(np.int16).view(np.uint16)) >> 1
+                _seq[y_slice] = (y_rot.astype(np.int16).view(np.uint16)) >> 1
 
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
