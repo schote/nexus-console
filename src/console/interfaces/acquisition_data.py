@@ -7,6 +7,7 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
+import h5py
 import ismrmrd
 import numpy as np
 
@@ -64,6 +65,7 @@ class AcquisitionData:
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
+                    "definitions": self.sequence.definitions,
                 },
                 "info": {},
             }
@@ -98,10 +100,11 @@ class AcquisitionData:
             )
             return
 
+        self._save_acquisiton_data(acq_folder_path / "acquisition_data.h5")
+
         # Save meta data
         with open(acq_folder_path / "meta.json", "w", encoding="utf-8") as outfile:
             json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
-
         try:
             # Write sequence .seq file
             self.sequence.write(acq_folder_path / "sequence.seq")
@@ -261,3 +264,32 @@ class AcquisitionData:
 
         dataset.close()
         log.info("ISMRMRD exported: %s", dataset_path)
+
+    def _save_acquisiton_data(self, file_path: str) -> None:
+        """Save AcquisitionData and all RxData entries to an HDF5 file."""
+
+        def _write_dict(group: h5py.Group, _dict: dict) -> None:
+            """Write dictionary to h5py group."""
+            for key, value in _dict.items():
+                if isinstance(value, dict):
+                    subgroup = group.create_group(key)
+                    _write_dict(subgroup, value)
+                elif isinstance(value, (str, int, float, bool, np.number)):
+                    group.attrs[key] = value
+                elif value is None:
+                    group.attrs[key] = "None"
+                else:
+                    group.attrs[key] = str(value)
+
+        with h5py.File(file_path, "w") as fh:
+            # --- Metadata
+            meta_group = fh.create_group("meta")
+            _write_dict(meta_group, self.meta)
+
+            # --- RxData per average
+            receive_data_group = fh.create_group("receive_data")
+            for rx_data in self.receive_data:
+                rx_group = receive_data_group.create_group(1)
+                _write_dict(rx_group, rx_data.dict())
+                if rx_data.processed_data is not None:
+                    rx_group.create_dataset("processed_data", data=rx_data.processed_data)

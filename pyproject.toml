@@ -38,7 +38,8 @@ dependencies = [
     "PyYAML",
     "matplotlib",
     "pandas",
-    "ismrmrd"
+    "ismrmrd",
+    "h5py",
 ]
 
 # Dependency groupds (optional)
