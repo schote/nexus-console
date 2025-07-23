@@ -64,8 +64,8 @@ class RxData:
     def __str__(self) -> str:
         """Return string representation of information contained within RxData class."""
         lines = ["RxData:"]
-        lines.append("-" * 30)
-        for key, value in self.dict():
+        lines.append("-" * 7)
+        for key, value in self.dict().items():
             lines.append(f"{key:<20}: {value}")
         return "\n".join(lines)
 
@@ -80,7 +80,7 @@ class RxData:
             if value is None:
                 _dict[key] = "None"
             # Replace data attributes by their shape
-            if key in ["processed_data", "raw_data"]:
+            if key in ["processed_data", "raw_data"] and value is not None:
                 _dict[key] = value.shape
         return _dict
 
