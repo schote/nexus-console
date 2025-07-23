@@ -1,5 +1,5 @@
 """"Define the dataclass and processing of receiver data."""
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import asdict, dataclass, field
 
 import numpy as np
 from scipy import signal
