@@ -65,7 +65,10 @@ class AcquisitionData:
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
-                    "definitions": self.sequence.definitions,
+                    "definitions": {
+                        # Write all sequence definitions, turn numpy arrays into lists
+                        k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in self.sequence.definitions.items()
+                    },
                 },
                 "info": {},
             }
@@ -89,27 +92,22 @@ class AcquisitionData:
         # Add trailing slash and make dir
         base_path = Path(user_path) if user_path is not None else Path(self.session_path)
         base_path.mkdir(parents=True, exist_ok=True)
-
-        try:
-            acq_folder_path = base_path / self.meta["folder_name"]
-            acq_folder_path.mkdir(parents=True, exist_ok=overwrite)
-        except Exception as exc:
-            log.exception(
-                msg="This acquisition data object has already been saved. Use the overwrite flag to force overwriting.",
-                exc_info=exc,
-            )
-            return
+        acq_folder_path = base_path / self.meta["folder_name"]
+        acq_folder_path.mkdir(parents=True, exist_ok=True)
 
         self._save_acquisiton_data(acq_folder_path / "acquisition_data.h5")
 
         # Save meta data
-        with open(acq_folder_path / "meta.json", "w", encoding="utf-8") as outfile:
-            json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
-        try:
-            # Write sequence .seq file
-            self.sequence.write(acq_folder_path / "sequence.seq")
-        except Exception as exc:
-            log.warning("Could not save sequence: %s", exc)
+        if not (meta_file := acq_folder_path / "meta.json").exists() or overwrite:
+            with open(meta_file, "w", encoding="utf-8") as outfile:
+                json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
+
+        if not (sequence_file := acq_folder_path / "sequence.seq").exists() or overwrite:
+            try:
+                # Write sequence .seq file
+                self.sequence.write(sequence_file)
+            except Exception as exc:
+                log.warning("Could not save sequence: %s", exc)
 
         if len(self._additional_numpy_data) > 0:
             for key, value in self._additional_numpy_data.items():
@@ -272,9 +270,10 @@ class AcquisitionData:
             """Write dictionary to h5py group."""
             for key, value in _dict.items():
                 if isinstance(value, dict):
-                    subgroup = group.create_group(key)
-                    _write_dict(subgroup, value)
-                elif isinstance(value, (str, int, float, bool, np.number)):
+                    _write_dict(group.create_group(key), value)
+                elif isinstance(value, np.generic):
+                    group.attrs[key] = value.item()
+                elif isinstance(value, (int, float, bool)):
                     group.attrs[key] = value
                 elif value is None:
                     group.attrs[key] = "None"
@@ -288,8 +287,9 @@ class AcquisitionData:
 
             # --- RxData per average
             receive_data_group = fh.create_group("receive_data")
-            for rx_data in self.receive_data:
-                rx_group = receive_data_group.create_group(1)
+            receive_data_group.attrs["length"] = len(self.receive_data)
+            for idx, rx_data in enumerate(self.receive_data):
+                rx_group = receive_data_group.create_group(str(idx))
                 _write_dict(rx_group, rx_data.dict())
                 if rx_data.processed_data is not None:
                     rx_group.create_dataset("processed_data", data=rx_data.processed_data)
