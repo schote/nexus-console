@@ -38,6 +38,7 @@ dependencies = [
     "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
     "plotly",
     "PyYAML",
+    "pydantic",
     "matplotlib",
     "pandas",
     "ismrmrd",
