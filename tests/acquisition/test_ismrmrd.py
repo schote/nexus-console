@@ -34,7 +34,7 @@ def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter
     acq_data = AcquisitionData(
         receive_data=receive_data,
         acquisition_parameters=acquisition_parameter,
-        sequence=seq,
+        sequence=seq_provider.to_pypulseq(),
         session_path=tmp_dir,
     )
 
