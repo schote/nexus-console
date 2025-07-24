@@ -285,9 +285,13 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
+        # Create a copy of the sequence provider for AcquisitonData without the unrolled sequence in it
+        seq_clean = copy.copy(self.seq_provider)
+        seq_clean._sqnc_cache = None
+
         return AcquisitionData(
             receive_data=self.receive_data,
-            sequence=self.seq_provider,
+            sequence=seq_clean,
             session_path=self.session_path,
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
