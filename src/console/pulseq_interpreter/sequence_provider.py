@@ -141,13 +141,35 @@ class SequenceProvider(Sequence):
         AttributeError
             Key of Sequence instance not
         """
+        checks = [
+            # Check gradient limits
+            seq.system.max_grad > self.system.max_grad,
+            seq.system.max_slew > self.system.max_slew,
+            seq.system.rise_time < self.system.rise_time,
+            # Check raster times
+            seq.system.grad_raster_time < self.system.grad_raster_time,
+            seq.system.adc_raster_time < self.system.adc_raster_time,
+            seq.system.rf_raster_time < self.system.rf_raster_time,
+            seq.system.block_duration_raster < self.system.block_duration_raster,
+            # Check dead times and ringdown
+            seq.system.adc_dead_time < self.system.adc_dead_time,
+            seq.system.rf_dead_time < self.system.rf_dead_time,
+            seq.system.rf_ringdown_time < self.system.rf_ringdown_time,
+        ]
+        if any(checks):
+            detail = f"Incompatible system limits.\nUse: {self.system}"
+            self.log.error(detail)
+            raise ValueError(detail)
         try:
             if not isinstance(seq, Sequence):
                 raise ValueError("Provided object is not an instance of pypulseq Sequence")
             for key, value in seq.__dict__.items():
                 # Check if attribute exists
-                if hasattr(self, key):
-                    setattr(self, key, value)
+                if not hasattr(self, key) or key == "system":   # dont't overwrite system
+                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
+                    continue
+                # Set attribute
+                setattr(self, key, value)
         except (ValueError, AttributeError) as err:
             self.log.exception(err, exc_info=True)
             raise err
