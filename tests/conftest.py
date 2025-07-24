@@ -77,7 +77,7 @@ def random_acquisition_data() -> Callable:
                         demod_frequency=2.0123e6,
                         raw_data=rng.random(size=(num_coils, num_raw_samples)),
                         processed_data=processed_re + 1j * processed_im,
-                        time_stamp=np.datetime64('now'),
+                        time_stamp=k_average * (num_averages + k_acquisition) * 0.67,
                     )
                 )
         return rx_data

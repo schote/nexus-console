@@ -95,7 +95,12 @@ class AcquisitionData:
         acq_folder_path = base_path / self.meta["folder_name"]
         acq_folder_path.mkdir(parents=True, exist_ok=True)
 
-        self._save_acquisiton_data(acq_folder_path / "acquisition_data.h5")
+        try:
+            self._save_acquisiton_data(acq_folder_path / "acquisition_data.h5")
+        except TypeError as exc:
+            log.warning("Type error when saving acquisition data to h5 format.", exc_info=exc)
+        except Exception as exc:
+            log.warning("Unexpected error when saving acquisition data to h5 format.", exc_info=exc)
 
         # Save meta data
         if not (meta_file := acq_folder_path / "meta.json").exists() or overwrite:
