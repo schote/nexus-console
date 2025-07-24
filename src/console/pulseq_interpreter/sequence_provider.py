@@ -78,8 +78,6 @@ class SequenceProvider(Sequence):
             Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6
         rf_to_mvolt, optional
             Translation of RF waveform from pulseq (Hz) to mV, by default 1
-        system, optional
-            System options from pypulseq, by default Opts()
         """
         super().__init__(system=system)
 
