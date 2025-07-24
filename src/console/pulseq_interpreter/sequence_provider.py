@@ -1,4 +1,5 @@
 """Sequence provider class."""
+import operator
 import logging
 from collections.abc import Callable
 from types import SimpleNamespace
@@ -141,26 +142,27 @@ class SequenceProvider(Sequence):
         AttributeError
             Key of Sequence instance not
         """
-        checks = [
-            # Check gradient limits
-            seq.system.max_grad > self.system.max_grad,
-            seq.system.max_slew > self.system.max_slew,
-            seq.system.rise_time < self.system.rise_time,
-            # Check raster times
-            seq.system.grad_raster_time < self.system.grad_raster_time,
-            seq.system.adc_raster_time < self.system.adc_raster_time,
-            seq.system.rf_raster_time < self.system.rf_raster_time,
-            seq.system.block_duration_raster < self.system.block_duration_raster,
-            # Check dead times and ringdown
-            seq.system.adc_dead_time < self.system.adc_dead_time,
-            seq.system.rf_dead_time < self.system.rf_dead_time,
-            seq.system.rf_ringdown_time < self.system.rf_ringdown_time,
-        ]
-        if any(checks):
-            detail = f"Incompatible system limits.\nUse: {self.system}"
-            self.log.error(detail)
-            raise ValueError(detail)
         try:
+            # List of (attribute, comparison function, message operator symbol) to check system limits
+            limits = [
+                ("max_grad", operator.gt, "<="),
+                ("max_slew", operator.gt, "<="),
+                ("grad_raster_time", operator.lt, ">="),
+                ("adc_raster_time", operator.lt, ">="),
+                ("rf_raster_time", operator.lt, ">="),
+                ("block_duration_raster", operator.lt, ">="),
+                ("adc_dead_time", operator.lt, ">="),
+                ("rf_dead_time", operator.lt, ">="),
+                ("rf_ringdown_time", operator.lt, ">="),
+            ]
+            errors = []
+            for attr, compare, symbol in limits:
+                limit_val = getattr(self.system, attr)
+                if compare(getattr(seq.system, attr), limit_val):
+                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val})")
+            if errors:
+                raise ValueError("; ".join(errors))
+
             if not isinstance(seq, Sequence):
                 raise ValueError("Provided object is not an instance of pypulseq Sequence")
             for key, value in seq.__dict__.items():
@@ -170,9 +172,9 @@ class SequenceProvider(Sequence):
                     continue
                 # Set attribute
                 setattr(self, key, value)
-        except (ValueError, AttributeError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        except (ValueError, AttributeError) as exc:
+            self.log.exception(exc, exc_info=True)
+            raise exc
 
     def to_pypulseq(self) -> Sequence | None:
         """Slice sequence provider to return pypulseq sequence."""

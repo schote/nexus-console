@@ -4,6 +4,7 @@ import tempfile
 from collections.abc import Callable
 
 import numpy as np
+from pathlib import Path
 import pypulseq as pp
 import pytest
 
@@ -11,11 +12,14 @@ from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimen
 from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
+from console.utilities.load_configuration import load_system_limits
+from console.interfaces.device_configuration import SystemLimits
 
 
 @pytest.fixture()
 def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
+    system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     return SequenceProvider(
         gradient_efficiency=[0.4, 0.4, 0.4],
         gpa_gain=[1.0, 1.0, 1.0],
@@ -23,7 +27,7 @@ def seq_provider() -> SequenceProvider:
         spcm_dwell_time=5e-8,
         rf_to_mvolt=5e-3,
         high_impedance=[False, True, True, True],
-        system=system,
+        system=pp.Opts(**system_limits.model_dump()),
     )
 
 
@@ -103,7 +107,7 @@ def test_spectrum() -> Callable:
 @pytest.fixture()
 def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
-    seq = pp.Sequence()
+    seq = pp.Sequence(system=system)
     seq.set_definition("Name", "test_sequence")
     seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2))
     seq.add_block(pp.make_delay(10e-6))
