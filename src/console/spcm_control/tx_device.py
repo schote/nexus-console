@@ -11,6 +11,8 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
+TX_NOTIFY_RATE = 16
+
 
 class TxCard(SpectrumDevice):
     """
@@ -37,14 +39,12 @@ class TxCard(SpectrumDevice):
         max_amplitude: list[int],
         filter_type: list[int],
         sample_rate: int,
-        notify_rate: int = 16,
     ) -> None:
         self.log = logging.getLogger(self.__name__)
         super().__init__(path=path, log=self.log)
         self.max_amplitude = max_amplitude
         self.filter_type = filter_type
         self.sample_rate = sample_rate
-        self.notify_rate = notify_rate
 
         # Number of output channels is fixed
         self.num_ch = 4
@@ -334,8 +334,8 @@ class TxCard(SpectrumDevice):
         # Calculate notify size is set to 1/16 of the replay buffer size
         # Ensure that minimum notify size is 4096 bytes
         notify_size = spcm.int32(max(4096, min(
-            int(((self.data_buffer_size / self.notify_rate) // 4096) * 4096),
-            int(((self.max_ring_buffer_size.value / self.notify_rate) // 4096) * 4096),
+            int(((self.data_buffer_size / TX_NOTIFY_RATE) // 4096) * 4096),
+            int(((self.max_ring_buffer_size.value / TX_NOTIFY_RATE) // 4096) * 4096),
         )))
 
         # >> Define software buffer
