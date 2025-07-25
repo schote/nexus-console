@@ -95,7 +95,6 @@ class SystemLimits(BaseModel):
 
     max_grad: float = Field(..., strict=True)
     max_slew: float = Field(..., strict=True)
-    rise_time: float = Field(..., strict=True)
     rf_dead_time: float = Field(..., strict=True)
     rf_ringdown_time: float = Field(..., strict=True)
     adc_dead_time: float = Field(..., strict=True)
@@ -103,7 +102,6 @@ class SystemLimits(BaseModel):
     rf_raster_time: float = Field(..., strict=True)
     grad_raster_time: float = Field(..., strict=True)
     adc_raster_time: float = Field(..., strict=True)
-    B0: float = Field(..., strict=True)
 
 
 class NexusConfiguration(BaseModel):

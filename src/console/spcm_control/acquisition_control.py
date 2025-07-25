@@ -81,7 +81,7 @@ class AcquisitionControl:
             output_limits=self.config.tx.channel_max_amplitude,
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
-            system=Opts(**self.config.system.model_dump()),
+            system_limits=Opts(**self.config.system.model_dump()),
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(
