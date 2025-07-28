@@ -517,11 +517,13 @@ class SequenceProvider(Sequence):
 
         # Count the total number of sample points and gate signals
         adc_count: int = 0
+        labels = {}
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             # Calculate gradient waveform start and end positions according to block position
             waveform_start = block_pos[event_idx] * 4
+
             if block.gx is not None:  # Gx event
                 waveform = self.calculate_gradient(
                     block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x
@@ -531,6 +533,7 @@ class SequenceProvider(Sequence):
                 waveform_start_gx = waveform_start + 4 * delay_samples
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start_gx + 1:waveform_start_gx + 4 * waveform_samples + 1:4] = waveform
+
             if block.gy is not None:  # Gy event
                 waveform = self.calculate_gradient(
                     block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y
@@ -540,6 +543,7 @@ class SequenceProvider(Sequence):
                 waveform_start_gy = waveform_start + 4 * delay_samples
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start_gy + 2:waveform_start_gy + 4 * waveform_samples + 2:4] = waveform
+
             if block.gz is not None:  # Gz event
                 waveform = self.calculate_gradient(
                     block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z
@@ -549,6 +553,7 @@ class SequenceProvider(Sequence):
                 waveform_start_gz = waveform_start + 4 * delay_samples
                 waveform_samples = np.size(waveform)
                 _seq[waveform_start_gz + 3:waveform_start_gz + 4 * waveform_samples + 3:4] = waveform
+
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
@@ -569,6 +574,11 @@ class SequenceProvider(Sequence):
                 # Add deblanking signal to Z gradient
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
+            if block.label is not None:
+                # Update dictionary with current labels
+                for label in block.label.values():
+                    labels[label.label] = label.value
+
             if block.adc is not None:  # ADC event
                 # Grab the ADC event from the pre-calculated list
                 # Pulseq is 1 indexed, shift idx by -1 for correct event
@@ -582,27 +592,20 @@ class SequenceProvider(Sequence):
                 # Add ADC gate to X gradient
                 _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
 
-                # Convert labels from namespace to dict
-                labels = {}
-                if block.label is not None:
-                    for label in block.label.values():
-                        if label.type == 'labelinc':
-                            # Store labelinc as booleans since they should be handled as flags
-                            labels[label.label] = bool(label.value)
-                        elif label.type == 'labelset':
-                            labels[label.label] = label.value
-
-                _rx_data.append(RxData(index=adc_count,
-                                       num_samples=block.adc.num_samples,
-                                       num_samples_raw=adc_event[2],
-                                       dwell_time=block.adc.dwell,
-                                       dwell_time_raw=self.spcm_dwell_time,
-                                       phase_offset=block.adc.phase_offset,
-                                       freq_offset=block.adc.freq_offset,
-                                       total_averages=parameter.num_averages,
-                                       ddc_method=parameter.ddc_method,
-                                       labels=labels))
+                _rx_data.append(RxData(
+                    index=adc_count,
+                    num_samples=block.adc.num_samples,
+                    num_samples_raw=adc_event[2],
+                    dwell_time=block.adc.dwell,
+                    dwell_time_raw=self.spcm_dwell_time,
+                    phase_offset=block.adc.phase_offset,
+                    freq_offset=block.adc.freq_offset,
+                    total_averages=parameter.num_averages,
+                    ddc_method=parameter.ddc_method,
+                    labels=labels,
+                ))
                 adc_count += 1
+                labels = {} # Reset labels dict
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
