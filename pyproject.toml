@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
-template = "{tag}.post{distance}"
-dev_template = "{tag}.dev{distance}"
-dirty_template = "{tag}+dirty"
-version_file = "src/console/_version.py"
+version_file = "src/console/VERSION"
+count_commits_from_version_file = true
+template = "{tag}{env:CONSOLEVERSIONSUFFIX:''}"
+dev_template = "{tag}{env:CONSOLEVERSIONSUFFIX:''}"
+dirty_template = "{tag}+dirty{sha}"
 
 [tool.setuptools]
 packages = ["console"]
