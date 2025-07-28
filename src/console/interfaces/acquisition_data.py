@@ -33,9 +33,6 @@ class AcquisitionData:
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
 
-    dwell_time: float
-    """Dwell time of down-sampled raw data in seconds."""
-
     session_path: str
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
