@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 enabled = true
 version_file = "src/console/VERSION"
 count_commits_from_version_file = true
-template = "{tag}{env:CONSOLEVERSIONSUFFIX:''}"
-dev_template = "{tag}{env:CONSOLEVERSIONSUFFIX:''}"
+template = "{tag}{env:VERSIONSUFFIX:''}"
+dev_template = "{tag}{env:VERSIONSUFFIX:''}"
 dirty_template = "{tag}+dirty{sha}"
 
 [tool.setuptools]
