@@ -706,7 +706,7 @@
 
         <span class="k">return</span> <span class="n">AcquisitionData</span><span class="p">(</span>
             <span class="n">receive_data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">,</span>
-            <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">,</span>
+            <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">to_pypulseq</span><span class="p">(),</span>
             <span class="n">session_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">,</span>
             <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">dict</span><span class="p">(),</span>
