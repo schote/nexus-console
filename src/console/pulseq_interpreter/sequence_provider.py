@@ -605,7 +605,7 @@ class SequenceProvider(Sequence):
                     labels=labels,
                 ))
                 adc_count += 1
-                labels = {} # Reset labels dict
+                labels = {}  # Reset labels dict
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
