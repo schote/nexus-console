@@ -36,9 +36,10 @@ jobs:
         id: get_version
         run: |
           VERSION=$(python -c "import setuptools_git_versioning; print(setuptools_git_versioning.get_version())")
-          echo "VERSION=$VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
           echo "$VERSION" > src/console/VERSION
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Commit updated VERSION file (if changed)
         run: |
