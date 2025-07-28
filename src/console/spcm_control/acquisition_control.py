@@ -287,7 +287,7 @@ class AcquisitionControl:
 
         return AcquisitionData(
             receive_data=self.receive_data,
-            sequence=self.seq_provider,
+            sequence=self.seq_provider.to_pypulseq(),
             session_path=self.session_path,
             meta={
                 self.tx_card.__name__: self.tx_card.dict(),
