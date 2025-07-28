@@ -4,11 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
-version_file = "src/console/VERSION"
-count_commits_from_version_file = true
-template = "v{tag}{env:VERSIONSUFFIX:''}"
-dev_template = "v{tag}{env:VERSIONSUFFIX:''}"
-dirty_template = "v{tag}+dirty{sha}"
+template = "{tag}" # For tagged releases (e.g., v1.0.0 becomes 1.0.0)
+dev_template = "{tag}.dev{ccount}" # For commits after a tag (e.g., 1.0.0.dev1)
+# dev_template = "{tag}.dev{ccount}+{sha}"
+dirty_template = "{tag}+dirty" # Simple dirty indicator, if you have untracked changes
+# Filter out "v" prefix in final version number (e.g., 1.0.0 instead of v1.0.0)
+tag_filter = '^v'
 
 [tool.setuptools]
 packages = ["console"]
