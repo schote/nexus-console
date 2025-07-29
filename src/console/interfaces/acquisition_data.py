@@ -265,7 +265,7 @@ class AcquisitionData:
             if (key := "REP") in data.labels:
                 acq.idx.repetition = data.labels[key]
 
-            traj = sequence_trajectory[:, trajectory_position:trajectory_position+data.num_samples].T
+            traj = sequence_trajectory[:, trajectory_position:trajectory_position + data.num_samples].T
             # Rearrange trajectory according to sequence definition, if available
             if channel_mapping is not None:
                 traj = traj[:, channel_mapping]
