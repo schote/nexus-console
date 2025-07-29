@@ -173,6 +173,24 @@ class AcquisitionData:
 
         sequence_trajectory = self.sequence.calculate_kspace()[0]
 
+        # Retrieve channel order from sequence definition, if available
+        channel_mapping = None
+        if (key := "channel_order") in self.sequence.definitions:
+            # Get definition if key 'channel_order' exists
+            channel_order = self.sequence.get_definition(key)
+            channels = ("x", "y", "z")
+            # Ensure that channel order is list/tuple, has length 3 and contains only valid channels
+            check = (
+                isinstance(channel_order, (list, tuple)) and
+                len(channel_order) == len(channels) and
+                all(ch in channels for ch in channel_order)
+            )
+            if check:
+                # Assign mapping if check passed
+                channel_mapping = [channel_order.index(ch) for ch in channels]
+        else:
+            log.warning("Could not find `channel_order` in sequence definitions, assigning sequence trajectory as is.")
+
         # Update larmor frequency with exact frequency
         header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency * 1e6)
 
@@ -247,10 +265,15 @@ class AcquisitionData:
             if (key := "REP") in data.labels:
                 acq.idx.repetition = data.labels[key]
 
+            traj = sequence_trajectory[:, trajectory_position:trajectory_position+data.num_samples].T
+            # Rearrange trajectory according to sequence definition, if available
+            if channel_mapping is not None:
+                traj = traj[:, channel_mapping]
+
             # Set the data and append
             acq.data[:] = data.processed_data
-            acq.traj[:] = sequence_trajectory[..., :data.processed_data.shape[-1]].T
-            trajectory_position += data.processed_data.shape[-1]
+            acq.traj[:] = traj
+            trajectory_position += data.num_samples
 
             dataset.append_acquisition(acq)
 
