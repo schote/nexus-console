@@ -6,9 +6,6 @@ on:
       - main
       - docu
   pull_request:
-    branches:
-      - main
-      - docu
 
 permissions:
     contents: write
