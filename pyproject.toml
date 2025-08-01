@@ -4,10 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
 enabled = true
-template = "{tag}.post{distance}"
-dev_template = "{tag}.dev{distance}"
-dirty_template = "{tag}+dirty"
-version_file = "src/console/_version.py"
+template = "{tag}" # For tagged releases (e.g., v1.0.0 becomes 1.0.0)
+dev_template = "{tag}.dev{ccount}" # For commits after a tag (e.g., 1.0.0.dev1)
+# dev_template = "{tag}.dev{ccount}+{sha}"
+dirty_template = "{tag}+dirty" # Simple dirty indicator, if you have untracked changes
+# Filter out "v" prefix in final version number (e.g., 1.0.0 instead of v1.0.0)
+tag_filter = '^v'
 
 [tool.setuptools]
 packages = ["console"]
@@ -24,7 +26,7 @@ authors = [
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
 keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
 classifiers = [
     "Programming Language :: Python",
