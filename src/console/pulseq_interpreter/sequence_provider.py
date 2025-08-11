@@ -146,14 +146,23 @@ class SequenceProvider(Sequence):
                 raise ValueError("Provided object is not an instance of pypulseq Sequence")
             for key, value in seq.__dict__.items():
                 # Check if attribute exists
-                if not hasattr(self, key):
-                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
-                    continue
-                # Set attribute
-                setattr(self, key, value)
+                if hasattr(self, key):
+                    setattr(self, key, value)
         except (ValueError, AttributeError) as err:
             self.log.exception(err, exc_info=True)
             raise err
+
+    def to_pypulseq(self) -> Sequence | None:
+        """Slice sequence provider to return pypulseq sequence."""
+        seq = Sequence()
+        try:
+            for key, value in vars(self).items():
+                if hasattr(seq, key):
+                    setattr(seq, key, value)
+        except Exception as exc:
+            self.log.error("Could not slice pypulseq sequence from sequence provider.", exc_info=exc)
+            return None
+        return seq
 
     @profile
     def calculate_rf(
