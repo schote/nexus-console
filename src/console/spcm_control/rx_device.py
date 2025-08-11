@@ -214,7 +214,7 @@ class RxCard(SpectrumDevice):
         gate_alignment = sp.int64(0)
         sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
         self.gate_alignment = gate_alignment.value
-        self.log.debug("Alignment samples: %d samples"%(self.gate_alignment))
+        self.log.debug("Alignment samples: %d samples" % (self.gate_alignment))
 
         # Set timeout used for DMA wait to 10 ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
@@ -345,13 +345,13 @@ class RxCard(SpectrumDevice):
                 gate_sample = timestamp_1 - timestamp_0
                 gate_length = gate_sample / (self.sample_rate * 1e6)
 
-                # self.log.info(
-                #     "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
-                #     timestamp_0 / (self.sample_rate * 1e6),
-                #     timestamp_1 / (self.sample_rate * 1e6),
-                #     float(gate_length) * 1e3,  # Can be trimmed.
-                #     gate_sample,
-                # )
+                self.log.info(
+                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
+                    timestamp_0 / (self.sample_rate * 1e6),
+                    timestamp_1 / (self.sample_rate * 1e6),
+                    float(gate_length) * 1e3,  # Can be trimmed.
+                    gate_sample,
+                )
 
                 # Tell buffer 32 bytes were read from timestamp buffer
                 try:
@@ -363,7 +363,7 @@ class RxCard(SpectrumDevice):
 
                 # Calculate data size for extraction from buffer.
                 # Calculate size of relevant data (pre_trigger needed to get position of start of gate)
-                # This is the minimum amount of data  must be available t0 get full gate data
+                # This is the minimum amount of data  must be available to get full gate data
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 # Get the total data duration, including post trigger, to accurately track buffer position
                 samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
@@ -371,15 +371,6 @@ class RxCard(SpectrumDevice):
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value
-
-                self.log.info(
-                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s, Alignment samples: %s",
-                    timestamp_0 / (self.sample_rate * 1e6),
-                    timestamp_1 / (self.sample_rate * 1e6),
-                    float(gate_length) * 1e3,  # Can be trimmed.
-                    gate_sample,
-                    alignment_samples
-                )
 
                 # Check if total gate data does not exceed buffer size:
                 if bytes_sequence > rx_size:
@@ -407,7 +398,7 @@ class RxCard(SpectrumDevice):
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
                     missing_bytes = total_bytes_gate - (available_data_bytes.value + remaining_bytes)
-                    self.log.debug("Waiting for: %d bytes"%(missing_bytes))
+                    self.log.debug("Waiting for: %d bytes" % (missing_bytes))
                     # wait_start = time.time()
                     # Wait for sufficient data to come in
                     while (available_data_bytes.value + remaining_bytes < total_bytes_gate) \
@@ -486,7 +477,7 @@ class RxCard(SpectrumDevice):
                         raise RuntimeError
 
                 else:
-                    self.log.error("Needed at least %d bytes but only %d bytes available"%(
+                    self.log.error("Needed at least %d bytes but only %d bytes available" % (
                         total_bytes_gate,
                         available_data_bytes.value))
 
