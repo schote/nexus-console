@@ -80,8 +80,6 @@ class AcquisitionData:
             Optional user path, default is None.
             If provided, it is taken to store the acquisition data.
             Other wise a datetime-based folder is created.
-        save_unprocessed
-            Flag which indicates if unprocessed data is to be written or not, default is False.
         overwrite
             Flag which indicates whether the acquisition data should be overwritten
             in case it already exists from a previous call to this function, default is False.
@@ -318,3 +316,5 @@ class AcquisitionData:
                 _write_dict(rx_group, rx_data.dict())
                 if rx_data.processed_data is not None:
                     rx_group.create_dataset("processed_data", data=rx_data.processed_data)
+                if rx_data.raw_data is not None:
+                    rx_group.create_dataset("raw_data", data=rx_data.raw_data)
