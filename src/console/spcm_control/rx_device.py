@@ -453,7 +453,7 @@ class RxCard(SpectrumDevice):
                                                                             gate_sample),
                                                                             order="F").copy()
                     self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
-                    self.rx_data[self._total_gates].time_stamp = timestamp_0
+                    self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
 
                     # The accumulation of the leftover bytes is positive,
                     # if if the post-trigger event was not fully captured (accumulated sum increases),
