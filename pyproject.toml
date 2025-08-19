@@ -1,6 +1,15 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
+template = "{tag}" # For tagged releases (e.g., v1.0.0 becomes 1.0.0)
+dev_template = "{tag}.dev{ccount}" # For commits after a tag (e.g., 1.0.0.dev1)
+# dev_template = "{tag}.dev{ccount}+{sha}"
+dirty_template = "{tag}+dirty" # Simple dirty indicator, if you have untracked changes
+# Filter out "v" prefix in final version number (e.g., 1.0.0 instead of v1.0.0)
+tag_filter = '^v'
 
 [tool.setuptools]
 packages = ["console"]
@@ -8,22 +17,21 @@ package-dir = {"" = "src"}
 
 [project]
 name = "nexus-console"
-version = "0.0.1"
+dynamic = ["version"]
 description = "MRI Nexus console application to run pulseq sequences on Spectrum-Instrumentation measurement cards."
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},
-    {name="Berk Silemek", email="berk.silemek@ptb.de"}
+    {name="Berk Silemek"},
+    {name="Thomas O'Reilly"}
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
-license = { file = "LICENSE" }
+license = "GPL-3.0-or-later"
 keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
-
 classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
 ]
-
 dependencies = [
     "pypulseq",
     # "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
@@ -44,6 +52,9 @@ dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipy
 
 [project.scripts]
 nexus = "console.service.start_manager:main"
+
+[tool.setuptools.package-data]
+"console" = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -67,7 +78,7 @@ src = ["src"]
 line-length = 120
 indent-width = 4
 target-version = "py310"
-extend-exclude = ["src/console/spcm_control/spcm", "docs"]
+extend-exclude = ["src/console/spcm_control/spcm", "docs", "__init__.py"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
