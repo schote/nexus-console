@@ -77,9 +77,9 @@ class RxCard(SpectrumDevice):
         self.is_receiving = threading.Event()
         self._total_gates: int = 0
 
-        # Pre trigger is set to minimum and post trigger size is at least one notify size to avoid data loss.
-        self.pre_trigger = 8
-        self.post_trigger = 4096
+        # Pre trigger is set to minimum, post trigger depends on active channel count and is defined later.
+        self.pre_trigger: int = 8
+        self.post_trigger: None | int = None
 
         self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
 
@@ -187,10 +187,10 @@ class RxCard(SpectrumDevice):
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
-        # Calculate actual post trigger size depending on the number of active channels
+        # Calculate trigger size depending on the number of active channels
         # Since data can only be gathered in notify size chunks, post_trigger // channel_count should be at least one
         # notify size to ensure that we can always access the full gate data.
-        self.post_trigger = self.post_trigger // self.num_channels.value
+        self.post_trigger = 4096 // self.num_channels.value
 
         # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
