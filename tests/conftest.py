@@ -1,5 +1,6 @@
 """Test configuration file."""
 
+import tempfile
 from collections.abc import Callable
 
 import numpy as np
@@ -7,6 +8,7 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences.system_settings import system
 
@@ -26,11 +28,26 @@ def seq_provider() -> SequenceProvider:
 
 
 @pytest.fixture()
+def random_complex_data() -> Callable:
+    """Return random complex valued numpy array with given shape."""
+    rng = np.random.default_rng(seed=0)
+
+    def _factory(shape: tuple) -> np.ndarray:
+        re = rng.random(size=shape)
+        im = rng.random(size=shape)
+        return re + 1j * im
+    return _factory
+
+
+@pytest.fixture()
 def random_acquisition_data() -> Callable:
     """Construct random acquisition data using factory function.
 
     Arguments:
-    num_averages: int, num_coils: int, num_pe: int, num_ro: int
+        num_coils: int
+        num_samples: int
+        num_acquisitions: int
+        num_averages: int
 
     Returns
     -------
@@ -38,12 +55,34 @@ def random_acquisition_data() -> Callable:
     """
     rng = np.random.default_rng(seed=0)
 
-    def _random_acquisition_data(num_averages: int, num_coils: int, num_pe: int, num_ro: int) -> np.ndarray:
-        re = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
-        im = rng.random(size=(num_averages, num_coils, num_pe, num_ro))
-        return re + 1j * im
+    def _factory(num_samples: int, num_acquisitions: int, num_averages: int = 1, num_coils: int = 1) -> list[RxData]:
+        num_raw_samples = num_samples * 1000
+        rx_data = []
+        for k_average in range(num_averages):
+            for k_acquisition in range(num_acquisitions):
+                processed_re = rng.random(size=(num_coils, num_samples))
+                processed_im = rng.random(size=(num_coils, num_samples))
+                rx_data.append(
+                    RxData(
+                        index=int(k_average * num_averages + k_acquisition),
+                        total_averages=num_averages,
+                        average_index=k_average,
+                        num_samples=num_samples,
+                        num_samples_raw=num_raw_samples,
+                        dwell_time=1 / 20e3,
+                        dwell_time_raw=1 / 20e6,
+                        phase_offset=0,
+                        freq_offset=0,
+                        larmor_frequency=2.0123e6,
+                        demod_frequency=2.0123e6,
+                        raw_data=rng.random(size=(num_coils, num_raw_samples)),
+                        processed_data=processed_re + 1j * processed_im,
+                        time_stamp=k_average * (num_averages + k_acquisition) * 0.67,
+                    )
+                )
+        return rx_data
 
-    return _random_acquisition_data
+    return _factory
 
 
 @pytest.fixture()
@@ -85,5 +124,5 @@ def acquisition_parameter() -> AcquisitionParameter:
         gradient_offset=Dimensions(0, 100, 500),
         fov_scaling=Dimensions(0.5, 0.0, 0.9),
         averaging_delay=1.01,
-        state_filepath=".",
+        state_filepath=tempfile.mkdtemp(),
     )

@@ -1,59 +1,52 @@
 """Test functions for interface classes."""
-import os
+import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+import numpy as np
 
 from console.interfaces.acquisition_data import AcquisitionData
-from console.interfaces.acquisition_parameter import AcquisitionParameter
-from console.interfaces.rx_data import RxData
 
 
-def test_acquisition_data(test_sequence, random_acquisition_data):
+def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisition_data):
     """Test acquisition data."""
-    params = AcquisitionParameter(
-        larmor_frequency=2.0e6
+    receive_data = random_acquisition_data(
+        num_coils=1,
+        num_samples=50,
+        num_acquisitions=3,
+        num_averages=2,
     )
 
-    assert isinstance(params.dict(), dict)
-
-    receive_data = []
-    receive_data.append([
-        RxData(
-            index=1,
-            num_samples=120,
-            num_samples_raw=120000,
-            dwell_time=1 / 20e3,
-            dwell_time_raw=1 / 20e6,
-            phase_offset=0,
-            freq_offset=0,
-            total_averages=2,
-            average_index=0,
-        ),
-        RxData(
-            index=1,
-            num_samples=120,
-            num_samples_raw=120000,
-            dwell_time=1 / 20e3,
-            dwell_time_raw=1 / 20e6,
-            phase_offset=0,
-            freq_offset=0,
-            total_averages=2,
-            average_index=1,
+    # Process receive data
+    with ThreadPoolExecutor() as executor:
+        executor.map(
+            lambda rx_obj: rx_obj.process_data(store_unprocessed=False),
+            receive_data
         )
-    ])
 
+    # Generate acquisition data
+    tmp_dir = tempfile.mkdtemp()
     acq_data = AcquisitionData(
         receive_data=receive_data,
-        acquisition_parameters=params,
+        acquisition_parameters=acquisition_parameter,
         sequence=test_sequence,
-        session_path=r"./tmp"
+        session_path=tmp_dir,
     )
 
+    # Check if info is appended to meta
     info = {"test": "test"}
     acq_data.add_info(info)
-
     assert info == acq_data.meta["info"]
 
-    acq_data.save("./tmp/")
-    acq_data_files = list(os.walk("./tmp/"))[-1][-1]
+    rng = np.random.default_rng(seed=0)
+    additional_data_key = "test-data"
+    acq_data.add_data({additional_data_key: rng.random(size=(1, 10, 100))})
+
+    # Check if meta and sequence is saved
+    acq_data.save()
+    acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
+    acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
 
     assert "meta.json" in acq_data_files
     assert "sequence.seq" in acq_data_files
+    assert f"{additional_data_key}.npy" in acq_data_files

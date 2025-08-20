@@ -1,5 +1,5 @@
 """"Define the dataclass and processing of receiver data."""
-from dataclasses import dataclass, field, fields
+from dataclasses import asdict, dataclass, field
 
 import numpy as np
 from scipy import signal
@@ -64,17 +64,25 @@ class RxData:
     def __str__(self) -> str:
         """Return string representation of information contained within RxData class."""
         lines = ["RxData:"]
-        lines.append("-" * 30)
-        for field_data in fields(self):
-            value = getattr(self, field_data.name)
-            if field_data.name != "raw_data" and field_data.name != "processed_data":
-                lines.append(f"{field_data.name.title():<20}: {value}")
-            else:
-                if value is not None:
-                    lines.append(f"{field_data.name.title():<20}: {np.shape(value)}")
-                else:
-                    lines.append(f"{field_data.name.title():<20}: None")
+        lines.append("-" * 7)
+        for key, value in self.dict().items():
+            lines.append(f"{key:<20}: {value}")
         return "\n".join(lines)
+
+    def dict(self) -> dict:
+        """Return RxData meta information as string."""
+        _dict = asdict(self)
+        for key, value in _dict.items():
+            # Remove private/protected attributes
+            if key.startswith("_"):
+                _dict.pop(key)
+            # Stringify none values
+            if value is None:
+                _dict[key] = "None"
+            # Replace data attributes by their shape
+            if key in ["processed_data", "raw_data"] and value is not None:
+                _dict[key] = value.shape
+        return _dict
 
     def decimate_data(self, data) -> np.ndarray:
         """Decimate the data using the passed method."""
