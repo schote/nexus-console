@@ -391,7 +391,7 @@ class RxCard(SpectrumDevice):
 
                 # # Debug log statements
                 self.log.debug("ADC event size: %d bytes, Available data length: %s bytes"
-                               %(total_bytes_gate,available_data_bytes.value))
+                               % total_bytes_gate, available_data_bytes.value)
 
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
