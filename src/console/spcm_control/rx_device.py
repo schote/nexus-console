@@ -1,6 +1,7 @@
 """Implementation of receive card."""
 import logging
 import threading
+import time
 from ctypes import POINTER, addressof, byref, c_short, cast
 from dataclasses import dataclass
 from itertools import compress
@@ -352,13 +353,6 @@ class RxCard(SpectrumDevice):
                     float(gate_length) * 1e3,  # Can be trimmed.
                     gate_sample,
                 )
-                self.log.info(
-                    "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
-                    timestamp_0 / (self.sample_rate * 1e6),
-                    timestamp_1 / (self.sample_rate * 1e6),
-                    float(gate_length) * 1e3,  # Can be trimmed.
-                    gate_sample,
-                )
 
                 # Tell buffer 32 bytes were read from timestamp buffer
                 try:
@@ -380,7 +374,7 @@ class RxCard(SpectrumDevice):
                 if bytes_sequence > rx_size:
                     error_msg = (f"ADC gate data ({bytes_sequence} bytes) exceeds "
                                 f"available buffer ({rx_size} bytes). "
-                                f"Reduce gate length, sample rate or channel count")
+                                f"Reduce adc length, sample rate or channel count")
                     self.log.critical(error_msg)
                     raise ValueError(error_msg)
 
@@ -396,17 +390,13 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
 
                 # # Debug log statements
-                # self.log.debug("Available data position: %s", available_data_position.value - remaining_bytes)
-                # self.log.debug("Available data length: %s", available_data_bytes.value)
-                # self.log.debug(f"total_bytes_gate: {total_bytes_gate} bytes")
-                # self.log.debug(f"bytes_sequence: {bytes_sequence} bytes")
+                self.log.debug("ADC event size: %d bytes, Available data length: %s bytes"
+                               %(total_bytes_gate,available_data_bytes.value))
 
                 # If insufficient data is in buffer wait for more to arrive.
                 if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
-                    # missing_bytes = total_bytes_gate - (available_data_bytes.value + remaining_bytes)
-                    # self.log.debug("Waiting for: %d bytes"%(missing_bytes))
                     # Wait for sufficient data to come in
-                    # wait_start = time.time()
+                    wait_start = time.time()
                     while (available_data_bytes.value + remaining_bytes < total_bytes_gate) \
                         and not self.is_running.is_set():
                         try:
@@ -415,7 +405,7 @@ class RxCard(SpectrumDevice):
                             self.log.error(f"DMA wait failed with error: {e}")
                             break
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
-                    # self.log.debug(f"Waited {(time.time() - wait_start) * 1e3:.3f} ms for extra data")
+                    self.log.debug(f"Waited {(time.time() - wait_start) * 1e3:.3f} ms for extra data to enter buffer")
 
                 # Check if sufficient data is available (while loop doesn't guarantee it since it can be interrupted)
                 if available_data_bytes.value + remaining_bytes >= total_bytes_gate:
@@ -467,8 +457,6 @@ class RxCard(SpectrumDevice):
                     # or negative if more then the expected data could be read due to lefter bytes
                     # from a previous acquisition (accumulated sum decreases).
                     remaining_bytes += available_data_bytes.value - bytes_sequence
-                    # self.log.debug(f"Bytes delta: {available_data_bytes.value - bytes_sequence} "
-                    #                f"Remaining bytes: {remaining_bytes}")
 
                     self._total_gates += 1
 
