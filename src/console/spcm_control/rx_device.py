@@ -407,6 +407,13 @@ class RxCard(SpectrumDevice):
                         sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
                     self.log.debug(f"Waited {(time.time() - wait_start) * 1e3:.3f} ms for extra data to enter buffer")
 
+                if remaining_bytes + available_data_bytes.value > rx_size:
+                    error_msg = (f"Memory overflow. Sum of remaining bytes ({remaining_bytes} bytes) "
+                                 f"and newly available bytes ({available_data_bytes.value} bytes) "
+                                 f"exceeds receive buffer size ({rx_size} bytes)")
+                    self.log.critical(error_msg)
+                    raise MemoryError(error_msg)
+
                 # Check if sufficient data is available (while loop doesn't guarantee it since it can be interrupted)
                 if available_data_bytes.value + remaining_bytes >= total_bytes_gate:
 
