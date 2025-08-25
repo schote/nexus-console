@@ -12,7 +12,6 @@ from queue import Queue
 from signal import SIG_IGN, SIGINT, signal
 
 import numpy as np
-from numpy.fft import fft, fftshift, ifft, ifftshift
 from scipy.signal import decimate
 
 import console
@@ -23,7 +22,6 @@ from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvi
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities import QUEUE, ddc
-from console.utilities.filter import filter_function
 from console.utilities.load_config import get_instances
 
 LOG_LEVELS = [
@@ -328,12 +326,6 @@ class AcquisitionControl:
         # Apply phase correction with mean value
         # A factor 2 is added to compensate for the halving due to the processing.
         data = data * 2 * np.exp(-1j * np.angle(ref_dec))
-
-        # Filter data in the frequential domain
-        data_fft = fftshift(fft(data))
-        filter = filter_function(data.shape[-1])  # creating filter reponse
-        data_fft = data_fft * filter  # filtering
-        data = ifft(ifftshift(data_fft))
 
         return data
 
