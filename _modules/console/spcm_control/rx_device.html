@@ -814,7 +814,7 @@
 
                 <span class="c1"># # Debug log statements</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ADC event size: </span><span class="si">%d</span><span class="s2"> bytes, Available data length: </span><span class="si">%s</span><span class="s2"> bytes&quot;</span>
-                               <span class="o">%</span> <span class="n">total_bytes_gate</span><span class="p">,</span> <span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+                               <span class="o">%</span> <span class="p">(</span><span class="n">total_bytes_gate</span><span class="p">,</span> <span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
 
                 <span class="c1"># If insufficient data is in buffer wait for more to arrive.</span>
                 <span class="k">if</span> <span class="p">(</span><span class="n">available_data_bytes</span><span class="o">.</span><span class="n">value</span> <span class="o">+</span> <span class="n">remaining_bytes</span> <span class="o">&lt;</span> <span class="n">total_bytes_gate</span><span class="p">):</span>
