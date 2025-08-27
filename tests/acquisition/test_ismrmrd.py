@@ -73,4 +73,3 @@ def test_write_1d_ismrmrd(random_acquisition_data, num_coils: int, num_averages:
         acquisitions = dataset.acquisitions[:]
 
     assert len(acquisitions) == len(receive_data)
-
