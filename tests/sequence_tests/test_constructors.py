@@ -1,6 +1,7 @@
 """Test sequence constructors contained in the package."""
 import pytest
 
+from console.interfaces import Dimensions
 from console.utilities import sequences
 
 
@@ -26,7 +27,7 @@ def test_t2_relaxation():
 
 
 @pytest.mark.parametrize("etl", [1, 7])
-@pytest.mark.parametrize("dim", [sequences.Dimensions(1, 50, 40), sequences.Dimensions(16, 32, 32)])
+@pytest.mark.parametrize("dim", [Dimensions(1, 50, 40), Dimensions(16, 32, 32)])
 @pytest.mark.parametrize("te", [20e-3])
 def test_tse_3d(etl, dim, te):
     """Test 3D TSE imaging sequence constructor."""
