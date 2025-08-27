@@ -199,16 +199,18 @@ class AcquisitionData:
             # Parse it into a structured object (optional, see below)
             header = ismrmrd.xsd.CreateFromDocument(xml_header)
 
-        # Update existing ismrmrd header with measurement info and conditions
-        header.measurementInformation = info
-        header.experimentalConditions = conditions
+        if isinstance(header, ismrmrd.xsd.ismrmrdHeader):
+            # Update existing ismrmrd header with measurement info and conditions
+            header.measurementInformation = info
+            header.experimentalConditions = conditions
 
-        return write_imaging_mrd(
-            data=self.receive_data,
-            header=header,
-            sequence=self.sequence,
-            dataset_path=dataset_path,
-        )
+            return write_imaging_mrd(
+                data=self.receive_data,
+                header=header,
+                sequence=self.sequence,
+                dataset_path=dataset_path,
+            )
+        raise AttributeError("Missing or invalid header.")
 
     def _write_acquisition_data(self, file_path: str) -> None:
         """Save AcquisitionData and all RxData entries to an HDF5 file."""
