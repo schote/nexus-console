@@ -35,7 +35,7 @@ class RxData:
     # Used for demodulation, value set in post init
     decimation_factor: int = field(init=False)
 
-    # Set the larmor frequency for each object
+    # Set the larmor frequency in Hz for each object
     larmor_frequency: None | float = None
 
     # Frequency with which the data are demodulated
