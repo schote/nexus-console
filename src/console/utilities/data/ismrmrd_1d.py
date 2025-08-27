@@ -1,8 +1,8 @@
 """Method to write 1D ISMRMRD data."""
+from importlib.metadata import version
 from pathlib import Path
 
 import ismrmrd
-from importlib_metadata import version
 
 from console.interfaces.rx_data import RxData
 from console.utilities.data import construct_acquisition_system, get_logger

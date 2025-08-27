@@ -1,8 +1,8 @@
 """Write ISMRMRD file for imaging data."""
+from importlib.metadata import version
 from pathlib import Path
 
 import ismrmrd
-from importlib_metadata import version
 from pypulseq.Sequence.sequence import Sequence
 
 from console.interfaces.rx_data import RxData
