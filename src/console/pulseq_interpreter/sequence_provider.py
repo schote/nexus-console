@@ -169,8 +169,8 @@ class SequenceProvider(Sequence):
                 limit_val = getattr(self.system_limits, attr)
                 # Compare can be done without converting gradient/slew-rate values
                 # -> internally stored in Hz/m and Hz/m/s
-                if compare(getattr(seq.system, attr), limit_val):
-                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val})")
+                if compare(system_value := getattr(seq.system, attr), limit_val):
+                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val}) (system value: {system_value})")
             if errors:
                 raise ValueError("; ".join(errors))
 
