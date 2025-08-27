@@ -10,7 +10,6 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-from pypulseq import Opts
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
@@ -81,7 +80,7 @@ class AcquisitionControl:
             output_limits=self.config.tx.channel_max_amplitude,
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
-            system_limits=Opts(**self.config.system.model_dump()),
+            system_limits=self.config.system,
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(
