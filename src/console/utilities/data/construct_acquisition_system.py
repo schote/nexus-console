@@ -1,6 +1,7 @@
 """Methods helping to construct or complete ISMRMRD header."""
+from importlib.metadata import version
+
 import ismrmrd
-from importlib_metadata import version
 
 
 def get_nexus_acquisition_system(
