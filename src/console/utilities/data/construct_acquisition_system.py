@@ -9,7 +9,7 @@ def get_nexus_acquisition_system(
     larmor_frequency: float | None,
 ) -> ismrmrd.xsd.acquisitionSystemInformationType:
     """Define the nexus console specific acquisition system information for ISMRMRD header."""
-    system_version = version("console")
+    system_version = version("nexus-console")
     system_info = ismrmrd.xsd.acquisitionSystemInformationType()
     system_info.receiverChannels = num_coils
     system_info.systemVendor = "osi2"
