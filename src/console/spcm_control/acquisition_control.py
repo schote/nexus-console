@@ -15,6 +15,7 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
+from console.interfaces.device_configuration import NexusConfiguration
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
@@ -71,7 +72,7 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Load device configuration and create instances
-        self.config = load_nexus_config(configuration_file)
+        self.config: NexusConfiguration = load_nexus_config(configuration_file)
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
@@ -312,6 +313,10 @@ class AcquisitionControl:
             meta={"device_configuration": self.config.model_dump()},
             acquisition_parameters=self.sequence.parameter,
         )
+
+    def get_device_configuration(self) -> NexusConfiguration:
+        """Get nexus device configuration."""
+        return self.config
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.
