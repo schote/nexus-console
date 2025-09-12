@@ -190,10 +190,12 @@ class AcquisitionControl:
 
         # Reset unrolled sequence
         self.sequence = None
-        self.log.info(
-            "Unrolling sequence: %s",
-            self.seq_provider.definitions["Name"].replace(" ", "_"),
-        )
+        seq_name = str(self.seq_provider.get_definition("Name"))
+        if not seq_name:
+            seq_name = str(self.seq_provider.get_definition("name"))
+            if not seq_name:
+                seq_name = "unknown"
+        self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
         # Update sequence parameter hash and calculate sequence
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
