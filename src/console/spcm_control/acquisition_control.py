@@ -76,7 +76,7 @@ class AcquisitionControl:
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
-            gpa_gain=self.config.tx.gradient_efficiency,
+            gpa_gain=self.config.tx.gpa_gain,
             high_impedance=[not val for val in self.config.tx.channel_terminated_50ohm],
             output_limits=self.config.tx.channel_max_amplitude,
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
