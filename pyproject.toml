@@ -25,7 +25,7 @@ authors = [
     {name="Thomas O'Reilly"}
 ]
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.10,<3.14"
 license = "GPL-3.0-or-later"
 keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
 classifiers = [
