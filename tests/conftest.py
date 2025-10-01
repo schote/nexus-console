@@ -2,20 +2,24 @@
 
 import tempfile
 from collections.abc import Callable
+from pathlib import Path
 
 import numpy as np
 import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimensions
+from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
+from console.utilities.load_configuration import load_system_limits
 from console.utilities.sequences.system_settings import system
 
 
 @pytest.fixture()
 def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
+    system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     return SequenceProvider(
         gradient_efficiency=[0.4, 0.4, 0.4],
         gpa_gain=[1.0, 1.0, 1.0],
@@ -23,7 +27,7 @@ def seq_provider() -> SequenceProvider:
         spcm_dwell_time=5e-8,
         rf_to_mvolt=5e-3,
         high_impedance=[False, True, True, True],
-        system=system,
+        system_limits=system_limits,
     )
 
 
@@ -103,14 +107,16 @@ def test_spectrum() -> Callable:
 @pytest.fixture()
 def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
-    seq = pp.Sequence()
+    seq = pp.Sequence(system=system)
     seq.set_definition("Name", "test_sequence")
-    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2, system=system))
     seq.add_block(pp.make_delay(10e-6))
-    seq.add_block(pp.make_trapezoid(channel="x", area=5e-3))
-    seq.add_block(
-        pp.make_arbitrary_grad(channel="y", waveform=np.array([0, 200, 400, 400, 400, 600, 600, 400, 200, 0]))
-    )
+    seq.add_block(pp.make_trapezoid(channel="x", area=5e-3, system=system))
+    seq.add_block(pp.make_arbitrary_grad(
+        channel="y",
+        waveform=np.array([0, 200, 400, 400, 400, 600, 600, 400, 200, 0]),
+        system=system,
+    ))
     seq.add_block(pp.make_adc(num_samples=200, dwell=1e-5))
     return seq
 

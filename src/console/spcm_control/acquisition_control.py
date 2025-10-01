@@ -13,12 +13,13 @@ import numpy as np
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
-from console.utilities.load_config import get_instances
+from console.utilities.load_configuration import load_nexus_config
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -70,13 +71,33 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
-        # Get instances from configuration file
-        ctx = get_instances(configuration_file)
-        self.seq_provider: SequenceProvider = ctx[0]
-        self.tx_card: TxCard = ctx[1]
-        self.rx_card: RxCard = ctx[2]
-
-        self.seq_provider.output_limits = self.tx_card.max_amplitude
+        # Load device configuration and create instances
+        self.config: NexusConfiguration = load_nexus_config(configuration_file)
+        # Create sequence provider instance
+        self.seq_provider: SequenceProvider = SequenceProvider(
+            gradient_efficiency=self.config.tx.gradient_efficiency,
+            gpa_gain=self.config.tx.gpa_gain,
+            high_impedance=[not val for val in self.config.tx.channel_terminated_50ohm],
+            output_limits=self.config.tx.channel_max_amplitude,
+            spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
+            rf_to_mvolt=self.config.tx.rf_to_mvolt,
+            system_limits=self.config.system,
+        )
+        # Create transmit card instance
+        self.tx_card: TxCard = TxCard(
+            path=self.config.tx.device_path,
+            max_amplitude=self.config.tx.channel_max_amplitude,
+            filter_type=self.config.tx.channel_filter_type,
+            sample_rate=self.config.tx.sampling_rate,
+        )
+        # Create receive card instance
+        self.rx_card: RxCard = RxCard(
+            path=self.config.rx.device_path,
+            sample_rate=self.config.rx.sampling_rate,
+            channel_enable=self.config.rx.channel_enable,
+            max_amplitude=self.config.rx.channel_max_amplitude,
+            impedance_50_ohms=self.config.rx.channel_terminated_50ohm,
+        )
 
         # Setup the cards
         self.is_setup: bool = False
@@ -289,13 +310,13 @@ class AcquisitionControl:
             receive_data=self.receive_data,
             sequence=self.seq_provider.to_pypulseq(),
             session_path=self.session_path,
-            meta={
-                self.tx_card.__name__: self.tx_card.dict(),
-                self.rx_card.__name__: self.rx_card.dict(),
-                self.seq_provider.__name__: self.seq_provider.dict()
-            },
+            meta={"device_configuration": self.config.model_dump()},
             acquisition_parameters=self.sequence.parameter,
         )
+
+    def get_device_configuration(self) -> NexusConfiguration:
+        """Get nexus device configuration."""
+        return self.config
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Proces acquired NMR data.

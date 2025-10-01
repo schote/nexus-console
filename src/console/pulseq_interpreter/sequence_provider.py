@@ -1,5 +1,6 @@
 """Sequence provider class."""
 import logging
+import operator
 from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
@@ -14,6 +15,7 @@ from scipy.signal import resample
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 # import console
+from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
@@ -29,7 +31,7 @@ except ImportError:
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
 
-default_opts: Opts = Opts()
+
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
 default_fov_offset: Dimensions = Dimensions(0, 0, 0)
 
@@ -58,10 +60,10 @@ class SequenceProvider(Sequence):
         gradient_efficiency: list[float],
         gpa_gain: list[float],
         high_impedance: list[bool],
-        output_limits: list[int] | None = None,
+        output_limits: list[int],
+        system_limits: SystemLimits,
         spcm_dwell_time: float = 1 / 20e6,
-        rf_to_mvolt: float = 1,
-        system: Opts = default_opts,
+        rf_to_mvolt: float = 1.,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -73,20 +75,23 @@ class SequenceProvider(Sequence):
             Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3]
         gpa_gain
             Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7]
+        system_limits
+            Maximum system limits
         spcm_dwell_time, optional
             Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6
         rf_to_mvolt, optional
             Translation of RF waveform from pulseq (Hz) to mV, by default 1
-        system, optional
-            System options from pypulseq, by default Opts()
         """
-        super().__init__(system=system)
-
+        super().__init__(
+            system=Opts(
+                **system_limits.model_dump(),
+                B0=50e-3,
+                grad_unit="Hz/m",   # system limit is defined in this units
+                slew_unit="Hz/m/s",  # system limit is defined in this units
+            )
+        )
         self.log = logging.getLogger("SeqProv")
-        self.rf_to_mvolt = rf_to_mvolt
-        self.spcm_freq = 1 / spcm_dwell_time
-        self.spcm_dwell_time = spcm_dwell_time
-
+        # Check list values
         try:
             if len(gradient_efficiency) != 3:
                 raise ValueError("Invalid number of gradient efficiency values, 3 values must be provided")
@@ -98,6 +103,11 @@ class SequenceProvider(Sequence):
                 raise ValueError("Invalid number of output impedance indicators, 4 values must be provided.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
+
+        self.rf_to_mvolt = rf_to_mvolt
+        self.spcm_freq = 1 / spcm_dwell_time
+        self.spcm_dwell_time = spcm_dwell_time
+        self.system_limits = system_limits
 
         # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
         # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
@@ -142,15 +152,40 @@ class SequenceProvider(Sequence):
             Key of Sequence instance not
         """
         try:
+            # List of (attribute, comparison function, message operator symbol) to check system limits
+            limits = [
+                ("max_grad", operator.gt, "<="),
+                ("max_slew", operator.gt, "<="),
+                ("grad_raster_time", operator.lt, ">="),
+                ("adc_raster_time", operator.lt, ">="),
+                ("rf_raster_time", operator.lt, ">="),
+                ("block_duration_raster", operator.lt, ">="),
+                ("adc_dead_time", operator.lt, ">="),
+                ("rf_dead_time", operator.lt, ">="),
+                ("rf_ringdown_time", operator.lt, ">="),
+            ]
+            errors = []
+            for attr, compare, symbol in limits:
+                limit_val = getattr(self.system_limits, attr)
+                # Compare can be done without converting gradient/slew-rate values
+                # -> internally stored in Hz/m and Hz/m/s
+                if compare(system_value := getattr(seq.system, attr), limit_val):
+                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val}) (system value: {system_value})")
+            if errors:
+                raise ValueError("; ".join(errors))
+
             if not isinstance(seq, Sequence):
                 raise ValueError("Provided object is not an instance of pypulseq Sequence")
             for key, value in seq.__dict__.items():
                 # Check if attribute exists
-                if hasattr(self, key):
-                    setattr(self, key, value)
-        except (ValueError, AttributeError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+                if not hasattr(self, key):   # dont't overwrite system
+                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
+                    continue
+                # Set attribute
+                setattr(self, key, value)
+        except (ValueError, AttributeError) as exc:
+            self.log.exception("Could not set sequence: %s" % exc, exc_info=True)
+            raise exc
 
     def to_pypulseq(self) -> Sequence | None:
         """Slice sequence provider to return pypulseq sequence."""

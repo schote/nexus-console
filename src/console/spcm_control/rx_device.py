@@ -56,18 +56,18 @@ class RxCard(SpectrumDevice):
         self,
         path: str,
         sample_rate: int,
-        channel_enable: list[int],
+        channel_enable: list[bool],
         max_amplitude: list[int],
-        impedance_50_ohms: list[int]
+        impedance_50_ohms: list[bool],
     ) -> None:
         """Execute after init function to do further class setup."""
         self.log = logging.getLogger(self.__name__)
         super().__init__(path, log=self.log)
 
         self.sample_rate = sample_rate
-        self.channel_enable = channel_enable
+        self.channel_enable = [int(val) for val in channel_enable]
         self.max_amplitude = max_amplitude
-        self.impedance_50_ohms = impedance_50_ohms
+        self.impedance_50_ohms = [int(val) for val in impedance_50_ohms]
         self.rx_data: None | list[RxData] = None
 
         self.num_channels = sp.int32(0)

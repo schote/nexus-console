@@ -96,7 +96,6 @@ def constructor(
     -------
         Pulseq sequence and a list which describes the trajectory
     """
-    system.rf_ringdown_time = 0
     seq = pp.Sequence(system)
     # Get the dimension and type of the sequence and set the name accordingly
     n_dim = int(n_enc.x > 1) + int(n_enc.y > 1) + int(n_enc.z > 1)
