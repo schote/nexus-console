@@ -412,6 +412,7 @@
   <h1>Source code for console.pulseq_interpreter.sequence_provider</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Sequence provider class.&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">operator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
@@ -426,6 +427,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
 
 <span class="c1"># import console</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.device_configuration</span><span class="w"> </span><span class="kn">import</span> <span class="n">SystemLimits</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.dimensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimensions</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.rx_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">RxData</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.unrolled_sequence</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnrolledSequence</span>
@@ -444,7 +446,7 @@
 <span class="n">INT16_MAX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
 <span class="n">INT16_MIN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span>
 
-<span class="n">default_opts</span><span class="p">:</span> <span class="n">Opts</span> <span class="o">=</span> <span class="n">Opts</span><span class="p">()</span>
+
 <span class="n">default_fov_scaling</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">default_fov_offset</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
@@ -475,10 +477,10 @@
         <span class="n">gradient_efficiency</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
-        <span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">system_limits</span><span class="p">:</span> <span class="n">SystemLimits</span><span class="p">,</span>
         <span class="n">spcm_dwell_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">20e6</span><span class="p">,</span>
-        <span class="n">rf_to_mvolt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">system</span><span class="p">:</span> <span class="n">Opts</span> <span class="o">=</span> <span class="n">default_opts</span><span class="p">,</span>
+        <span class="n">rf_to_mvolt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize sequence provider class which is used to unroll a pulseq sequence.</span>
 
@@ -490,20 +492,23 @@
 <span class="sd">            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3]</span>
 <span class="sd">        gpa_gain</span>
 <span class="sd">            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7]</span>
+<span class="sd">        system_limits</span>
+<span class="sd">            Maximum system limits</span>
 <span class="sd">        spcm_dwell_time, optional</span>
 <span class="sd">            Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6</span>
 <span class="sd">        rf_to_mvolt, optional</span>
 <span class="sd">            Translation of RF waveform from pulseq (Hz) to mV, by default 1</span>
-<span class="sd">        system, optional</span>
-<span class="sd">            System options from pypulseq, by default Opts()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="n">system</span><span class="p">)</span>
-
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">system</span><span class="o">=</span><span class="n">Opts</span><span class="p">(</span>
+                <span class="o">**</span><span class="n">system_limits</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+                <span class="n">B0</span><span class="o">=</span><span class="mf">50e-3</span><span class="p">,</span>
+                <span class="n">grad_unit</span><span class="o">=</span><span class="s2">&quot;Hz/m&quot;</span><span class="p">,</span>   <span class="c1"># system limit is defined in this units</span>
+                <span class="n">slew_unit</span><span class="o">=</span><span class="s2">&quot;Hz/m/s&quot;</span><span class="p">,</span>  <span class="c1"># system limit is defined in this units</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;SeqProv&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">=</span> <span class="n">rf_to_mvolt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">spcm_dwell_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">=</span> <span class="n">spcm_dwell_time</span>
-
+        <span class="c1"># Check list values</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gradient_efficiency</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of gradient efficiency values, 3 values must be provided&quot;</span><span class="p">)</span>
@@ -515,6 +520,11 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid number of output impedance indicators, 4 values must be provided.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">=</span> <span class="n">rf_to_mvolt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">spcm_dwell_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">=</span> <span class="n">spcm_dwell_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system_limits</span> <span class="o">=</span> <span class="n">system_limits</span>
 
         <span class="c1"># Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms</span>
         <span class="c1"># Halve RF scaling factor if impedance is high, because the card output doubles for high impedance</span>
@@ -564,15 +574,40 @@
 <span class="sd">            Key of Sequence instance not</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># List of (attribute, comparison function, message operator symbol) to check system limits</span>
+            <span class="n">limits</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">&quot;max_grad&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">,</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;max_slew&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">gt</span><span class="p">,</span> <span class="s2">&quot;&lt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;grad_raster_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;adc_raster_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;rf_raster_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;block_duration_raster&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;adc_dead_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;rf_dead_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">&quot;rf_ringdown_time&quot;</span><span class="p">,</span> <span class="n">operator</span><span class="o">.</span><span class="n">lt</span><span class="p">,</span> <span class="s2">&quot;&gt;=&quot;</span><span class="p">),</span>
+            <span class="p">]</span>
+            <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">compare</span><span class="p">,</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">limits</span><span class="p">:</span>
+                <span class="n">limit_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">system_limits</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                <span class="c1"># Compare can be done without converting gradient/slew-rate values</span>
+                <span class="c1"># -&gt; internally stored in Hz/m and Hz/m/s</span>
+                <span class="k">if</span> <span class="n">compare</span><span class="p">(</span><span class="n">system_value</span> <span class="o">:=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">seq</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="n">attr</span><span class="p">),</span> <span class="n">limit_val</span><span class="p">):</span>
+                    <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2"> out of bounds (limit </span><span class="si">{</span><span class="n">symbol</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">limit_val</span><span class="si">}</span><span class="s2">) (system value: </span><span class="si">{</span><span class="n">system_value</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">))</span>
+
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Provided object is not an instance of pypulseq Sequence&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">seq</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="c1"># Check if attribute exists</span>
-                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="n">err</span></div>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>   <span class="c1"># dont&#39;t overwrite system</span>
+                    <span class="c1"># raise AttributeError(&quot;Attribute %s not found in SequenceProvider&quot; % key)</span>
+                    <span class="k">continue</span>
+                <span class="c1"># Set attribute</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Could not set sequence: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">exc</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">exc</span></div>
 
 
 <div class="viewcode-block" id="SequenceProvider.to_pypulseq">

@@ -423,6 +423,8 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.abstract_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDevice</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">type_to_name</span>
 
+<span class="n">TX_NOTIFY_RATE</span> <span class="o">=</span> <span class="mi">16</span>
+
 
 <div class="viewcode-block" id="TxCard">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard">[docs]</a>
@@ -451,14 +453,12 @@
         <span class="n">max_amplitude</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">filter_type</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">sample_rate</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">notify_rate</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span> <span class="o">=</span> <span class="n">max_amplitude</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filter_type</span> <span class="o">=</span> <span class="n">filter_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="n">sample_rate</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">notify_rate</span> <span class="o">=</span> <span class="n">notify_rate</span>
 
         <span class="c1"># Number of output channels is fixed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">=</span> <span class="mi">4</span>
@@ -760,8 +760,8 @@
         <span class="c1"># Calculate notify size is set to 1/16 of the replay buffer size</span>
         <span class="c1"># Ensure that minimum notify size is 4096 bytes</span>
         <span class="n">notify_size</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">4096</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span>
-            <span class="nb">int</span><span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">notify_rate</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4096</span><span class="p">),</span>
-            <span class="nb">int</span><span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">notify_rate</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4096</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="n">TX_NOTIFY_RATE</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4096</span><span class="p">),</span>
+            <span class="nb">int</span><span class="p">(((</span><span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">/</span> <span class="n">TX_NOTIFY_RATE</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4096</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4096</span><span class="p">),</span>
         <span class="p">)))</span>
 
         <span class="c1"># &gt;&gt; Define software buffer</span>
