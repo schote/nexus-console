@@ -54,9 +54,24 @@ class TxCard(SpectrumDevice):
         # Define maximum ring buffer size, 512 MSamples * 2 Bytes = 1024 MB
         self.max_ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)
 
+        # Set notify size independent of sequence
+        if self.max_ring_buffer_size % TX_NOTIFY_RATE != 0:
+            error_string = "Ring buffer size (%d) is not an integer multiple of notify rate (%d)"%(
+                self.max_ring_buffer_size.value, TX_NOTIFY_RATE
+            )
+            self.log.debug(error_string)
+            raise ValueError(error_string)
+
+        self._notify_size = self.max_ring_buffer_size.value // TX_NOTIFY_RATE
+
         # Threading class attributes
         self.worker: threading.Thread | None = None
         self.is_running = threading.Event()
+
+    @property
+    def notify_size(self) -> int:
+        """Getter for notify size"""
+        return self._notify_size
 
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
@@ -277,8 +292,8 @@ class TxCard(SpectrumDevice):
             sqnc = data.seq
 
             # Check if sequence datatype is valid
-            if sqnc.dtype != np.int16:
-                raise ValueError("Sequence replay data is not int16, please unroll sequence to int16.")
+            if isinstance(sqnc, list):
+                raise ValueError("Sequence replay data is not a list.")
 
             # Check if card connection is established
             if not self.card:
