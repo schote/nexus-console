@@ -496,7 +496,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">pre_trigger</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_trigger</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rx_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="n">amp</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span> <span class="k">for</span> <span class="n">amp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">]</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">total_gates</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
