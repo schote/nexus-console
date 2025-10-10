@@ -82,7 +82,7 @@ class RxCard(SpectrumDevice):
         self.pre_trigger: int = 8
         self.post_trigger: None | int = None
 
-        self.rx_scaling = [amp / (2**16) for amp in self.max_amplitude]
+        self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     @property
     def total_gates(self) -> int:
