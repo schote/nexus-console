@@ -30,7 +30,7 @@ except ImportError:
 
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
-SQRT2BY2 = np.sqrt(2)/2
+ROT_SCALING = 0.5
 
 
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
@@ -333,8 +333,8 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
-                if self.rotate_basis:
-                    waveform *= SQRT2BY2    # scale waveform by sqrt(2)/2
+                if self.rotate_basis and idx != "z":
+                    waveform *= ROT_SCALING    # scale waveform by sqrt(2)/2
                 # Transfer mV floating point waveform values to int16 if amplitude check passed
                 waveform *= (INT16_MAX / self.output_limits[idx + 1])
 
@@ -359,8 +359,8 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
-                if self.rotate_basis:
-                    flat_amp *= SQRT2BY2    # scale waveform by sqrt(2)/2
+                if self.rotate_basis and idx != "z":
+                    flat_amp *= ROT_SCALING    # scale waveform by sqrt(2)/2
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp *= (INT16_MAX / self.output_limits[idx + 1])
 
