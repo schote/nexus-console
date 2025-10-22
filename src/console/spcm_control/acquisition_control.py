@@ -99,6 +99,9 @@ class AcquisitionControl:
             impedance_50_ohms=self.config.rx.channel_terminated_50ohm,
         )
 
+        # Set notify rate of the Tx card in the sequence provider
+        self.seq_provider.tx_notify_size = self.tx_card.notify_size
+
         # Setup the cards
         self.is_setup: bool = False
         try:

@@ -55,7 +55,7 @@ class TxCard(SpectrumDevice):
         self.max_ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)
 
         # Set notify size independent of sequence
-        if self.max_ring_buffer_size % TX_NOTIFY_RATE != 0:
+        if self.max_ring_buffer_size.value % TX_NOTIFY_RATE != 0:
             error_string = "Ring buffer size (%d) is not an integer multiple of notify rate (%d)"%(
                 self.max_ring_buffer_size.value, TX_NOTIFY_RATE
             )
@@ -70,7 +70,7 @@ class TxCard(SpectrumDevice):
 
     @property
     def notify_size(self) -> int:
-        """Getter for notify size"""
+        """Getter for notify size."""
         return self._notify_size
 
     def setup_card(self) -> None:
@@ -289,11 +289,21 @@ class TxCard(SpectrumDevice):
             # Data must have a default value as start_operation is an abstract method and data is optional
             if not data:
                 raise ValueError("No unrolled sequence data provided.")
+
             sqnc = data.seq
 
-            # Check if sequence datatype is valid
-            if isinstance(sqnc, list):
+            # Check if sequence is list
+            if not isinstance(sqnc, list):
                 raise ValueError("Sequence replay data is not a list.")
+
+            # Check if sequence length is greater than 0
+            if len(sqnc) == 0:
+                raise RuntimeError("Sequence has length 0")
+
+            # Check if sequence elements are all numpy arrays with dtype int16
+            if any((not isinstance(seq_element, np.ndarray)) and
+                   (seq_element.dtype == np.int16) for seq_element in sqnc):
+                raise TypeError("Sequence datatype is not np.int16")
 
             # Check if card connection is established
             if not self.card:
@@ -331,7 +341,7 @@ class TxCard(SpectrumDevice):
         else:
             print("No active replay thread found...")
 
-    def _fifo_stream_worker(self, data: np.ndarray) -> None:
+    def _fifo_stream_worker(self, data: list[np.ndarray]) -> None:
         """Continuous FIFO mode examples.
 
         Parameters
@@ -342,25 +352,18 @@ class TxCard(SpectrumDevice):
             >>> [c0_0, c1_0, c2_0, c3_0, c0_1, c1_1, c2_1, c3_1, ..., cX_N]
             Here, X denotes the channel and the subsequent index N the sample index.
         """
-        # Get total size of data buffer to be played out
-        self.data_buffer_size = data.nbytes
-        self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
-
-        # Calculate notify size is set to 1/16 of the replay buffer size
-        # Ensure that minimum notify size is 4096 bytes
-        notify_size = spcm.int32(max(4096, min(
-            int(((self.data_buffer_size / TX_NOTIFY_RATE) // 4096) * 4096),
-            int(((self.max_ring_buffer_size.value / TX_NOTIFY_RATE) // 4096) * 4096),
-        )))
+        # Get sequence length (in units of notify size)
+        seq_length = len(data)
+        self.log.debug("Sequence length: %d notifies"%(seq_length))
+        self.log.debug("Chunk size: %d"%(np.size(data[0])))
 
         # >> Define software buffer
-        # Setup replay data buffer
-        data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        # Allocate continuous ring buffer with minimimum necessary amount of memory, ensure multiple of notify size
-        min_ring_buffer_size = int(np.ceil(self.data_buffer_size / notify_size.value) * notify_size.value)
-        # Create page-aligned ring buffer
-        ring_buffer = create_dma_buffer(min(self.max_ring_buffer_size.value, min_ring_buffer_size))
+        # Allocate continuous ring buffer wih tminimimum necessary amount of memory, ensure multiple of notify size
+        ring_buffer = create_dma_buffer(np.min((seq_length, TX_NOTIFY_RATE))*self._notify_size)
+
+        # Check size of ring buffer and get its address in memory
         ring_buffer_size = spcm.uint64(len(ring_buffer))
+        ring_buffer_base_addr = ctypes.cast(ring_buffer, ctypes.c_void_p).value
 
         try:
             # Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)
@@ -369,11 +372,7 @@ class TxCard(SpectrumDevice):
                     "Ring buffer size is not a multiple of channel sample product \
                     (number of enables channels times 2 byte per sample)"
                 )
-            # Check size of data buffer
-            if self.data_buffer_size % (self.num_ch * 2) != 0:
-                raise MemoryError(
-                    "Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."
-                )
+
         except MemoryError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -381,37 +380,45 @@ class TxCard(SpectrumDevice):
         self.log.debug(
             "Ring buffer size: %s; Notify size: %s",
             ring_buffer_size.value,
-            notify_size.value,
+            self.notify_size,
         )
 
-        try:
-            # Perform initial memory transfer: Fill the whole ring buffer
-            if (_ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value) and \
-                (_data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value):
-                if self.data_buffer_size < ring_buffer_size.value:
-                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.data_buffer_size)
-                    transferred_bytes = self.data_buffer_size
-                else:
-                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, ring_buffer_size.value)
-                    transferred_bytes = ring_buffer_size.value
-            else:
-                raise RuntimeError("Could not get ring or data buffer position.")
-        except RuntimeError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        # Perform initial memory transfe
+        current_element = 0
+        current_position = 0
+        if ring_buffer_base_addr:
+            # Grab the total number of notifies to transfer initially
+            initial_elements = min((seq_length, TX_NOTIFY_RATE))
+            # Transfer those sequence elements to the ring buffer
+            for idx in range(initial_elements):
+                seq_element = data[idx]
+                seq_element_ptr = seq_element.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
+                ctypes.memmove(
+                    ring_buffer_base_addr + current_position,
+                    ctypes.cast(seq_element_ptr, ctypes.c_void_p).value,
+                    seq_element.nbytes
+                )
+                current_position += seq_element.nbytes
+                current_element += 1
+                # Remove that sequence element from memory
+                data[idx] = None
+            initial_transfer_size = current_position
+        else:
+            raise RuntimeError("Could not get ring buffer address")
 
-        # Perform initial data transfer to completely fill continuous buffer
+        # Perform initial data transfer to completely fill continuous buffer (on card)
         spcm.spcm_dwDefTransfer_i64(
             self.card,
             spcm.SPCM_BUF_DATA,
             spcm.SPCM_DIR_PCTOCARD,
-            notify_size,
+            spcm.int32(self._notify_size),
             ring_buffer,
             spcm.uint64(0),
             ring_buffer_size,
         )
 
-        self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, ring_buffer_size))
+        # Tell the card how much data is available
+        self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, initial_transfer_size))
 
         self.log.debug("Starting card memory transfer")
         self.handle_error(spcm.spcm_dwSetParam_i32(
@@ -430,53 +437,54 @@ class TxCard(SpectrumDevice):
 
         avail_bytes = spcm.int32(0)
         usr_position = spcm.int32(0)
-        transfer_count = 0
 
-        while (transferred_bytes < self.data_buffer_size) and not self.is_running.is_set():
+        while (current_element < len(data)) and not self.is_running.is_set():
             # Read available bytes and user position
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
 
             # Calculate new data for the transfer, when notify_size is available on continous buffer
-            if avail_bytes.value >= notify_size.value:
-                transfer_count += 1
+            if avail_bytes.value >= self._notify_size:
 
-                ring_buffer_position = ctypes.cast((
-                    ctypes.c_char * (self.max_ring_buffer_size.value - usr_position.value)).from_buffer(
-                        ring_buffer, usr_position.value), ctypes.c_void_p
-                    ).value
+                # Get memory position of where to transfer data to
+                ring_buffer_position = ring_buffer_base_addr + usr_position.value
+                if ring_buffer_position:
+                    # Get next chunk
+                    seq_element = data[current_element]
+                    seq_element_ptr = seq_element.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
 
-                current_data_buffer = ctypes.cast(data_buffer, ctypes.c_void_p).value
-
-                # Get new buffer positions
-                if ring_buffer_position and current_data_buffer:
-                    data_buffer_position = current_data_buffer + transferred_bytes
-
-                    if (bytes_remaining := self.data_buffer_size - transferred_bytes) >= notify_size.value:
-                        # Enough data available -> copy notify size
+                    # Check if this is the last chunk and might be partial
+                    if current_element == len(data) - 1 and seq_element.nbytes < self._notify_size:
+                        # Copy partial chunk and pad with zeros
                         ctypes.memmove(
                             ring_buffer_position,
-                            data_buffer_position,
-                            notify_size.value,
-                        )
-                    else:
-                        # Not enough data availabe -> set remaining bytes to zero
-                        ctypes.memmove(
-                            ring_buffer_position,
-                            data_buffer_position,
-                            bytes_remaining,
+                            ctypes.cast(seq_element_ptr, ctypes.c_void_p).value,
+                            seq_element.nbytes
                         )
                         ctypes.memset(
-                            ring_buffer_position + bytes_remaining,
+                            ring_buffer_position + seq_element.nbytes,
                             0,
-                            notify_size.value - bytes_remaining,
+                            self._notify_size - seq_element.nbytes
                         )
+                    else:
+                        # Copy full chunk
+                        ctypes.memmove(
+                            ring_buffer_position,
+                            ctypes.cast(seq_element_ptr, ctypes.c_void_p).value,
+                            self._notify_size
+                        )
+                    # Remove sequence element from memory
+                    data[current_element] = None
 
+                    # Notify card of new data
                     self.handle_error(
-                        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, notify_size)
+                        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, spcm.int32(self._notify_size))
                     )
-                    transferred_bytes += notify_size.value
 
+                    current_element += 1
+                    self.log.debug("Transferred chunk %d/%d", current_element, len(data))
+
+                # Wait for transfer
                 self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
 
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
