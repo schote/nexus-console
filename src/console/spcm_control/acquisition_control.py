@@ -9,10 +9,11 @@ from datetime import datetime
 from multiprocessing import Pool
 from pathlib import Path
 from queue import Queue
+from signal import SIG_IGN, SIGINT, signal
 
 import numpy as np
 from numpy.fft import fft, fftshift, ifft, ifftshift
-from scipy import signal
+from scipy.signal import decimate
 
 import console
 from console.interfaces.acquisition_data import AcquisitionData
@@ -223,7 +224,9 @@ class AcquisitionControl:
         self.acq_finished = False
 
         processing_thread = threading.Thread(
-            target=self.post_processing, args=(console.parameter, self.queue, return_unprocessed)
+            target=self.post_processing,
+            args=(console.parameter, self.queue, return_unprocessed),
+            daemon=True,
         )
         processing_thread.start()
 
@@ -317,7 +320,7 @@ class AcquisitionControl:
             case DDCMethod.AVG:
                 data = ddc.filter_moving_average(data, decimation=parameter.decimation, overlap=8)
             case _:
-                data = signal.decimate(data, q=parameter.decimation, ftype="fir")
+                data = decimate(data, q=parameter.decimation, ftype="fir")
 
         # Apply phase correction with mean value
         # A factor 2 is added to compensate for the halving due to the processing.
@@ -362,7 +365,7 @@ class AcquisitionControl:
         raw_list: list = []
         unproc_list: list = []
 
-        with Pool(processes=8) as pool:
+        with Pool(processes=8, initializer=signal, initargs=(SIGINT, SIG_IGN)) as pool:
             while True:
                 # Stop processing if everything processed and acquisition finished
                 if gates_received >= self.rx_card.gates_received and self.acq_finished is True:
@@ -379,7 +382,7 @@ class AcquisitionControl:
 
                     # Extract and decimate reference signal
                     _ref = (gate_data[1, ...].astype(np.uint16) >> 15).astype(float)[None, ...]
-                    ref_dec = signal.decimate(_ref, q=parameter.decimation, ftype="fir")[None, ...]
+                    ref_dec = decimate(_ref, q=parameter.decimation, ftype="fir")[None, ...]
 
                     # Remove digital signal from channel 1
                     gate_data[1, ...] = gate_data[1, ...] << 1

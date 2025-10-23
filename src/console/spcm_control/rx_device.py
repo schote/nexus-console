@@ -226,7 +226,9 @@ class RxCard(SpectrumDevice):
         self.is_running.clear()
         self.gates_received = 0
         # Start card thread. if time stamp mode is not available use the example function.
-        self.worker = threading.Thread(target=self._gated_timestamps_stream)
+        self.worker = threading.Thread(
+            target=self._gated_timestamps_stream, daemon=True
+        )
         self.worker.start()
 
     def stop_operation(self):
