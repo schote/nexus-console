@@ -18,7 +18,7 @@ class UnrolledSequence:
     `unroll_sequence` function.
     """
 
-    seq: np.ndarray
+    seq: list[np.ndarray]
     """Replay data as int16 values in a list of numpy arrays. The sequence data already
     contains the digital adc and unblanking signals in the channels gx and gy."""
 
