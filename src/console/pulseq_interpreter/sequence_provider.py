@@ -30,7 +30,8 @@ except ImportError:
 
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
-ROT_SCALING = 0.5
+# ROT_SCALING = 0.5
+ROT_SCALING = np.sqrt(2)/2
 
 
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
@@ -319,6 +320,9 @@ class SequenceProvider(Sequence):
         # Calculate gradient waveform scaling
         scaling = fov_scaling * self.imp_scaling[idx + 1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
 
+        if self.rotate_basis and idx != "z":
+            scaling *= ROT_SCALING    # scale waveform by sqrt(2)/2
+
         try:
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
@@ -333,8 +337,6 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
-                if self.rotate_basis and idx != "z":
-                    waveform *= ROT_SCALING    # scale waveform by sqrt(2)/2
                 # Transfer mV floating point waveform values to int16 if amplitude check passed
                 waveform *= (INT16_MAX / self.output_limits[idx + 1])
 
@@ -359,8 +361,7 @@ class SequenceProvider(Sequence):
                             self.output_limits[idx + 1],
                         )
                     )
-                if self.rotate_basis and idx != "z":
-                    flat_amp *= ROT_SCALING    # scale waveform by sqrt(2)/2
+
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
                 flat_amp *= (INT16_MAX / self.output_limits[idx + 1])
 
@@ -610,18 +611,19 @@ class SequenceProvider(Sequence):
                 y_slice = slice(waveform_start + 2, waveform_start + 2 + 4 * block_durations[event_idx], 4)
                 x = (_seq[x_slice] << 1).astype(np.int16)
                 y = (_seq[y_slice] << 1).astype(np.int16)
-                x_max = np.max(x)/INT16_MAX
-                x_min = np.min(x)/INT16_MAX
-                y_max = np.max(y)/INT16_MAX
-                y_min = np.min(y)/INT16_MAX
-                if np.abs(x_max + y_max) > 1. or np.abs(x_min + y_min) > 1.:
-                    raise ValueError("X gradient exceeds maximum after rotation.")
-                if np.abs(x_max - y_max) > 1. or np.abs(x_min - y_min) > 1.:
-                    raise ValueError("X gradient exceeds maximum after rotation.")
-                x_rot = (x + y)
-                y_rot = (x - y)
-                _seq[x_slice] = (x_rot.astype(np.int16).view(np.uint16)) >> 1
-                _seq[y_slice] = (y_rot.astype(np.int16).view(np.uint16)) >> 1
+                if (x.size > 0 and y.size > 0):
+                    x_max = np.max(x)/INT16_MAX
+                    x_min = np.min(x)/INT16_MAX
+                    y_max = np.max(y)/INT16_MAX
+                    y_min = np.min(y)/INT16_MAX
+                    if np.abs(x_max + y_max) > 1. or np.abs(x_min + y_min) > 1.:
+                        raise ValueError("X gradient exceeds maximum after rotation.")
+                    if np.abs(x_max - y_max) > 1. or np.abs(x_min - y_min) > 1.:
+                        raise ValueError("X gradient exceeds maximum after rotation.")
+                    x_rot = (x + y)
+                    y_rot = (x - y)
+                    _seq[x_slice] = (x_rot.astype(np.int16).view(np.uint16)) >> 1
+                    _seq[y_slice] = (y_rot.astype(np.int16).view(np.uint16)) >> 1
 
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
