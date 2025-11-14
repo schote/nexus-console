@@ -26,31 +26,34 @@ def test_dimensions_from_dict(generator):
     y = generator()
     z = generator()
 
-    dim_dct = {"x": x, "y": y, "z": z}
-    dim = Dimensions.from_dict(dim_dct)
+    dim_dict = {"x": x, "y": y, "z": z}
+    dim = Dimensions.from_dict(dim_dict)
 
     assert x == dim.x
     assert y == dim.y
     assert z == dim.z
-    assert dim.dict() == dim_dct
+    assert dim.to_dict() == dim_dict
 
 
 @pytest.mark.parametrize("generator", (get_random_int, get_random_float))
-def test_dimensions(generator):
-    """Test creations of dimensions object and check if instance is frozen."""
-    x = generator()
-    y = generator()
-    z = generator()
+def test_dimensions_arithmetics(generator):
+    """Test creations of dimensions object from dictionary."""
+    dim = Dimensions(generator(), generator(), generator())
 
-    dim = Dimensions(x=x, y=y, z=z)
+    dim *= 0
+    assert dim.x == 0
+    assert dim.y == 0
+    assert dim.z == 0
 
-    assert x == dim.x
-    assert y == dim.y
-    assert z == dim.z
+    val_add = 2
+    dim += val_add
+    assert dim.x == val_add
+    assert dim.y == val_add
+    assert dim.z == val_add
 
-    with pytest.raises(FrozenInstanceError):
-        dim.x = generator()
-        dim.y = generator()
-        dim.z = generator()
+    val_sub = 1
+    dim -= val_sub
+    assert dim.x == val_add - val_sub
+    assert dim.y == val_add - val_sub
+    assert dim.z == val_add - val_sub
 
-    print("test done.")

@@ -1,7 +1,8 @@
 """Interface class for acquisition parameters."""
 
+# import pickle  # noqa: S403
+import json
 import logging
-import pickle  # noqa: S403
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -11,14 +12,18 @@ from console.interfaces.enums import DDCMethod
 
 
 def _grad_factory() -> Dimensions:
-    return Dimensions(x=0., y=0., z=0.)
+    return Dimensions(x=0, y=0, z=0)
 
 
 def _fov_factory() -> Dimensions:
     return Dimensions(x=1., y=1., z=1.)
 
 
-@dataclass(unsafe_hash=True)
+def _channel_factory() -> Dimensions:
+    return Dimensions(x=1, y=2, z=3)
+
+
+@dataclass
 class AcquisitionParameter:
     """
     Parameters to define an acquisition.
@@ -47,7 +52,11 @@ class AcquisitionParameter:
     fov_scaling: Dimensions = field(default_factory=_fov_factory)
     """Field of view scaling for Gx, Gy and Gz."""
 
+    channel_assignment: Dimensions = field(default_factory=_channel_factory)
+    """Assignment of console output channels to gradient channels x, y, z."""
+
     ddc_method: DDCMethod = DDCMethod.FIR
+    """Decimation filter method."""
 
     num_averages: int = 1
     """Number of acquisition averages."""
@@ -66,39 +75,50 @@ class AcquisitionParameter:
             self.gradient_offset = Dimensions(**self.gradient_offset)
         if isinstance(self.fov_scaling, dict):
             self.fov_scaling = Dimensions(**self.fov_scaling)
-        if isinstance(self.state_filepath, str):
-            self.state_filepath = Path(self.state_filepath)
+        if isinstance(self.channel_assignment, dict):
+            self.channel_assignment = Dimensions(**self.channel_assignment)
+
+        self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):
             self.state_filepath = self.state_filepath / "acquisition-parameter.state"
+
         self._initialized = True
         self.save()
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite __setattr__ function to save object on each mutation."""
         if self._initialized:
-            _hash = hash(self)
+            prev = self.to_dict()
             super().__setattr__(name, value)
-            if hash(self) != _hash:
+            if self.to_dict() != prev:
+                print("DEBUG: Saving acquisition parameter...")
                 self.save()
         else:
             super().__setattr__(name, value)
 
-    def __str__(self):
+    def __eq__(self, other) -> bool:
+        """Compare acquisition parameter to other instance."""
+        if not isinstance(other, AcquisitionParameter):
+            return False
+        # deep dict comparison, including nested dataclasses
+        return self.to_dict() == other.to_dict()
+
+    def __str__(self) -> str:
         """Get string representation of acquisition parameter."""
-        data = self.dict()
+        data = self.to_dict()
         output = "Acquisition parameter\n----------\n"
         for k, (key, value) in enumerate(data.items()):
             output += f"{key} = {value}" if k == len(data) - 1 else f"{key} = {value}\n"
         return output
 
-    def __copy__(self):
+    def __copy__(self) -> "AcquisitionParameter":
         """Copy acquisition parameter."""
         cls = self.__class__
         result = cls(**self.__dict__)
         result._initialized = True
         return result
 
-    def dict(self, use_strings: bool = False) -> dict:
+    def to_dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
 
         Parameters
@@ -128,29 +148,22 @@ class AcquisitionParameter:
             Default state file path can be changed using the set_default_path method.
         """
         _filepath = filepath if filepath else self.state_filepath
-        if isinstance(_filepath, str):
-            _filepath = Path(_filepath)
+        _filepath = Path(_filepath)
         if not _filepath.name.endswith(".state"):
             _filepath = _filepath / "acquisition-parameter.state"
         _filepath.parent.mkdir(parents=True, exist_ok=True)
-        data = {key: value for key, value in self.__dict__.items() if not key.startswith("_")}
-        with _filepath.open("wb") as file:
-            pickle.dump(data, file)
-
-    def hash(self) -> int:
-        """Return acquisition parameter integer hash."""
-        return self.__hash__()
+        _filepath.write_text(json.dumps(self.to_dict(), indent=2))
 
     @classmethod
     def load(cls, filepath: Path | str | None = None) -> Optional["AcquisitionParameter"]:
         """
-        Load acquisition parameter state from state file in-place.
+        Load and return acquisition parameter state.
 
         Parameters
         ----------
         file_path, optional
             Path to acquisition parameter state file.
-            If file_path is not a pickle file, i.e. ends with .pkl,
+            If file_path is not a pickle file, i.e. ends with .json,
             the default state file designation acquisition-parameter.state is added.
 
         Returns
@@ -167,37 +180,15 @@ class AcquisitionParameter:
         log = logging.getLogger("AcqParam")
         filepath = cls.state_filepath if filepath is None else filepath
         filepath = Path(filepath) if isinstance(filepath, str) else filepath
-        state = None
+        if filepath.suffix != ".state":
+            msg = "Invalid state file, `.state` suffix expected."
+            raise ValueError(msg)
         try:
-            with filepath.open("rb") as state_file:
-                state = pickle.load(state_file)  # noqa: S301
-        except FileNotFoundError:
-            log.exception(
-                "FileNotFoundError: AcquisitionParameter state file '%s' does not exist.",
-                str(filepath),
-            )
-        except EOFError:
-            log.exception(
-                "EOFError: AcquisitionParameter state file '%s' is empty or corrupted. \
-                    Please delete the existing state file so that a new one can be generated.",
-                str(filepath),
-            )
+            data = json.loads(filepath.read_text())
+            return cls(**data)
         except Exception:
             log.exception(
                 "Error loading AcquisitionParameter state file '%s'.",
                 str(filepath),
             )
-        if state is not None:
-            try:
-                instance = cls(**state)
-                instance._initialized = True
-                if isinstance(instance, str):
-                    instance.state_filepath = Path(instance.state_filepath)
-            except Exception:
-                log.exception(
-                    "Error creating AcquisitionParameter instance from file '%s'.",
-                    str(filepath),
-                )
-            else:
-                return instance
-        return None
+            return None

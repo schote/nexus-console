@@ -59,7 +59,7 @@ class AcquisitionData:
                 "time": datetime_now.strftime("%H:%M:%S"),
                 "acquisition_id": acquisition_id,
                 "folder_name": acquisition_id,
-                "acquisition_parameter": self.acquisition_parameters.dict(),
+                "acquisition_parameter": self.acquisition_parameters.to_dict(),
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
