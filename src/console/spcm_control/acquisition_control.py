@@ -196,7 +196,7 @@ class AcquisitionControl:
             if not seq_name:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
-        # Update sequence parameter hash and calculate sequence
+        # Calculate sequence with parameter
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 

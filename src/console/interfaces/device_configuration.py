@@ -2,7 +2,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 # Specify the number of gradient channels
-NUM_CHANNELS = 3
+NUM_GRADIENTS = 3
 
 
 class TxConfiguration(BaseModel):
@@ -16,8 +16,8 @@ class TxConfiguration(BaseModel):
     channel_max_amplitude: list[int] = Field(..., strict=True)
     channel_filter_type: list[int] = Field(..., strict=True)
     channel_terminated_50ohm: list[bool] = Field(..., strict=True)
-    gradient_efficiency: list[float] = Field(..., min_length=NUM_CHANNELS, max_length=NUM_CHANNELS, strict=True)
-    gpa_gain: list[float] = Field(..., min_length=NUM_CHANNELS, max_length=NUM_CHANNELS, strict=True)
+    gradient_efficiency: list[float] = Field(..., min_length=NUM_GRADIENTS, max_length=NUM_GRADIENTS, strict=True)
+    gpa_gain: list[float] = Field(..., min_length=NUM_GRADIENTS, max_length=NUM_GRADIENTS, strict=True)
     rf_to_mvolt: float = Field(..., strict=True)
 
     @model_validator(mode="after")
