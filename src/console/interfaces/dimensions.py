@@ -2,12 +2,17 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Iterable
 
     from typing_extensions import Self
+
+
+def _dict_factory(items: Iterable[tuple[str, Any]]) -> dict[str, Any]:
+    """Return a dictionary containing only fields whose names do not start with '_'."""
+    return {key: value for key, value in items if not key.startswith("_")}
 
 
 @dataclass
@@ -45,7 +50,7 @@ class Dimensions:
 
     def to_dict(self) -> dict[str, int | float]:
         """Convert to a nested dictionary."""
-        return asdict(self)
+        return asdict(self, dict_factory=_dict_factory)
 
     def __setattr__(self, name: str, value: float) -> None:
         """Overwrite setter to trigger private on_change method if set."""
