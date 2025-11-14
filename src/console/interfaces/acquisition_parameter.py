@@ -1,8 +1,7 @@
 """Interface class for acquisition parameters."""
-
-# import pickle  # noqa: S403
 import json
 import logging
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Optional
@@ -21,6 +20,11 @@ def _fov_factory() -> Dimensions:
 
 def _channel_factory() -> Dimensions:
     return Dimensions(x=1, y=2, z=3)
+
+
+def _dict_factory(items: Iterable[tuple[str, Any]]) -> dict[str, Any]:
+    """Return a dictionary containing only fields whose names do not start with '_'."""
+    return {key: value for key, value in items if not key.startswith("_")}
 
 
 @dataclass
@@ -71,13 +75,20 @@ class AcquisitionParameter:
 
     def __post_init__(self) -> None:
         """Post initialization method."""
+        # Ensure Dimensions type
         if isinstance(self.gradient_offset, dict):
-            self.gradient_offset = Dimensions(**self.gradient_offset)
+            self.gradient_offset = Dimensions.from_dict(self.gradient_offset)
         if isinstance(self.fov_scaling, dict):
-            self.fov_scaling = Dimensions(**self.fov_scaling)
+            self.fov_scaling = Dimensions.from_dict(self.fov_scaling)
         if isinstance(self.channel_assignment, dict):
-            self.channel_assignment = Dimensions(**self.channel_assignment)
+            self.channel_assignment = Dimensions.from_dict(self.channel_assignment)
 
+        # Register child change callback to trigger a save when child changed
+        self.gradient_offset.register_on_change_callback(self._child_changed)
+        self.fov_scaling.register_on_change_callback(self._child_changed)
+        self.channel_assignment.register_on_change_callback(self._child_changed)
+
+        # Ensure state filepath has a valid suffix
         self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):
             self.state_filepath = self.state_filepath / "acquisition-parameter.state"
@@ -91,7 +102,6 @@ class AcquisitionParameter:
             prev = self.to_dict()
             super().__setattr__(name, value)
             if self.to_dict() != prev:
-                print("DEBUG: Saving acquisition parameter...")
                 self.save()
         else:
             super().__setattr__(name, value)
@@ -118,6 +128,11 @@ class AcquisitionParameter:
         result._initialized = True
         return result
 
+    def _child_changed(self) -> None:
+        """Save acquisition parameters if child changed."""
+        if self._initialized:
+            self.save()
+
     def to_dict(self, use_strings: bool = False) -> dict:
         """Return acquisition parameters as dictionary.
 
@@ -131,8 +146,8 @@ class AcquisitionParameter:
             Acquisition parameter dictionary
         """
         if use_strings:
-            return {key: str(value) for key, value in asdict(self).items() if not key.startswith("_")}
-        data = {key: value for key, value in asdict(self).items() if not key.startswith("_")}
+            return {key: str(value) for key, value in asdict(self, dict_factory=_dict_factory).items()}
+        data = asdict(self, dict_factory=_dict_factory)
         # Make state filepath a str (Path variable)
         data["state_filepath"] = str(data["state_filepath"])
         return data

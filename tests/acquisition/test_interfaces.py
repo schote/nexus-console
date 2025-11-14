@@ -1,5 +1,4 @@
 """Test interfaces."""
-from dataclasses import FrozenInstanceError
 
 import numpy as np
 import pytest
@@ -56,4 +55,3 @@ def test_dimensions_arithmetics(generator):
     assert dim.x == val_add - val_sub
     assert dim.y == val_add - val_sub
     assert dim.z == val_add - val_sub
-
