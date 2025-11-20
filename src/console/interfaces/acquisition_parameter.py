@@ -68,8 +68,12 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    state_filepath: Path | str = Path.home() / Path("nexus-console/acquisition-parameter.state")
-    """Default file path for acquisition parameter state."""
+    state_filepath: str = str(Path.home() / "nexus-console/acquisition-parameter.state")
+    """Default file path for acquisition parameter state.
+
+    Don't enforece a Path object here to prevent conflicts when sending acquisition parameter
+    instances between different OS.
+    """
 
     _initialized: bool = field(default=False, init=True, repr=False, compare=False, hash=False)
 
@@ -88,10 +92,11 @@ class AcquisitionParameter:
         self.fov_scaling.register_on_change_callback(self._child_changed)
         self.channel_assignment.register_on_change_callback(self._child_changed)
 
-        # Ensure state filepath has a valid suffix
-        self.state_filepath = Path(self.state_filepath)
-        if not self.state_filepath.name.endswith(".state"):
-            self.state_filepath = self.state_filepath / "acquisition-parameter.state"
+        _path = Path(self.state_filepath)
+        if not _path.name.endswith(".state"):
+            _path = _path / "acquisition-parameter.state"
+        # Ensure state filepath is a string
+        self.state_filepath = str(_path)
 
         self._initialized = True
         self.save()
@@ -147,10 +152,7 @@ class AcquisitionParameter:
         """
         if use_strings:
             return {key: str(value) for key, value in asdict(self, dict_factory=_dict_factory).items()}
-        data = asdict(self, dict_factory=_dict_factory)
-        # Make state filepath a str (Path variable)
-        data["state_filepath"] = str(data["state_filepath"])
-        return data
+        return asdict(self, dict_factory=_dict_factory)
 
     def save(self, filepath: str | Path | None = None) -> None:
         """Save current acquisition parameter state.
@@ -162,12 +164,11 @@ class AcquisitionParameter:
             If None, the default state file path is taken which is <home>/nexus-console/acquisition-parameter.state
             Default state file path can be changed using the set_default_path method.
         """
-        _filepath = filepath if filepath else self.state_filepath
-        _filepath = Path(_filepath)
-        if not _filepath.name.endswith(".state"):
-            _filepath = _filepath / "acquisition-parameter.state"
-        _filepath.parent.mkdir(parents=True, exist_ok=True)
-        _filepath.write_text(json.dumps(self.to_dict(), indent=2))
+        _path = Path(filepath or self.state_filepath)
+        if not _path.name.endswith(".state"):
+            _path = _path / "acquisition-parameter.state"
+        _path.parent.mkdir(parents=True, exist_ok=True)
+        _path.write_text(json.dumps(self.to_dict(), indent=2))
 
     @classmethod
     def load(cls, filepath: Path | str | None = None) -> Optional["AcquisitionParameter"]:
@@ -193,17 +194,21 @@ class AcquisitionParameter:
             Provided state file is corrupted
         """
         log = logging.getLogger("AcqParam")
-        filepath = cls.state_filepath if filepath is None else filepath
-        filepath = Path(filepath) if isinstance(filepath, str) else filepath
-        if filepath.suffix != ".state":
-            msg = "Invalid state file, `.state` suffix expected."
-            raise ValueError(msg)
+
+        # Resolve file path
+        _path = filepath or cls.state_filepath
+        _path = Path(_path)
+
+        # Enforce `.state` suffix
+        if not _path.name.endswith(".state"):
+            _path = _path / "acquisition-parameter.state"
+
         try:
-            data = json.loads(filepath.read_text())
+            data = json.loads(_path.read_text())
             return cls(**data)
         except Exception:
             log.exception(
                 "Error loading AcquisitionParameter state file '%s'.",
-                str(filepath),
+                str(_path),
             )
             return None
