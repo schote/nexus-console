@@ -45,8 +45,8 @@ uptr16 = ctypes.POINTER(uint16)
 uptr32 = ctypes.POINTER(uint32)
 uptr64 = ctypes.POINTER(uint64)
 
-spcmDll: ctypes.CDLL | ctypes.WinDLL | None = None
-drv_handle: Any | None = None
+spcmDll = None
+drv_handle = None
 
 
 # Check if code is running in an github actions
