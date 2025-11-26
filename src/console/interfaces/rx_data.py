@@ -15,7 +15,7 @@ class RxData:
     # Rx data event number
     index: int
 
-    # Data characteristics, defined by the ADC event in sequence defintion
+    # Data characteristics, defined by the ADC event in sequence definition
     num_samples: int
     num_samples_raw: int
     dwell_time: float
@@ -30,7 +30,7 @@ class RxData:
     average_index: int = 0
 
     # ADC labels
-    labels: dict | None = None
+    labels: dict[str, int | None] | None = None
 
     # Used for demodulation, value set in post init
     decimation_factor: int = field(init=False)

@@ -54,7 +54,10 @@ def write_acquisition_to_mrd(
             # Readout bandwidth, as time between samples in microseconds
             acq.sample_time_us = rx_data.dwell_time * 1e6
             # Timestamp of readout
-            acq.acquisition_time_stamp = int(rx_data.time_stamp * 1e6)  # timestamp in us
+            if rx_data.time_stamp is not None:
+                acq.acquisition_time_stamp = int(rx_data.time_stamp * 1e6)  # timestamp in us
+            else:
+                log.warning("Missing time stamp for acquisition %i/%i", k, len(data))
 
             # Set counters and flags
             mrd_helper.set_mrd_counters(acq, rx_data)
