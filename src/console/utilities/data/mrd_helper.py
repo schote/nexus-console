@@ -51,6 +51,7 @@ def set_mrd_counters(mrd_acquisition: ismrmrd.Acquisition, rx_data: RxData) -> N
         if (key := "SEG") in rx_data.labels:
             mrd_acquisition.idx.segment = rx_data.labels[key]
 
+
 def set_mrd_flags(mrd_acquisition: ismrmrd.Acquisition, rx_data: RxData) -> None:
     """Extract pulseq labels from receive data and set them in MRD acquisition object."""
     if rx_data.labels is not None:
