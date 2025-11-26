@@ -9,7 +9,7 @@ import pytest
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.dimensions import Dimensions
 from console.utilities.data import write_acquisition_to_mrd
-from console.utilities.sequences import tse_3d, se_spectrum
+from console.utilities.sequences import se_spectrum, tse_3d
 
 
 @pytest.mark.parametrize("trajectory_type", [tse_3d.Trajectory.INOUT, tse_3d.Trajectory.LINEAR])
@@ -50,6 +50,14 @@ def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter
     acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
     assert "data.mrd" in acq_data_files
+
+    with ismrmrd.File(acq_folder / "data.mrd", 'r') as fh:
+        dataset = fh['dataset']
+        acquisitions = dataset.acquisitions[:]
+
+    assert len(acquisitions) == len(receive_data)
+    for k in range(len(acquisitions)):
+        np.testing.assert_array_almost_equal(acquisitions[k].data, receive_data[k].processed_data)
 
 
 @pytest.mark.parametrize("num_coils", [1, 2, 4])

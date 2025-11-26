@@ -47,7 +47,11 @@ def write_acquisition_to_mrd(
             acq.scan_counter = k
             # Resize each acquisition to the individual number of sample points and active channels
             num_coils = rx_data.processed_data.shape[0]
-            acq.resize(number_of_samples=rx_data.num_samples, active_channels=num_coils, trajectory_dimensions=traj_dims.sum())
+            acq.resize(
+                number_of_samples=rx_data.num_samples,
+                active_channels=num_coils,
+                trajectory_dimensions=traj_dims.sum()
+            )
             # Assume the center sample is the middle of the data
             acq.center_sample = rx_data.num_samples // 2
             # Readout bandwidth, as time between samples in microseconds
