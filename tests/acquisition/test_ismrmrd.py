@@ -3,6 +3,7 @@ import tempfile
 from pathlib import Path
 
 import ismrmrd
+import numpy as np
 import pytest
 
 from console.interfaces.acquisition_data import AcquisitionData
@@ -73,3 +74,5 @@ def test_write_1d_ismrmrd(random_acquisition_data, num_coils: int, num_averages:
         acquisitions = dataset.acquisitions[:]
 
     assert len(acquisitions) == len(receive_data)
+    for k in range(len(acquisitions)):
+        np.testing.assert_array_almost_equal(acquisitions[k].data, receive_data[k].processed_data)
