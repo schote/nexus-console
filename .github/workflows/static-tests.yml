@@ -25,7 +25,7 @@ jobs:
         pip install ".[lint]"
 
     - name: Run ruff check
-      run: ruff check --preview
+      run: ruff check
 
     - name: Run mypy
       run: mypy src
