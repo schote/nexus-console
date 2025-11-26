@@ -14,7 +14,7 @@ import numpy as np
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
-from console.utilities.data import write_1d_mrd, write_imaging_mrd
+from console.utilities.data import get_nexus_acquisition_system, write_acquisition_to_mrd
 from console.utilities.json_encoder import JSONEncoder
 
 log = logging.getLogger("AcqData")
@@ -151,9 +151,9 @@ class AcquisitionData:
         self,
         header: ismrmrd.xsd.ismrmrdHeader | str | Path | None = None,
         user_path: str | None = None,
-    ) -> Path:
+    ) -> Path | None:
         """Store acquisition data in (ISMR)MRD format."""
-        # Get dimensions of raw data
+        # Ensure that receive data is available
         if not self.receive_data or self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."
             raise AttributeError(detail)
@@ -170,47 +170,50 @@ class AcquisitionData:
             seriesDate=self.meta["date"],
             seriesTime=self.meta["time"],
         )
+        # Get number of coils per receive event and create acquisition system info
+        coils_per_rx = [
+            rx_data.processed_data.shape[0] for rx_data in self.receive_data if rx_data.processed_data is not None
+        ]
+        system_info = get_nexus_acquisition_system(
+            num_coils=max(coils_per_rx),
+            larmor_frequency=int(self.acquisition_parameters.larmor_frequency),
+        )
         # Define experimental conditions with true larmor frequency
         conditions = ismrmrd.xsd.experimentalConditionsType(
             H1resonanceFrequency_Hz=int(self.acquisition_parameters.larmor_frequency),
         )
 
-        # 1D case
+        # Create header if not given
         if header is None:
-            log.info("ISMRMRD header not given, treating RX data as 1D data.")
-            # Create new ISMRMRD header object for 1D data
-            new_header = ismrmrd.xsd.ismrmrdHeader()
-            new_header.measurementInformation = info
-            new_header.experimentalConditions = conditions
-            return write_1d_mrd(
-                data=self.receive_data,
-                header=new_header,
-                dataset_path=dataset_path,
-            )
+            log.info("ISMRMRD header not given, creating header without encoding/reconstruction info.")
+            header = ismrmrd.xsd.ismrmrdHeader()
 
         # Load header from xml file
-        if not isinstance(header, ismrmrd.xsd.ismrmrdHeader):
-            header_path = Path(header) if isinstance(header, str) else header
+        if isinstance(header, (str, Path)):
+            header_path = Path(header)
             log.info("Loading ISMRMRD header from file: %s", header_path.name)
             # Open the dataset
             dataset = ismrmrd.Dataset(header_path)
-            # Read the XML header as a string
+            # Read the XML file and create header
             xml_header = dataset.read_xml_header()
-            # Parse it into a structured object (optional, see below)
             header = ismrmrd.xsd.CreateFromDocument(xml_header)
 
+        # Extend header if given
         if isinstance(header, ismrmrd.xsd.ismrmrdHeader):
-            # Update existing ismrmrd header with measurement info and conditions
+            # Update existing ismrmrd header with measurement info, conditions and system info
             header.measurementInformation = info
             header.experimentalConditions = conditions
+            header.acquisitionSystemInformation = system_info
 
-            return write_imaging_mrd(
+            return write_acquisition_to_mrd(
                 data=self.receive_data,
                 header=header,
                 sequence=self.sequence,
                 dataset_path=dataset_path,
             )
-        raise AttributeError("Missing or invalid header.")
+
+        log.warning("Invalid MRD header, could not write MRD file.")
+        return None
 
     def _write_acquisition_data(self, file_path: str) -> None:
         """Save AcquisitionData and all RxData entries to an HDF5 file."""
