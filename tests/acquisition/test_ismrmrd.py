@@ -8,12 +8,16 @@ import pytest
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.dimensions import Dimensions
-from console.utilities.data import write_1d_mrd
-from console.utilities.sequences import tse_3d
+from console.utilities.data import write_acquisition_to_mrd
+from console.utilities.sequences import tse_3d, se_spectrum
 
 
 @pytest.mark.parametrize("trajectory_type", [tse_3d.Trajectory.INOUT, tse_3d.Trajectory.LINEAR])
-@pytest.mark.parametrize("dim", [Dimensions(x=60, y=50, z=20)])
+@pytest.mark.parametrize("dim", [
+    Dimensions(x=60, y=50, z=20),   # 3D case
+    Dimensions(x=100, y=80, z=1),   # 2D case
+    Dimensions(x=119, y=1, z=1),    # 1D case
+])
 def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter, seq_provider):
     """Test 3D TSE imaging sequence constructor."""
     seq, header = tse_3d.constructor(
@@ -50,11 +54,12 @@ def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter
 
 @pytest.mark.parametrize("num_coils", [1, 2, 4])
 @pytest.mark.parametrize("num_averages", [1, 5])
-def test_write_1d_ismrmrd(random_acquisition_data, num_coils: int, num_averages: int) -> None:
+def test_write_acquisition_to_mrd(random_acquisition_data, num_coils: int, num_averages: int) -> None:
     """Test ismrmrd export for 1D data."""
+    num_samples = 1000
     receive_data = random_acquisition_data(
         num_coils=num_coils,
-        num_samples=1000,
+        num_samples=num_samples,
         num_acquisitions=1,
         num_averages=num_averages,
     )
@@ -63,10 +68,11 @@ def test_write_1d_ismrmrd(random_acquisition_data, num_coils: int, num_averages:
     header.experimentalConditions = ismrmrd.xsd.experimentalConditionsType(receive_data[0].larmor_frequency)
 
     tmp_dir = tempfile.mkdtemp()
-    mrd_path = write_1d_mrd(
+    mrd_path = write_acquisition_to_mrd(
         data=receive_data,
         header=header,
         dataset_path=Path(tmp_dir) / "raw_data.mrd",
+        sequence=se_spectrum.constructor(num_samples=num_samples),
     )
 
     with ismrmrd.File(mrd_path, 'r') as fh:
