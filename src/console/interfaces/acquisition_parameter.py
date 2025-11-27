@@ -62,6 +62,10 @@ class AcquisitionParameter:
 
     def __post_init__(self) -> None:
         """Post initialization method."""
+        if isinstance(self.gradient_offset, dict):
+            self.gradient_offset = Dimensions(**self.gradient_offset)
+        if isinstance(self.fov_scaling, dict):
+            self.fov_scaling = Dimensions(**self.fov_scaling)
         if isinstance(self.state_filepath, str):
             self.state_filepath = Path(self.state_filepath)
         if not self.state_filepath.name.endswith(".state"):

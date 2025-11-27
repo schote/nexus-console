@@ -14,6 +14,7 @@ import numpy as np
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.utilities.data import get_nexus_acquisition_system, write_acquisition_to_mrd
 from console.utilities.json_encoder import JSONEncoder
 
 log = logging.getLogger("AcqData")
@@ -91,7 +92,7 @@ class AcquisitionData:
         acq_folder_path.mkdir(parents=True, exist_ok=True)
 
         try:
-            self._save_acquisiton_data(acq_folder_path / "acquisition_data.h5")
+            self._write_acquisition_data(acq_folder_path / "rx_data.h5")
         except TypeError as exc:
             log.warning("Type error when saving acquisition data to h5 format.", exc_info=exc)
         except Exception as exc:
@@ -146,147 +147,75 @@ class AcquisitionData:
                 log.error(detail)
                 continue
 
-    def save_ismrmrd(self, header: ismrmrd.xsd.ismrmrdHeader | str | Path, user_path: str | None = None):
+    def save_ismrmrd(
+        self,
+        header: ismrmrd.xsd.ismrmrdHeader | str | Path | None = None,
+        user_path: str | None = None,
+    ) -> Path | None:
         """Store acquisition data in (ISMR)MRD format."""
-        # Get dimensions of raw data
-        if self.receive_data[0].processed_data is None:
+        # Ensure that receive data is available
+        if not self.receive_data or self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."
             raise AttributeError(detail)
 
-        if not isinstance(header, ismrmrd.xsd.ismrmrdHeader):
-            header_path = Path(header) if isinstance(header, str) else header
-            # Open the dataset
-            dataset = ismrmrd.Dataset(header_path, 'dataset')
-            # Read the XML header as a string
-            xml_header = dataset.read_xml_header()
-            # Parse it into a structured object (optional, see below)
-            header = ismrmrd.xsd.CreateFromDocument(xml_header)
-
-        enc_dim = [
-            header.encoding[0].encodedSpace.matrixSize.x,
-            header.encoding[0].encodedSpace.matrixSize.y,
-            header.encoding[0].encodedSpace.matrixSize.z,
-        ]
-        n_dims = sum([int(d > 0) for d in enc_dim])
-
-        sequence_trajectory = self.sequence.calculate_kspace()[0]
-
-        # Retrieve channel order from sequence definition, if available
-        channel_mapping = None
-        if (key := "channel_order") in self.sequence.definitions:
-            # Get definition if key 'channel_order' exists
-            channel_order = self.sequence.get_definition(key)
-            channels = ("x", "y", "z")
-            # Ensure that channel order is list/tuple, has length 3 and contains only valid channels
-            check = (
-                isinstance(channel_order, (list, tuple)) and
-                len(channel_order) == len(channels) and
-                all(ch in channels for ch in channel_order)
-            )
-            if check:
-                # Assign mapping if check passed
-                channel_mapping = [channel_order.index(ch) for ch in channels]
-        else:
-            log.warning("Could not find `channel_order` in sequence definitions, assigning sequence trajectory as is.")
-
-        # Update larmor frequency with exact frequency
-        header.experimentalConditions.H1resonanceFrequency_Hz = int(self.acquisition_parameters.larmor_frequency * 1e6)
-
-        # Set measurement information
-        measurement_info = ismrmrd.xsd.measurementInformationType()
-        measurement_info.measurementID = self.meta["acquisition_id"]
-        measurement_info.seriesDate = self.meta["date"]
-        measurement_info.seriesTime = self.meta["time"]
-        header.measurementInformation = measurement_info
-
-        # Set receive channels, required by gadgetron
-        system_info = ismrmrd.xsd.acquisitionSystemInformationType()
-        num_coils = self.receive_data[0].processed_data.shape[0]
-        system_info.receiverChannels = num_coils
-        system_info.systemVendor = "osi2"
-        system_info.systemModel = "Nexus"
-        system_info.systemFieldStrength_T = round(self.acquisition_parameters.larmor_frequency / 42.58, 4)
-        header.acquisitionSystemInformation = system_info
-
-        # Get folder path and create (ismr)mrd header
+        # Get MRD data path
         base_path = Path(user_path) if user_path else Path(self.session_path)
         base_path = base_path / self.meta["folder_name"]
         base_path.mkdir(parents=True, exist_ok=True)
         dataset_path = base_path / "data.mrd"
-        dataset = ismrmrd.Dataset(dataset_path)
-        dataset.write_xml_header(header.toXML('utf-8'))
 
-        # Create acquisition
-        acq = ismrmrd.Acquisition()
-        acq.version = int(version("ismrmrd")[0])
-        acq.read_dir[0] = 1.0
-        acq.phase_dir[1] = 1.0
-        acq.slice_dir[2] = 1.0
+        # Create measurement info from meta
+        info = ismrmrd.xsd.measurementInformationType(
+            measurementID=self.meta["acquisition_id"],
+            seriesDate=self.meta["date"],
+            seriesTime=self.meta["time"],
+        )
+        # Get number of coils per receive event and create acquisition system info
+        coils_per_rx = [
+            rx_data.processed_data.shape[0] for rx_data in self.receive_data if rx_data.processed_data is not None
+        ]
+        system_info = get_nexus_acquisition_system(
+            num_coils=max(coils_per_rx),
+            larmor_frequency=int(self.acquisition_parameters.larmor_frequency),
+        )
+        # Define experimental conditions with true larmor frequency
+        conditions = ismrmrd.xsd.experimentalConditionsType(
+            H1resonanceFrequency_Hz=int(self.acquisition_parameters.larmor_frequency),
+        )
 
-        trajectory_position = 0
-        count_unsaved = 0
+        # Create header if not given
+        if header is None:
+            log.info("ISMRMRD header not given, creating header without encoding/reconstruction info.")
+            header = ismrmrd.xsd.ismrmrdHeader()
 
-        for k, data in enumerate(self.receive_data):
+        # Load header from xml file
+        if isinstance(header, (str, Path)):
+            header_path = Path(header)
+            log.info("Loading ISMRMRD header from file: %s", header_path.name)
+            # Open the dataset
+            dataset = ismrmrd.Dataset(header_path)
+            # Read the XML file and create header
+            xml_header = dataset.read_xml_header()
+            header = ismrmrd.xsd.CreateFromDocument(xml_header)
 
-            if data.labels is None or data.processed_data is None:
-                count_unsaved += 1
-                continue
+        # Extend header if given
+        if isinstance(header, ismrmrd.xsd.ismrmrdHeader):
+            # Update existing ismrmrd header with measurement info, conditions and system info
+            header.measurementInformation = info
+            header.experimentalConditions = conditions
+            header.acquisitionSystemInformation = system_info
 
-            acq.clear_all_flags()
-            acq.scan_counter = k
-            # Resize each acquisition to the individual number of sample points and active channels
-            num_coils = data.processed_data.shape[0]
-            acq.resize(number_of_samples=data.num_samples, active_channels=num_coils, trajectory_dimensions=n_dims)
-            # Assume the center sample is the middle of the data
-            acq.center_sample = round(data.num_samples / 2)
-            # Readout bandwidth, as time between samples in microseconds
-            acq.sample_time_us = data.dwell_time * 1e6
-            # Timestamp of readout
-            if data.time_stamp is not None:
-                acq.acquisition_time_stamp = int(data.time_stamp * 1e6)  # timestamp in us
-
-            # Set counter
-            acq.idx.average = data.average_index
-            # Set encoding step 1 counters and flags
-            if (key := "LIN") in data.labels:
-                acq.idx.kspace_encode_step_1 = data.labels[key]
-            # Set encoding step 2 counters and flags
-            if (key := "PAR") in data.labels:
-                acq.idx.kspace_encode_step_2 = data.labels[key]
-            # Set slice encoding counters and flags
-            if (key := "SLC") in data.labels:
-                acq.idx.slice = data.labels[key]
-            # Set echo position/contrast counters and flags
-            if (key := "ECO") in data.labels:
-                acq.idx.contrast = data.labels[key]
-            # Set repetition counters and flags
-            if (key := "REP") in data.labels:
-                acq.idx.repetition = data.labels[key]
-
-            traj = sequence_trajectory[:, trajectory_position:trajectory_position + data.num_samples].T
-            # Rearrange trajectory according to sequence definition, if available
-            if channel_mapping is not None:
-                traj = traj[:, channel_mapping]
-
-            # Set the data and append
-            acq.data[:] = data.processed_data
-            acq.traj[:] = traj
-            trajectory_position += data.num_samples
-
-            dataset.append_acquisition(acq)
-
-        # Log warning if unlabeled acquisitions were found
-        if count_unsaved > 0:
-            log.warning(
-                "%i/%i acquisitions are unlabeled/none and could not be exported.",
-                count_unsaved,
-                len(self.receive_data),
+            return write_acquisition_to_mrd(
+                data=self.receive_data,
+                header=header,
+                sequence=self.sequence,
+                dataset_path=dataset_path,
             )
 
-        dataset.close()
-        log.info("ISMRMRD exported: %s", dataset_path)
+        log.warning("Invalid MRD header, could not write MRD file.")
+        return None
 
-    def _save_acquisiton_data(self, file_path: str) -> None:
+    def _write_acquisition_data(self, file_path: str) -> None:
         """Save AcquisitionData and all RxData entries to an HDF5 file."""
 
         def _write_dict(group: h5py.Group, _dict: dict) -> None:
