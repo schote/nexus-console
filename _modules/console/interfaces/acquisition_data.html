@@ -426,6 +426,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.rx_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">RxData</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.pulseq_interpreter.sequence_provider</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">SequenceProvider</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_nexus_acquisition_system</span><span class="p">,</span> <span class="n">write_acquisition_to_mrd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.json_encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONEncoder</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;AcqData&quot;</span><span class="p">)</span>
@@ -507,7 +508,7 @@
         <span class="n">acq_folder_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_save_acquisiton_data</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">&quot;acquisition_data.h5&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_acquisition_data</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">&quot;rx_data.h5&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Type error when saving acquisition data to h5 format.&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
@@ -571,148 +572,76 @@
 
 <div class="viewcode-block" id="AcquisitionData.save_ismrmrd">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.save_ismrmrd">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_ismrmrd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span> <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_ismrmrd</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">header</span><span class="p">:</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store acquisition data in (ISMR)MRD format.&quot;&quot;&quot;</span>
-        <span class="c1"># Get dimensions of raw data</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Ensure that receive data is available</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">detail</span> <span class="o">=</span> <span class="s2">&quot;Processed data not found in receive data. Cannot export ISMRMRD.&quot;</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span><span class="p">):</span>
-            <span class="n">header_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">header</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">header</span>
-            <span class="c1"># Open the dataset</span>
-            <span class="n">dataset</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">header_path</span><span class="p">,</span> <span class="s1">&#39;dataset&#39;</span><span class="p">)</span>
-            <span class="c1"># Read the XML header as a string</span>
-            <span class="n">xml_header</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">read_xml_header</span><span class="p">()</span>
-            <span class="c1"># Parse it into a structured object (optional, see below)</span>
-            <span class="n">header</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">CreateFromDocument</span><span class="p">(</span><span class="n">xml_header</span><span class="p">)</span>
-
-        <span class="n">enc_dim</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
-            <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
-            <span class="n">header</span><span class="o">.</span><span class="n">encoding</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">encodedSpace</span><span class="o">.</span><span class="n">matrixSize</span><span class="o">.</span><span class="n">z</span><span class="p">,</span>
-        <span class="p">]</span>
-        <span class="n">n_dims</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">d</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">enc_dim</span><span class="p">])</span>
-
-        <span class="n">sequence_trajectory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">calculate_kspace</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="c1"># Retrieve channel order from sequence definition, if available</span>
-        <span class="n">channel_mapping</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;channel_order&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">definitions</span><span class="p">:</span>
-            <span class="c1"># Get definition if key &#39;channel_order&#39; exists</span>
-            <span class="n">channel_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">get_definition</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="n">channels</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">)</span>
-            <span class="c1"># Ensure that channel order is list/tuple, has length 3 and contains only valid channels</span>
-            <span class="n">check</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="nb">isinstance</span><span class="p">(</span><span class="n">channel_order</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">and</span>
-                <span class="nb">len</span><span class="p">(</span><span class="n">channel_order</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="ow">and</span>
-                <span class="nb">all</span><span class="p">(</span><span class="n">ch</span> <span class="ow">in</span> <span class="n">channels</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channel_order</span><span class="p">)</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="n">check</span><span class="p">:</span>
-                <span class="c1"># Assign mapping if check passed</span>
-                <span class="n">channel_mapping</span> <span class="o">=</span> <span class="p">[</span><span class="n">channel_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">channels</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Could not find `channel_order` in sequence definitions, assigning sequence trajectory as is.&quot;</span><span class="p">)</span>
-
-        <span class="c1"># Update larmor frequency with exact frequency</span>
-        <span class="n">header</span><span class="o">.</span><span class="n">experimentalConditions</span><span class="o">.</span><span class="n">H1resonanceFrequency_Hz</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>
-
-        <span class="c1"># Set measurement information</span>
-        <span class="n">measurement_info</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">measurementInformationType</span><span class="p">()</span>
-        <span class="n">measurement_info</span><span class="o">.</span><span class="n">measurementID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;acquisition_id&quot;</span><span class="p">]</span>
-        <span class="n">measurement_info</span><span class="o">.</span><span class="n">seriesDate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span>
-        <span class="n">measurement_info</span><span class="o">.</span><span class="n">seriesTime</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">]</span>
-        <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span> <span class="o">=</span> <span class="n">measurement_info</span>
-
-        <span class="c1"># Set receive channels, required by gadgetron</span>
-        <span class="n">system_info</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">acquisitionSystemInformationType</span><span class="p">()</span>
-        <span class="n">num_coils</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">system_info</span><span class="o">.</span><span class="n">receiverChannels</span> <span class="o">=</span> <span class="n">num_coils</span>
-        <span class="n">system_info</span><span class="o">.</span><span class="n">systemVendor</span> <span class="o">=</span> <span class="s2">&quot;osi2&quot;</span>
-        <span class="n">system_info</span><span class="o">.</span><span class="n">systemModel</span> <span class="o">=</span> <span class="s2">&quot;Nexus&quot;</span>
-        <span class="n">system_info</span><span class="o">.</span><span class="n">systemFieldStrength_T</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">/</span> <span class="mf">42.58</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span> <span class="o">=</span> <span class="n">system_info</span>
-
-        <span class="c1"># Get folder path and create (ismr)mrd header</span>
+        <span class="c1"># Get MRD data path</span>
         <span class="n">base_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">user_path</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">)</span>
         <span class="n">base_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;folder_name&quot;</span><span class="p">]</span>
         <span class="n">base_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="s2">&quot;data.mrd&quot;</span>
-        <span class="n">dataset</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">)</span>
-        <span class="n">dataset</span><span class="o">.</span><span class="n">write_xml_header</span><span class="p">(</span><span class="n">header</span><span class="o">.</span><span class="n">toXML</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
 
-        <span class="c1"># Create acquisition</span>
-        <span class="n">acq</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">Acquisition</span><span class="p">()</span>
-        <span class="n">acq</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">version</span><span class="p">(</span><span class="s2">&quot;ismrmrd&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">acq</span><span class="o">.</span><span class="n">read_dir</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="n">acq</span><span class="o">.</span><span class="n">phase_dir</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
-        <span class="n">acq</span><span class="o">.</span><span class="n">slice_dir</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c1"># Create measurement info from meta</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">measurementInformationType</span><span class="p">(</span>
+            <span class="n">measurementID</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;acquisition_id&quot;</span><span class="p">],</span>
+            <span class="n">seriesDate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">],</span>
+            <span class="n">seriesTime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="c1"># Get number of coils per receive event and create acquisition system info</span>
+        <span class="n">coils_per_rx</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">rx_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span> <span class="k">if</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">]</span>
+        <span class="n">system_info</span> <span class="o">=</span> <span class="n">get_nexus_acquisition_system</span><span class="p">(</span>
+            <span class="n">num_coils</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">coils_per_rx</span><span class="p">),</span>
+            <span class="n">larmor_frequency</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="c1"># Define experimental conditions with true larmor frequency</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">experimentalConditionsType</span><span class="p">(</span>
+            <span class="n">H1resonanceFrequency_Hz</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">),</span>
+        <span class="p">)</span>
 
-        <span class="n">trajectory_position</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">count_unsaved</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Create header if not given</span>
+        <span class="k">if</span> <span class="n">header</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ISMRMRD header not given, creating header without encoding/reconstruction info.&quot;</span><span class="p">)</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span><span class="p">()</span>
 
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">):</span>
+        <span class="c1"># Load header from xml file</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+            <span class="n">header_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading ISMRMRD header from file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">header_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="c1"># Open the dataset</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">header_path</span><span class="p">)</span>
+            <span class="c1"># Read the XML file and create header</span>
+            <span class="n">xml_header</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">read_xml_header</span><span class="p">()</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">CreateFromDocument</span><span class="p">(</span><span class="n">xml_header</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">data</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">count_unsaved</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="k">continue</span>
+        <span class="c1"># Extend header if given</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span><span class="p">):</span>
+            <span class="c1"># Update existing ismrmrd header with measurement info, conditions and system info</span>
+            <span class="n">header</span><span class="o">.</span><span class="n">measurementInformation</span> <span class="o">=</span> <span class="n">info</span>
+            <span class="n">header</span><span class="o">.</span><span class="n">experimentalConditions</span> <span class="o">=</span> <span class="n">conditions</span>
+            <span class="n">header</span><span class="o">.</span><span class="n">acquisitionSystemInformation</span> <span class="o">=</span> <span class="n">system_info</span>
 
-            <span class="n">acq</span><span class="o">.</span><span class="n">clear_all_flags</span><span class="p">()</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">scan_counter</span> <span class="o">=</span> <span class="n">k</span>
-            <span class="c1"># Resize each acquisition to the individual number of sample points and active channels</span>
-            <span class="n">num_coils</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">processed_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">number_of_samples</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">active_channels</span><span class="o">=</span><span class="n">num_coils</span><span class="p">,</span> <span class="n">trajectory_dimensions</span><span class="o">=</span><span class="n">n_dims</span><span class="p">)</span>
-            <span class="c1"># Assume the center sample is the middle of the data</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">center_sample</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="c1"># Readout bandwidth, as time between samples in microseconds</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">sample_time_us</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">dwell_time</span> <span class="o">*</span> <span class="mf">1e6</span>
-            <span class="c1"># Timestamp of readout</span>
-            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">time_stamp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">acquisition_time_stamp</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">time_stamp</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span>  <span class="c1"># timestamp in us</span>
-
-            <span class="c1"># Set counter</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">average</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">average_index</span>
-            <span class="c1"># Set encoding step 1 counters and flags</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;LIN&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">kspace_encode_step_1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="c1"># Set encoding step 2 counters and flags</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;PAR&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">kspace_encode_step_2</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="c1"># Set slice encoding counters and flags</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;SLC&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">slice</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="c1"># Set echo position/contrast counters and flags</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;ECO&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">contrast</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="c1"># Set repetition counters and flags</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">:=</span> <span class="s2">&quot;REP&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">:</span>
-                <span class="n">acq</span><span class="o">.</span><span class="n">idx</span><span class="o">.</span><span class="n">repetition</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-            <span class="n">traj</span> <span class="o">=</span> <span class="n">sequence_trajectory</span><span class="p">[:,</span> <span class="n">trajectory_position</span><span class="p">:</span><span class="n">trajectory_position</span> <span class="o">+</span> <span class="n">data</span><span class="o">.</span><span class="n">num_samples</span><span class="p">]</span><span class="o">.</span><span class="n">T</span>
-            <span class="c1"># Rearrange trajectory according to sequence definition, if available</span>
-            <span class="k">if</span> <span class="n">channel_mapping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">traj</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[:,</span> <span class="n">channel_mapping</span><span class="p">]</span>
-
-            <span class="c1"># Set the data and append</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">processed_data</span>
-            <span class="n">acq</span><span class="o">.</span><span class="n">traj</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">traj</span>
-            <span class="n">trajectory_position</span> <span class="o">+=</span> <span class="n">data</span><span class="o">.</span><span class="n">num_samples</span>
-
-            <span class="n">dataset</span><span class="o">.</span><span class="n">append_acquisition</span><span class="p">(</span><span class="n">acq</span><span class="p">)</span>
-
-        <span class="c1"># Log warning if unlabeled acquisitions were found</span>
-        <span class="k">if</span> <span class="n">count_unsaved</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="si">%i</span><span class="s2">/</span><span class="si">%i</span><span class="s2"> acquisitions are unlabeled/none and could not be exported.&quot;</span><span class="p">,</span>
-                <span class="n">count_unsaved</span><span class="p">,</span>
-                <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">),</span>
+            <span class="k">return</span> <span class="n">write_acquisition_to_mrd</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">,</span>
+                <span class="n">header</span><span class="o">=</span><span class="n">header</span><span class="p">,</span>
+                <span class="n">sequence</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">,</span>
+                <span class="n">dataset_path</span><span class="o">=</span><span class="n">dataset_path</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="n">dataset</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ISMRMRD exported: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">dataset_path</span><span class="p">)</span></div>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid MRD header, could not write MRD file.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_save_acquisiton_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_write_acquisition_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save AcquisitionData and all RxData entries to an HDF5 file.&quot;&quot;&quot;</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_write_dict</span><span class="p">(</span><span class="n">group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
