@@ -18,7 +18,7 @@ from console.utilities.sequences import se_spectrum, tse_3d
     Dimensions(x=100, y=80, z=1),   # 2D case
     Dimensions(x=119, y=1, z=1),    # 1D case
 ])
-def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter, seq_provider):
+def test_write_acquisition_to_mrd(trajectory_type, dim, random_complex_data, acquisition_parameter, seq_provider):
     """Test 3D TSE imaging sequence constructor."""
     seq, header = tse_3d.constructor(
         n_enc=dim,
