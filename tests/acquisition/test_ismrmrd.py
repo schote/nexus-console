@@ -62,7 +62,7 @@ def test_tse_3d(trajectory_type, dim, random_complex_data, acquisition_parameter
 
 @pytest.mark.parametrize("num_coils", [1, 2, 4])
 @pytest.mark.parametrize("num_averages", [1, 5])
-def test_write_acquisition_to_mrd(random_acquisition_data, num_coils: int, num_averages: int) -> None:
+def test_write_single_acquisition_to_mrd(random_acquisition_data, num_coils: int, num_averages: int) -> None:
     """Test ismrmrd export for 1D data."""
     num_samples = 1000
     receive_data = random_acquisition_data(
