@@ -105,7 +105,6 @@ class SequenceProvider(Sequence):
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
         # Initialize larmor frequency and sequence cache variables, to be set later
-        self.larmor_freq: float = float("nan")
         self._sqnc_cache: np.ndarray | None = None
 
     # -------- PyPulseq interface -------- #
@@ -187,7 +186,6 @@ class SequenceProvider(Sequence):
             "gpa_gain": self.gpa_gain,
             "gradient_efficiency": self.grad_eff,
             "output_limits": self.output_limits,
-            "larmor_freq": self.larmor_freq,
         }
 
     def get_adc_events(self) -> list:
@@ -278,7 +276,6 @@ class SequenceProvider(Sequence):
             raise
 
         self._sqnc_cache = None
-        self.larmor_freq = parameter.larmor_frequency
         ch_idx: Dimensions = parameter.channel_assignment
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
@@ -290,7 +287,9 @@ class SequenceProvider(Sequence):
         # Should probably be moved inside of get_rf_events()
         rf_pulses = {}
         for rf_event in rf_events:
-            rf_pulses[rf_event[0]] = self._calculate_rf(block=rf_event[1], b1_scaling=parameter.b1_scaling)
+            rf_pulses[rf_event[0]] = self._calculate_rf(
+                block=rf_event[1], b1_scaling=parameter.b1_scaling, larmor_frequency=parameter.larmor_frequency,
+            )
 
         seq_duration, _, _ = self.duration()
         seq_samples = round(seq_duration * self.spcm_freq)
@@ -490,6 +489,7 @@ class SequenceProvider(Sequence):
     def _calculate_rf(
         self,
         block: SimpleNamespace,
+        larmor_frequency: float,
         b1_scaling: float,
     ) -> tuple[np.ndarray, np.ndarray]:
         """Calculate RF sample points to be played by TX card.
@@ -498,12 +498,10 @@ class SequenceProvider(Sequence):
         ----------
         block
             Pulseq RF block
-        unroll_arr
-            Section of numpy array which will contain unrolled RF event
+        larmor_frequency
+            Larmor frequency of RF waveform
         b1_scaling
             Experiment dependent scaling factor of the RF amplitude
-        unblanking
-            Unblanking signal which is updated in-place for the calculated RF event
 
         Returns
         -------
@@ -517,18 +515,20 @@ class SequenceProvider(Sequence):
         try:
             if not block.type == "rf":
                 raise ValueError("Sequence block event is not a valid RF event.")
+            if not larmor_frequency > 0.:
+                raise ValueError(f"Invalid Larmor frequency: {larmor_frequency}")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
 
         # Calculate the number of delay samples before an RF event (and unblanking)
+        # Note that the RF ring-down time is handled implicitly: the block duration used to place the RF waveform
+        # already includes the post-pulse dead time, so no additional handling is required.
         # Dead-time is automatically set as delay! Delay accounts for start of RF event
         num_samples_delay = round(max(block.dead_time, block.delay) * self.spcm_freq)
         # Calculate the number of dead-time samples between unblanking and RF event
         # Delay - dead-time samples account for start of unblanking
         num_samples_dead_time = round(block.dead_time * self.spcm_freq)
-        # Calculate the number of ringdown samples at the end of RF pulse
-        # num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
         # Calculate the number of RF shape sample points
         num_samples = round(block.shape_dur * self.spcm_freq)
 
@@ -560,7 +560,7 @@ class SequenceProvider(Sequence):
         # Only precalculate carrier time array, calculate carriere here to take into account the
         # frequency and phase offsets of an RF block event
         carrier_time = np.arange(num_samples) * self.spcm_dwell_time
-        carrier = np.exp(2j * np.pi * (self.larmor_freq + block.freq_offset) * carrier_time)
+        carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
 
         try:
             waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
@@ -667,6 +667,9 @@ class SequenceProvider(Sequence):
         f0_limit = self.spcm_freq / 2
         if parameter.larmor_frequency >= f0_limit:
             msg = f"Larmor frequency too high ({parameter.larmor_frequency * 1e-6} MHz), violating sampling theorem"
+            raise ValueError(msg)
+        if parameter.larmor_frequency <= 0:
+            msg = "Larmor frequency invalid (<= 0)."
             raise ValueError(msg)
 
         # Validate channel assignment
