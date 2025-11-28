@@ -50,10 +50,10 @@ class AcquisitionParameter:
     b1_scaling: float = 1.0
     """Scaling of the B1 field (RF transmit power)."""
 
-    gradient_offset: Dimensions = field(default_factory=_grad_factory)
+    gradient_offset: Dimensions = field(default_factory=_gradient_offset_factory)
     """Gradient offset values in mV."""
 
-    fov_scaling: Dimensions = field(default_factory=_fov_factory)
+    fov_scaling: Dimensions = field(default_factory=_fov_scaling_factory)
     """Field of view scaling for Gx, Gy and Gz."""
 
     channel_assignment: Dimensions = field(default_factory=_channel_factory)
