@@ -14,7 +14,7 @@ def _gradient_offset_factory() -> Dimensions:
     return Dimensions(x=0, y=0, z=0)
 
 
-def _fov_factory() -> Dimensions:
+def _fov_scaling_factory() -> Dimensions:
     return Dimensions(x=1., y=1., z=1.)
 
 
