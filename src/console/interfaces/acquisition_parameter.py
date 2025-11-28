@@ -10,7 +10,7 @@ from console.interfaces.dimensions import Dimensions
 from console.interfaces.enums import DDCMethod
 
 
-def _grad_factory() -> Dimensions:
+def _gradient_offset_factory() -> Dimensions:
     return Dimensions(x=0, y=0, z=0)
 
 
