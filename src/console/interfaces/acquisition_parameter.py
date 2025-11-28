@@ -71,7 +71,7 @@ class AcquisitionParameter:
     state_filepath: str = str(Path.home() / "nexus-console/acquisition-parameter.state")
     """Default file path for acquisition parameter state.
 
-    Don't enforece a Path object here to prevent conflicts when sending acquisition parameter
+    Don't enforce a Path object here to prevent conflicts when sending acquisition parameter
     instances between different OS.
     """
 
