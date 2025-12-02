@@ -46,9 +46,9 @@ class SequenceProvider(Sequence):
 
     Example
     -------
-    >>> seq = SequenceProvider()
-    >>> seq.read("./seq_file.seq")
-    >>> sqnc, gate, total_samples = seq.unroll_sequence()
+    >>> seq_provider = SequenceProvider()
+    >>> seq_provider.read("./seq_file.seq")
+    >>> unrolled = seq_provider.unroll_sequence(acquisition_parameter)
     """
 
     __name__: str = "SequenceProvider"
