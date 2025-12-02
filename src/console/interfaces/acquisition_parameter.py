@@ -45,7 +45,7 @@ class AcquisitionParameter:
     """
 
     larmor_frequency: float = 2.e6
-    """Larmor frequency in MHz."""
+    """Larmor frequency in Hz."""
 
     b1_scaling: float = 1.0
     """Scaling of the B1 field (RF transmit power)."""

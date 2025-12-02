@@ -257,7 +257,7 @@ def test_get_rf_events(seq_provider, test_sequence):
     assert rf_block.type == "rf"
 
 
-def test_unroll_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter):
+def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter):
     """Labels in blocks must be propagated into RxData.labels for each ADC event."""
     n_samples = 1000
     bw = 20e3
