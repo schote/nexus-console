@@ -2,8 +2,11 @@
 
 # %%
 from math import pi
+
 import pypulseq as pp
+
 from console.utilities.sequences.system_settings import raster, system
+
 
 def constructor(
     fov: float = 0.24,
@@ -45,11 +48,10 @@ def constructor(
     ValueError
         Sequence time check failed
     """
-    
     # Set default values
     if channel is None:
         channel = "x"
-    
+
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "se_projection")
     seq.set_definition("readout_bandwidth_in_Hz", readout_bandwidth)
@@ -66,7 +68,7 @@ def constructor(
     else:
         rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration,
                                     delay=system.rf_dead_time)
-        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration, 
+        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration,
                                      delay=system.rf_dead_time)
 
     adc_duration = num_samples / readout_bandwidth
@@ -92,14 +94,14 @@ def constructor(
     )
 
     # Calculate delays
-    te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay 
-                        - pp.calc_duration(g_ro_prew), 
+    te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay
+                        - pp.calc_duration(g_ro_prew),
                         precision=system.grad_raster_time)
-    te_delay_2 = raster(echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time 
-                        - adc.dead_time - gradient_correction - g_ro.rise_time, 
+    te_delay_2 = raster(echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time
+                        - adc.dead_time - gradient_correction - g_ro.rise_time,
                         precision=system.grad_raster_time)
 
- 
+
     # Construct sequence
     seq.add_block(rf_90)
     seq.add_block(g_ro_prew)
