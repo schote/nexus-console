@@ -22,7 +22,7 @@ def constructor(
     echo_time
         Time between center of 90 degree pulse and center of ADC in s
     rf_duration
-        Duration of the excitation RF pulse in s
+        Duration of the RF pulses in s
     num_samples
         Number of data points to acquire
     acq_bandwidth
