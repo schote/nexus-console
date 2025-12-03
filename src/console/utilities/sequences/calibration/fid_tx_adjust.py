@@ -69,11 +69,11 @@ def constructor(
         _start_time = sum(seq.block_durations.values())
         seq.add_block(rf_90)
         seq.add_block(adc)
-        
+
         # calculate TR delay
         _duration_step = sum(seq.block_durations.values()) - _start_time
         delay_tr = repetition_time - _duration_step
-        
+
         seq.add_block(pp.make_delay(delay_tr))
 
     return seq, flip_angles
