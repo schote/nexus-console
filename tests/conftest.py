@@ -109,7 +109,7 @@ def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "test_sequence")
-    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2, system=system))
+    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2, system=system, delay=system.rf_dead_time))
     seq.add_block(pp.make_delay(10e-6))
     seq.add_block(pp.make_trapezoid(channel="x", area=5e-3, system=system))
     seq.add_block(pp.make_arbitrary_grad(
