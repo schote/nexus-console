@@ -22,12 +22,22 @@ def constructor(
 
     Parameters
     ----------
-    n_steps, optional
-        Number of flip angles, by default 10
-    tr, optional
-        Repetition time in s, by default 1000
-    te, optional
-        Echo time in s, by default 12e-3
+    n_steps
+        Number of flip angles
+    flip_angle_range
+        Range of flip angles in rad
+    repetition_time
+        Repetition time in s
+    rf_duration
+        RF pulse duration in s
+    use_sinc
+        RF pulse type, if true sinc pulse is used, rect otherwise
+    num_adc_samples
+        Number of ADC samples
+    acq_bandwidth
+        Acquisition bandwidth in Hz
+    ring_down_time
+        RF ring down time in s
 
     Returns
     -------
@@ -56,9 +66,14 @@ def constructor(
             rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration, apodization=0.5)
         else:
             rf_90 = pp.make_block_pulse(system=system, flip_angle=angle, duration=rf_duration)
-
+        _start_time = sum(seq.block_durations.values())
         seq.add_block(rf_90)
         seq.add_block(adc)
-        seq.add_block(pp.make_delay(repetition_time))
+        
+        # calculate TR delay
+        _duration_step = sum(seq.block_durations.values()) - _start_time
+        delay_tr = repetition_time - _duration_step
+        
+        seq.add_block(pp.make_delay(delay_tr))
 
     return seq, flip_angles
