@@ -63,9 +63,11 @@ def constructor(
 
     for angle in flip_angles:
         if use_sinc:
-            rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration, apodization=0.5)
+            rf_90 = pp.make_sinc_pulse(system=system, flip_angle=angle, duration=rf_duration, apodization=0.5,
+                                       delay=system.rf_dead_time)
         else:
-            rf_90 = pp.make_block_pulse(system=system, flip_angle=angle, duration=rf_duration)
+            rf_90 = pp.make_block_pulse(system=system, flip_angle=angle, duration=rf_duration,
+                                        delay=system.rf_dead_time)
         _start_time = sum(seq.block_durations.values())
         seq.add_block(rf_90)
         seq.add_block(adc)
