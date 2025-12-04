@@ -32,6 +32,7 @@ INT16_MIN = np.iinfo(np.int16).min
 
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
 default_fov_offset: Dimensions = Dimensions(0, 0, 0)
+default_orientation: Dimensions = Dimensions(1, 2, 3)
 
 
 class SequenceProvider(Sequence):
@@ -571,7 +572,11 @@ class SequenceProvider(Sequence):
 
     @profile
     def _calculate_gradient(
-        self, block: SimpleNamespace, fov_scaling: float, offset: float | int
+        self,
+        block: SimpleNamespace,
+        fov_scaling: float,
+        offset: float,
+        orientation: Dimensions = default_orientation,
     ) -> np.ndarray:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
@@ -595,14 +600,21 @@ class SequenceProvider(Sequence):
             Invalid block type (must be either ``grad`` or ``trap``),
             gradient amplitude exceeds channel maximum output level
         """
-        # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
-        idx = ["x", "y", "z"].index(block.channel)
-
-        # Calculate gradient waveform scaling
-        scaling = fov_scaling * self.imp_scaling[idx + 1] / (
-            self.system.gamma * self.gpa_gain[idx] * self.grad_eff[idx])
-
         try:
+            # Index of this gradient, dependent on channel orientation
+            idx = orientation.to_dict().get(block.channel)
+            if idx is None:
+                msg = f"Invalid channel designation in gradient block: {block.channel}"
+                raise IndexError(msg)
+
+            # Ensure integer
+            idx = int(idx)
+
+            # Calculate gradient waveform scaling, substract gain and efficiency index by 1,
+            # because these lists do not include the RF channel (i.e. gradient channe 1 corresponds to index 0)
+            scaling = fov_scaling * self.imp_scaling[idx] / (
+                self.system.gamma * 1e-3 * self.gpa_gain[idx-1] * self.grad_eff[idx-1])
+
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
