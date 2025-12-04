@@ -129,6 +129,7 @@ def acquisition_parameter() -> AcquisitionParameter:
         b1_scaling=5.432,
         gradient_offset=Dimensions(0, 100, 500),
         fov_scaling=Dimensions(0.5, 0.0, 0.9),
+        channel_assignment=Dimensions(1, 2, 3),
         averaging_delay=1.01,
         state_filepath=tempfile.mkdtemp(),
     )
