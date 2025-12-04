@@ -633,9 +633,9 @@ class SequenceProvider(Sequence):
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 flat_amp = block.amplitude * scaling
-                self._check_amplitude(block.channel, np.amax(flat_amp), self.output_limits[idx + 1])
+                self._check_amplitude(block.channel, np.amax(flat_amp), self.output_limits[idx])
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[idx + 1]
+                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[idx]
                 # Define rise, flat and fall sections of trapezoidal gradient on spectrum card time raster
                 rise = np.linspace(0, flat_amp_i16, round(block.rise_time / self.spcm_dwell_time))
                 flat = np.full(round(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp_i16)
@@ -649,12 +649,12 @@ class SequenceProvider(Sequence):
             # Calculate gradient offset int16 value from mV
             # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
             # Gradient offset is used for calculating output limits but is not added to the waveform
-            offset_i16 = offset * INT16_MAX / self.output_limits[idx + 1]
+            offset_i16 = offset * INT16_MAX / self.output_limits[idx]
             # This is the combined int16 gradient and offset waveform as float dtype
             combined_i16 = gradient + offset_i16
             if (max_strength_i16 := np.amax(combined_i16)) > INT16_MAX:
                 # Report maximum strength in mV
-                max_strength = max_strength_i16 * self.output_limits[idx + 1] / INT16_MAX
+                max_strength = max_strength_i16 * self.output_limits[idx] / INT16_MAX
                 msg = f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude"
                 raise ValueError(msg)
 
