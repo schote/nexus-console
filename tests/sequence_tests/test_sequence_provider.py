@@ -147,7 +147,7 @@ def test_invalid_channel_assignment(
     test_sequence,
     acquisition_parameter,
 ):
-    """unroll_sequence should fail when Larmor frequency violates Nyquist limit."""
+    """unroll_sequence should fail when incorrect value for channel assignment is set."""
     seq_provider.from_pypulseq(test_sequence)
     # Set invalid values
     acquisition_parameter.channel_assignment.x = 4
@@ -173,7 +173,7 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=seq_provider.output_limits[1])
     block.channel = "a"
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=0.)
 
 
@@ -198,7 +198,7 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=seq_provider.output_limits[1])
     block.channel = "a"
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=0.)
 
 def test_calculate_rf_block(seq_provider: SequenceProvider):
