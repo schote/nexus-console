@@ -277,7 +277,7 @@ class SequenceProvider(Sequence):
             raise
 
         self._sqnc_cache = None
-        ch_idx: Dimensions = parameter.channel_assignment
+        gradient_index: Dimensions = parameter.channel_assignment
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
@@ -322,32 +322,56 @@ class SequenceProvider(Sequence):
 
             if block.gx is not None:  # Gx event
                 waveform = self._calculate_gradient(
-                    block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x,
+                    block=block.gx,
+                    # Consider the FoV and offset values of the target output channel
+                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.x-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.x-1)],
+                    output_channel=int(gradient_index.x),
                 )
                 delay = block.gx.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gx = waveform_start + 4 * delay_samples
-                gx_slice = slice(waveform_start_gx + ch_idx.x, waveform_start_gx + 4 * np.size(waveform) + ch_idx.x, 4)
+                gx_slice = slice(
+                    waveform_start_gx + gradient_index.x,
+                    waveform_start_gx + 4 * np.size(waveform) + gradient_index.x,
+                    4,
+                )
                 _seq[gx_slice] = waveform
 
             if block.gy is not None:  # Gy event
                 waveform = self._calculate_gradient(
-                    block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y,
+                    block=block.gy,
+                    # Consider the FoV and offset values of the target output channel
+                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.y-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
+                    output_channel=int(gradient_index.y),
                 )
                 delay = block.gy.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gy = waveform_start + 4 * delay_samples
-                gy_slice = slice(waveform_start_gy + ch_idx.y, waveform_start_gy + 4 * np.size(waveform) + ch_idx.y, 4)
+                gy_slice = slice(
+                    waveform_start_gy + gradient_index.y,
+                    waveform_start_gy + 4 * np.size(waveform) + gradient_index.y,
+                    4,
+                )
                 _seq[gy_slice] = waveform
 
             if block.gz is not None:  # Gz event
                 waveform = self._calculate_gradient(
-                    block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z,
+                    block=block.gz,
+                    # Consider the FoV and offset values of the target output channel
+                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.z-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
+                    output_channel=int(gradient_index.z),
                 )
                 delay = block.gz.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gz = waveform_start + 4 * delay_samples
-                gz_slice = slice(waveform_start_gz + ch_idx.z, waveform_start_gz + 4 * np.size(waveform) + ch_idx.z, 4)
+                gz_slice = slice(
+                    waveform_start_gz + gradient_index.z,
+                    waveform_start_gz + 4 * np.size(waveform) + gradient_index.z,
+                    4,
+                )
                 _seq[gz_slice] = waveform
 
             if block.rf is not None:  # RF event
@@ -576,7 +600,7 @@ class SequenceProvider(Sequence):
         block: SimpleNamespace,
         fov_scaling: float,
         offset: float,
-        orientation: Dimensions = default_orientation,
+        output_channel: int,
     ) -> np.ndarray:
         """Calculate spectrum-card sample points of a pypulseq gradient block event.
 
@@ -601,28 +625,19 @@ class SequenceProvider(Sequence):
             gradient amplitude exceeds channel maximum output level
         """
         try:
-            # Index of this gradient, dependent on channel orientation
-            idx = orientation.to_dict().get(block.channel)
-            if idx is None:
-                msg = f"Invalid channel designation in gradient block: {block.channel}"
-                raise IndexError(msg)
-
-            # Ensure integer
-            idx = int(idx)
-
             # Calculate gradient waveform scaling, substract gain and efficiency index by 1,
             # because these lists do not include the RF channel (i.e. gradient channe 1 corresponds to index 0)
-            scaling = fov_scaling * self.imp_scaling[idx] / (
-                self.system.gamma * 1e-3 * self.gpa_gain[idx-1] * self.grad_eff[idx-1])
+            scaling = fov_scaling * self.imp_scaling[output_channel] / (
+                self.system.gamma * 1e-3 * self.gpa_gain[output_channel-1] * self.grad_eff[output_channel-1])
 
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
                 waveform = block.waveform * scaling
-                self._check_amplitude(block.channel, np.amax(waveform), self.output_limits[idx + 1])
+                self._check_amplitude(output_channel, np.amax(waveform), self.output_limits[output_channel])
                 # Transfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx + 1]
+                waveform *= INT16_MAX / self.output_limits[output_channel]
                 # Interpolate waveform on spectrum card time raster
                 gradient = np.interp(
                     x=np.linspace(block.tt[0], block.tt[-1], round(block.shape_dur / self.spcm_dwell_time)),
@@ -633,9 +648,9 @@ class SequenceProvider(Sequence):
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
                 flat_amp = block.amplitude * scaling
-                self._check_amplitude(block.channel, np.amax(flat_amp), self.output_limits[idx])
+                self._check_amplitude(output_channel, np.amax(flat_amp), self.output_limits[output_channel])
                 # Transfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[idx]
+                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[output_channel]
                 # Define rise, flat and fall sections of trapezoidal gradient on spectrum card time raster
                 rise = np.linspace(0, flat_amp_i16, round(block.rise_time / self.spcm_dwell_time))
                 flat = np.full(round(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp_i16)
@@ -647,14 +662,13 @@ class SequenceProvider(Sequence):
                 raise ValueError("Block is not a valid gradient block")
 
             # Calculate gradient offset int16 value from mV
-            # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
             # Gradient offset is used for calculating output limits but is not added to the waveform
-            offset_i16 = offset * INT16_MAX / self.output_limits[idx]
+            offset_i16 = offset * INT16_MAX / self.output_limits[output_channel]
             # This is the combined int16 gradient and offset waveform as float dtype
             combined_i16 = gradient + offset_i16
             if (max_strength_i16 := np.amax(combined_i16)) > INT16_MAX:
                 # Report maximum strength in mV
-                max_strength = max_strength_i16 * self.output_limits[idx] / INT16_MAX
+                max_strength = max_strength_i16 * self.output_limits[output_channel] / INT16_MAX
                 msg = f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude"
                 raise ValueError(msg)
 
@@ -667,10 +681,10 @@ class SequenceProvider(Sequence):
 
     # -------- Private validation methods -------- #
 
-    def _check_amplitude(self, name: str, value: float, limit: float) -> None:
+    def _check_amplitude(self, idx: int, value: float, limit: float) -> None:
         """Raise error if amplitude exceeds output limit."""
         if value > limit:
-            msg = f"Amplitude of {name} gradient ({value}) exceeded output limit ({limit}))"
+            msg = f"Amplitude of channel {idx} ({value}) exceeded output limit ({limit}))"
             raise ValueError(msg)
 
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:

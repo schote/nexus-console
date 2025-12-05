@@ -162,7 +162,9 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
         waveform=np.array([0.0, 0.5, 0.9], dtype=float),
     )
 
-    grad = seq_provider._calculate_gradient(block=block, fov_scaling=1.0, offset=0.0)
+    grad = seq_provider._calculate_gradient(
+        block=block, fov_scaling=1.0, offset=0.0, output_channel=1,
+    )
 
     # Output is uint16-view of int16 >> 1
     assert isinstance(grad, np.ndarray)
@@ -171,10 +173,9 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
 
     # Test exceptions
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=seq_provider.output_limits[1])
-    block.channel = "a"
-    with pytest.raises(IndexError):
-        _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=0.)
+        _ = seq_provider._calculate_gradient(
+            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+        )
 
 
 def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
@@ -188,7 +189,9 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
     )
 
     total_dur = block.rise_time + block.flat_time + block.fall_time
-    grad = seq_provider._calculate_gradient(block=block, fov_scaling=1.0, offset=0.0)
+    grad = seq_provider._calculate_gradient(
+        block=block, fov_scaling=1.0, offset=0.0, output_channel=1,
+    )
 
     assert isinstance(grad, np.ndarray)
     assert grad.dtype == np.uint16
@@ -196,10 +199,10 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
 
     # Test exceptions
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=seq_provider.output_limits[1])
-    block.channel = "a"
-    with pytest.raises(IndexError):
-        _ = seq_provider._calculate_gradient(block=block, fov_scaling=1., offset=0.)
+        _ = seq_provider._calculate_gradient(
+            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+        )
+
 
 def test_calculate_rf_block(seq_provider: SequenceProvider):
     """Cover _calculate_rf for valid and invalid RF blocks."""
