@@ -49,8 +49,17 @@ class Dimensions:
         return cls(**{key: dim[key] for key in required})
 
     def to_dict(self) -> dict[str, int | float]:
-        """Convert to a nested dictionary."""
+        """Convert to a dictionary."""
         return asdict(self, dict_factory=_dict_factory)
+
+    @classmethod
+    def from_list(cls, dim: list[int | float]) -> Dimensions:
+        """Create a Dimensions instance from a list."""
+        return cls(*dim)
+
+    def to_list(self) -> list[int | float]:
+        """Convert to a list."""
+        return [self.x, self.y, self.z]
 
     def __setattr__(self, name: str, value: float) -> None:
         """Overwrite setter to trigger private on_change method if set."""
