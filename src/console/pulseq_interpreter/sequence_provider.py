@@ -323,8 +323,11 @@ class SequenceProvider(Sequence):
             if block.gx is not None:  # Gx event
                 waveform = self._calculate_gradient(
                     block=block.gx,
-                    # Consider the FoV and offset values of the target output channel
-                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.x-1)],
+                    # FoV scaling refers to the sequence, block.gx -> x
+                    fov_scaling=parameter.fov_scaling.x,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.x-1)],
                     output_channel=int(gradient_index.x),
                 )
@@ -341,8 +344,11 @@ class SequenceProvider(Sequence):
             if block.gy is not None:  # Gy event
                 waveform = self._calculate_gradient(
                     block=block.gy,
-                    # Consider the FoV and offset values of the target output channel
-                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.y-1)],
+                    # FoV scaling refers to the sequence, block.gy -> y
+                    fov_scaling=parameter.fov_scaling.y,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
                     output_channel=int(gradient_index.y),
                 )
@@ -359,8 +365,11 @@ class SequenceProvider(Sequence):
             if block.gz is not None:  # Gz event
                 waveform = self._calculate_gradient(
                     block=block.gz,
-                    # Consider the FoV and offset values of the target output channel
-                    fov_scaling=parameter.fov_scaling.to_list()[int(gradient_index.z-1)],
+                    # FoV scaling refers to the sequence, block.gz -> z
+                    fov_scaling=parameter.fov_scaling.z,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
                     output_channel=int(gradient_index.z),
                 )
