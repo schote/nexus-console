@@ -15,7 +15,7 @@ def constructor(
     gradient_correction: float = 0.0,
     num_samples: int = 120,
     rf_duration: float = 400e-6,
-    channel: str | None = None,
+    channel: str = "x",
     use_sinc: bool = False,
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence with projection gradient (1D).
@@ -48,10 +48,6 @@ def constructor(
     ValueError
         Sequence time check failed
     """
-    # Set default values
-    if channel is None:
-        channel = "x"
-
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "se_projection")
     seq.set_definition("readout_bandwidth_in_Hz", readout_bandwidth)
