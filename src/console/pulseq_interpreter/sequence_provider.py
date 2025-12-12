@@ -621,7 +621,7 @@ class SequenceProvider(Sequence):
             Section of numpy array which will contain the unrolled gradient event
         fov_scaling
             Scaling factor to adjust the FoV.
-            Factor is applied to the whole gradient waveform, excepton the amplitude offset.
+            Factor is applied to the whole gradient waveform, exception the amplitude offset.
 
         Returns
         -------
@@ -634,8 +634,8 @@ class SequenceProvider(Sequence):
             gradient amplitude exceeds channel maximum output level
         """
         try:
-            # Calculate gradient waveform scaling, substract gain and efficiency index by 1,
-            # because these lists do not include the RF channel (i.e. gradient channe 1 corresponds to index 0)
+            # Calculate gradient waveform scaling, subtract gain and efficiency index by 1,
+            # because these lists do not include the RF channel (i.e. gradient channel 1 corresponds to index 0)
             scaling = fov_scaling * self.imp_scaling[output_channel] / (
                 self.system.gamma * 1e-3 * self.gpa_gain[output_channel-1] * self.grad_eff[output_channel-1])
 
