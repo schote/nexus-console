@@ -50,6 +50,7 @@ def constructor(
     else:
         seq.set_definition("Name", "se_spectrum")
 
+    # Define RF pulses for excitation and refocusing
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
             system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration, time_bw_product=time_bw_product,
@@ -64,14 +65,18 @@ def constructor(
                                     delay=system.rf_dead_time)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration,
                                      delay=system.rf_dead_time)
-
+    
+    # Define ADC duration
     adc_duration = raster(val=num_samples / acq_bandwidth, precision=system.adc_raster_time)
+    
+    # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,
         duration=adc_duration,
         system=system,
     )
 
+    # Calculate delays to achieve desired echo time
     te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay,
                         system.grad_raster_time)
     if use_fid:

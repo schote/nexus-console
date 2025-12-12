@@ -56,6 +56,7 @@ def constructor(
     seq.set_definition("gradient_correction_in_s", gradient_correction)
     seq.set_definition("projection_channel", channel)
 
+    # Define RF pulses for excitation and refocusing
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5,
                                    delay=system.rf_dead_time)
@@ -67,14 +68,17 @@ def constructor(
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration,
                                      delay=system.rf_dead_time)
 
+    # Define ADC duration
     adc_duration = num_samples / readout_bandwidth
+    
+    # Define readout gradient duration and amplitude
     g_ro_duration = adc_duration + gradient_correction
     g_ro_amplitude = num_samples / fov / adc_duration
 
-    # Readout gradient
+    # Define readout gradient
     g_ro = pp.make_trapezoid(system=system, channel=channel, amplitude=g_ro_amplitude, flat_time=g_ro_duration)
 
-    # Readout prewinder
+    # Define readout prewinder
     g_ro_prew = pp.make_trapezoid(
         system=system,
         channel=channel,
@@ -82,6 +86,7 @@ def constructor(
         duration=pp.calc_duration(g_ro) / 2,
     )
 
+    # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,
         duration=adc_duration,
@@ -89,7 +94,7 @@ def constructor(
         delay=gradient_correction + g_ro.rise_time,
     )
 
-    # Calculate delays
+    # Calculate delays to achieve desired echo time
     te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay
                         - pp.calc_duration(g_ro_prew),
                         precision=system.grad_raster_time)

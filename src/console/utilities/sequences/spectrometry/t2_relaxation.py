@@ -44,22 +44,27 @@ def constructor(
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "te-variation")
 
+    # Define RF pulses for excitation and refocusing
     rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, phase_offset=0, duration=rf_duration,
                                 delay=system.rf_dead_time)
     rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration,
                                  delay=system.rf_dead_time)
 
+    # Define ADC duration
     adc_duration = raster(val=num_samples / acq_bandwidth, precision=system.adc_raster_time)
 
+    # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,
         duration=adc_duration,
         system=system,
     )
 
+    # Define array of echo times
     te_values = np.linspace(echo_time_range[0], echo_time_range[1], num=num_steps)
 
     for echo_time in te_values:
+        # Calculate delays to achieve desired echo time
         te_delay_1 = raster(
             echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay,
             precision=system.grad_raster_time
