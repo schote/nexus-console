@@ -65,10 +65,9 @@ def constructor(
                                     delay=system.rf_dead_time)
         rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, phase_offset=pi / 2, duration=rf_duration,
                                      delay=system.rf_dead_time)
-    
     # Define ADC duration
     adc_duration = raster(val=num_samples / acq_bandwidth, precision=system.adc_raster_time)
-    
+
     # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,

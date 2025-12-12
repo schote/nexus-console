@@ -70,7 +70,7 @@ def constructor(
 
     # Define ADC duration
     adc_duration = num_samples / readout_bandwidth
-    
+
     # Define readout gradient duration and amplitude
     g_ro_duration = adc_duration + gradient_correction
     g_ro_amplitude = num_samples / fov / adc_duration
