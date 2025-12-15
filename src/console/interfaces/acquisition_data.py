@@ -43,8 +43,8 @@ class AcquisitionData:
     Dictionary is updated (extended) by post-init method with some general information."""
 
     _additional_numpy_data: dict = field(default_factory=dict)
-    """Dictionarz containing addition (numpy) data.
-    Use the function add_data to update this dictionarz before saving.
+    """Dictionary containing addition (numpy) data.
+    Use the function add_data to update this dictionary before saving.
     They key of each entry is used as filename."""
 
     def __post_init__(self) -> None:
@@ -59,7 +59,7 @@ class AcquisitionData:
                 "time": datetime_now.strftime("%H:%M:%S"),
                 "acquisition_id": acquisition_id,
                 "folder_name": acquisition_id,
-                "acquisition_parameter": self.acquisition_parameters.dict(),
+                "acquisition_parameter": self.acquisition_parameters.to_dict(),
                 "sequence": {
                     "name": seq_name,
                     "duration": self.sequence.duration()[0],
@@ -152,7 +152,7 @@ class AcquisitionData:
         header: ismrmrd.xsd.ismrmrdHeader | str | Path | None = None,
         user_path: str | None = None,
     ) -> Path | None:
-        """Store acquisition data in (ISMR)MRD format."""
+        """Store acquisition data in ISMRMRD format."""
         # Ensure that receive data is available
         if not self.receive_data or self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."

@@ -13,8 +13,6 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
-
-# import console
 from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
@@ -34,6 +32,7 @@ INT16_MIN = np.iinfo(np.int16).min
 
 default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
 default_fov_offset: Dimensions = Dimensions(0, 0, 0)
+default_orientation: Dimensions = Dimensions(1, 2, 3)
 
 
 class SequenceProvider(Sequence):
@@ -48,9 +47,9 @@ class SequenceProvider(Sequence):
 
     Example
     -------
-    >>> seq = SequenceProvider()
-    >>> seq.read("./seq_file.seq")
-    >>> sqnc, gate, total_samples = seq.unroll_sequence()
+    >>> seq_provider = SequenceProvider()
+    >>> seq_provider.read("./seq_file.seq")
+    >>> unrolled = seq_provider.unroll_sequence(acquisition_parameter)
     """
 
     __name__: str = "SequenceProvider"
@@ -91,47 +90,25 @@ class SequenceProvider(Sequence):
             )
         )
         self.log = logging.getLogger("SeqProv")
-        # Check list values
-        try:
-            if len(gradient_efficiency) != 3:
-                raise ValueError("Invalid number of gradient efficiency values, 3 values must be provided")
-            if len(gpa_gain) != 3:
-                raise ValueError("Invalid number of GPA gain values, 3 values must be provided")
-            if isinstance(output_limits, list) and len(output_limits) != 4:
-                raise ValueError("Invalid number of output limits, 4 values must be provided.")
-            if len(high_impedance) != 4:
-                raise ValueError("Invalid number of output impedance indicators, 4 values must be provided.")
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
 
+        # Set class instance attributes
         self.rf_to_mvolt = rf_to_mvolt
-        self.spcm_freq = 1 / spcm_dwell_time
         self.spcm_dwell_time = spcm_dwell_time
+        self.spcm_freq = 1 / spcm_dwell_time
         self.system_limits = system_limits
+        self.high_impedance = high_impedance
+        self.gpa_gain: list[float] = gpa_gain
+        self.grad_eff: list[float] = gradient_efficiency
 
         # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
         # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
         self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
-        self.high_impedance = high_impedance
-
-        self.gpa_gain: list[float] = gpa_gain
-        self.grad_eff: list[float] = gradient_efficiency
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
-        self.larmor_freq: float = float("nan")
+        # Initialize larmor frequency and sequence cache variables, to be set later
         self._sqnc_cache: np.ndarray | None = None
 
-    def dict(self) -> dict:
-        """Abstract method which returns variables for logging in dictionary."""
-        return {
-            "rf_to_mvolt": self.rf_to_mvolt,
-            "spcm_freq": self.spcm_freq,
-            "spcm_dwell_time": self.spcm_dwell_time,
-            "gpa_gain": self.gpa_gain,
-            "gradient_efficiency": self.grad_eff,
-            "output_limits": self.output_limits,
-            "larmor_freq": self.larmor_freq,
-        }
+    # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
@@ -199,204 +176,19 @@ class SequenceProvider(Sequence):
             return None
         return seq
 
-    @profile
-    def calculate_rf(
-        self,
-        block: SimpleNamespace,
-        b1_scaling: float,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """Calculate RF sample points to be played by TX card.
+    # -------- Public interface -------- #
 
-        Parameters
-        ----------
-        block
-            Pulseq RF block
-        unroll_arr
-            Section of numpy array which will contain unrolled RF event
-        b1_scaling
-            Experiment dependent scaling factor of the RF amplitude
-        unblanking
-            Unblanking signal which is updated in-place for the calculated RF event
+    def dict(self) -> dict:
+        """Abstract method which returns variables for logging in dictionary."""
+        return {
+            "rf_to_mvolt": self.rf_to_mvolt,
+            "spcm_freq": self.spcm_freq,
+            "spcm_dwell_time": self.spcm_dwell_time,
+            "gpa_gain": self.gpa_gain,
+            "gradient_efficiency": self.grad_eff,
+            "output_limits": self.output_limits,
+        }
 
-        Returns
-        -------
-            List with the RF pulse in the first element, and the unblanking signal in the second element
-
-        Raises
-        ------
-        ValueError
-            Invalid RF block
-        """
-        try:
-            if not block.type == "rf":
-                raise ValueError("Sequence block event is not a valid RF event.")
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-        # Calculate the number of delay samples before an RF event (and unblanking)
-        # Dead-time is automatically set as delay! Delay accounts for start of RF event
-        num_samples_delay = round(max(block.dead_time, block.delay) * self.spcm_freq)
-        # Calculate the number of dead-time samples between unblanking and RF event
-        # Delay - dead-time samples account for start of unblanking
-        num_samples_dead_time = round(block.dead_time * self.spcm_freq)
-        # Calculate the number of ringdown samples at the end of RF pulse
-        # num_samgles_ringdown = int(block.ringdown_time * self.spcm_freq)
-        # Calculate the number of RF shape sample points
-        num_samples = round(block.shape_dur * self.spcm_freq)
-
-        # Set unblanking signal: 16th bit set to 1 (high)
-        rf_unblanking_start = num_samples_delay - num_samples_dead_time
-        rf_unblanking_end = num_samples_delay + num_samples
-        rf_unblanking = np.zeros(rf_unblanking_end, dtype=np.uint16)
-        rf_unblanking[rf_unblanking_start:] = 2**15
-
-        # Calculate the static phase offset, defined by RF pulse
-        phase_offset = np.exp(1j * block.phase_offset)
-
-        # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
-        # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
-        try:
-            # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
-            if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
-                raise ValueError("RF magnitude exceeds output limit.")
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-        envelope_scaled = envelope_scaled * INT16_MAX
-
-        # Resampling of scaled complex envelope
-        envelope = resample(envelope_scaled, num=num_samples)
-
-        # Only precalculate carrier time array, calculate carriere here to take into account the
-        # frequency and phase offsets of an RF block event
-        carrier_time = np.arange(num_samples) * self.spcm_dwell_time
-        carrier = np.exp(2j * np.pi * (self.larmor_freq + block.freq_offset) * carrier_time)
-
-        try:
-            waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
-        except IndexError as err:
-            self.log.exception(err, exc_info=True)
-
-        return (waveform_rf, rf_unblanking)
-
-    @profile
-    def calculate_gradient(
-        self, block: SimpleNamespace, fov_scaling: float, offset: float | int
-    ) -> np.ndarray:
-        """Calculate spectrum-card sample points of a pypulseq gradient block event.
-
-        Parameters
-        ----------
-        block
-            Gradient block from pypulseq sequence, type must be grad or trap
-        unroll_arr
-            Section of numpy array which will contain the unrolled gradient event
-        fov_scaling
-            Scaling factor to adjust the FoV.
-            Factor is applied to the whole gradient waveform, excepton the amplitude offset.
-
-        Returns
-        -------
-            Array with sample points of RF waveform as int16 values
-
-        Raises
-        ------
-        ValueError
-            Invalid block type (must be either ``grad`` or ``trap``),
-            gradient amplitude exceeds channel maximum output level
-        """
-        # Index of this gradient, dependent on channel designation, offset of 1 to start at channel 1
-        idx = ["x", "y", "z"].index(block.channel)
-
-        # Calculate gradient waveform scaling
-        scaling = fov_scaling * self.imp_scaling[idx + 1] / (42.58e3 * self.gpa_gain[idx] * self.grad_eff[idx])
-
-        try:
-            # Calculate the gradient waveform relative to max output (within the interval [0, 1])
-            if block.type == "grad":
-                # Arbitrary gradient waveform, interpolate linearly
-                # This function requires float input => cast to int16 afterwards
-                if np.amax(waveform := block.waveform * scaling) > self.output_limits[idx + 1]:
-                    raise ValueError(
-                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
-                        % (
-                            block.channel,
-                            np.amax(waveform),
-                            self.output_limits[idx + 1],
-                        )
-                    )
-                # Transfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[idx + 1]
-
-                gradient = np.interp(
-                    x=np.linspace(
-                        block.tt[0],
-                        block.tt[-1],
-                        round(block.shape_dur / self.spcm_dwell_time),
-                    ),
-                    xp=block.tt,
-                    fp=waveform,
-                )
-
-            elif block.type == "trap":
-                # Construct trapezoidal gradient from rise, flat and fall sections
-                if np.amax(flat_amp := block.amplitude * scaling) > self.output_limits[idx + 1]:
-                    raise ValueError(
-                        "Amplitude of %s gradient (%s) exceeded output limit (%s)"
-                        % (
-                            block.channel,
-                            flat_amp,
-                            self.output_limits[idx + 1],
-                        )
-                    )
-                # Transfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp = flat_amp * INT16_MAX / self.output_limits[idx + 1]
-
-                rise = np.linspace(
-                    0,
-                    flat_amp,
-                    round(block.rise_time / self.spcm_dwell_time)
-                )
-                flat = np.full(
-                    round(block.flat_time / self.spcm_dwell_time),
-                    fill_value=flat_amp
-                )
-                fall = np.linspace(
-                    flat_amp,
-                    0,
-                    round(block.fall_time / self.spcm_dwell_time)
-                )
-
-                gradient = np.concatenate((rise, flat, fall))
-
-            else:
-                raise ValueError("Block is not a valid gradient block")
-
-            # Calculate gradient offset int16 value from mV
-            # block.channel is either x, y or z and used to obtain correct gradient offset dimension/channel
-            # Gradient offset is used for calculating output limits but is not added to the waveform
-            offset *= INT16_MAX / self.output_limits[idx + 1]
-
-            if np.amax(gradient + offset) > INT16_MAX:
-                max_strength = gradient[np.argmax(np.abs(gradient + offset))] + offset
-                # Report maximum strength in mV
-                max_strength /= (INT16_MAX / self.output_limits[idx + 1])
-                raise ValueError(
-                    f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude")
-            else:
-                gradient = gradient.astype(np.int16)
-
-            # Shifting gradient waveform to 15 bits already for adding the gate signals later
-            return gradient.view(np.uint16) >> 1
-
-        except (ValueError, IndexError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-    @profile
     def get_adc_events(self) -> list:
         """Extract ADC 'waveforms' from the sequence.
 
@@ -413,9 +205,9 @@ class SequenceProvider(Sequence):
             num_samples = adc_waveform[1][0]
             dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
-            delay_samples = int(round(delay * self.spcm_freq))
+            delay_samples = round(delay * self.spcm_freq)
             gate_duration = num_samples * dwell_time
-            gate_samples = int(round(gate_duration * self.spcm_freq))
+            gate_samples = round(gate_duration * self.spcm_freq)
             waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
             waveform[delay_samples:] = 2**15
             adc_list.append((adc_waveform[0], waveform, gate_samples))
@@ -435,17 +227,11 @@ class SequenceProvider(Sequence):
     def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
-        TODO: Update this docstring
-
         Parameters
         ----------
-        larmor_freq
-            (Larmor) frequency of the carrier RF waveform
-        b1_scaling, optional
-            Factor for the RF waveform, which is to be calibrated per coil and phantom (load), by default 1.0
-        fov_scaling, optional
-            Per channel factor for the gradient waveforms to scale the field of fiew (FOV),
-            by default Dimensions(1.0, 1.0, 1.0)
+        parameter
+            Instance of AcquisitionParameter containing all necessary parameters to
+            calculate the sequence waveforms, i.e. larmor frequency, gradient offsets, etc.
 
         Returns
         -------
@@ -455,19 +241,8 @@ class SequenceProvider(Sequence):
 
                 The list of unrolled sequence arrays is returned as uint16 values which contain a digital
                 signal encoded by 15th bit. Only the RF channel does not contain a digital signal.
-                In addition, the adc and unblanking signals are returned as list of numpy arrays in the
-                unrolled sequence instance.
-
-        Raises
-        ------
-        ValueError
-            Larmor frequency too large
-        ValueError
-            No block events defined
-        ValueError
-            Sequence timing check failed
-        ValueError
-            Amplitude limits not provided
+                In addition, all receive events are described and returned in a list within the unrolled
+                sequence object.
 
         Examples
         --------
@@ -494,27 +269,15 @@ class SequenceProvider(Sequence):
 
         As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.
         """
-        self._sqnc_cache = None
-
         try:
-            # Check larmor frequency
-            if parameter.larmor_frequency > 10e6:
-                raise ValueError("Larmor frequency is above 10 MHz: %s MHz",
-                                 parameter.larmor_frequency * 1e-6)
-            self.larmor_freq = parameter.larmor_frequency
+            self._check_parameter(parameter)
+            self._check_sequence()
+        except Exception:
+            self.log.exception("Checks not passed")
+            raise
 
-            # Check if sequence has block events
-            if not len(self.block_events) > 0:
-                raise ValueError("No block events found")
-
-            # Sequence timing check
-            check, seq_err = self.check_timing()
-            if not check:
-                raise ValueError(f"Sequence timing check failed: {seq_err}")
-
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        self._sqnc_cache = None
+        gradient_index: Dimensions = parameter.channel_assignment
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
@@ -525,26 +288,24 @@ class SequenceProvider(Sequence):
         # Should probably be moved inside of get_rf_events()
         rf_pulses = {}
         for rf_event in rf_events:
-            rf_pulses[rf_event[0]] = self.calculate_rf(
-                block=rf_event[1],
-                b1_scaling=parameter.b1_scaling
+            rf_pulses[rf_event[0]] = self._calculate_rf(
+                block=rf_event[1], b1_scaling=parameter.b1_scaling, larmor_frequency=parameter.larmor_frequency,
             )
 
         seq_duration, _, _ = self.duration()
-        seq_samples = int(round(seq_duration * self.spcm_freq))
+        seq_samples = round(seq_duration * self.spcm_freq)
 
         # Calculate the start time (and sample position) and duration of each block
         block_durations = np.array(
-            [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
+            [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())],
         )
         block_durations = np.round(block_durations * self.spcm_freq).astype(int)
         block_pos = np.cumsum(block_durations, dtype=np.int64)
         block_pos = np.insert(block_pos, 0, 0)
 
         if seq_samples != block_pos[-1]:
-            raise IndexError(
-                "Number of sequence samples does not match total number of block samples"
-            )
+            msg = "Number of sequence samples does not match total number of block samples"
+            raise IndexError(msg)
 
         # Setup output arrays
         _seq = np.zeros(4 * seq_samples, dtype=np.int16)
@@ -560,34 +321,67 @@ class SequenceProvider(Sequence):
             waveform_start = block_pos[event_idx] * 4
 
             if block.gx is not None:  # Gx event
-                waveform = self.calculate_gradient(
-                    block=block.gx, fov_scaling=parameter.fov_scaling.x, offset=parameter.gradient_offset.x
+                waveform = self._calculate_gradient(
+                    block=block.gx,
+                    # FoV scaling refers to the sequence, block.gx -> x
+                    fov_scaling=parameter.fov_scaling.x,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.x-1)],
+                    output_channel=int(gradient_index.x),
                 )
                 delay = block.gx.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gx = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gx + 1:waveform_start_gx + 4 * waveform_samples + 1:4] = waveform
+                gx_slice = slice(
+                    waveform_start_gx + gradient_index.x,
+                    waveform_start_gx + 4 * np.size(waveform) + gradient_index.x,
+                    4,
+                )
+                _seq[gx_slice] = waveform
 
             if block.gy is not None:  # Gy event
-                waveform = self.calculate_gradient(
-                    block=block.gy, fov_scaling=parameter.fov_scaling.y, offset=parameter.gradient_offset.y
+                waveform = self._calculate_gradient(
+                    block=block.gy,
+                    # FoV scaling refers to the sequence, block.gy -> y
+                    fov_scaling=parameter.fov_scaling.y,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
+                    output_channel=int(gradient_index.y),
                 )
                 delay = block.gy.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gy = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gy + 2:waveform_start_gy + 4 * waveform_samples + 2:4] = waveform
+                gy_slice = slice(
+                    waveform_start_gy + gradient_index.y,
+                    waveform_start_gy + 4 * np.size(waveform) + gradient_index.y,
+                    4,
+                )
+                _seq[gy_slice] = waveform
 
             if block.gz is not None:  # Gz event
-                waveform = self.calculate_gradient(
-                    block=block.gz, fov_scaling=parameter.fov_scaling.z, offset=parameter.gradient_offset.z
+                waveform = self._calculate_gradient(
+                    block=block.gz,
+                    # FoV scaling refers to the sequence, block.gz -> z
+                    fov_scaling=parameter.fov_scaling.z,
+                    # Offset value are set independent of the sequence orientation,
+                    # must be considered with respect to the target output channel!
+                    # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
+                    output_channel=int(gradient_index.z),
                 )
                 delay = block.gz.delay
                 delay_samples = round(delay * self.spcm_freq)
                 waveform_start_gz = waveform_start + 4 * delay_samples
-                waveform_samples = np.size(waveform)
-                _seq[waveform_start_gz + 3:waveform_start_gz + 4 * waveform_samples + 3:4] = waveform
+                gz_slice = slice(
+                    waveform_start_gz + gradient_index.z,
+                    waveform_start_gz + 4 * np.size(waveform) + gradient_index.z,
+                    4,
+                )
+                _seq[gz_slice] = waveform
 
             if block.rf is not None:  # RF event
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
@@ -598,7 +392,8 @@ class SequenceProvider(Sequence):
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[event_idx + 1] - block_pos[event_idx]):
-                    raise IndexError("RF waveform size exceeds block size.")
+                    msg = "RF waveform size exceeds block size."
+                    raise IndexError(msg)
 
                 # Calculate RF waveform start and end positions according to block position
                 rf_start = block_pos[event_idx] * 4
@@ -661,12 +456,10 @@ class SequenceProvider(Sequence):
             duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
-            rx_data=_rx_data
+            rx_data=_rx_data,
         )
 
-    def plot_unrolled(
-            self, time_range: tuple[float, float] = (0, -1)
-        ) -> tuple[mpl.figure.Figure, np.ndarray]:
+    def plot_unrolled(self, time_range: tuple[float, float] = (0, -1)) -> tuple[mpl.figure.Figure, np.ndarray]:
         """Plot unrolled waveforms for replay.
 
         Parameters
@@ -682,8 +475,8 @@ class SequenceProvider(Sequence):
         fig, axis = plt.subplots(5, 1, figsize=(16, 9))
 
         if (sqnc := self._sqnc_cache) is None:
-            print("No unrolled sequence...")
-            return fig, axis
+            msg = "No unrolled sequence. Execute `unroll_sequence(...)` first"
+            raise RuntimeError(msg)
 
         seq_start = int(time_range[0] * self.spcm_freq)
         seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
@@ -723,3 +516,211 @@ class SequenceProvider(Sequence):
         axis[4].set_xlabel("Time [ms]")
 
         return fig, axis
+
+    # -------- Private waveform calculation functions -------- #
+
+    @profile
+    def _calculate_rf(
+        self,
+        block: SimpleNamespace,
+        larmor_frequency: float,
+        b1_scaling: float,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Calculate RF sample points to be played by TX card.
+
+        Parameters
+        ----------
+        block
+            Pulseq RF block
+        larmor_frequency
+            Larmor frequency of RF waveform
+        b1_scaling
+            Experiment dependent scaling factor of the RF amplitude
+
+        Returns
+        -------
+            List with the RF pulse in the first element, and the unblanking signal in the second element
+
+        Raises
+        ------
+        ValueError
+            Invalid RF block
+        """
+        try:
+            if not block.type == "rf":
+                raise ValueError("Sequence block event is not a valid RF event.")
+            if not larmor_frequency > 0.:
+                raise ValueError(f"Invalid Larmor frequency: {larmor_frequency}")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        # Calculate the number of delay samples before an RF event (and unblanking)
+        # Note that the RF ring-down time is handled implicitly: the block duration used to place the RF waveform
+        # already includes the post-pulse dead time, so no additional handling is required.
+        # Dead-time is automatically set as delay! Delay accounts for start of RF event
+        num_samples_delay = round(max(block.dead_time, block.delay) * self.spcm_freq)
+        # Calculate the number of dead-time samples between unblanking and RF event
+        # Delay - dead-time samples account for start of unblanking
+        num_samples_dead_time = round(block.dead_time * self.spcm_freq)
+        # Calculate the number of RF shape sample points
+        num_samples = round(block.shape_dur * self.spcm_freq)
+
+        # Set unblanking signal: 16th bit set to 1 (high)
+        rf_unblanking_start = num_samples_delay - num_samples_dead_time
+        rf_unblanking_end = num_samples_delay + num_samples
+        rf_unblanking = np.zeros(rf_unblanking_end, dtype=np.uint16)
+        rf_unblanking[rf_unblanking_start:] = 2**15
+
+        # Calculate the static phase offset, defined by RF pulse
+        phase_offset = np.exp(1j * block.phase_offset)
+
+        # Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)
+        # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
+        try:
+            # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
+            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
+            if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
+                raise ValueError("RF magnitude exceeds output limit.")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        envelope_scaled = envelope_scaled * INT16_MAX
+
+        # Resampling of scaled complex envelope
+        envelope = resample(envelope_scaled, num=num_samples)
+
+        # Only precalculate carrier time array, calculate carriere here to take into account the
+        # frequency and phase offsets of an RF block event
+        carrier_time = np.arange(num_samples) * self.spcm_dwell_time
+        carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
+
+        try:
+            waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
+        except IndexError as err:
+            self.log.exception(err, exc_info=True)
+
+        return (waveform_rf, rf_unblanking)
+
+    @profile
+    def _calculate_gradient(
+        self,
+        block: SimpleNamespace,
+        fov_scaling: float,
+        offset: float,
+        output_channel: int,
+    ) -> np.ndarray:
+        """Calculate spectrum-card sample points of a pypulseq gradient block event.
+
+        Parameters
+        ----------
+        block
+            Gradient block from pypulseq sequence, type must be grad or trap
+        unroll_arr
+            Section of numpy array which will contain the unrolled gradient event
+        fov_scaling
+            Scaling factor to adjust the FoV.
+            Factor is applied to the whole gradient waveform, exception the amplitude offset.
+
+        Returns
+        -------
+            Array with sample points of RF waveform as int16 values
+
+        Raises
+        ------
+        ValueError
+            Invalid block type (must be either ``grad`` or ``trap``),
+            gradient amplitude exceeds channel maximum output level
+        """
+        try:
+            # Calculate gradient waveform scaling, subtract gain and efficiency index by 1,
+            # because these lists do not include the RF channel (i.e. gradient channel 1 corresponds to index 0)
+            scaling = fov_scaling * self.imp_scaling[output_channel] / (
+                self.system.gamma * 1e-3 * self.gpa_gain[output_channel-1] * self.grad_eff[output_channel-1])
+
+            # Calculate the gradient waveform relative to max output (within the interval [0, 1])
+            if block.type == "grad":
+                # Arbitrary gradient waveform, interpolate linearly
+                # This function requires float input => cast to int16 afterwards
+                waveform = block.waveform * scaling
+                self._check_amplitude(output_channel, np.amax(waveform), self.output_limits[output_channel])
+                # Transfer mV floating point waveform values to int16 if amplitude check passed
+                waveform *= INT16_MAX / self.output_limits[output_channel]
+                # Interpolate waveform on spectrum card time raster
+                gradient = np.interp(
+                    x=np.linspace(block.tt[0], block.tt[-1], round(block.shape_dur / self.spcm_dwell_time)),
+                    xp=block.tt,
+                    fp=waveform,
+                )
+
+            elif block.type == "trap":
+                # Construct trapezoidal gradient from rise, flat and fall sections
+                flat_amp = block.amplitude * scaling
+                self._check_amplitude(output_channel, np.amax(flat_amp), self.output_limits[output_channel])
+                # Transfer mV floating point flat amplitude to int16 if amplitude check passed
+                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[output_channel]
+                # Define rise, flat and fall sections of trapezoidal gradient on spectrum card time raster
+                rise = np.linspace(0, flat_amp_i16, round(block.rise_time / self.spcm_dwell_time))
+                flat = np.full(round(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp_i16)
+                fall = np.linspace(flat_amp_i16, 0, round(block.fall_time / self.spcm_dwell_time))
+                # Combine rise, flat and fall sections to gradient waveform
+                gradient = np.concatenate((rise, flat, fall))
+
+            else:
+                raise ValueError("Block is not a valid gradient block")
+
+            # Calculate gradient offset int16 value from mV
+            # Gradient offset is used for calculating output limits but is not added to the waveform
+            offset_i16 = offset * INT16_MAX / self.output_limits[output_channel]
+            # This is the combined int16 gradient and offset waveform as float dtype
+            combined_i16 = gradient + offset_i16
+            if (max_strength_i16 := np.amax(combined_i16)) > INT16_MAX:
+                # Report maximum strength in mV
+                max_strength = max_strength_i16 * self.output_limits[output_channel] / INT16_MAX
+                msg = f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude"
+                raise ValueError(msg)
+
+            # Shifting gradient waveform to 15 bits already for adding the gate signals later
+            return gradient.astype(np.int16).view(np.uint16) >> 1
+
+        except (ValueError, IndexError):
+            self.log.exception("Error calculating gradient")
+            raise
+
+    # -------- Private validation methods -------- #
+
+    def _check_amplitude(self, idx: int, value: float, limit: float) -> None:
+        """Raise error if amplitude exceeds output limit."""
+        if value > limit:
+            msg = f"Amplitude of channel {idx} ({value}) exceeded output limit ({limit}))"
+            raise ValueError(msg)
+
+    def _check_parameter(self, parameter: AcquisitionParameter) -> None:
+        """Check acquisition parameter and raise error if invalid."""
+        # Check larmor frequency
+        f0_limit = self.spcm_freq / 2
+        if parameter.larmor_frequency >= f0_limit:
+            msg = f"Larmor frequency too high ({parameter.larmor_frequency * 1e-6} MHz), violating sampling theorem"
+            raise ValueError(msg)
+        if parameter.larmor_frequency <= 0:
+            msg = "Larmor frequency invalid (<= 0)."
+            raise ValueError(msg)
+
+        # Validate channel assignment
+        grad_ch: Dimensions = parameter.channel_assignment
+        if not all(isinstance(v, int) for v in (grad_ch.x, grad_ch.y, grad_ch.z)):
+            raise TypeError("All channel_assignment values must be integers.")
+        if {grad_ch.x, grad_ch.y, grad_ch.z} != {1, 2, 3}:
+            msg = f"Invalid channel assigment, must contain each of 1, 2, and 3 exactly once, got: {grad_ch}"
+            raise ValueError(msg)
+
+    def _check_sequence(self) -> None:
+        """Check sequence."""
+        # Check number of block events
+        if not len(self.block_events) > 0:
+            raise ValueError("No block events found")
+        # Perform sequence timing check
+        check, seq_err = self.check_timing()
+        if not check:
+            raise ValueError(f"Sequence timing check failed: {seq_err}")

@@ -196,7 +196,7 @@ class AcquisitionControl:
             if not seq_name:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
-        # Update sequence parameter hash and calculate sequence
+        # Calculate sequence with parameter
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
@@ -248,7 +248,7 @@ class AcquisitionControl:
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-            # Start masurement card operations
+            # Start measurement card operations
             self.rx_card.start_operation()
 
             while not self.rx_card.is_receiving.is_set():
@@ -321,7 +321,7 @@ class AcquisitionControl:
         return self.config
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
-        """Proces acquired NMR data.
+        """Process acquired NMR data.
 
         Post processing contains the following steps (per readout sample size):
         (1) Scaling of receive data

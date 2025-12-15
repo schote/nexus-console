@@ -2,6 +2,7 @@
 
 from pypulseq.opts import Opts
 
+# The definitions below may be adjusted to the individual specifications of different scanners
 system = Opts(
     # Set raster times to spectrum card frequency (timing checks)
     grad_raster_time=1e-6,
@@ -16,6 +17,9 @@ system = Opts(
     # Time delay at the beginning of ADC event
     adc_dead_time=0.,
 
+    # Set maximum gradient amplitude
+    max_grad=629e3,
+    grad_unit="Hz/m",
     # Set maximum slew rate
     max_slew=50,
     slew_unit="T/m/s",
