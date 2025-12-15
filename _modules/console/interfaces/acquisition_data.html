@@ -457,8 +457,8 @@
 <span class="sd">    Dictionary is updated (extended) by post-init method with some general information.&quot;&quot;&quot;</span>
 
     <span class="n">_additional_numpy_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionarz containing addition (numpy) data.</span>
-<span class="sd">    Use the function add_data to update this dictionarz before saving.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary containing addition (numpy) data.</span>
+<span class="sd">    Use the function add_data to update this dictionary before saving.</span>
 <span class="sd">    They key of each entry is used as filename.&quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -473,7 +473,7 @@
                 <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">),</span>
                 <span class="s2">&quot;acquisition_id&quot;</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
                 <span class="s2">&quot;folder_name&quot;</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
-                <span class="s2">&quot;acquisition_parameter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">dict</span><span class="p">(),</span>
+                <span class="s2">&quot;acquisition_parameter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
                 <span class="s2">&quot;sequence&quot;</span><span class="p">:</span> <span class="p">{</span>
                     <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">seq_name</span><span class="p">,</span>
                     <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">duration</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
@@ -577,7 +577,7 @@
         <span class="n">header</span><span class="p">:</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store acquisition data in (ISMR)MRD format.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store acquisition data in ISMRMRD format.&quot;&quot;&quot;</span>
         <span class="c1"># Ensure that receive data is available</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">detail</span> <span class="o">=</span> <span class="s2">&quot;Processed data not found in receive data. Cannot export ISMRMRD.&quot;</span>

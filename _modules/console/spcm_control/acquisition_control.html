@@ -612,7 +612,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">seq_name</span><span class="p">:</span>
                 <span class="n">seq_name</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Unrolling sequence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">seq_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">))</span>
-        <span class="c1"># Update sequence parameter hash and calculate sequence</span>
+        <span class="c1"># Calculate sequence with parameter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">unroll_sequence</span><span class="p">(</span><span class="n">parameter</span><span class="o">=</span><span class="n">parameter</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Sequence duration: </span><span class="si">%s</span><span class="s2"> s&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span></div>
 
@@ -667,7 +667,7 @@
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Acquisition </span><span class="si">%s</span><span class="s2">/</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">)</span>
 
-            <span class="c1"># Start masurement card operations</span>
+            <span class="c1"># Start measurement card operations</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">start_operation</span><span class="p">()</span>
 
             <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">rx_card</span><span class="o">.</span><span class="n">is_receiving</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
@@ -746,7 +746,7 @@
 <div class="viewcode-block" id="AcquisitionControl.post_processing">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.post_processing">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">post_processing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Proces acquired NMR data.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process acquired NMR data.</span>
 
 <span class="sd">        Post processing contains the following steps (per readout sample size):</span>
 <span class="sd">        (1) Scaling of receive data</span>
