@@ -22,14 +22,22 @@ def constructor(
 
     Parameters
     ----------
-    fov, optional
-        Field of view in m, by default 0.025
-    te, optional
-        Echo time in s, by default 12e-3
-    rf_duration, optional
-        RF duration in s, by default 400e-6
-    use_sinc, optional
-        RF pulse type, if true sinc pulse is used, rect otherwise, by default True
+    fov
+        Field of view in m
+    readout_bandwidth
+        Readout bandwidth in Hz
+    echo_time
+        Time between center of 90 degree pulse and center of ADC in s
+    gradient_correction
+        Additional delay to account for gradient system delays in s
+    num_samples
+        Number of data points to acquire
+    rf_duration
+        Duration of the RF pulses in s
+    channel
+        Gradient channel to use for projection
+    use_sinc
+        RF pulse type, if true: sinc pulse is used, rect otherwise
 
     Returns
     -------
@@ -48,46 +56,59 @@ def constructor(
     seq.set_definition("gradient_correction_in_s", gradient_correction)
     seq.set_definition("projection_channel", channel)
 
+    # Define RF pulses for excitation and refocusing
     if use_sinc:
-        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5)
-        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, apodization=0.5)
+        rf_90 = pp.make_sinc_pulse(system=system, flip_angle=pi / 2, duration=rf_duration, apodization=0.5,
+                                   delay=system.rf_dead_time)
+        rf_180 = pp.make_sinc_pulse(system=system, flip_angle=pi, duration=rf_duration, apodization=0.5,
+                                    delay=system.rf_dead_time)
     else:
-        rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration)
-        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration)
+        rf_90 = pp.make_block_pulse(system=system, flip_angle=pi / 2, duration=rf_duration,
+                                    delay=system.rf_dead_time)
+        rf_180 = pp.make_block_pulse(system=system, flip_angle=pi, duration=rf_duration,
+                                     delay=system.rf_dead_time)
 
+    # Define ADC duration
     adc_duration = num_samples / readout_bandwidth
-    gradient_duration = adc_duration + gradient_correction
-    k_width = num_samples / fov
 
-    # Readout gradient
-    gradient = pp.make_trapezoid(system=system, channel=channel, flat_area=k_width, flat_time=gradient_duration)
+    # Define readout gradient duration and amplitude
+    g_ro_duration = adc_duration + gradient_correction
+    g_ro_amplitude = num_samples / fov / adc_duration
 
-    prephaser = pp.make_trapezoid(
+    # Define readout gradient
+    g_ro = pp.make_trapezoid(system=system, channel=channel, amplitude=g_ro_amplitude, flat_time=g_ro_duration)
+
+    # Define readout prewinder
+    g_ro_prew = pp.make_trapezoid(
         system=system,
         channel=channel,
-        area=gradient.area / 2,
-        duration=pp.calc_duration(gradient) / 2,
+        area=g_ro.area / 2,
+        duration=pp.calc_duration(g_ro) / 2,
     )
 
+    # Define ADC event
     adc = pp.make_adc(
-        num_samples=int(adc_duration / system.adc_raster_time),
+        num_samples=num_samples,
         duration=adc_duration,
         system=system,
-        delay=gradient_correction + gradient.rise_time,
+        delay=gradient_correction + g_ro.rise_time,
     )
 
-    # Calculate delays
-    te_delay_1_val = echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.dead_time
-    te_delay_1 = pp.make_delay(raster(te_delay_1_val, precision=1e-6))
-    te_delay_2_val = echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time
-    te_delay_2 = pp.make_delay(raster(te_delay_2_val - gradient_correction, precision=1e-6))
+    # Calculate delays to achieve desired echo time
+    te_delay_1 = raster(echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay
+                        - pp.calc_duration(g_ro_prew),
+                        precision=system.grad_raster_time)
+    te_delay_2 = raster(echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time
+                        - adc.dead_time - gradient_correction - g_ro.rise_time,
+                        precision=system.grad_raster_time)
 
-    # construct sequence
+
+    # Construct sequence
     seq.add_block(rf_90)
-    seq.add_block(prephaser)
-    seq.add_block(te_delay_1)
+    seq.add_block(g_ro_prew)
+    seq.add_block(pp.make_delay(te_delay_1))
     seq.add_block(rf_180)
-    seq.add_block(te_delay_2)
-    seq.add_block(gradient, adc)
+    seq.add_block(pp.make_delay(te_delay_2))
+    seq.add_block(g_ro, adc)
 
     return seq

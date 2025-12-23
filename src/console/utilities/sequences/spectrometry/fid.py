@@ -36,6 +36,7 @@ def constructor(
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "fid")
 
+    # Define RF pulse for excitation
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
             system=system,
@@ -52,6 +53,7 @@ def constructor(
             phase_offset=0
         )
 
+    # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,
         dwell=1 / acq_bandwidth,
@@ -59,6 +61,7 @@ def constructor(
         system=system,
     )
 
+    # Define delay to account for RF ringing
     ring_down_delay = pp.make_delay(
         round((dead_time) / 1e-6) * 1e-6
     )
