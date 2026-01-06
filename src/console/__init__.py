@@ -4,9 +4,12 @@ import logging
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
-parameter = AcquisitionParameter.load()
+_parameter: AcquisitionParameter | None = AcquisitionParameter.load()
+parameter: AcquisitionParameter
 
-if not parameter:
+if isinstance(_parameter, AcquisitionParameter):
+    parameter = _parameter
+else:
     log = logging.getLogger("AcqParam")
     log.warning(
         "Could not load AcquisitionParameter state."
