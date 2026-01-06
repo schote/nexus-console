@@ -28,6 +28,7 @@ def test_autosave(acquisition_parameter: AcquisitionParameter) -> None:
     assert params_copy == AcquisitionParameter.load(params_copy.state_filepath)
 
 def test_invalid_attribute(acquisition_parameter: AcquisitionParameter) -> None:
+    """Ensure that TypeError is raised when invalid value is set."""
     with pytest.raises(TypeError):
         acquisition_parameter.larmor_frequency = [1, 2, 3]
     with pytest.raises(TypeError):

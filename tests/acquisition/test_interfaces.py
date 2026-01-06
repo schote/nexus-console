@@ -1,8 +1,8 @@
 """Test interfaces."""
 
-import numpy as np
 from copy import deepcopy
-import pytest
+
+import numpy as np
 
 from console.interfaces.dimensions import Dimensions
 
