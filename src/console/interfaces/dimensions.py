@@ -63,6 +63,9 @@ class Dimensions:
 
     def __setattr__(self, name: str, value: float) -> None:
         """Overwrite setter to trigger private on_change method if set."""
+        if name in ("x", "y", "z") and not isinstance(value, (int, float)):
+            msg = f"Invalid value: {value}, only (int, float) is allowed."
+            raise TypeError(msg)
         super().__setattr__(name, value)
         if not hasattr(self, "_on_change"):
             return
@@ -70,8 +73,10 @@ class Dimensions:
             # Trigger on_change callback to trigger parent save
             self._on_change()
 
-    def __str__(self) -> str:
-        """Return custom representation string."""
+    def __format__(self, format_spec: str = "") -> str:
+        """Return formatted string with applied format spec to all values."""
+        if format_spec:
+            return f"x={self.x:{format_spec}}, y={self.y:{format_spec}}, z={self.z:{format_spec}}"
         return f"x={self.x}, y={self.y}, z={self.z}"
 
     # ---------------- Arithmetic ---------------- #
@@ -83,6 +88,12 @@ class Dimensions:
         if isinstance(other, Dimensions):
             return Dimensions(x=self.x * other.x, y=self.y * other.y, z=self.z * other.z)
         return Dimensions(x=self.x * other, y=self.y * other, z=self.z * other)
+
+    def __truediv__(self, other: float | Dimensions) -> Dimensions:
+        """Divide dimension."""
+        if isinstance(other, Dimensions):
+            return Dimensions(x=self.x / other.x, y=self.y / other.y, z=self.z / other.z)
+        return Dimensions(x=self.x / other, y=self.y / other, z=self.z / other)
 
     def __add__(self, other: float | Dimensions) -> Dimensions:
         """Add dimension."""
@@ -106,6 +117,18 @@ class Dimensions:
             self.x *= other
             self.y *= other
             self.z *= other
+        return self
+
+    def __itruediv__(self, other: float | Dimensions) -> Self:
+        """In-place division."""
+        if isinstance(other, Dimensions):
+            self.x /= other.x
+            self.y /= other.y
+            self.z /= other.z
+        else:
+            self.x /= other
+            self.y /= other
+            self.z /= other
         return self
 
     def __iadd__(self, other: float | Dimensions) -> Self:
