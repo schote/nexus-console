@@ -103,7 +103,16 @@ class AcquisitionParameter:
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite __setattr__ function to save object on each mutation."""
+        # Get type hints for the class
+        hints = self.__class__.__annotations__
         if self._initialized:
+            # Skip validation for private attributes
+            if not name.startswith("_") and name in hints:
+                expected_type = hints[name]
+                if not isinstance(value, expected_type):
+                    # Raise error on type mismatch
+                    msg = f"Attribute '{name}' must be of type {expected_type.__name__}, got {type(value).__name__}"
+                    raise TypeError(msg)
             prev = self.to_dict()
             super().__setattr__(name, value)
             if self.to_dict() != prev:

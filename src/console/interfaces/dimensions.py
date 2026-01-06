@@ -61,7 +61,7 @@ class Dimensions:
         """Convert to a list."""
         return [self.x, self.y, self.z]
 
-    def __setattr__(self, name: str, value: float) -> None:
+    def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite setter to trigger private on_change method if set."""
         if name in ("x", "y", "z") and not isinstance(value, (int, float)):
             msg = f"Invalid value: {value}, only (int, float) is allowed."
