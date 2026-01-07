@@ -61,7 +61,6 @@ def set_mrd_flags(mrd_acquisition: ismrmrd.Acquisition, rx_data: RxData) -> None
         # Parallel imaging flags
         if rx_data.labels.get("REF"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_PARALLEL_CALIBRATION)
-        # Image flag
         if rx_data.labels.get("IMA"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING)
         # Reverse flag
