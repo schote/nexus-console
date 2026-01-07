@@ -53,19 +53,20 @@ def set_mrd_counters(mrd_acquisition: ismrmrd.Acquisition, rx_data: RxData) -> N
 
 
 def set_mrd_flags(mrd_acquisition: ismrmrd.Acquisition, rx_data: RxData) -> None:
-    """Extract pulseq labels from receive data and set them in MRD acquisition object."""
+    """Extract further labels from RxData and set them in MRD acquisition object."""
     if rx_data.labels is not None:
         # Noise flag
-        if "NOISE" in rx_data.labels:
+        if rx_data.labels.get("NOISE"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_NOISE_MEASUREMENT)
         # Parallel imaging flags
-        if "REF" in rx_data.labels:
+        if rx_data.labels.get("REF"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_PARALLEL_CALIBRATION)
-        if "IMA" in rx_data.labels:
+        # Image flag
+        if rx_data.labels.get("IMA"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_PARALLEL_CALIBRATION_AND_IMAGING)
         # Reverse flag
-        if "REV" in rx_data.labels:
+        if rx_data.labels.get("REV"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_REVERSE)
         # Navigator flag
-        if "NAV" in rx_data.labels:
+        if rx_data.labels.get("NAV"):
             mrd_acquisition.set_flag(ismrmrd.ACQ_IS_NAVIGATION_DATA)
