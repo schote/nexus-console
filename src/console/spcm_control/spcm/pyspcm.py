@@ -6,9 +6,9 @@ import platform
 import sys
 from typing import Any
 
+import logging
 from console.spcm_control.spcm.errors import *
 from console.spcm_control.spcm.registers import *
-import warnings
 
 SPCM_DIR_PCTOCARD = 0
 SPCM_DIR_CARDTOPC = 1
@@ -47,7 +47,7 @@ uptr64 = ctypes.POINTER(uint64)
 
 spcmDll = None
 drv_handle = None
-
+log = logging.getLogger("SPCM")
 
 # Check if code is running in an github actions
 
@@ -55,7 +55,7 @@ try:
     if not os.getenv("GITHUB_ACTIONS"):
         # Windows
         if os.name == "nt":
-            sys.stdout.write("Python Version: {0} on Windows\n\n".format(platform.python_version()))
+            log.debug(f"Python Version: {platform.python_version()} on Windows")
 
             # define card handle type
             if bIs64Bit:
@@ -197,7 +197,7 @@ try:
             spcm_dwGetContBuf_i64.restype = uint32
 
         elif os.name == "posix":
-            sys.stdout.write("Python Version: {0} on Linux\n\n".format(platform.python_version()))
+            log.debug(f"Python Version: {platform.python_version()} on Linux")
 
             # define card handle type
             if bIs64Bit:
@@ -277,14 +277,10 @@ try:
             ]
             spcm_dwGetContBuf_i64.restype = uint32
 
-        else:
-            raise Exception("Operating system not supported by pySpcm")
-
 except Exception as e:
-    warnings.warn(f"Could not load spcm driver: {e}", RuntimeWarning)
 
     def _driver_not_loaded(*args, **kwargs):
-        raise ConnectionError("SPCM driver not loaded")
+        raise ConnectionError(f"SPCM driver not loaded: {e}")
 
     spcm_hOpen = _driver_not_loaded
     spcm_vClose = _driver_not_loaded

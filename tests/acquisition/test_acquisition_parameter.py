@@ -1,6 +1,8 @@
 """Test functions for acquisition parameter."""
 from copy import copy
 
+import pytest
+
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.enums import DDCMethod
 
@@ -24,3 +26,14 @@ def test_autosave(acquisition_parameter: AcquisitionParameter) -> None:
     params_copy.fov_scaling = params_copy.fov_scaling - 0.1
     params_copy.ddc_method = DDCMethod.CIC
     assert params_copy == AcquisitionParameter.load(params_copy.state_filepath)
+
+def test_invalid_attribute(acquisition_parameter: AcquisitionParameter) -> None:
+    """Ensure that TypeError is raised when invalid value is set."""
+    with pytest.raises(TypeError):
+        acquisition_parameter.larmor_frequency = [1, 2, 3]
+    with pytest.raises(TypeError):
+        acquisition_parameter.b1_scaling = [1, 2, 3]
+    with pytest.raises(TypeError):
+        acquisition_parameter.gradient_offset = 2.
+    with pytest.raises(TypeError):
+        acquisition_parameter.fov_scaling = 2.

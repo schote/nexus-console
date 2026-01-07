@@ -43,14 +43,16 @@ def constructor(
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
-            time_bw_product=time_bw_product
+            time_bw_product=time_bw_product,
+            delay=system.rf_dead_time,
         )
     else:
         rf_90 = pp.make_block_pulse(
             system=system,
             flip_angle=flip_angle,
             duration=rf_duration,
-            phase_offset=0
+            phase_offset=0,
+            delay=system.rf_dead_time,
         )
 
     # Define ADC event
