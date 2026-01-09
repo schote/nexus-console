@@ -4,7 +4,7 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import system, raster
 
 
 def constructor(
@@ -82,6 +82,7 @@ def constructor(
         # calculate TR delay
         _duration_step = sum(seq.block_durations.values()) - _start_time
         delay_tr = repetition_time - _duration_step
+        delay_tr = raster(delay_tr, precision=system.grad_raster_time)
 
         seq.add_block(pp.make_delay(delay_tr))
 
