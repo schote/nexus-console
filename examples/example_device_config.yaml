@@ -22,7 +22,7 @@ TxConfiguration:
   # Calculate grad_to_volt per gradient channel:
   # Gradient efficiency in T/m/A
   gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]
-  # Gradient power amplifier in V/A
+  # Gradient power amplifier in A/V
   gpa_gain: [7.10, 7.10, 7.10]
   # Scales RF in Hz (pulseq) to mV
   rf_to_mvolt: 5.e-3
@@ -45,7 +45,7 @@ RxConfiguration:
 
 SystemLimits:
   # Maximum gradient amplitude in Hz/m (PyPulseq system stores this unit)
-  max_grad: 10644000000.0 # equals 250 T/m
+  max_grad: 1703040.0 # equals 40 mT/m
   # Maximum slew rate in Hz/m/s (PyPulseq system stores this unit)
   max_slew: 4257600000.0 # equals 100 T/m/s
   # Dead time at the beginning of RF event in s, covered by rf_delay
@@ -54,7 +54,11 @@ SystemLimits:
   rf_ringdown_time: 20.e-6
   # Time delay at the beginning of an ADC event in s
   adc_dead_time: 0.
+  # Raster time for block durations
   block_duration_raster: 5.e-8
+  # Raster time for RF pulses.
   rf_raster_time: 5.e-8
+  # Raster time for gradient waveforms.
   grad_raster_time: 5.e-8
+  # Raster time for ADC readout pulses.
   adc_raster_time: 5.e-8
