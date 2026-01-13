@@ -206,10 +206,12 @@ class SequenceProvider(Sequence):
             dwell_time = adc_waveform[1][1]
             delay = adc_waveform[1][2]
             delay_samples = round(delay * self.spcm_freq)
+            dead_time = adc_waveform[1][5]
+            dead_time_samples = round(dead_time * self.spcm_freq)
             gate_duration = num_samples * dwell_time
             gate_samples = round(gate_duration * self.spcm_freq)
-            waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
-            waveform[delay_samples:] = 2**15
+            waveform = np.zeros(delay_samples + gate_samples + dead_time_samples, dtype=np.uint16)
+            waveform[delay_samples:-dead_time_samples] = 2**15
             adc_list.append((adc_waveform[0], waveform, gate_samples))
         return adc_list
 
