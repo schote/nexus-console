@@ -60,5 +60,5 @@ SystemLimits:
   rf_raster_time: 5.e-8
   # Raster time for gradient waveforms.
   grad_raster_time: 5.e-8
-  # Raster time for ADC readout pulses.
+  # Raster time for ADC readout.
   adc_raster_time: 5.e-8
