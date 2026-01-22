@@ -52,8 +52,26 @@ def write_acquisition_to_mrd(
                 active_channels=num_coils,
                 trajectory_dimensions=traj_dims.sum()
             )
-            # Assume the center sample is the middle of the data
-            acq.center_sample = rx_data.num_samples // 2
+            
+            # Handle ADC presampling if applicable
+            if rx_data.labels is not None:
+                if not rx_data.labels.get("NOISE"):   # dont remove for noise scans
+                    image_samples = header.encoding[0].encodedSpace.matrixSize.x
+                    x_ratio = rx_data.num_samples / image_samples
+                    if x_ratio > 1.0:
+                        log.warning(
+                            "Readout oversampling detected (x_ratio=%.2f) for acquisition %i/%i. ",
+                            x_ratio, k, len(data)-1,
+                        )
+                        # Round down to integer oversampling factors and mark exceeding samples to be discarded (adc-presampling)
+                        acq.discard_pre = rx_data.num_samples - (image_samples * int(x_ratio))
+                else:
+                    acq.discard_pre = 0
+            else:
+                acq.discard_pre = 0
+    
+            # Assume the center sample is the middle of the data, accounting for pre-discarded samples
+            acq.center_sample = (rx_data.num_samples + acq.discard_pre) // 2
             # Readout bandwidth, as time between samples in microseconds
             acq.sample_time_us = rx_data.dwell_time * 1e6
             # Timestamp of readout
