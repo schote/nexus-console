@@ -49,9 +49,16 @@ def main():
         default=50000,
         help="Manager process connection port",
     )
+    parser.add_argument(
+        "-n",
+        "--no-verify",
+        action="store_true",
+        help="If this flag is set, the service starts immedietly without asking the user to confirm that hardware is turned off.",
+    )
     args = parser.parse_args()
-    input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\
-        \nPress Enter to continue...")
+    if not args.no_verify:
+        input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\
+            \nPress Enter to continue...")
     print("\n[neXus] Setting up the acquisition control...\n")
 
     # Setup global acquisition control with argparse arguments
