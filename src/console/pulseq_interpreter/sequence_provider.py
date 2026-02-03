@@ -210,7 +210,9 @@ class SequenceProvider(Sequence):
         """
         adc_list = []
         for adc_props in self.adc_library.data.values():
-            num_samples, adc_dwell_time, delay, _, _, dead_time = adc_props
+            # Implementation compatible to version 1.4.X and 1.5.X -> dead time is always appended
+            num_samples, adc_dwell_time, delay = adc_props[:3]
+            dead_time = adc_props[-1]
 
             # Calculate the number of samples to be discarded from the decimated signal
             num_samples_discard = round(dead_time / adc_dwell_time)
