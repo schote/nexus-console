@@ -17,6 +17,7 @@ def write_acquisition_to_mrd(
     header: ismrmrd.xsd.ismrmrdHeader,
     sequence: Sequence,
     dataset_path: Path,
+    channel_assignment: dict[str, int | float],
 ) -> Path:
     """Write imaging data to ISMRMRD."""
     with ismrmrd.Dataset(dataset_path) as dataset:
@@ -25,9 +26,36 @@ def write_acquisition_to_mrd(
         # Create acquisition
         acq = ismrmrd.Acquisition()
         acq.version = int(version("ismrmrd")[0])
-        acq.read_dir[0] = 1.0
-        acq.phase_dir[1] = 1.0
-        acq.slice_dir[2] = 1.0
+
+        # Set raw data orientation directions in LPS coordinates
+        # This information is shared for all acquisitions
+        # The assumption is that the console output channels to physical gradient orientations are as follows
+        # ch output1 -> gradient along I to S
+        # ch output2 -> gradient along P to A
+        # ch output3 -> gradient along R to L
+        # For LPS coordinates the direction P to A needs to be inverted, i.e., read_dir = [0,-1,0]
+
+        # Map logical gradient axes to physical directions in LPS coordinates
+        direction_map = {
+            1: (2, 1.0),   # I to S -> [0, 0, 1]
+            2: (1, -1.0),  # P to A -> [0, -1, 0] (inverted for LPS)
+            3: (0, 1.0),   # R to L -> [1, 0, 0]
+        }
+
+        # Set readout direction
+        if channel_assignment['x'] in direction_map:
+            idx, val = direction_map[int(channel_assignment['x'])]
+            acq.read_dir[idx] = val
+
+        # Set phase encoding direction
+        if channel_assignment['y'] in direction_map:
+            idx, val = direction_map[int(channel_assignment['y'])]
+            acq.phase_dir[idx] = val
+
+        # Set slice direction
+        if channel_assignment['z'] in direction_map:
+            idx, val = direction_map[int(channel_assignment['z'])]
+            acq.slice_dir[idx] = val
 
         trajectory_position = 0
         none_counter = 0
