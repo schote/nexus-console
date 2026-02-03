@@ -7,6 +7,7 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.rx_data import RxData
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
@@ -260,7 +261,7 @@ def test_get_rf_events(seq_provider, test_sequence):
     assert rf_block.type == "rf"
 
 
-def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter):
+def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
     """Labels in blocks must be propagated into RxData.labels for each ADC event."""
     n_samples = 1000
     bw = 20e3
@@ -282,3 +283,25 @@ def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter)
     assert rx0.num_samples == n_samples
     assert rx0.num_samples_raw == n_samples / (bw*seq_provider.spcm_dwell_time)
     assert rx0.dwell_time == 1/bw
+
+
+@pytest.mark.parametrize("dead_time", [0., 10e-3])
+def test_adc_presampling(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter, dead_time: float):
+    """Verify that dead_time is used for pre and post samples which are to be discarded after decimation."""
+    adc_bw = 20e3
+    adc_dwell = 1/adc_bw
+    num_samples_discard = round(dead_time/adc_dwell)
+    num_samples = 100
+    # Define adc event
+    adc = pp.make_adc(
+        num_samples=num_samples,
+        dwell=adc_dwell,
+        system=pp.Opts(adc_dead_time=dead_time),
+    )
+    # Unroll sequence
+    seq_provider.add_block(adc)
+    seq_unrolled = seq_provider.unroll_sequence(acquisition_parameter)
+    rx_data = seq_unrolled.rx_data[0]
+
+    assert rx_data.num_samples == num_samples
+    assert rx_data.num_samples_discard == num_samples_discard
