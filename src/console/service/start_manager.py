@@ -53,7 +53,7 @@ def main():
         "-n",
         "--no-verify",
         action="store_true",
-        help="If this flag is set, the service starts immedietly \
+        help="If this flag is set, the service starts immediately \
             without asking the user to confirm that hardware is turned off.",
     )
     args = parser.parse_args()
