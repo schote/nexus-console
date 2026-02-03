@@ -44,6 +44,12 @@ class UnrolledSequence:
     """If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
     This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage."""
 
+    output_limits: list[int]
+    """Limit of each output channel in mV."""
+
+    impedance_scaling: list[float]
+    """Waveform scaling based on impedance, the channel is terminated in."""
+
     dwell_time: float
     """Dwell time of the spectrum card replay data (unrolled sequence).
     Defines the distance in time between to sample points.
