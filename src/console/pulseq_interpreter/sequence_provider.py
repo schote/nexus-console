@@ -5,8 +5,6 @@ from collections.abc import Callable
 from types import SimpleNamespace
 from typing import Any
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
