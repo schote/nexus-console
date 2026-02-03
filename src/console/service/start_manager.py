@@ -54,7 +54,7 @@ def main():
         "--no-verify",
         action="store_true",
         help="If this flag is set, the service starts immediately \
-            without asking the user to confirm that hardware is turned off.",
+            without asking the user to confirm that the hardware (e.g. amplifiers) is turned off.",
     )
     args = parser.parse_args()
     if not args.no_verify:
