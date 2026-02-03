@@ -6,8 +6,8 @@ import numpy as np
 import pypulseq as pp
 import pytest
 
-from console.interfaces.rx_data import RxData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
