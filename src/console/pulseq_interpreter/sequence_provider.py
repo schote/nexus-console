@@ -212,9 +212,6 @@ class SequenceProvider(Sequence):
         for adc_props in self.adc_library.data.values():
             num_samples, adc_dwell_time, delay, _, _, dead_time = adc_props
 
-            # Calculate the pure delay without adc dead time, ensure that value is >= 0
-            pure_delay = max(0, delay - dead_time)
-            num_delay_samples = round(pure_delay * self.spcm_freq)
             # Calculate the number of samples to be discarded from the decimated signal
             num_samples_discard = round(dead_time / adc_dwell_time)
             # Calculate the total gate duration, given by number of samples
@@ -222,6 +219,17 @@ class SequenceProvider(Sequence):
             # Note that the total gate duration is only increased if the dead time is a multiple of the adc dwell time
             total_gate_duration = (num_samples + 2*num_samples_discard) * adc_dwell_time
             num_raw_samples = round(total_gate_duration * self.spcm_freq)
+
+            if num_samples_discard > 0:
+                # Calculate the pure delay without dead time if dead time > adc dwell time, ensure that value is >= 0.
+                # If the dead time is not a multiple of the adc dwell time,
+                # the "left-over" dead time duration is at the end of the adc block.
+                pure_delay = max(0, delay - dead_time)
+                num_delay_samples = round(pure_delay * self.spcm_freq)
+            else:
+                # If dead time is < adc dwell time,
+                # the dead time is symetrically arranged around ADC gate without sampling.
+                num_delay_samples = round(delay * self.spcm_freq)
 
             waveform = np.zeros(num_delay_samples + num_raw_samples, dtype=np.uint16)
             waveform[num_delay_samples:] = 2**15
