@@ -138,11 +138,10 @@ class RxData:
 
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
-        output_shape = (*np.shape(demod_data)[:-1], self.num_samples)
+        # Note that the processed data may contain samples from pre and post sampling
+        output_shape = (*np.shape(demod_data)[:-1], self.num_samples + int(2*self.num_samples_discard))
         self.processed_data = np.zeros(output_shape, dtype=complex)
-        # Define slice to discard dead_time sample before and after the ADC gate
-        processed_data_slice = slice(self.num_samples_discard, self.num_samples_discard+self.num_samples)
-        self.processed_data[:] = self.decimate_data(demod_data)[processed_data_slice]
+        self.processed_data[:] = self.decimate_data(demod_data)
 
         if not store_unprocessed:
             self.raw_data = None
