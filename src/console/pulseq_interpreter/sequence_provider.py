@@ -109,9 +109,6 @@ class SequenceProvider(Sequence):
         self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
         self.output_limits: list[int] = output_limits if output_limits is not None else []
 
-        # Initialize larmor frequency and sequence cache variables, to be set later
-        self._sqnc_cache: np.ndarray | None = None
-
     # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
@@ -280,7 +277,6 @@ class SequenceProvider(Sequence):
             self.log.exception("Checks not passed")
             raise
 
-        self._sqnc_cache = None
         gradient_index: Dimensions = parameter.channel_assignment
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
@@ -446,9 +442,6 @@ class SequenceProvider(Sequence):
             seq_samples,
             len(block_durations),
         )
-
-        # Save unrolled sequence in class
-        self._sqnc_cache = _seq
 
         return UnrolledSequence(
             seq=_seq,
