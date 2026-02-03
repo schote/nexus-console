@@ -2,14 +2,20 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
 
-def plot_unrolled(sequence: UnrolledSequence, time_range: tuple[float, float] = (0, -1)) -> tuple[mpl.figure.Figure, np.ndarray]:
+def plot_unrolled(
+    sequence: UnrolledSequence,
+    time_range: tuple[float, float] = (0, -1),
+) -> tuple[mpl.figure.Figure, np.ndarray]:
     """Plot unrolled waveforms for replay.
 
     Parameters
     ----------
+    sequence
+        The unrolled/calculated sequence to be plotted.
     time_range, default = (0, -1)
         Specify the time range of the plot in seconds.
         If the second value is smaller then the first or -1, the whole sequence is plotted.
@@ -65,7 +71,11 @@ def plot_unrolled(sequence: UnrolledSequence, time_range: tuple[float, float] = 
     return fig, axis
 
 
-def plot_slices(img: np.ndarray, vmin: float | None = None, vmax: float | None = None):
+def plot_slices(
+    img: np.ndarray,
+    vmin: float | None = None,
+    vmax: float | None = None,
+) -> tuple[mpl.figure.Figure, np.ndarray]:
     """Return sliced plot of 3D image data."""
     num_slices = img.shape[0]
     num_cols = int(np.ceil(np.sqrt(num_slices)))
