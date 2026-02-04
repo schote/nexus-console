@@ -242,7 +242,8 @@ class AcquisitionControl:
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
-            self.sequence.parameter.gradient_offset, self.seq_provider.high_impedance[1:]
+            offsets=self.sequence.parameter.gradient_offset,
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
         for k in range(self.sequence.parameter.num_averages):
@@ -292,7 +293,10 @@ class AcquisitionControl:
                 time.sleep(self.sequence.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
+        self.tx_card.set_gradient_offsets(
+            offsets=Dimensions(x=0, y=0, z=0),
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
+        )
 
         if len(self.receive_data) > 0:
             self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
