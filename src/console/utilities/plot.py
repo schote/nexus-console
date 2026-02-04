@@ -16,7 +16,7 @@ def plot_unrolled_sequence(
     ----------
     sequence
         The unrolled/calculated sequence to be plotted.
-    time_range, default = (0, -1)
+    time_range
         Specify the time range of the plot in seconds.
         If the second value is smaller then the first or -1, the whole sequence is plotted.
 
@@ -50,10 +50,10 @@ def plot_unrolled_sequence(
     gy_signal = np.array((np.uint16(gy_signal) << 1).astype(np.int16) / 2**15)
     gz_signal = np.array((np.uint16(gz_signal) << 1).astype(np.int16) / 2**15)
 
-    axis[0].plot(samples, sequence.output_limits[0] * rf_signal / sequence.impedance_scaling[0])
-    axis[1].plot(samples, sequence.output_limits[1] * gx_signal / sequence.impedance_scaling[1])
-    axis[2].plot(samples, sequence.output_limits[2] * gy_signal / sequence.impedance_scaling[2])
-    axis[3].plot(samples, sequence.output_limits[3] * gz_signal / sequence.impedance_scaling[3])
+    axis[0].plot(samples, sequence.rf_output_limit * rf_signal)
+    axis[1].plot(samples, sequence.gradient_output_limits[0] * gx_signal)
+    axis[2].plot(samples, sequence.gradient_output_limits[1] * gy_signal)
+    axis[3].plot(samples, sequence.gradient_output_limits[2] * gz_signal)
     axis[4].plot(samples, adc_gate, label="ADC gate")
     axis[4].plot(samples, unblanking, label="RF unblanking")
 
