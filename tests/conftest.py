@@ -21,12 +21,14 @@ def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
     system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     return SequenceProvider(
-        gradient_efficiency=[0.4, 0.4, 0.4],
-        gpa_gain=[1.0, 1.0, 1.0],
-        output_limits=[200, 6000, 6000, 6000],
-        spcm_dwell_time=5e-8,
+        gradient_efficiency=(0.4, 0.4, 0.4),
+        gpa_gain=(1.0, 1.0, 1.0),
+        gradient_output_limits=(6000, 6000, 6000),
+        gradients_50ohms=False,
+        rf_output_limit=200,
+        rf_50ohms=True,
         rf_to_mvolt=5e-3,
-        high_impedance=[False, True, True, True],
+        spcm_dwell_time=5e-8,
         system_limits=system_limits,
     )
 
