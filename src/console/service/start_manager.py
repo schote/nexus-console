@@ -49,12 +49,16 @@ def main():
         default=50000,
         help="Manager process connection port",
     )
+    # Note, XIO lines have a pull-up -> XIO output is temporarily high when opening the cards:
+    # https://github.com/schote/nexus-console/issues/54#issuecomment-2823593549
     parser.add_argument(
         "-n",
         "--no-verify",
         action="store_true",
-        help="If this flag is set, the service starts immediately \
-            without asking the user to confirm that the hardware (e.g. amplifiers) is turned off.",
+        help="If this flag is set, the service starts immediately without asking the user for confirmation. \
+                Be aware that the outputs of the XIO lines have a pull-up resistor to pull the signal high, \
+                    when the card isn't actively setting the output (e.g. when opening the card). \
+                        This is the case when starting the service because the cards are opened.",
     )
     args = parser.parse_args()
     if not args.no_verify:
