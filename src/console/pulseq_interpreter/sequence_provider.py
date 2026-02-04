@@ -440,7 +440,7 @@ class SequenceProvider(Sequence):
                 adc_end = (block_pos[event_idx] + adc_gate.start + adc_gate.num_samples_raw) * 4
 
                 # Add ADC gate to X gradient
-                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | 2**15
+                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | np.uint16(2**15)
 
                 _rx_data.append(RxData(
                     index=adc_count,
