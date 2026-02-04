@@ -294,6 +294,7 @@ def test_adc_presampling(seq_provider: SequenceProvider, acquisition_parameter: 
     num_samples = 100
     # Define adc event
     adc = pp.make_adc(
+        delay=dead_time,
         num_samples=num_samples,
         dwell=adc_dwell,
         system=pp.Opts(adc_dead_time=dead_time),
