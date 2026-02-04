@@ -28,27 +28,29 @@ class UnrolledSequence:
     rx_data: list[RxData]
     """List containing the data and metadata of all receive events"""
 
-    gpa_gain: list[float]
+    gpa_gain: tuple[float, float, float]
     """The gradient waveforms in pulseq are defined in Hz/m.
     The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
     The gpa gain is given in V/A and accounts for the voltage required to generate an output of 1A.
     The gyromagnetic ratio defined by 42.58e6 MHz/T."""
 
-    gradient_efficiency: list[float]
+    gradient_efficiency: tuple[float, float, float]
     """The gradient waveforms in pulseq are defined in Hz/m.
     The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
     The gradient efficiency is given in mT/m/A and accounts for the gradient field which is generated per 1A.
     The gyromagnetic ratio defined by 42.58e6 MHz/T."""
 
+    gradient_output_limits: tuple[int, int, int]
+    """Integer limits for each gradient output channel in mV. Gradient output limits already contain scaling
+    from channel termination into high impedance or 50 ohms respectively."""
+
     rf_to_mvolt: float
     """If sequence values are given as float values, they can be interpreted as output voltage [mV] directly.
     This conversion factor represents the scaling from original pulseq RF values [Hz] to card output voltage."""
 
-    output_limits: list[int]
-    """Limit of each output channel in mV."""
-
-    impedance_scaling: list[float]
-    """Waveform scaling based on impedance, the channel is terminated in."""
+    rf_output_limit: int
+    """Integer limit of rf output channel in mV. RF output limits already contains scaling
+    from channel termination into high impedance or 50 ohms respectively."""
 
     dwell_time: float
     """Dwell time of the spectrum card replay data (unrolled sequence).
