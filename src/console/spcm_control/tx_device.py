@@ -36,8 +36,8 @@ class TxCard(SpectrumDevice):
     def __init__(
         self,
         path: str,
-        max_amplitude: list[int],
-        filter_type: list[int],
+        max_amplitude: tuple[int, int, int, int],
+        filter_type: tuple[int, int, int, int],
         sample_rate: int,
     ) -> None:
         self.log = logging.getLogger(self.__name__)

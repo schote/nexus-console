@@ -72,13 +72,16 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Load device configuration and create instances
+        # TODO: Generalize Nexus configuration to allow different setups
         self.config: NexusConfiguration = load_nexus_config(configuration_file)
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
             gpa_gain=self.config.tx.gpa_gain,
-            high_impedance=[not val for val in self.config.tx.channel_terminated_50ohm],
-            output_limits=self.config.tx.channel_max_amplitude,
+            gradients_50ohms=self.config.tx.gradients_terminated_50ohm,
+            rf_50ohms=self.config.tx.rf_terminated_50ohm,
+            gradient_output_limits=self.config.tx.channel_max_amplitude[1:],
+            rf_output_limit=self.config.tx.channel_max_amplitude[0],
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
             system_limits=self.config.system,
