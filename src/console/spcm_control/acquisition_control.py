@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib as mpl
 import numpy as np
 
 from console.interfaces.acquisition_data import AcquisitionData
@@ -20,6 +21,7 @@ from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvi
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_configuration import load_nexus_config
+from console.utilities.plot import plot_unrolled_sequence
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -348,3 +350,13 @@ class AcquisitionControl:
         with ThreadPoolExecutor() as executor:
             executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
                          , self.receive_data)
+
+    def plot_waveforms(
+        self,
+        time_range: tuple[float, float],
+    ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
+        """Plot internally stored waveforms."""
+        if self.sequence is not None:
+            return plot_unrolled_sequence(self.sequence, time_range=time_range)
+        self.log.warning("No sequence to plot. Set sequence first.")
+        return None
