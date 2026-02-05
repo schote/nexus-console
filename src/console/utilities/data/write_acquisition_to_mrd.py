@@ -6,6 +6,7 @@ import ismrmrd
 import numpy as np
 from pypulseq.Sequence.sequence import Sequence
 
+from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.utilities.data import get_logger, mrd_helper
 
@@ -17,7 +18,7 @@ def write_acquisition_to_mrd(
     header: ismrmrd.xsd.ismrmrdHeader,
     sequence: Sequence,
     dataset_path: Path,
-    channel_assignment: dict[str, int | float],
+    channel_assignment: Dimensions,
 ) -> Path:
     """Write imaging data to ISMRMRD."""
     with ismrmrd.Dataset(dataset_path) as dataset:
@@ -27,12 +28,12 @@ def write_acquisition_to_mrd(
         acq = ismrmrd.Acquisition()
         acq.version = int(version("ismrmrd")[0])
 
-        # Set raw data orientation directions in LPS coordinates
+        # Set raw data orientation directions in LPS coordinates, assuming patient is lying supine, head first.
         # This information is shared for all acquisitions
         # The assumption is that the console output channels to physical gradient orientations are as follows
-        # ch output1 -> gradient along I to S
-        # ch output2 -> gradient along P to A
-        # ch output3 -> gradient along R to L
+        # ch output1 -> gradient from front to back (Patient: I to S)
+        # ch output2 -> gradient from top to bottom (Patient: P to A)
+        # ch output3 -> gradient from left to right (Patient: R to L)
         # For LPS coordinates the direction P to A needs to be inverted, i.e., read_dir = [0,-1,0]
 
         # Map logical gradient axes to physical directions in LPS coordinates
@@ -43,19 +44,16 @@ def write_acquisition_to_mrd(
         }
 
         # Set readout direction
-        if channel_assignment['x'] in direction_map:
-            idx, val = direction_map[int(channel_assignment['x'])]
-            acq.read_dir[idx] = val
+        idx, val = direction_map[int(channel_assignment.x)]
+        acq.read_dir[idx] = val
 
         # Set phase encoding direction
-        if channel_assignment['y'] in direction_map:
-            idx, val = direction_map[int(channel_assignment['y'])]
-            acq.phase_dir[idx] = val
+        idx, val = direction_map[int(channel_assignment.y)]
+        acq.phase_dir[idx] = val
 
         # Set slice direction
-        if channel_assignment['z'] in direction_map:
-            idx, val = direction_map[int(channel_assignment['z'])]
-            acq.slice_dir[idx] = val
+        idx, val = direction_map[int(channel_assignment.z)]
+        acq.slice_dir[idx] = val
 
         trajectory_position = 0
         none_counter = 0
