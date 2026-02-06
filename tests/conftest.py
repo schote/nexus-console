@@ -73,6 +73,7 @@ def random_acquisition_data() -> Callable:
                         average_index=k_average,
                         num_samples=num_samples,
                         num_samples_raw=num_raw_samples,
+                        num_samples_discard=0,
                         dwell_time=1 / 20e3,
                         dwell_time_raw=1 / 20e6,
                         phase_offset=0,

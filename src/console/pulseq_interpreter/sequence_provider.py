@@ -2,6 +2,8 @@
 import logging
 import operator
 from collections.abc import Callable
+from dataclasses import dataclass
+from math import floor
 from types import SimpleNamespace
 from typing import Any
 
@@ -34,6 +36,13 @@ default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
 default_fov_offset: Dimensions = Dimensions(0, 0, 0)
 default_orientation: Dimensions = Dimensions(1, 2, 3)
 
+@dataclass
+class ADCGate:
+    """Define precalculated attributes of an ADC gate."""
+
+    start: int
+    num_samples_discard: int
+    num_samples_raw: int
 
 class SequenceProvider(Sequence):
     """Sequence provider class.
@@ -189,7 +198,7 @@ class SequenceProvider(Sequence):
             "output_limits": self.output_limits,
         }
 
-    def get_adc_events(self) -> list:
+    def get_adc_events(self) -> list[ADCGate]:
         """Extract ADC 'waveforms' from the sequence.
 
         TODO: Add error checks
@@ -199,18 +208,30 @@ class SequenceProvider(Sequence):
             list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
 
         """
-        adc_waveforms = self.adc_library
         adc_list = []
-        for adc_waveform in adc_waveforms.data.items():
-            num_samples = adc_waveform[1][0]
-            dwell_time = adc_waveform[1][1]
-            delay = adc_waveform[1][2]
-            delay_samples = round(delay * self.spcm_freq)
-            gate_duration = num_samples * dwell_time
-            gate_samples = round(gate_duration * self.spcm_freq)
-            waveform = np.zeros(delay_samples + gate_samples, dtype=np.uint16)
-            waveform[delay_samples:] = 2**15
-            adc_list.append((adc_waveform[0], waveform, gate_samples))
+        for adc_props in self.adc_library.data.values():
+            # Implementation compatible to version 1.4.X and 1.5.X -> dead time is always appended
+            num_samples, adc_dwell_time, delay = adc_props[:3]
+            dead_time = adc_props[-1]
+
+            # Calculate the number of samples to be discarded from the decimated signal
+            num_samples_discard = floor(dead_time / adc_dwell_time)
+            # Calculate the total gate duration, given by number of samples
+            # and two times the number of discarded samples for symmetric adc dead time
+            # Note that the total gate duration is only increased if the dead time is a multiple of the adc dwell time
+            total_gate_duration = (num_samples + 2*num_samples_discard) * adc_dwell_time
+            num_raw_samples = round(total_gate_duration * self.spcm_freq)
+
+            # Remaining delay = dead_time minus pre- and post-sampling fractions
+            remaining_delay = delay - num_samples_discard * adc_dwell_time
+            num_delay_samples = round(remaining_delay * self.spcm_freq)
+
+            adc_list.append(ADCGate(
+                start=num_delay_samples,
+                num_samples_raw=num_raw_samples,
+                num_samples_discard=num_samples_discard,
+            ))
+
         return adc_list
 
     def get_rf_events(self) -> list:
@@ -281,7 +302,7 @@ class SequenceProvider(Sequence):
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
-        adc_events = self.get_adc_events()
+        adc_events: list[ADCGate] = self.get_adc_events()
         rf_events = self.get_rf_events()
 
         # Calculate rf pulse and unblanking waveforms from RF event
@@ -410,22 +431,22 @@ class SequenceProvider(Sequence):
                     labels[label.label] = label.value
 
             if block.adc is not None:  # ADC event
-                # Grab the ADC event from the pre-calculated list
+                # Grab the ADC gate from the pre-calculated list
                 # Pulseq is 1 indexed, shift idx by -1 for correct event
-                adc_event = adc_events[event[5] - 1]
-                adc_waveform = adc_event[1]
+                adc_gate: ADCGate = adc_events[event[5] - 1]
 
                 # Calculate ADC start and end positions according to block position
-                adc_start = block_pos[event_idx] * 4
-                adc_end = (block_pos[event_idx] + np.size(adc_waveform)) * 4
+                adc_start = (block_pos[event_idx] + adc_gate.start) * 4
+                adc_end = (block_pos[event_idx] + adc_gate.start + adc_gate.num_samples_raw) * 4
 
                 # Add ADC gate to X gradient
-                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | adc_waveform
+                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | np.uint16(2**15)
 
                 _rx_data.append(RxData(
                     index=adc_count,
                     num_samples=block.adc.num_samples,
-                    num_samples_raw=adc_event[2],
+                    num_samples_raw=adc_gate.num_samples_raw,
+                    num_samples_discard=adc_gate.num_samples_discard,
                     dwell_time=block.adc.dwell,
                     dwell_time_raw=self.spcm_dwell_time,
                     phase_offset=block.adc.phase_offset,
