@@ -125,12 +125,13 @@ def test_sequence() -> pp.Sequence:
 @pytest.fixture()
 def acquisition_parameter() -> AcquisitionParameter:
     """Construct acquisition parameter object for testing."""
-    return AcquisitionParameter(
-        larmor_frequency=2.123e6,
-        b1_scaling=5.432,
-        gradient_offset=Dimensions(0, 100, 500),
-        fov_scaling=Dimensions(0.5, 0.0, 0.9),
-        channel_assignment=Dimensions(1, 2, 3),
-        averaging_delay=1.01,
-        state_filepath=tempfile.mkdtemp(),
-    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield AcquisitionParameter(
+            larmor_frequency=2.123e6,
+            b1_scaling=5.432,
+            gradient_offset=Dimensions(0, 100, 500),
+            fov_scaling=Dimensions(0.5, 0.0, 0.9),
+            channel_assignment=Dimensions(1, 2, 3),
+            averaging_delay=1.01,
+            state_filepath=tmpdir,
+        )
