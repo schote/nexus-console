@@ -7,8 +7,6 @@ from math import floor
 from types import SimpleNamespace
 from typing import Any
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
@@ -65,30 +63,41 @@ class SequenceProvider(Sequence):
 
     def __init__(
         self,
-        gradient_efficiency: list[float],
-        gpa_gain: list[float],
-        high_impedance: list[bool],
-        output_limits: list[int],
+        gradient_efficiency: tuple[float, float, float],
+        gpa_gain: tuple[float, float, float],
+        gradient_output_limits: tuple[int, int, int],
+        gradients_50ohms: bool,
+        rf_output_limit: int,
+        rf_50ohms: bool,
+        rf_to_mvolt: float,
+        spcm_dwell_time: float,
         system_limits: SystemLimits,
-        spcm_dwell_time: float = 1 / 20e6,
-        rf_to_mvolt: float = 1.,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
         Parameters
         ----------
-        output_limits
-            Output limit per channel in mV, includes both, RF and gradients, e.g. [200, 6000, 6000, 6000]
         gradient_efficiency
-            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3]
+            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3].
         gpa_gain
-            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7]
-        system_limits
-            Maximum system limits
-        spcm_dwell_time, optional
-            Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6
+            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7].
+        gradient_output_limits
+            Integer output limit per gradient channel in mV, e.g. [6000, 6000, 6000].
+        gradients_50ohms
+            Boolean flag which indicates if the gradient output is terminated into 50 ohms or high impedance.
+            If terminated into high impedance, the card output doubles,
+            what needs to be considered when calculating the sequence.
+        rf_output_limit
+            Integer output limit of the RF channel in mV.
+        rf_50ohms
+            Boolean flag which indicates if the rf output is terminated into 50 ohms (see gradients_50ohms).
         rf_to_mvolt, optional
-            Translation of RF waveform from pulseq (Hz) to mV, by default 1
+            Translation of RF waveform from pulseq (Hz) to mV.
+        spcm_dwell_time, optional
+            Sampling time raster of the output waveform (depends on spectrum card).
+        system_limits
+            Absolute maximum system limits defined in the device configuration.
+            Used to instantiate the pypulseq `Opts()` class.
         """
         super().__init__(
             system=Opts(
@@ -96,7 +105,7 @@ class SequenceProvider(Sequence):
                 B0=50e-3,
                 grad_unit="Hz/m",   # system limit is defined in this units
                 slew_unit="Hz/m/s",  # system limit is defined in this units
-            )
+            ),
         )
         self.log = logging.getLogger("SeqProv")
 
@@ -105,17 +114,19 @@ class SequenceProvider(Sequence):
         self.spcm_dwell_time = spcm_dwell_time
         self.spcm_freq = 1 / spcm_dwell_time
         self.system_limits = system_limits
-        self.high_impedance = high_impedance
-        self.gpa_gain: list[float] = gpa_gain
-        self.grad_eff: list[float] = gradient_efficiency
+        self.gpa_gain = gpa_gain
+        self.grad_eff = gradient_efficiency
 
-        # Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms
-        # Halve RF scaling factor if impedance is high, because the card output doubles for high impedance
-        self.imp_scaling = [0.5 if z else 1 for z in high_impedance]
-        self.output_limits: list[int] = output_limits if output_limits is not None else []
-
-        # Initialize larmor frequency and sequence cache variables, to be set later
-        self._sqnc_cache: np.ndarray | None = None
+        # Scale output limit dependent on high impedance flags:
+        # If output is terminated into high impedance (flag is true), the channel output is doubled.
+        # Otherwise, if output is terminated into 50 ohms impedance, output limit remains unchanged.
+        self.rf_out_limit = rf_output_limit if rf_50ohms else int(2 * rf_output_limit)
+        # Ensure tuple[int, int, int] for mypy typing
+        self.gradient_out_limits = (
+            gradient_output_limits[0] if gradients_50ohms else int(2 * gradient_output_limits[0]),
+            gradient_output_limits[1] if gradients_50ohms else int(2 * gradient_output_limits[1]),
+            gradient_output_limits[2] if gradients_50ohms else int(2 * gradient_output_limits[2]),
+        )
 
     # -------- PyPulseq interface -------- #
 
@@ -195,7 +206,7 @@ class SequenceProvider(Sequence):
             "spcm_dwell_time": self.spcm_dwell_time,
             "gpa_gain": self.gpa_gain,
             "gradient_efficiency": self.grad_eff,
-            "output_limits": self.output_limits,
+            "output_limits": self.gradient_out_limits,
         }
 
     def get_adc_events(self) -> list[ADCGate]:
@@ -248,6 +259,8 @@ class SequenceProvider(Sequence):
     def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
+        TODO: Reduce complexity.
+
         Parameters
         ----------
         parameter
@@ -297,7 +310,6 @@ class SequenceProvider(Sequence):
             self.log.exception("Checks not passed")
             raise
 
-        self._sqnc_cache = None
         gradient_index: Dimensions = parameter.channel_assignment
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
@@ -306,11 +318,13 @@ class SequenceProvider(Sequence):
         rf_events = self.get_rf_events()
 
         # Calculate rf pulse and unblanking waveforms from RF event
-        # Should probably be moved inside of get_rf_events()
+        # TODO: Should probably be moved inside of get_rf_events()
         rf_pulses = {}
         for rf_event in rf_events:
             rf_pulses[rf_event[0]] = self._calculate_rf(
-                block=rf_event[1], b1_scaling=parameter.b1_scaling, larmor_frequency=parameter.larmor_frequency,
+                block=rf_event[1],
+                b1_scaling=parameter.b1_scaling,
+                larmor_frequency=parameter.larmor_frequency,
             )
 
         seq_duration, _, _ = self.duration()
@@ -350,7 +364,9 @@ class SequenceProvider(Sequence):
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.x-1)],
-                    output_channel=int(gradient_index.x),
+                    # Gradient indexing starts at 1 (RF is channel 0)
+                    # -> correct indexing to match tuple index
+                    output_channel=int(gradient_index.x-1),
                 )
                 delay = block.gx.delay
                 delay_samples = round(delay * self.spcm_freq)
@@ -371,7 +387,9 @@ class SequenceProvider(Sequence):
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
-                    output_channel=int(gradient_index.y),
+                    # Gradient indexing starts at 1 (RF is channel 0)
+                    # -> correct indexing to match tuple index
+                    output_channel=int(gradient_index.x-1),
                 )
                 delay = block.gy.delay
                 delay_samples = round(delay * self.spcm_freq)
@@ -392,7 +410,9 @@ class SequenceProvider(Sequence):
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
-                    output_channel=int(gradient_index.z),
+                    # Gradient indexing starts at 1 (RF is channel 0)
+                    # -> correct indexing to match tuple index
+                    output_channel=int(gradient_index.x-1),
                 )
                 delay = block.gz.delay
                 delay_samples = round(delay * self.spcm_freq)
@@ -464,9 +484,6 @@ class SequenceProvider(Sequence):
             len(block_durations),
         )
 
-        # Save unrolled sequence in class
-        self._sqnc_cache = _seq
-
         return UnrolledSequence(
             seq=_seq,
             sample_count=seq_samples,
@@ -474,69 +491,13 @@ class SequenceProvider(Sequence):
             gradient_efficiency=self.grad_eff,
             rf_to_mvolt=self.rf_to_mvolt,
             dwell_time=self.spcm_dwell_time,
+            gradient_output_limits=self.gradient_out_limits,
+            rf_output_limit=self.rf_out_limit,
             duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
             rx_data=_rx_data,
         )
-
-    def plot_unrolled(self, time_range: tuple[float, float] = (0, -1)) -> tuple[mpl.figure.Figure, np.ndarray]:
-        """Plot unrolled waveforms for replay.
-
-        Parameters
-        ----------
-        time_range, default = (0, -1)
-            Specify the time range of the plot in seconds.
-            If the second value is smaller then the first or -1, the whole sequence is plotted.
-
-        Returns
-        -------
-            Matplotlib figure and axis
-        """
-        fig, axis = plt.subplots(5, 1, figsize=(16, 9))
-
-        if (sqnc := self._sqnc_cache) is None:
-            msg = "No unrolled sequence. Execute `unroll_sequence(...)` first"
-            raise RuntimeError(msg)
-
-        seq_start = int(time_range[0] * self.spcm_freq)
-        seq_end = int(time_range[1] * self.spcm_freq) if time_range[1] > time_range[0] else -1
-        samples = np.arange(len(sqnc) // 4, dtype=float)[seq_start:seq_end] * self.spcm_dwell_time * 1e3
-
-        rf_signal = sqnc[0::4][seq_start:seq_end]
-        gx_signal = sqnc[1::4][seq_start:seq_end]
-        gy_signal = sqnc[2::4][seq_start:seq_end]
-        gz_signal = sqnc[3::4][seq_start:seq_end]
-
-        # Get digital signals
-        adc_gate = gx_signal.astype(np.uint16) >> 15
-        unblanking = gz_signal.astype(np.uint16) >> 15
-
-        # Get gradient waveforms
-        rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
-        gx_signal = np.array((np.uint16(gx_signal) << 1).astype(np.int16) / 2**15)
-        gy_signal = np.array((np.uint16(gy_signal) << 1).astype(np.int16) / 2**15)
-        gz_signal = np.array((np.uint16(gz_signal) << 1).astype(np.int16) / 2**15)
-
-        axis[0].plot(samples, self.output_limits[0] * rf_signal / self.imp_scaling[0])
-        axis[1].plot(samples, self.output_limits[1] * gx_signal / self.imp_scaling[1])
-        axis[2].plot(samples, self.output_limits[2] * gy_signal / self.imp_scaling[2])
-        axis[3].plot(samples, self.output_limits[3] * gz_signal / self.imp_scaling[3])
-        axis[4].plot(samples, adc_gate, label="ADC gate")
-        axis[4].plot(samples, unblanking, label="RF unblanking")
-
-        axis[0].set_ylabel("RF [mV]")
-        axis[1].set_ylabel("Gx [mV]")
-        axis[2].set_ylabel("Gy [mV]")
-        axis[3].set_ylabel("Gz [mV]")
-        axis[4].set_ylabel("Digital")
-        axis[4].legend(loc="upper right")
-
-        _ = [ax.grid(axis="x") for ax in axis]
-
-        axis[4].set_xlabel("Time [ms]")
-
-        return fig, axis
 
     # -------- Private waveform calculation functions -------- #
 
@@ -600,8 +561,8 @@ class SequenceProvider(Sequence):
         # Perform this step here to save computation time, num. of envelope samples << num. of resampled signal
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-            rf_scaling = b1_scaling * self.rf_to_mvolt * self.imp_scaling[0] / self.output_limits[0]
-            if np.abs(np.amax(envelope_scaled := block.signal * phase_offset * rf_scaling)) > 1:
+            rf_scaling = b1_scaling * self.rf_to_mvolt * phase_offset / self.rf_out_limit
+            if np.abs(np.amax(envelope_scaled := block.signal * rf_scaling)) > 1:
                 raise ValueError("RF magnitude exceeds output limit.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -655,32 +616,32 @@ class SequenceProvider(Sequence):
             gradient amplitude exceeds channel maximum output level
         """
         try:
-            # Calculate gradient waveform scaling, subtract gain and efficiency index by 1,
-            # because these lists do not include the RF channel (i.e. gradient channel 1 corresponds to index 0)
-            scaling = fov_scaling * self.imp_scaling[output_channel] / (
-                self.system.gamma * 1e-3 * self.gpa_gain[output_channel-1] * self.grad_eff[output_channel-1])
+            # Calculate gradient waveform scaling
+            scaling = fov_scaling / (
+                self.system.gamma * 1e-3 * self.gpa_gain[output_channel] * self.grad_eff[output_channel]
+            )
 
             # Calculate the gradient waveform relative to max output (within the interval [0, 1])
             if block.type == "grad":
                 # Arbitrary gradient waveform, interpolate linearly
                 # This function requires float input => cast to int16 afterwards
-                waveform = block.waveform * scaling
-                self._check_amplitude(output_channel, np.amax(waveform), self.output_limits[output_channel])
+                waveform = block.waveform * scaling / self.gradient_out_limits[output_channel]
+                self._check_gradient_amplitude(output_channel, np.abs(np.amax(waveform)))
                 # Transfer mV floating point waveform values to int16 if amplitude check passed
-                waveform *= INT16_MAX / self.output_limits[output_channel]
+                waveform_i16 = waveform * INT16_MAX
                 # Interpolate waveform on spectrum card time raster
                 gradient = np.interp(
                     x=np.linspace(block.tt[0], block.tt[-1], round(block.shape_dur / self.spcm_dwell_time)),
                     xp=block.tt,
-                    fp=waveform,
+                    fp=waveform_i16,
                 )
 
             elif block.type == "trap":
                 # Construct trapezoidal gradient from rise, flat and fall sections
-                flat_amp = block.amplitude * scaling
-                self._check_amplitude(output_channel, np.amax(flat_amp), self.output_limits[output_channel])
-                # Transfer mV floating point flat amplitude to int16 if amplitude check passed
-                flat_amp_i16 = flat_amp * INT16_MAX / self.output_limits[output_channel]
+                flat_amp = block.amplitude * scaling / self.gradient_out_limits[output_channel]
+                self._check_gradient_amplitude(output_channel, np.abs(np.amax(flat_amp)))
+                # Transfer relative floating point flat amplitude to int16 if amplitude check passed
+                flat_amp_i16 = flat_amp * INT16_MAX
                 # Define rise, flat and fall sections of trapezoidal gradient on spectrum card time raster
                 rise = np.linspace(0, flat_amp_i16, round(block.rise_time / self.spcm_dwell_time))
                 flat = np.full(round(block.flat_time / self.spcm_dwell_time), fill_value=flat_amp_i16)
@@ -693,12 +654,12 @@ class SequenceProvider(Sequence):
 
             # Calculate gradient offset int16 value from mV
             # Gradient offset is used for calculating output limits but is not added to the waveform
-            offset_i16 = offset * INT16_MAX / self.output_limits[output_channel]
+            offset_i16 = offset * INT16_MAX / self.gradient_out_limits[output_channel]
             # This is the combined int16 gradient and offset waveform as float dtype
             combined_i16 = gradient + offset_i16
             if (max_strength_i16 := np.amax(combined_i16)) > INT16_MAX:
                 # Report maximum strength in mV
-                max_strength = max_strength_i16 * self.output_limits[output_channel] / INT16_MAX
+                max_strength = max_strength_i16 * self.gradient_out_limits[output_channel] / INT16_MAX
                 msg = f"Amplitude of combined gradient and shim waveforms {max_strength} exceed max gradient amplitude"
                 raise ValueError(msg)
 
@@ -711,10 +672,11 @@ class SequenceProvider(Sequence):
 
     # -------- Private validation methods -------- #
 
-    def _check_amplitude(self, idx: int, value: float, limit: float) -> None:
+    def _check_gradient_amplitude(self, idx: int, rel_value: float) -> None:
         """Raise error if amplitude exceeds output limit."""
-        if value > limit:
-            msg = f"Amplitude of channel {idx} ({value}) exceeded output limit ({limit}))"
+        limit = self.gradient_out_limits[idx]
+        if np.abs(rel_value) > 1.:
+            msg = f"Amplitude of gradient channel {idx+1} ({rel_value*limit}) exceeded output limit ({limit}))"
             raise ValueError(msg)
 
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:

@@ -68,7 +68,7 @@ def test_dict_contains_basic_config(seq_provider: SequenceProvider):
     # Values agree with constructor
     np.testing.assert_approx_equal(d["spcm_freq"], 1 / seq_provider.spcm_dwell_time)
     assert d["rf_to_mvolt"] == seq_provider.rf_to_mvolt
-    assert d["output_limits"] == seq_provider.output_limits
+    assert d["output_limits"] == seq_provider.gradient_out_limits
 
 
 def test_from_pypulseq_system_limit_violation(seq_provider: SequenceProvider, test_sequence):
@@ -175,7 +175,7 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
     # Test exceptions
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
 
 
@@ -201,7 +201,7 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
     # Test exceptions
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
 
 
