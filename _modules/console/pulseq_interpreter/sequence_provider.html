@@ -419,8 +419,6 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleNamespace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pypulseq.opts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Opts</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pypulseq.Sequence.sequence</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
@@ -485,30 +483,41 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">gradient_efficiency</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-        <span class="n">high_impedance</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span>
-        <span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+        <span class="n">gradient_efficiency</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+        <span class="n">gradient_output_limits</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+        <span class="n">gradients_50ohms</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">rf_output_limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">rf_50ohms</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+        <span class="n">rf_to_mvolt</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">spcm_dwell_time</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">system_limits</span><span class="p">:</span> <span class="n">SystemLimits</span><span class="p">,</span>
-        <span class="n">spcm_dwell_time</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="mf">20e6</span><span class="p">,</span>
-        <span class="n">rf_to_mvolt</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize sequence provider class which is used to unroll a pulseq sequence.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        output_limits</span>
-<span class="sd">            Output limit per channel in mV, includes both, RF and gradients, e.g. [200, 6000, 6000, 6000]</span>
 <span class="sd">        gradient_efficiency</span>
-<span class="sd">            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3]</span>
+<span class="sd">            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3].</span>
 <span class="sd">        gpa_gain</span>
-<span class="sd">            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7]</span>
-<span class="sd">        system_limits</span>
-<span class="sd">            Maximum system limits</span>
-<span class="sd">        spcm_dwell_time, optional</span>
-<span class="sd">            Sampling time raster of the output waveform (depends on spectrum card), by default 1/20e6</span>
+<span class="sd">            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7].</span>
+<span class="sd">        gradient_output_limits</span>
+<span class="sd">            Integer output limit per gradient channel in mV, e.g. [6000, 6000, 6000].</span>
+<span class="sd">        gradients_50ohms</span>
+<span class="sd">            Boolean flag which indicates if the gradient output is terminated into 50 ohms or high impedance.</span>
+<span class="sd">            If terminated into high impedance, the card output doubles,</span>
+<span class="sd">            what needs to be considered when calculating the sequence.</span>
+<span class="sd">        rf_output_limit</span>
+<span class="sd">            Integer output limit of the RF channel in mV.</span>
+<span class="sd">        rf_50ohms</span>
+<span class="sd">            Boolean flag which indicates if the rf output is terminated into 50 ohms (see gradients_50ohms).</span>
 <span class="sd">        rf_to_mvolt, optional</span>
-<span class="sd">            Translation of RF waveform from pulseq (Hz) to mV, by default 1</span>
+<span class="sd">            Translation of RF waveform from pulseq (Hz) to mV.</span>
+<span class="sd">        spcm_dwell_time, optional</span>
+<span class="sd">            Sampling time raster of the output waveform (depends on spectrum card).</span>
+<span class="sd">        system_limits</span>
+<span class="sd">            Absolute maximum system limits defined in the device configuration.</span>
+<span class="sd">            Used to instantiate the pypulseq `Opts()` class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">system</span><span class="o">=</span><span class="n">Opts</span><span class="p">(</span>
@@ -516,7 +525,7 @@
                 <span class="n">B0</span><span class="o">=</span><span class="mf">50e-3</span><span class="p">,</span>
                 <span class="n">grad_unit</span><span class="o">=</span><span class="s2">&quot;Hz/m&quot;</span><span class="p">,</span>   <span class="c1"># system limit is defined in this units</span>
                 <span class="n">slew_unit</span><span class="o">=</span><span class="s2">&quot;Hz/m/s&quot;</span><span class="p">,</span>  <span class="c1"># system limit is defined in this units</span>
-            <span class="p">)</span>
+            <span class="p">),</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;SeqProv&quot;</span><span class="p">)</span>
 
@@ -525,17 +534,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">=</span> <span class="n">spcm_dwell_time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">spcm_dwell_time</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">system_limits</span> <span class="o">=</span> <span class="n">system_limits</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">high_impedance</span> <span class="o">=</span> <span class="n">high_impedance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">gpa_gain</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">gradient_efficiency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span> <span class="o">=</span> <span class="n">gpa_gain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span> <span class="o">=</span> <span class="n">gradient_efficiency</span>
 
-        <span class="c1"># Set impedance scaling factor, 0.5 if impedance is high, 1 if impedance is 50 ohms</span>
-        <span class="c1"># Halve RF scaling factor if impedance is high, because the card output doubles for high impedance</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="k">if</span> <span class="n">z</span> <span class="k">else</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="n">high_impedance</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_limits</span> <span class="k">if</span> <span class="n">output_limits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
-
-        <span class="c1"># Initialize larmor frequency and sequence cache variables, to be set later</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Scale output limit dependent on high impedance flags:</span>
+        <span class="c1"># If output is terminated into high impedance (flag is true), the channel output is doubled.</span>
+        <span class="c1"># Otherwise, if output is terminated into 50 ohms impedance, output limit remains unchanged.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rf_out_limit</span> <span class="o">=</span> <span class="n">rf_output_limit</span> <span class="k">if</span> <span class="n">rf_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rf_output_limit</span><span class="p">)</span>
+        <span class="c1"># Ensure tuple[int, int, int] for mypy typing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">gradients_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">gradients_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+            <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="n">gradients_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
+        <span class="p">)</span>
 
     <span class="c1"># -------- PyPulseq interface -------- #</span>
 
@@ -623,7 +634,7 @@
             <span class="s2">&quot;spcm_dwell_time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
             <span class="s2">&quot;gpa_gain&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
             <span class="s2">&quot;gradient_efficiency&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
-            <span class="s2">&quot;output_limits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">,</span>
+            <span class="s2">&quot;output_limits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
@@ -685,6 +696,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">unroll_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnrolledSequence</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll the pypulseq sequence description.</span>
 
+<span class="sd">        TODO: Reduce complexity.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        parameter</span>
@@ -734,7 +747,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Checks not passed&quot;</span><span class="p">)</span>
             <span class="k">raise</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">gradient_index</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">channel_assignment</span>
 
         <span class="c1"># Get list of all events and list of unique RF and ADC events, since they are frequently reused</span>
@@ -743,11 +755,13 @@
         <span class="n">rf_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rf_events</span><span class="p">()</span>
 
         <span class="c1"># Calculate rf pulse and unblanking waveforms from RF event</span>
-        <span class="c1"># Should probably be moved inside of get_rf_events()</span>
+        <span class="c1"># TODO: Should probably be moved inside of get_rf_events()</span>
         <span class="n">rf_pulses</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">rf_event</span> <span class="ow">in</span> <span class="n">rf_events</span><span class="p">:</span>
             <span class="n">rf_pulses</span><span class="p">[</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_rf</span><span class="p">(</span>
-                <span class="n">block</span><span class="o">=</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span> <span class="n">larmor_frequency</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span>
+                <span class="n">block</span><span class="o">=</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
+                <span class="n">larmor_frequency</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="n">seq_duration</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span>
@@ -787,7 +801,9 @@
                     <span class="c1"># must be considered with respect to the target output channel!</span>
                     <span class="c1"># Offsets mapping: x -&gt; channel 1, y -&gt; channel 2, z -&gt; channel 3</span>
                     <span class="n">offset</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="o">.</span><span class="n">to_list</span><span class="p">()[</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">)],</span>
-                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">x</span><span class="p">),</span>
+                    <span class="c1"># Gradient indexing starts at 1 (RF is channel 0)</span>
+                    <span class="c1"># -&gt; correct indexing to match tuple index</span>
+                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
                 <span class="p">)</span>
                 <span class="n">delay</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">gx</span><span class="o">.</span><span class="n">delay</span>
                 <span class="n">delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
@@ -808,7 +824,9 @@
                     <span class="c1"># must be considered with respect to the target output channel!</span>
                     <span class="c1"># Offsets mapping: x -&gt; channel 1, y -&gt; channel 2, z -&gt; channel 3</span>
                     <span class="n">offset</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="o">.</span><span class="n">to_list</span><span class="p">()[</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">y</span><span class="o">-</span><span class="mi">1</span><span class="p">)],</span>
-                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">y</span><span class="p">),</span>
+                    <span class="c1"># Gradient indexing starts at 1 (RF is channel 0)</span>
+                    <span class="c1"># -&gt; correct indexing to match tuple index</span>
+                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
                 <span class="p">)</span>
                 <span class="n">delay</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">gy</span><span class="o">.</span><span class="n">delay</span>
                 <span class="n">delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
@@ -829,7 +847,9 @@
                     <span class="c1"># must be considered with respect to the target output channel!</span>
                     <span class="c1"># Offsets mapping: x -&gt; channel 1, y -&gt; channel 2, z -&gt; channel 3</span>
                     <span class="n">offset</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="o">.</span><span class="n">to_list</span><span class="p">()[</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">z</span><span class="o">-</span><span class="mi">1</span><span class="p">)],</span>
-                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
+                    <span class="c1"># Gradient indexing starts at 1 (RF is channel 0)</span>
+                    <span class="c1"># -&gt; correct indexing to match tuple index</span>
+                    <span class="n">output_channel</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">gradient_index</span><span class="o">.</span><span class="n">x</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
                 <span class="p">)</span>
                 <span class="n">delay</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">gz</span><span class="o">.</span><span class="n">delay</span>
                 <span class="n">delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
@@ -901,9 +921,6 @@
             <span class="nb">len</span><span class="p">(</span><span class="n">block_durations</span><span class="p">),</span>
         <span class="p">)</span>
 
-        <span class="c1"># Save unrolled sequence in class</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span> <span class="o">=</span> <span class="n">_seq</span>
-
         <span class="k">return</span> <span class="n">UnrolledSequence</span><span class="p">(</span>
             <span class="n">seq</span><span class="o">=</span><span class="n">_seq</span><span class="p">,</span>
             <span class="n">sample_count</span><span class="o">=</span><span class="n">seq_samples</span><span class="p">,</span>
@@ -911,72 +928,13 @@
             <span class="n">gradient_efficiency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
             <span class="n">rf_to_mvolt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
             <span class="n">dwell_time</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
+            <span class="n">gradient_output_limits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">,</span>
+            <span class="n">rf_output_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rf_out_limit</span><span class="p">,</span>
             <span class="n">duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">adc_count</span><span class="o">=</span><span class="n">adc_count</span><span class="p">,</span>
             <span class="n">parameter</span><span class="o">=</span><span class="n">parameter</span><span class="p">,</span>
             <span class="n">rx_data</span><span class="o">=</span><span class="n">_rx_data</span><span class="p">,</span>
         <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SequenceProvider.plot_unrolled">
-<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.plot_unrolled">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">plot_unrolled</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">mpl</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot unrolled waveforms for replay.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        time_range, default = (0, -1)</span>
-<span class="sd">            Specify the time range of the plot in seconds.</span>
-<span class="sd">            If the second value is smaller then the first or -1, the whole sequence is plotted.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            Matplotlib figure and axis</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
-
-        <span class="k">if</span> <span class="p">(</span><span class="n">sqnc</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sqnc_cache</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;No unrolled sequence. Execute `unroll_sequence(...)` first&quot;</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
-
-        <span class="n">seq_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
-        <span class="n">seq_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span> <span class="k">if</span> <span class="n">time_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">time_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sqnc</span><span class="p">)</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)[</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span> <span class="o">*</span> <span class="mf">1e3</span>
-
-        <span class="n">rf_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">0</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
-        <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
-        <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">2</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
-        <span class="n">gz_signal</span> <span class="o">=</span> <span class="n">sqnc</span><span class="p">[</span><span class="mi">3</span><span class="p">::</span><span class="mi">4</span><span class="p">][</span><span class="n">seq_start</span><span class="p">:</span><span class="n">seq_end</span><span class="p">]</span>
-
-        <span class="c1"># Get digital signals</span>
-        <span class="n">adc_gate</span> <span class="o">=</span> <span class="n">gx_signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span>
-        <span class="n">unblanking</span> <span class="o">=</span> <span class="n">gz_signal</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">15</span>
-
-        <span class="c1"># Get gradient waveforms</span>
-        <span class="n">rf_signal</span> <span class="o">=</span> <span class="n">rf_signal</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">)</span>
-        <span class="n">gx_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gx_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
-        <span class="n">gy_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gy_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
-        <span class="n">gz_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="n">gz_signal</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
-
-        <span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">rf_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">gx_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">gy_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">gz_signal</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">adc_gate</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;ADC gate&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">unblanking</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;RF unblanking&quot;</span><span class="p">)</span>
-
-        <span class="n">axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;RF [mV]&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Gx [mV]&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Gy [mV]&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Gz [mV]&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Digital&quot;</span><span class="p">)</span>
-        <span class="n">axis</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper right&quot;</span><span class="p">)</span>
-
-        <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axis</span><span class="p">]</span>
-
-        <span class="n">axis</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time [ms]&quot;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">fig</span><span class="p">,</span> <span class="n">axis</span></div>
 
 
     <span class="c1"># -------- Private waveform calculation functions -------- #</span>
@@ -1041,8 +999,8 @@
         <span class="c1"># Perform this step here to save computation time, num. of envelope samples &lt;&lt; num. of resampled signal</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># RF scaling according to B1 calibration and &quot;device&quot; (translation from pulseq to output voltage)</span>
-            <span class="n">rf_scaling</span> <span class="o">=</span> <span class="n">b1_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">signal</span> <span class="o">*</span> <span class="n">phase_offset</span> <span class="o">*</span> <span class="n">rf_scaling</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">rf_scaling</span> <span class="o">=</span> <span class="n">b1_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">*</span> <span class="n">phase_offset</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_out_limit</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">signal</span> <span class="o">*</span> <span class="n">rf_scaling</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;RF magnitude exceeds output limit.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1096,32 +1054,32 @@
 <span class="sd">            gradient amplitude exceeds channel maximum output level</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># Calculate gradient waveform scaling, subtract gain and efficiency index by 1,</span>
-            <span class="c1"># because these lists do not include the RF channel (i.e. gradient channel 1 corresponds to index 0)</span>
-            <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">imp_scaling</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">[</span><span class="n">output_channel</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">[</span><span class="n">output_channel</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Calculate gradient waveform scaling</span>
+            <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">/</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+            <span class="p">)</span>
 
             <span class="c1"># Calculate the gradient waveform relative to max output (within the interval [0, 1])</span>
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;grad&quot;</span><span class="p">:</span>
                 <span class="c1"># Arbitrary gradient waveform, interpolate linearly</span>
                 <span class="c1"># This function requires float input =&gt; cast to int16 afterwards</span>
-                <span class="n">waveform</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scaling</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_check_amplitude</span><span class="p">(</span><span class="n">output_channel</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">waveform</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">])</span>
+                <span class="n">waveform</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scaling</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_check_gradient_amplitude</span><span class="p">(</span><span class="n">output_channel</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">waveform</span><span class="p">)))</span>
                 <span class="c1"># Transfer mV floating point waveform values to int16 if amplitude check passed</span>
-                <span class="n">waveform</span> <span class="o">*=</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+                <span class="n">waveform_i16</span> <span class="o">=</span> <span class="n">waveform</span> <span class="o">*</span> <span class="n">INT16_MAX</span>
                 <span class="c1"># Interpolate waveform on spectrum card time raster</span>
                 <span class="n">gradient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span>
                     <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">shape_dur</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">)),</span>
                     <span class="n">xp</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">tt</span><span class="p">,</span>
-                    <span class="n">fp</span><span class="o">=</span><span class="n">waveform</span><span class="p">,</span>
+                    <span class="n">fp</span><span class="o">=</span><span class="n">waveform_i16</span><span class="p">,</span>
                 <span class="p">)</span>
 
             <span class="k">elif</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;trap&quot;</span><span class="p">:</span>
                 <span class="c1"># Construct trapezoidal gradient from rise, flat and fall sections</span>
-                <span class="n">flat_amp</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">*</span> <span class="n">scaling</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_check_amplitude</span><span class="p">(</span><span class="n">output_channel</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">flat_amp</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">])</span>
-                <span class="c1"># Transfer mV floating point flat amplitude to int16 if amplitude check passed</span>
-                <span class="n">flat_amp_i16</span> <span class="o">=</span> <span class="n">flat_amp</span> <span class="o">*</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+                <span class="n">flat_amp</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">*</span> <span class="n">scaling</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_check_gradient_amplitude</span><span class="p">(</span><span class="n">output_channel</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">flat_amp</span><span class="p">)))</span>
+                <span class="c1"># Transfer relative floating point flat amplitude to int16 if amplitude check passed</span>
+                <span class="n">flat_amp_i16</span> <span class="o">=</span> <span class="n">flat_amp</span> <span class="o">*</span> <span class="n">INT16_MAX</span>
                 <span class="c1"># Define rise, flat and fall sections of trapezoidal gradient on spectrum card time raster</span>
                 <span class="n">rise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">flat_amp_i16</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">rise_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">))</span>
                 <span class="n">flat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">flat_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">flat_amp_i16</span><span class="p">)</span>
@@ -1134,12 +1092,12 @@
 
             <span class="c1"># Calculate gradient offset int16 value from mV</span>
             <span class="c1"># Gradient offset is used for calculating output limits but is not added to the waveform</span>
-            <span class="n">offset_i16</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">*</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
+            <span class="n">offset_i16</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">*</span> <span class="n">INT16_MAX</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
             <span class="c1"># This is the combined int16 gradient and offset waveform as float dtype</span>
             <span class="n">combined_i16</span> <span class="o">=</span> <span class="n">gradient</span> <span class="o">+</span> <span class="n">offset_i16</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">max_strength_i16</span> <span class="o">:=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">combined_i16</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">INT16_MAX</span><span class="p">:</span>
                 <span class="c1"># Report maximum strength in mV</span>
-                <span class="n">max_strength</span> <span class="o">=</span> <span class="n">max_strength_i16</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">INT16_MAX</span>
+                <span class="n">max_strength</span> <span class="o">=</span> <span class="n">max_strength_i16</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">INT16_MAX</span>
                 <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Amplitude of combined gradient and shim waveforms </span><span class="si">{</span><span class="n">max_strength</span><span class="si">}</span><span class="s2"> exceed max gradient amplitude&quot;</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
@@ -1152,10 +1110,11 @@
 
     <span class="c1"># -------- Private validation methods -------- #</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_check_amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_gradient_amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rel_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Raise error if amplitude exceeds output limit.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Amplitude of channel </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">) exceeded output limit (</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">))&quot;</span>
+        <span class="n">limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rel_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Amplitude of gradient channel </span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel_value</span><span class="o">*</span><span class="n">limit</span><span class="si">}</span><span class="s2">) exceeded output limit (</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">))&quot;</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

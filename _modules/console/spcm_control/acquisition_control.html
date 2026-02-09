@@ -421,6 +421,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionData</span>
@@ -432,6 +433,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.rx_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">RxCard</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.tx_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">TxCard</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.load_configuration</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_nexus_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_unrolled_sequence</span>
 
 <span class="n">LOG_LEVELS</span> <span class="o">=</span> <span class="p">[</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
@@ -486,13 +488,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;--- Acquisition control started</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># Load device configuration and create instances</span>
+        <span class="c1"># TODO: Generalize Nexus configuration to allow different setups</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span> <span class="n">NexusConfiguration</span> <span class="o">=</span> <span class="n">load_nexus_config</span><span class="p">(</span><span class="n">configuration_file</span><span class="p">)</span>
         <span class="c1"># Create sequence provider instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">:</span> <span class="n">SequenceProvider</span> <span class="o">=</span> <span class="n">SequenceProvider</span><span class="p">(</span>
             <span class="n">gradient_efficiency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">gradient_efficiency</span><span class="p">,</span>
             <span class="n">gpa_gain</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
-            <span class="n">high_impedance</span><span class="o">=</span><span class="p">[</span><span class="ow">not</span> <span class="n">val</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">channel_terminated_50ohm</span><span class="p">],</span>
-            <span class="n">output_limits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">channel_max_amplitude</span><span class="p">,</span>
+            <span class="n">gradients_50ohms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">gradients_terminated_50ohm</span><span class="p">,</span>
+            <span class="n">rf_50ohms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">rf_terminated_50ohm</span><span class="p">,</span>
+            <span class="n">gradient_output_limits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">channel_max_amplitude</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span>
+            <span class="n">rf_output_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">channel_max_amplitude</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">spcm_dwell_time</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">sampling_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">),</span>
             <span class="n">rf_to_mvolt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
             <span class="n">system_limits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">system</span><span class="p">,</span>
@@ -658,7 +663,8 @@
 
         <span class="c1"># Set gradient offset values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">high_impedance</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+            <span class="n">offsets</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span>
+            <span class="n">is_50ohms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">gradients_terminated_50ohm</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">):</span>
@@ -708,7 +714,10 @@
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">parameter</span><span class="o">.</span><span class="n">averaging_delay</span><span class="p">)</span>
 
         <span class="c1"># Reset gradient offset values</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span><span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">high_impedance</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="o">.</span><span class="n">set_gradient_offsets</span><span class="p">(</span>
+            <span class="n">offsets</span><span class="o">=</span><span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">is_50ohms</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">gradients_terminated_50ohm</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Total number of ADC events: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -766,6 +775,19 @@
         <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">()</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>
             <span class="n">executor</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">rx_obj</span><span class="p">:</span> <span class="n">rx_obj</span><span class="o">.</span><span class="n">process_data</span><span class="p">(</span><span class="n">store_unprocessed</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">store_unprocessed</span><span class="p">)</span>
                          <span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AcquisitionControl.plot_waveforms">
+<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.plot_waveforms">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_waveforms</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">time_range</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">mpl</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">Figure</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot internally stored waveforms.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">plot_unrolled_sequence</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="p">,</span> <span class="n">time_range</span><span class="o">=</span><span class="n">time_range</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No sequence to plot. Set sequence first.&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
 </div>
 
 </pre></div>
