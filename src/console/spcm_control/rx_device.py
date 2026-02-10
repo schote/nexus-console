@@ -187,6 +187,10 @@ class RxCard(SpectrumDevice):
 
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
+        
+        # Setup digital input channel for the phase reference signal
+        sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
+        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
         # Calculate trigger size depending on the number of active channels
         # Since data can only be gathered in notify size chunks, post_trigger // channel_count should be at least one
@@ -343,15 +347,15 @@ class RxCard(SpectrumDevice):
                 timestamp_1 = pll_data[int(available_timestamp_position.value / 8) + 2]
 
                 # Calculate gate duration and the number of adc gate sample points (per channel)
-                gate_sample = timestamp_1 - timestamp_0
-                gate_length = gate_sample / (self.sample_rate * 1e6)
+                num_gate_samples = timestamp_1 - timestamp_0
+                gate_duration = num_gate_samples / (self.sample_rate * 1e6)
 
                 self.log.info(
                     "Gate: (%s s, %s s); ADC duration: %s ms ; Samples/gate/channel: %s",
                     timestamp_0 / (self.sample_rate * 1e6),
                     timestamp_1 / (self.sample_rate * 1e6),
-                    float(gate_length) * 1e3,  # Can be trimmed.
-                    gate_sample,
+                    float(gate_duration) * 1e3,  # Can be trimmed.
+                    num_gate_samples,
                 )
 
                 # Tell buffer 32 bytes were read from timestamp buffer
@@ -362,10 +366,10 @@ class RxCard(SpectrumDevice):
 
                 # Calculate size of relevant data (pre_trigger needed to get position of start of gate)
                 # This is the minimum amount of data  must be available to get full gate data
-                total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
+                total_bytes_gate = (num_gate_samples + self.pre_trigger) * 2 * self.num_channels.value
                 # Get the total data duration, including post trigger, to accurately track buffer position
-                samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
-                # Ensure data alignment
+                samples_sequence = (num_gate_samples + self.pre_trigger + self.post_trigger)
+                # Ensure data aligmment
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value
@@ -449,13 +453,12 @@ class RxCard(SpectrumDevice):
                         ptr_to_slice = cast(addressof(adc_data.contents) + byte_position, POINTER(c_short))
                         gate_data = np.ctypeslib.as_array(ptr_to_slice, ((total_bytes_gate // 2),))
 
-                    # Cut the pretrigger, we do not need it.
+                    # Cut the pretrigger (we don't need it) and reshape the data to (num_coils, num_samples)
                     pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
-                    gate_data = gate_data[pre_trigger_cut:]
+                    gate_data = gate_data[pre_trigger_cut:].reshape((self.num_channels.value, num_gate_samples), order="F")
                     # Store raw data in RxData object
-                    self.rx_data[self._total_gates].raw_data = gate_data.reshape((self.num_channels.value,
-                                                                            gate_sample),
-                                                                            order="F").copy()
+                    self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
+                    self.rx_data[self._total_gates].phase_reference = (gate_data[0, 0:min(num_gate_samples, 1000)].astype(np.uint16) >> 15).copy()
                     self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
                     self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
 

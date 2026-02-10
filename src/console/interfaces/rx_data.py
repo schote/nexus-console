@@ -51,6 +51,9 @@ class RxData:
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     # Shape of Raw data is (num_channels_enabled, raw number of samples)
     raw_data: None | np.ndarray = None
+    
+    # Phase reference signal
+    phase_reference: None | np.ndarray = None
 
     # Timestamp of start of data acquisition
     time_stamp: None | float = None
