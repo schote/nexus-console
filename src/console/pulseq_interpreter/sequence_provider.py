@@ -209,52 +209,6 @@ class SequenceProvider(Sequence):
             "output_limits": self.gradient_out_limits,
         }
 
-    def get_adc_events(self) -> list[ADCGate]:
-        """Extract ADC 'waveforms' from the sequence.
-
-        TODO: Add error checks
-
-        Returns
-        -------
-            list: List of with waveform ID, gate signal and reference signal for each unique ADC event.
-
-        """
-        adc_list = []
-        for adc_props in self.adc_library.data.values():
-            # Implementation compatible to version 1.4.X and 1.5.X -> dead time is always appended
-            num_samples, adc_dwell_time, delay = adc_props[:3]
-            dead_time = adc_props[-1]
-
-            # Calculate the number of samples to be discarded from the decimated signal
-            num_samples_discard = floor(dead_time / adc_dwell_time)
-            # Calculate the total gate duration, given by number of samples
-            # and two times the number of discarded samples for symmetric adc dead time
-            # Note that the total gate duration is only increased if the dead time is a multiple of the adc dwell time
-            total_gate_duration = (num_samples + 2*num_samples_discard) * adc_dwell_time
-            num_raw_samples = round(total_gate_duration * self.spcm_freq)
-
-            # Remaining delay = dead_time minus pre- and post-sampling fractions
-            remaining_delay = delay - num_samples_discard * adc_dwell_time
-            num_delay_samples = round(remaining_delay * self.spcm_freq)
-
-            adc_list.append(ADCGate(
-                start=num_delay_samples,
-                num_samples_raw=num_raw_samples,
-                num_samples_discard=num_samples_discard,
-            ))
-
-        return adc_list
-
-    def get_rf_events(self) -> list:
-        """Extract RF 'waveforms' from sequence file.
-
-        Returns
-        -------
-            list: list of unique RF events.
-        """
-        rf_waveforms = self.rf_library
-        return [(rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in rf_waveforms.data.items()]
-
     @profile
     def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
@@ -314,11 +268,11 @@ class SequenceProvider(Sequence):
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
-        adc_events: list[ADCGate] = self.get_adc_events()
-        rf_events = self.get_rf_events()
 
         # Calculate rf pulse and unblanking waveforms from RF event
-        # TODO: Should probably be moved inside of get_rf_events()
+        rf_events = [
+            (rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in self.rf_library.data.items()
+        ]
         rf_pulses = {}
         for rf_event in rf_events:
             rf_pulses[rf_event[0]] = self._calculate_rf(
@@ -451,30 +405,39 @@ class SequenceProvider(Sequence):
                     labels[label.label] = label.value
 
             if block.adc is not None:  # ADC event
-                # Grab the ADC gate from the pre-calculated list
-                # Pulseq is 1 indexed, shift idx by -1 for correct event
-                adc_gate: ADCGate = adc_events[event[5] - 1]
+                # Calculate the number of samples to be discarded from the decimated signal
+                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell)
+                # Calculate the total gate duration, given by number of samples
+                # and two times the number of discarded samples for symmetric adc dead time
+                # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
+                total_gate_duration = (block.adc.num_samples + 2 * num_samples_discard) * block.adc.dwell
+                num_samples_raw = round(total_gate_duration * self.spcm_freq)
 
-                # Calculate ADC start and end positions according to block position
-                adc_start = (block_pos[event_idx] + adc_gate.start) * 4
-                adc_end = (block_pos[event_idx] + adc_gate.start + adc_gate.num_samples_raw) * 4
+                # Remaining delay = dead_time minus pre- and post-sampling fractions
+                remaining_delay = block.adc.dead_time - num_samples_discard * block.adc.dwell
+                num_delay_samples = round(remaining_delay * self.spcm_freq)
 
-                # Add ADC gate to X gradient
-                _seq[adc_start + 1:adc_end + 1:4] = _seq[adc_start + 1:adc_end + 1:4] | np.uint16(2**15)
+                adc_start = (block_pos[event_idx] + num_delay_samples) * 4
+                adc_end = (block_pos[event_idx] + num_delay_samples + num_samples_raw) * 4
 
-                _rx_data.append(RxData(
-                    index=adc_count,
-                    num_samples=block.adc.num_samples,
-                    num_samples_raw=adc_gate.num_samples_raw,
-                    num_samples_discard=adc_gate.num_samples_discard,
-                    dwell_time=block.adc.dwell,
-                    dwell_time_raw=self.spcm_dwell_time,
-                    phase_offset=block.adc.phase_offset,
-                    freq_offset=block.adc.freq_offset,
-                    total_averages=parameter.num_averages,
-                    ddc_method=parameter.ddc_method,
-                    labels=labels,
-                ))
+                # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
+                _seq[slice(adc_start + 1, adc_end + 1, 4)] |= np.uint16(2**15)
+
+                _rx_data.append(
+                    RxData(
+                        index=adc_count,
+                        num_samples=block.adc.num_samples,
+                        num_samples_raw=num_samples_raw,
+                        num_samples_discard=num_samples_discard,
+                        dwell_time=block.adc.dwell,
+                        dwell_time_raw=self.spcm_dwell_time,
+                        phase_offset=block.adc.phase_offset,
+                        freq_offset=block.adc.freq_offset,
+                        total_averages=parameter.num_averages,
+                        ddc_method=parameter.ddc_method,
+                        labels=labels,
+                    )
+                )
                 adc_count += 1
                 labels = {}  # Reset labels dict
 
