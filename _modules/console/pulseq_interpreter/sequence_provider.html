@@ -638,58 +638,6 @@
         <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="SequenceProvider.get_adc_events">
-<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.get_adc_events">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_adc_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ADCGate</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract ADC &#39;waveforms&#39; from the sequence.</span>
-
-<span class="sd">        TODO: Add error checks</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            list: List of with waveform ID, gate signal and reference signal for each unique ADC event.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">adc_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">adc_props</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">adc_library</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="c1"># Implementation compatible to version 1.4.X and 1.5.X -&gt; dead time is always appended</span>
-            <span class="n">num_samples</span><span class="p">,</span> <span class="n">adc_dwell_time</span><span class="p">,</span> <span class="n">delay</span> <span class="o">=</span> <span class="n">adc_props</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
-            <span class="n">dead_time</span> <span class="o">=</span> <span class="n">adc_props</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-
-            <span class="c1"># Calculate the number of samples to be discarded from the decimated signal</span>
-            <span class="n">num_samples_discard</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">dead_time</span> <span class="o">/</span> <span class="n">adc_dwell_time</span><span class="p">)</span>
-            <span class="c1"># Calculate the total gate duration, given by number of samples</span>
-            <span class="c1"># and two times the number of discarded samples for symmetric adc dead time</span>
-            <span class="c1"># Note that the total gate duration is only increased if the dead time is a multiple of the adc dwell time</span>
-            <span class="n">total_gate_duration</span> <span class="o">=</span> <span class="p">(</span><span class="n">num_samples</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">num_samples_discard</span><span class="p">)</span> <span class="o">*</span> <span class="n">adc_dwell_time</span>
-            <span class="n">num_raw_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_gate_duration</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
-
-            <span class="c1"># Remaining delay = dead_time minus pre- and post-sampling fractions</span>
-            <span class="n">remaining_delay</span> <span class="o">=</span> <span class="n">delay</span> <span class="o">-</span> <span class="n">num_samples_discard</span> <span class="o">*</span> <span class="n">adc_dwell_time</span>
-            <span class="n">num_delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">remaining_delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
-
-            <span class="n">adc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ADCGate</span><span class="p">(</span>
-                <span class="n">start</span><span class="o">=</span><span class="n">num_delay_samples</span><span class="p">,</span>
-                <span class="n">num_samples_raw</span><span class="o">=</span><span class="n">num_raw_samples</span><span class="p">,</span>
-                <span class="n">num_samples_discard</span><span class="o">=</span><span class="n">num_samples_discard</span><span class="p">,</span>
-            <span class="p">))</span>
-
-        <span class="k">return</span> <span class="n">adc_list</span></div>
-
-
-<div class="viewcode-block" id="SequenceProvider.get_rf_events">
-<a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.get_rf_events">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_rf_events</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract RF &#39;waveforms&#39; from sequence file.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">            list: list of unique RF events.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">rf_waveforms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_library</span>
-        <span class="k">return</span> <span class="p">[(</span><span class="n">rf_pulse</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="o">.</span><span class="n">rf_from_lib_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_pulse</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">rf_pulse</span> <span class="ow">in</span> <span class="n">rf_waveforms</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span></div>
-
-
 <div class="viewcode-block" id="SequenceProvider.unroll_sequence">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
     <span class="nd">@profile</span>
@@ -751,11 +699,11 @@
 
         <span class="c1"># Get list of all events and list of unique RF and ADC events, since they are frequently reused</span>
         <span class="n">events_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_events</span>
-        <span class="n">adc_events</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ADCGate</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_adc_events</span><span class="p">()</span>
-        <span class="n">rf_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rf_events</span><span class="p">()</span>
 
         <span class="c1"># Calculate rf pulse and unblanking waveforms from RF event</span>
-        <span class="c1"># TODO: Should probably be moved inside of get_rf_events()</span>
+        <span class="n">rf_events</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">rf_pulse</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="o">.</span><span class="n">rf_from_lib_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_pulse</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">rf_pulse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_library</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
         <span class="n">rf_pulses</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">rf_event</span> <span class="ow">in</span> <span class="n">rf_events</span><span class="p">:</span>
             <span class="n">rf_pulses</span><span class="p">[</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_rf</span><span class="p">(</span>
@@ -888,30 +836,39 @@
                     <span class="n">labels</span><span class="p">[</span><span class="n">label</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">label</span><span class="o">.</span><span class="n">value</span>
 
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># ADC event</span>
-                <span class="c1"># Grab the ADC gate from the pre-calculated list</span>
-                <span class="c1"># Pulseq is 1 indexed, shift idx by -1 for correct event</span>
-                <span class="n">adc_gate</span><span class="p">:</span> <span class="n">ADCGate</span> <span class="o">=</span> <span class="n">adc_events</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="c1"># Calculate the number of samples to be discarded from the decimated signal</span>
+                <span class="n">num_samples_discard</span> <span class="o">=</span> <span class="n">floor</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">/</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dwell</span><span class="p">)</span>
+                <span class="c1"># Calculate the total gate duration, given by number of samples</span>
+                <span class="c1"># and two times the number of discarded samples for symmetric adc dead time</span>
+                <span class="c1"># Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.</span>
+                <span class="n">total_gate_duration</span> <span class="o">=</span> <span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">num_samples_discard</span><span class="p">)</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dwell</span>
+                <span class="n">num_samples_raw</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">total_gate_duration</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
 
-                <span class="c1"># Calculate ADC start and end positions according to block position</span>
-                <span class="n">adc_start</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">adc_gate</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
-                <span class="n">adc_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">adc_gate</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">adc_gate</span><span class="o">.</span><span class="n">num_samples_raw</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="c1"># Remaining delay = dead_time minus pre- and post-sampling fractions</span>
+                <span class="n">remaining_delay</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dead_time</span> <span class="o">-</span> <span class="n">num_samples_discard</span> <span class="o">*</span> <span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dwell</span>
+                <span class="n">num_delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">remaining_delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
 
-                <span class="c1"># Add ADC gate to X gradient</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+                <span class="n">adc_start</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">num_delay_samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="n">adc_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">num_delay_samples</span> <span class="o">+</span> <span class="n">num_samples_raw</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
 
-                <span class="n">_rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">RxData</span><span class="p">(</span>
-                    <span class="n">index</span><span class="o">=</span><span class="n">adc_count</span><span class="p">,</span>
-                    <span class="n">num_samples</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
-                    <span class="n">num_samples_raw</span><span class="o">=</span><span class="n">adc_gate</span><span class="o">.</span><span class="n">num_samples_raw</span><span class="p">,</span>
-                    <span class="n">num_samples_discard</span><span class="o">=</span><span class="n">adc_gate</span><span class="o">.</span><span class="n">num_samples_discard</span><span class="p">,</span>
-                    <span class="n">dwell_time</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dwell</span><span class="p">,</span>
-                    <span class="n">dwell_time_raw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
-                    <span class="n">phase_offset</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">phase_offset</span><span class="p">,</span>
-                    <span class="n">freq_offset</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">,</span>
-                    <span class="n">total_averages</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
-                    <span class="n">ddc_method</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">,</span>
-                    <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
-                <span class="p">))</span>
+                <span class="c1"># Add ADC gate to 16th bit of output channel 1 (first gradient channel)</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span> <span class="o">|=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+
+                <span class="n">_rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">RxData</span><span class="p">(</span>
+                        <span class="n">index</span><span class="o">=</span><span class="n">adc_count</span><span class="p">,</span>
+                        <span class="n">num_samples</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span>
+                        <span class="n">num_samples_raw</span><span class="o">=</span><span class="n">num_samples_raw</span><span class="p">,</span>
+                        <span class="n">num_samples_discard</span><span class="o">=</span><span class="n">num_samples_discard</span><span class="p">,</span>
+                        <span class="n">dwell_time</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">dwell</span><span class="p">,</span>
+                        <span class="n">dwell_time_raw</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
+                        <span class="n">phase_offset</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">phase_offset</span><span class="p">,</span>
+                        <span class="n">freq_offset</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">,</span>
+                        <span class="n">total_averages</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
+                        <span class="n">ddc_method</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">,</span>
+                        <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
                 <span class="n">adc_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">labels</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Reset labels dict</span>
 
