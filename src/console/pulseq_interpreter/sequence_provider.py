@@ -270,7 +270,6 @@ class SequenceProvider(Sequence):
         events_list = self.block_events
 
         # Calculate rf pulse and unblanking waveforms from RF event
-        # TODO: Should probably be moved inside of get_rf_events()
         rf_events = [
             (rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in self.rf_library.data.items()
         ]
