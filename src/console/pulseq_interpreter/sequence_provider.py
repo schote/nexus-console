@@ -343,7 +343,7 @@ class SequenceProvider(Sequence):
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
                     # Gradient indexing starts at 1 (RF is channel 0)
                     # -> correct indexing to match tuple index
-                    output_channel=int(gradient_index.x-1),
+                    output_channel=int(gradient_index.y-1),
                 )
                 delay = block.gy.delay
                 delay_samples = round(delay * self.spcm_freq)
@@ -366,7 +366,7 @@ class SequenceProvider(Sequence):
                     offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
                     # Gradient indexing starts at 1 (RF is channel 0)
                     # -> correct indexing to match tuple index
-                    output_channel=int(gradient_index.x-1),
+                    output_channel=int(gradient_index.z-1),
                 )
                 delay = block.gz.delay
                 delay_samples = round(delay * self.spcm_freq)
@@ -414,7 +414,7 @@ class SequenceProvider(Sequence):
                 num_samples_raw = round(total_gate_duration * self.spcm_freq)
 
                 # Remaining delay = dead_time minus pre- and post-sampling fractions
-                remaining_delay = block.adc.dead_time - num_samples_discard * block.adc.dwell
+                remaining_delay = block.adc.delay - num_samples_discard * block.adc.dwell
                 num_delay_samples = round(remaining_delay * self.spcm_freq)
 
                 adc_start = (block_pos[event_idx] + num_delay_samples) * 4
