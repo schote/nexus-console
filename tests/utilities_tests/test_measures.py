@@ -1,4 +1,4 @@
-"""Test measure funtions defined like SNR."""
+"""Test measure functions defined like SNR."""
 import pytest
 
 from console.utilities.snr import signal_to_noise_ratio
