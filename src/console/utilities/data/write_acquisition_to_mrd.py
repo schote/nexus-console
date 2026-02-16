@@ -82,6 +82,11 @@ def write_acquisition_to_mrd(
             acq.center_sample = rx_data.num_samples // 2
             # Readout bandwidth, as time between samples in microseconds
             acq.sample_time_us = rx_data.dwell_time * 1e6
+            # Number of samples to be discarded, defined by adc_dead_time
+            # Since adc_dead_time is arrange symmetrically around ADC, the
+            # number of discarded pre and post sample is identical
+            acq.discard_pre = rx_data.num_samples_discard
+            acq.discard_post = rx_data.num_samples_discard
             # Timestamp of readout
             if rx_data.time_stamp is not None:
                 acq.acquisition_time_stamp = int(rx_data.time_stamp * 1e6)  # timestamp in us

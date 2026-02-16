@@ -17,8 +17,9 @@ TxConfiguration:
   channel_max_amplitude: [200, 6000, 6000, 6000]
   # Filter configuration of each transmit channel
   channel_filter_type: [0, 2, 2, 2]
-  # Configure which channels are terminated into 50 ohm impedance (true == 50 ohm), list length must at least match the number of enabled channels
-  channel_terminated_50ohm: [True, False, False, False]
+  # Configure if RF/gradients are terminated into 50 ohm impedance (true == 50 ohm)
+  rf_terminated_50ohm: True
+  gradients_terminated_50ohm: False
   # Calculate grad_to_volt per gradient channel:
   # Gradient efficiency in T/m/A
   gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]
@@ -33,7 +34,7 @@ RxConfiguration:
   # Could be extended to a list
   device_path: "/dev/spcm0"
   # Number of channels
-  max_available_channels: 4
+  max_available_channels: 8
   # Device sampling rate in MHz
   sampling_rate: 20
   # Enable the receive channels

@@ -18,6 +18,7 @@ class RxData:
     # Data characteristics, defined by the ADC event in sequence definition
     num_samples: int
     num_samples_raw: int
+    num_samples_discard: int    # Number of samples to be discarded before and after ADC, defined by dead time
     dwell_time: float
     dwell_time_raw: float
 
@@ -137,10 +138,10 @@ class RxData:
 
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
-        output_shape = list(np.shape(demod_data))
-        output_shape[-1] = self.num_samples
+        # Note that the processed data may contain samples from pre and post sampling
+        output_shape = (*np.shape(demod_data)[:-1], self.num_samples + int(2*self.num_samples_discard))
         self.processed_data = np.zeros(output_shape, dtype=complex)
-        self.processed_data[:] = self.decimate_data(demod_data)[:]
+        self.processed_data[:] = self.decimate_data(demod_data)
 
         if not store_unprocessed:
             self.raw_data = None

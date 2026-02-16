@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+import matplotlib as mpl
 import numpy as np
 
 from console.interfaces.acquisition_data import AcquisitionData
@@ -20,6 +21,7 @@ from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvi
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_configuration import load_nexus_config
+from console.utilities.plot import plot_unrolled_sequence
 
 LOG_LEVELS = [
     logging.DEBUG,
@@ -72,13 +74,16 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         # Load device configuration and create instances
+        # TODO: Generalize Nexus configuration to allow different setups
         self.config: NexusConfiguration = load_nexus_config(configuration_file)
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
             gpa_gain=self.config.tx.gpa_gain,
-            high_impedance=[not val for val in self.config.tx.channel_terminated_50ohm],
-            output_limits=self.config.tx.channel_max_amplitude,
+            gradients_50ohms=self.config.tx.gradients_terminated_50ohm,
+            rf_50ohms=self.config.tx.rf_terminated_50ohm,
+            gradient_output_limits=self.config.tx.channel_max_amplitude[1:],
+            rf_output_limit=self.config.tx.channel_max_amplitude[0],
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
             system_limits=self.config.system,
@@ -239,7 +244,8 @@ class AcquisitionControl:
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
-            self.sequence.parameter.gradient_offset, self.seq_provider.high_impedance[1:]
+            offsets=self.sequence.parameter.gradient_offset,
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
         for k in range(self.sequence.parameter.num_averages):
@@ -289,7 +295,10 @@ class AcquisitionControl:
                 time.sleep(self.sequence.parameter.averaging_delay)
 
         # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(Dimensions(x=0, y=0, z=0), self.seq_provider.high_impedance[1:])
+        self.tx_card.set_gradient_offsets(
+            offsets=Dimensions(x=0, y=0, z=0),
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
+        )
 
         if len(self.receive_data) > 0:
             self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
@@ -341,3 +350,13 @@ class AcquisitionControl:
         with ThreadPoolExecutor() as executor:
             executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
                          , self.receive_data)
+
+    def plot_waveforms(
+        self,
+        time_range: tuple[float, float],
+    ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
+        """Plot internally stored waveforms."""
+        if self.sequence is not None:
+            return plot_unrolled_sequence(self.sequence, time_range=time_range)
+        self.log.warning("No sequence to plot. Set sequence first.")
+        return None
