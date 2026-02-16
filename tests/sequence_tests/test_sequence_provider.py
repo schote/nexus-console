@@ -6,6 +6,7 @@ import numpy as np
 import pypulseq as pp
 import pytest
 
+from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
@@ -67,7 +68,7 @@ def test_dict_contains_basic_config(seq_provider: SequenceProvider):
     # Values agree with constructor
     np.testing.assert_approx_equal(d["spcm_freq"], 1 / seq_provider.spcm_dwell_time)
     assert d["rf_to_mvolt"] == seq_provider.rf_to_mvolt
-    assert d["output_limits"] == seq_provider.output_limits
+    assert d["output_limits"] == seq_provider.gradient_out_limits
 
 
 def test_from_pypulseq_system_limit_violation(seq_provider: SequenceProvider, test_sequence):
@@ -174,7 +175,7 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
     # Test exceptions
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
 
 
@@ -200,7 +201,7 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
     # Test exceptions
     with pytest.raises(ValueError):
         _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.output_limits[1], output_channel=1,
+            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
 
 
@@ -246,21 +247,7 @@ def test_calculate_rf_block(seq_provider: SequenceProvider):
         _ = seq_provider._calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=-1.e3)
 
 
-def test_get_rf_events(seq_provider, test_sequence):
-    """get_rf_events should expose RF events from the RF library."""
-    seq_provider.from_pypulseq(test_sequence)
-
-    rf_events = seq_provider.get_rf_events()
-    assert len(rf_events) >= 1
-
-    rf_id, rf_block = rf_events[0]
-    assert isinstance(rf_id, int)
-    # rf_block should be something pypulseq-like (namespace or RF block)
-    assert hasattr(rf_block, "type")
-    assert rf_block.type == "rf"
-
-
-def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter):
+def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
     """Labels in blocks must be propagated into RxData.labels for each ADC event."""
     n_samples = 1000
     bw = 20e3
@@ -282,3 +269,28 @@ def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter)
     assert rx0.num_samples == n_samples
     assert rx0.num_samples_raw == n_samples / (bw*seq_provider.spcm_dwell_time)
     assert rx0.dwell_time == 1/bw
+
+
+@pytest.mark.parametrize("dead_time", [0., 10e-3])
+def test_adc_presampling(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter, dead_time: float):
+    """Verify that dead_time is used for pre and post samples which are to be discarded after decimation."""
+    adc_bw = 20e3
+    adc_dwell = 1/adc_bw
+    num_samples_discard = round(dead_time/adc_dwell)
+    num_samples = 100
+    # ADC dead time is a system parameter and should be set in sequence system
+    seq_provider.system.adc_dead_time = dead_time
+    # Define adc event
+    adc = pp.make_adc(
+        delay=dead_time,
+        num_samples=num_samples,
+        dwell=adc_dwell,
+        system=seq_provider.system,
+    )
+    # Unroll sequence
+    seq_provider.add_block(adc)
+    seq_unrolled = seq_provider.unroll_sequence(acquisition_parameter)
+    rx_data = seq_unrolled.rx_data[0]
+
+    assert rx_data.num_samples == num_samples
+    assert rx_data.num_samples_discard == num_samples_discard

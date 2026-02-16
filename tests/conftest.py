@@ -21,12 +21,14 @@ def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
     system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     return SequenceProvider(
-        gradient_efficiency=[0.4, 0.4, 0.4],
-        gpa_gain=[1.0, 1.0, 1.0],
-        output_limits=[200, 6000, 6000, 6000],
-        spcm_dwell_time=5e-8,
+        gradient_efficiency=(0.4, 0.4, 0.4),
+        gpa_gain=(1.0, 1.0, 1.0),
+        gradient_output_limits=(6000, 6000, 6000),
+        gradients_50ohms=False,
+        rf_output_limit=200,
+        rf_50ohms=True,
         rf_to_mvolt=5e-3,
-        high_impedance=[False, True, True, True],
+        spcm_dwell_time=5e-8,
         system_limits=system_limits,
     )
 
@@ -73,6 +75,7 @@ def random_acquisition_data() -> Callable:
                         average_index=k_average,
                         num_samples=num_samples,
                         num_samples_raw=num_raw_samples,
+                        num_samples_discard=0,
                         dwell_time=1 / 20e3,
                         dwell_time_raw=1 / 20e6,
                         phase_offset=0,
@@ -124,12 +127,13 @@ def test_sequence() -> pp.Sequence:
 @pytest.fixture()
 def acquisition_parameter() -> AcquisitionParameter:
     """Construct acquisition parameter object for testing."""
-    return AcquisitionParameter(
-        larmor_frequency=2.123e6,
-        b1_scaling=5.432,
-        gradient_offset=Dimensions(0, 100, 500),
-        fov_scaling=Dimensions(0.5, 0.0, 0.9),
-        channel_assignment=Dimensions(1, 2, 3),
-        averaging_delay=1.01,
-        state_filepath=tempfile.mkdtemp(),
-    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield AcquisitionParameter(
+            larmor_frequency=2.123e6,
+            b1_scaling=5.432,
+            gradient_offset=Dimensions(0, 100, 500),
+            fov_scaling=Dimensions(0.5, 0.0, 0.9),
+            channel_assignment=Dimensions(1, 2, 3),
+            averaging_delay=1.01,
+            state_filepath=tmpdir,
+        )
