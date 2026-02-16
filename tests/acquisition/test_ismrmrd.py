@@ -75,12 +75,15 @@ def test_write_single_acquisition_to_mrd(random_acquisition_data, num_coils: int
     header = ismrmrd.xsd.ismrmrdHeader()
     header.experimentalConditions = ismrmrd.xsd.experimentalConditionsType(receive_data[0].larmor_frequency)
 
+    channel_assignment = Dimensions(x=1, y=2, z=3)
+
     tmp_dir = tempfile.mkdtemp()
     mrd_path = write_acquisition_to_mrd(
         data=receive_data,
         header=header,
         dataset_path=Path(tmp_dir) / "raw_data.mrd",
         sequence=se_spectrum.constructor(num_samples=num_samples),
+        channel_assignment = channel_assignment,
     )
 
     with ismrmrd.File(mrd_path, 'r') as fh:
