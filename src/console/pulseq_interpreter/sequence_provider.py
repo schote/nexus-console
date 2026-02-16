@@ -30,10 +30,6 @@ INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
 
 
-default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
-default_fov_offset: Dimensions = Dimensions(0, 0, 0)
-default_orientation: Dimensions = Dimensions(1, 2, 3)
-
 @dataclass
 class ADCGate:
     """Define precalculated attributes of an ADC gate."""
