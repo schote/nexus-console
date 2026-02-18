@@ -14,7 +14,8 @@ def constructor(
     use_sinc: bool = False,
     time_bw_product: float = 4,
     use_fid: bool = True,
-    ) -> pp.Sequence:
+    sys: pp.Opts | None = None,
+) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
     Parameters
@@ -43,7 +44,7 @@ def constructor(
     ValueError
         Sequence timing check failed
     """
-    seq = pp.Sequence(system=system)
+    seq = pp.Sequence(system=sys) if sys is not None else pp.Sequence(system=system)
 
     if use_fid:
         seq.set_definition("Name", "se_decay_spectrum")
