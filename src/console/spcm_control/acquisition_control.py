@@ -11,6 +11,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import numpy as np
+from pypulseq import Opts
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
@@ -328,6 +329,10 @@ class AcquisitionControl:
     def get_device_configuration(self) -> NexusConfiguration:
         """Get nexus device configuration."""
         return self.config
+
+    def get_sequence_system(self) -> Opts:
+        """Get pypulseq sequence system from sequence provider."""
+        return self.seq_provider.system
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Process acquired NMR data.
