@@ -40,7 +40,7 @@ def constructor(
     # Define RF pulse for excitation
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
-            system=system,
+            system=seq.system,
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
@@ -49,7 +49,7 @@ def constructor(
         )
     else:
         rf_90 = pp.make_block_pulse(
-            system=system,
+            system=seq.system,
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
@@ -61,12 +61,12 @@ def constructor(
         num_samples=num_samples,
         dwell=1 / acq_bandwidth,
         phase_offset=0,
-        system=system,
+        system=seq.system,
     )
 
     # Define delay to account for RF ringing
     ring_down_delay = pp.make_delay(
-        round((dead_time) / 1e-6) * 1e-6
+        round((dead_time) / 1e-6) * 1e-6,
     )
 
     seq.add_block(rf_90)
