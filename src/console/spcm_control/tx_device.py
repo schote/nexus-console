@@ -127,12 +127,12 @@ class TxCard(SpectrumDevice):
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP0, self.max_amplitude[0]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER0, self.filter_type[0]))
 
-        # Channel 1: Gradient x, synchronus digital output: gate trigger
+        # Channel 1: Gradient x, synchronous digital output: gate trigger
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP1, self.max_amplitude[1]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER1, self.filter_type[1]))
 
-        # Channel 2: Gradient y, synchronus digital output: un-blanking
+        # Channel 2: Gradient y, synchronous digital output: un-blanking
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP2, self.max_amplitude[2]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER2, self.filter_type[2]))
@@ -338,7 +338,7 @@ class TxCard(SpectrumDevice):
         # >> Define software buffer
         # Setup replay data buffer
         data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
-        # Allocate continuous ring buffer with minimimum necessary amount of memory, ensure multiple of notify size
+        # Allocate continuous ring buffer with minimum necessary amount of memory, ensure multiple of notify size
         min_ring_buffer_size = int(np.ceil(self.data_buffer_size / notify_size.value) * notify_size.value)
         # Create page-aligned ring buffer
         ring_buffer = create_dma_buffer(min(self.max_ring_buffer_size.value, min_ring_buffer_size))
@@ -419,7 +419,7 @@ class TxCard(SpectrumDevice):
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_LEN, ctypes.byref(avail_bytes))
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_DATA_AVAIL_USER_POS, ctypes.byref(usr_position))
 
-            # Calculate new data for the transfer, when notify_size is available on continous buffer
+            # Calculate new data for the transfer, when notify_size is available on continuous buffer
             if avail_bytes.value >= notify_size.value:
                 transfer_count += 1
 
@@ -442,7 +442,7 @@ class TxCard(SpectrumDevice):
                             notify_size.value,
                         )
                     else:
-                        # Not enough data availabe -> set remaining bytes to zero
+                        # Not enough data available -> set remaining bytes to zero
                         ctypes.memmove(
                             ring_buffer_position,
                             data_buffer_position,

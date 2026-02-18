@@ -193,7 +193,7 @@ class RxCard(SpectrumDevice):
         # notify size to ensure that we can always access the full gate data.
         self.post_trigger = 4096 // self.num_channels.value
 
-        # Set the memory size, pre and post trigger and loop paramaters, SPC_LOOPS = 0 => runs infinitely long
+        # Set the memory size, pre and post trigger and loop parameters, SPC_LOOPS = 0 => runs infinitely long
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_POSTTRIGGER, self.post_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_PRETRIGGER, self.pre_trigger)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_LOOPS, 0)
@@ -204,7 +204,7 @@ class RxCard(SpectrumDevice):
             sp.SPC_TIMESTAMP_CMD,
             sp.SPC_TSMODE_STARTRESET | sp.SPC_TSCNT_INTERNAL,
         )
-        # Configure trigger on EXT1 channe; and trigger on positive edge
+        # Configure trigger on EXT1 channel; and trigger on positive edge
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_EXT1_MODE, sp.SPC_TM_POS)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TRIG_ORMASK, sp.SPC_TMASK_EXT1)
 
@@ -297,7 +297,7 @@ class RxCard(SpectrumDevice):
         # Setup polling mode for timestamp data
         self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL))
 
-        # Start card acquistion and DMA usage
+        # Start card acquisition and DMA usage
         self.handle_error(sp.spcm_dwSetParam_i32(
             self.card,
             sp.SPC_M2CMD,
@@ -306,7 +306,7 @@ class RxCard(SpectrumDevice):
 
         # Define helpers/buffer to read card parameter
         available_timestamp_bytes = sp.int32(0)
-        available_timestamp_postion = sp.int32(0)
+        available_timestamp_position = sp.int32(0)
         available_data_bytes = sp.int32(0)
         available_data_position = sp.int32(0)
 
@@ -335,12 +335,12 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(
                     self.card,
                     sp.SPC_TS_AVAIL_USER_POS,
-                    byref(available_timestamp_postion),
+                    byref(available_timestamp_position),
                 )
 
                 # Read exactly two timestamps
-                timestamp_0 = pll_data[int(available_timestamp_postion.value / 8)]
-                timestamp_1 = pll_data[int(available_timestamp_postion.value / 8) + 2]
+                timestamp_0 = pll_data[int(available_timestamp_position.value / 8)]
+                timestamp_1 = pll_data[int(available_timestamp_position.value / 8) + 2]
 
                 # Calculate gate duration and the number of adc gate sample points (per channel)
                 gate_sample = timestamp_1 - timestamp_0
@@ -365,7 +365,7 @@ class RxCard(SpectrumDevice):
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 # Get the total data duration, including post trigger, to accurately track buffer position
                 samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
-                # Ensure data aligmment
+                # Ensure data alignment
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value

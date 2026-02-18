@@ -105,7 +105,7 @@ class SpectrumDevice(ABC):
             if (sp.spcm_dwGetErrorInfo_i32(self.card, None, None, err_msg) != sp.ERR_OK):
                 # double check if error is not ERR_OK, disconnect and raise error
                 self.log.critical(
-                    f"Catched error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
+                    f"Caught error ( {error} ): {err_msg}, {translate_error(error)}; Stopping card {self.name}"
                 )
                 sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_CARD_STOP)
                 raise RuntimeError
