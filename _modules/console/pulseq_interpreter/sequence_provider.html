@@ -445,10 +445,6 @@
 <span class="n">INT16_MIN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span>
 
 
-<span class="n">default_fov_scaling</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">default_fov_offset</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-<span class="n">default_orientation</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
-
 <div class="viewcode-block" id="ADCGate">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.ADCGate">[docs]</a>
 <span class="nd">@dataclass</span>
@@ -827,7 +823,7 @@
 
                 <span class="c1"># Add RF waveform</span>
                 <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span><span class="p">:</span><span class="n">rf_end</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rf_waveform</span>
-                <span class="c1"># Add deblanking signal to Z gradient</span>
+                <span class="c1"># Add unblanking signal to Z gradient</span>
                 <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">rf_unblanking</span>
 
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -968,7 +964,7 @@
         <span class="c1"># Resampling of scaled complex envelope</span>
         <span class="n">envelope</span> <span class="o">=</span> <span class="n">resample</span><span class="p">(</span><span class="n">envelope_scaled</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
 
-        <span class="c1"># Only precalculate carrier time array, calculate carriere here to take into account the</span>
+        <span class="c1"># Only precalculate carrier time array, calculate carrier here to take into account the</span>
         <span class="c1"># frequency and phase offsets of an RF block event</span>
         <span class="n">carrier_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">num_samples</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
         <span class="n">carrier</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">larmor_frequency</span> <span class="o">+</span> <span class="n">block</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">)</span> <span class="o">*</span> <span class="n">carrier_time</span><span class="p">)</span>
@@ -1090,7 +1086,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">grad_ch</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">z</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All channel_assignment values must be integers.&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">{</span><span class="n">grad_ch</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">z</span><span class="p">}</span> <span class="o">!=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid channel assigment, must contain each of 1, 2, and 3 exactly once, got: </span><span class="si">{</span><span class="n">grad_ch</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid channel assignment, must contain each of 1, 2, and 3 exactly once, got: </span><span class="si">{</span><span class="n">grad_ch</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
