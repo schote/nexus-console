@@ -3,7 +3,7 @@ from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import system
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -14,6 +14,7 @@ def constructor(
     use_sinc: bool = False,
     time_bw_product: float = 4,
     flip_angle: float = pi / 2,
+    system: pp.Opts | None = None,
     ) -> pp.Sequence:
     """Construct FID sequence.
 
@@ -33,7 +34,7 @@ def constructor(
     ValueError
         Sequence timing check failed
     """
-    seq = pp.Sequence(system=system)
+    seq = pp.Sequence(system=system) if system is not None else pp.Sequence(system=default_system)
     seq.set_definition("Name", "fid")
 
     # Define RF pulse for excitation
@@ -44,7 +45,7 @@ def constructor(
             duration=rf_duration,
             phase_offset=0,
             time_bw_product=time_bw_product,
-            delay=system.rf_dead_time,
+            delay=seq.system.rf_dead_time,
         )
     else:
         rf_90 = pp.make_block_pulse(
@@ -52,7 +53,7 @@ def constructor(
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
-            delay=system.rf_dead_time,
+            delay=seq.system.rf_dead_time,
         )
 
     # Define ADC event

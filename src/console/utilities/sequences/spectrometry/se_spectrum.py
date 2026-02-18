@@ -3,7 +3,8 @@ from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import raster, system
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -14,7 +15,7 @@ def constructor(
     use_sinc: bool = False,
     time_bw_product: float = 4,
     use_fid: bool = True,
-    sys: pp.Opts | None = None,
+    system: pp.Opts | None = None,
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
@@ -44,7 +45,7 @@ def constructor(
     ValueError
         Sequence timing check failed
     """
-    seq = pp.Sequence(system=sys) if sys is not None else pp.Sequence(system=system)
+    seq = pp.Sequence(system=system) if system is not None else pp.Sequence(system=default_system)
 
     if use_fid:
         seq.set_definition("Name", "se_decay_spectrum")
