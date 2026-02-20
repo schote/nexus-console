@@ -117,8 +117,8 @@ class RxData:
         if self.phase_reference is not None and self.phase_ref_frequency is not None:
             time_reference = np.arange(self.phase_reference.size) * self.dwell_time_raw
             ref_demod = self.phase_reference * np.exp(-2j * np.pi * self.phase_ref_frequency * time_reference)
-            phase_correction = np.sum(ref_demod) * (self.demod_frequency / self.phase_ref_frequency)
-            data_demod *= np.exp(-1j * phase_correction[None, ...])
+            phase_correction = np.angle(np.sum(ref_demod)) * (self.demod_frequency / self.phase_ref_frequency)
+            data_demod *= np.exp(-1j * phase_correction)
 
         # Apply receive phase offset to data and return data
         return data_demod * np.exp(1j * self.phase_offset)
