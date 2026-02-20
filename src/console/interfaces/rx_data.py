@@ -115,7 +115,7 @@ class RxData:
 
         # Demodulate the reference signal if available and correct acquired data
         if self.phase_reference is not None and self.phase_ref_frequency is not None:
-            time_reference = np.arange(self.phase_reference) * self.dwell_time_raw
+            time_reference = np.arange(self.phase_reference.size) * self.dwell_time_raw
             ref_demod = self.phase_reference * np.exp(-2j * np.pi * self.phase_ref_frequency * time_reference)
             phase_correction = np.sum(ref_demod) * (self.demod_frequency / self.phase_ref_frequency)
             data_demod *= np.exp(-1j * phase_correction[None, ...])
