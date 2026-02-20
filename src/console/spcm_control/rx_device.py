@@ -187,7 +187,7 @@ class RxCard(SpectrumDevice):
 
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
-        
+
         # Setup digital input channel for the phase reference signal
         sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
@@ -455,10 +455,15 @@ class RxCard(SpectrumDevice):
 
                     # Cut the pretrigger (we don't need it) and reshape the data to (num_coils, num_samples)
                     pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
-                    gate_data = gate_data[pre_trigger_cut:].reshape((self.num_channels.value, num_gate_samples), order="F")
+                    gate_data = gate_data[pre_trigger_cut:].reshape(
+                        (self.num_channels.value, num_gate_samples),
+                        order="F",
+                    )
                     # Store raw data in RxData object
                     self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
-                    self.rx_data[self._total_gates].phase_reference = (gate_data[0, 0:min(num_gate_samples, 1000)].astype(np.uint16) >> 15).copy()
+                    self.rx_data[self._total_gates].phase_reference = (
+                        gate_data[0, 0:min(num_gate_samples, 1000)].astype(np.uint16) >> 15
+                    ).copy()
                     self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
                     self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
 
