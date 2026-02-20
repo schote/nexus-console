@@ -1,6 +1,7 @@
 """Implementation of receive card."""
+
 import logging
-import threading
+import multiprocessing
 import time
 from ctypes import POINTER, addressof, byref, c_short, cast
 from dataclasses import dataclass
@@ -9,7 +10,7 @@ from itertools import compress
 import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
-from console.interfaces.rx_data import RxData
+from console.interfaces.enums import RxCommand
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
@@ -46,11 +47,15 @@ IMP_SELECT = [
 ]
 
 
-@dataclass
-class RxCard(SpectrumDevice):
+@dataclass(kw_only=True)
+class RxCard(SpectrumDevice, multiprocessing.Process):
     """Implementation of RX device."""
 
     __name__: str = "RxCard"
+
+    command_queue: multiprocessing.Queue
+    input_queue: multiprocessing.Queue
+    processing_queue: multiprocessing.Queue
 
     def __init__(
         self,
@@ -59,34 +64,42 @@ class RxCard(SpectrumDevice):
         channel_enable: tuple[bool, ...],
         max_amplitude: tuple[int, ...],
         impedance_50_ohms: tuple[bool, ...],
+        command_queue: multiprocessing.Queue,
+        input_queue: multiprocessing.Queue,
+        processing_queue: multiprocessing.Queue,
     ) -> None:
         """Execute after init function to do further class setup."""
         self.log = logging.getLogger(self.__name__)
-        super().__init__(path, log=self.log)
+        # Note: We don't call SpectrumDevice.__init__ logic fully yet because we need to be picklable.
+        # We'll call connect() which calls setup_card() inside the run() method.
+        multiprocessing.Process.__init__(self, name=self.__name__)
+        SpectrumDevice.__init__(self, path, log=self.log)
 
         self.sample_rate = sample_rate
         self.channel_enable = [int(val) for val in channel_enable]
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = [int(val) for val in impedance_50_ohms]
-        self.rx_data: None | list[RxData] = None
 
-        self.num_channels = sp.int32(0)
-        self.card_type = sp.int32(0)
+        self.command_queue = command_queue
+        self.input_queue = input_queue
+        self.processing_queue = processing_queue
 
-        self.worker: threading.Thread | None = None
-        self.is_running = threading.Event()
-        self.is_receiving = threading.Event()
-        self._total_gates: int = 0
+        # These will be initialized in the subprocess
+        self.num_channels = None
+        self.card_type = None
+        self.is_running = None
+        self.is_receiving = None
+        self._total_gates = 0
 
         # Pre trigger is set to minimum, post trigger depends on active channel count and is defined later.
-        self.pre_trigger: int = 8
-        self.post_trigger: None | int = None
+        self.pre_trigger = 8
+        self.post_trigger = None
 
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
     @property
     def total_gates(self) -> int:
-        """"Helper function to return the number of gates that have been collected by the Rx Card."""
+        """ "Helper function to return the number of gates that have been collected by the Rx Card."""
         return self._total_gates
 
     def setup_card(self):
@@ -222,37 +235,43 @@ class RxCard(SpectrumDevice):
 
         self.log.debug("Device setup completed")
 
-    def start_operation(self):
-        """Start card operation."""
-        # Clear the emergency stop flag
-        self.is_running.clear()
-        self.is_receiving.clear()
+    def run(self) -> None:
+        """Main process loop."""
+        self.log.info("RX Process started")
+        self.num_channels = sp.int32(0)
+        self.card_type = sp.int32(0)
+        self.is_running = multiprocessing.Event()
+        self.is_receiving = multiprocessing.Event()
 
-        # Start card thread. if time stamp mode is not available use the example function.
-        self.worker = threading.Thread(target=self._gated_timestamps_stream)
-        self.worker.start()
+        try:
+            self.connect()
+            while True:
+                cmd = self.command_queue.get()
+                if cmd == RxCommand.START:
+                    self.is_running.clear()
+                    self._gated_timestamps_stream()
+                elif cmd == RxCommand.STOP:
+                    self.is_running.set()
+                elif cmd == RxCommand.SHUTDOWN:
+                    self.log.info("RX Process shutting down")
+                    break
+        except Exception as e:
+            self.log.exception(f"Error in RX Process: {e}")
+        finally:
+            self.disconnect()
+
+    def start_operation(self):
+        """Start card operation (from main process)."""
+        self.command_queue.put(RxCommand.START)
 
     def stop_operation(self):
-        """Stop card thread."""
-        # Check if thread is running
-        if self.worker is not None:
-            # Signal thread to stop
-            self.is_running.set()
-            # Wait for thread to complete
-            self.worker.join()
+        """Stop card thread (from main process)."""
+        self.command_queue.put(RxCommand.STOP)
 
-            # Stop card operation with the following steps:
-            # 1. Stop card acquisition
-            # 2. Stop data DMA transfer
-            # 3. Stop timestamp DMA transfer
-            self.handle_error(sp.spcm_dwSetParam_i32(
-                self.card,
-                sp.SPC_M2CMD,
-                sp.M2CMD_CARD_STOP | sp.M2CMD_DATA_STOPDMA | sp.M2CMD_EXTRA_STOPDMA,
-            ))
-        else:
-            # No thread is running
-            self.log.error("No active process found")
+    def shutdown(self):
+        """Shutdown process."""
+        self.command_queue.put(RxCommand.SHUTDOWN)
+        self.join()
 
     def _gated_timestamps_stream(self):
         # Rx buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
@@ -298,11 +317,13 @@ class RxCard(SpectrumDevice):
         self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_EXTRA_POLL))
 
         # Start card acquistion and DMA usage
-        self.handle_error(sp.spcm_dwSetParam_i32(
-            self.card,
-            sp.SPC_M2CMD,
-            sp.M2CMD_CARD_START | sp.M2CMD_CARD_ENABLETRIGGER | sp.M2CMD_DATA_STARTDMA,
-        ))
+        self.handle_error(
+            sp.spcm_dwSetParam_i32(
+                self.card,
+                sp.SPC_M2CMD,
+                sp.M2CMD_CARD_START | sp.M2CMD_CARD_ENABLETRIGGER | sp.M2CMD_DATA_STARTDMA,
+            )
+        )
 
         # Define helpers/buffer to read card parameter
         available_timestamp_bytes = sp.int32(0)
@@ -315,22 +336,23 @@ class RxCard(SpectrumDevice):
         # Track the amount of gate events recorded
         self._total_gates = 0
 
-        # Check that the list of RxData objects has been passed
-        if self.rx_data is None:
-            self.log.critical("No RxData objects found for storing ADC data")
-            raise RuntimeError("No RxData objects found for storing ADC data")
-
         # Signal that acquisition has started
         self.log.debug("Starting receive")
         self.is_receiving.set()
 
         while not self.is_running.is_set():
-
             # Read the available timestamp buffer size
             sp.spcm_dwGetParam_i64(self.card, sp.SPC_TS_AVAIL_USER_LEN, byref(available_timestamp_bytes))
 
             # Process, if buffer size is greater or equal 32 (corresponds to 2 timestamps)
             if available_timestamp_bytes.value >= 32:
+                # ...
+                # Pull next RxData object from input queue
+                try:
+                    rx_data = self.input_queue.get(timeout=5.0)
+                except Exception:
+                    self.log.error("Timeout waiting for RxData from input queue")
+                    break
                 # Read timestamp position
                 sp.spcm_dwGetParam_i32(
                     self.card,
@@ -364,7 +386,7 @@ class RxCard(SpectrumDevice):
                 # This is the minimum amount of data  must be available to get full gate data
                 total_bytes_gate = (gate_sample + self.pre_trigger) * 2 * self.num_channels.value
                 # Get the total data duration, including post trigger, to accurately track buffer position
-                samples_sequence = (gate_sample + self.pre_trigger + self.post_trigger)
+                samples_sequence = gate_sample + self.pre_trigger + self.post_trigger
                 # Ensure data aligmment
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
@@ -372,9 +394,11 @@ class RxCard(SpectrumDevice):
 
                 # Check if total gate data does not exceed buffer size
                 if bytes_sequence > rx_size:
-                    error_msg = (f"ADC gate data ({bytes_sequence} bytes) exceeds "
-                                f"available buffer ({rx_size} bytes). "
-                                f"Reduce adc length, sample rate or channel count")
+                    error_msg = (
+                        f"ADC gate data ({bytes_sequence} bytes) exceeds "
+                        f"available buffer ({rx_size} bytes). "
+                        f"Reduce adc length, sample rate or channel count"
+                    )
                     self.log.critical(error_msg)
                     raise ValueError(error_msg)
 
@@ -390,15 +414,18 @@ class RxCard(SpectrumDevice):
                 sp.spcm_dwGetParam_i32(self.card, sp.SPC_DATA_AVAIL_USER_LEN, byref(available_data_bytes))
 
                 # # Debug log statements
-                self.log.debug("ADC event size: %d bytes, Available data length: %s bytes"
-                               % (total_bytes_gate, available_data_bytes.value))
+                self.log.debug(
+                    "ADC event size: %d bytes, Available data length: %s bytes"
+                    % (total_bytes_gate, available_data_bytes.value)
+                )
 
                 # If insufficient data is in buffer wait for more to arrive.
-                if (available_data_bytes.value + remaining_bytes < total_bytes_gate):
+                if available_data_bytes.value + remaining_bytes < total_bytes_gate:
                     # Wait for sufficient data to come in
                     wait_start = time.time()
-                    while (available_data_bytes.value + remaining_bytes < total_bytes_gate) \
-                        and not self.is_running.is_set():
+                    while (
+                        available_data_bytes.value + remaining_bytes < total_bytes_gate
+                    ) and not self.is_running.is_set():
                         try:
                             self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_M2CMD, sp.M2CMD_DATA_WAITDMA))
                         except RuntimeError as e:  # Reraise error for traceability
@@ -408,15 +435,16 @@ class RxCard(SpectrumDevice):
                     self.log.debug(f"Waited {(time.time() - wait_start) * 1e3:.3f} ms for extra data to enter buffer")
 
                 if remaining_bytes + available_data_bytes.value > rx_size:
-                    error_msg = (f"Memory overflow. Sum of remaining bytes ({remaining_bytes} bytes) "
-                                 f"and newly available bytes ({available_data_bytes.value} bytes) "
-                                 f"exceeds receive buffer size ({rx_size} bytes)")
+                    error_msg = (
+                        f"Memory overflow. Sum of remaining bytes ({remaining_bytes} bytes) "
+                        f"and newly available bytes ({available_data_bytes.value} bytes) "
+                        f"exceeds receive buffer size ({rx_size} bytes)"
+                    )
                     self.log.critical(error_msg)
                     raise MemoryError(error_msg)
 
                 # Check if sufficient data is available (while loop doesn't guarantee it since it can be interrupted)
                 if available_data_bytes.value + remaining_bytes >= total_bytes_gate:
-
                     # Adjust memory position to account for bytes remaining after previous acquisition
                     byte_position = available_data_position.value - remaining_bytes
 
@@ -453,11 +481,13 @@ class RxCard(SpectrumDevice):
                     pre_trigger_cut = (self.pre_trigger) * self.num_channels.value
                     gate_data = gate_data[pre_trigger_cut:]
                     # Store raw data in RxData object
-                    self.rx_data[self._total_gates].raw_data = gate_data.reshape((self.num_channels.value,
-                                                                            gate_sample),
-                                                                            order="F").copy()
-                    self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
-                    self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
+                    # We write directly to the persistent buffer of the RxData object
+                    rx_data.raw_data = gate_data.reshape((self.num_channels.value, gate_sample), order="F")
+                    rx_data.scaling_factor = self.rx_scaling[: self.num_channels.value]
+                    rx_data.time_stamp = timestamp_0 / (self.sample_rate * 1e6)
+
+                    # Push to processing queue
+                    self.processing_queue.put(rx_data)
 
                     # The accumulation of the leftover bytes is positive,
                     # if if the post-trigger event was not fully captured (accumulated sum increases),
@@ -477,8 +507,9 @@ class RxCard(SpectrumDevice):
                         raise RuntimeError
 
                 else:
-                    self.log.error("Needed at least %d bytes but only %d bytes available" % (
-                        total_bytes_gate,
-                        available_data_bytes.value))
+                    self.log.error(
+                        "Needed at least %d bytes but only %d bytes available"
+                        % (total_bytes_gate, available_data_bytes.value)
+                    )
 
         self.log.debug("Card operation stopped")

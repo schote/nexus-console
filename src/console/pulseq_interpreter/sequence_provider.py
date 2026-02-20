@@ -1,4 +1,4 @@
-"""Sequence provider class."""
+import copy
 import logging
 import operator
 from collections.abc import Callable
@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
+from multiprocessing import shared_memory
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
@@ -21,6 +22,7 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 try:
     from line_profiler import profile
 except ImportError:
+
     def profile(func: Callable[..., Any]) -> Callable[..., Any]:
         """Define placeholder for profile decorator."""
         return func
@@ -34,6 +36,7 @@ default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
 default_fov_offset: Dimensions = Dimensions(0, 0, 0)
 default_orientation: Dimensions = Dimensions(1, 2, 3)
 
+
 @dataclass
 class ADCGate:
     """Define precalculated attributes of an ADC gate."""
@@ -41,6 +44,7 @@ class ADCGate:
     start: int
     num_samples_discard: int
     num_samples_raw: int
+
 
 class SequenceProvider(Sequence):
     """Sequence provider class.
@@ -71,6 +75,7 @@ class SequenceProvider(Sequence):
         rf_50ohms: bool,
         rf_to_mvolt: float,
         spcm_dwell_time: float,
+        num_rx_channels: int,
         system_limits: SystemLimits,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
@@ -103,7 +108,7 @@ class SequenceProvider(Sequence):
             system=Opts(
                 **system_limits.model_dump(),
                 B0=50e-3,
-                grad_unit="Hz/m",   # system limit is defined in this units
+                grad_unit="Hz/m",  # system limit is defined in this units
                 slew_unit="Hz/m/s",  # system limit is defined in this units
             ),
         )
@@ -116,6 +121,7 @@ class SequenceProvider(Sequence):
         self.system_limits = system_limits
         self.gpa_gain = gpa_gain
         self.grad_eff = gradient_efficiency
+        self.num_rx_channels = num_rx_channels
 
         # Scale output limit dependent on high impedance flags:
         # If output is terminated into high impedance (flag is true), the channel output is doubled.
@@ -175,7 +181,7 @@ class SequenceProvider(Sequence):
                 raise ValueError("Provided object is not an instance of pypulseq Sequence")
             for key, value in seq.__dict__.items():
                 # Check if attribute exists
-                if not hasattr(self, key):   # dont't overwrite system
+                if not hasattr(self, key):  # dont't overwrite system
                     # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
                     continue
                 # Set attribute
@@ -297,12 +303,16 @@ class SequenceProvider(Sequence):
             raise IndexError(msg)
 
         # Setup output arrays
-        _seq = np.zeros(4 * seq_samples, dtype=np.int16)
-        _rx_data = []  # list containing rx data objects for each ADC event
+        # Calculate TX SHM size
+        shm_tx_size = 4 * seq_samples * 2  # 4 channels, int16 (2 bytes)
+        shm_tx = shared_memory.SharedMemory(create=True, size=shm_tx_size)
+        _seq = np.ndarray((4 * seq_samples,), dtype=np.int16, buffer=shm_tx.buf)
+        _seq.fill(0)
 
-        # Count the total number of sample points and gate signals
-        adc_count: int = 0
+        # Second pass: fill _seq and create metadata-only RxData objects for the FIRST average
+        _rx_data = []  # list containing rx data objects for each ADC event
         labels = {}
+        adc_count_in_avg = 0
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
@@ -317,13 +327,12 @@ class SequenceProvider(Sequence):
                     # Offset value are set independent of the sequence orientation,
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
-                    offset=parameter.gradient_offset.to_list()[int(gradient_index.x-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.x - 1)],
                     # Gradient indexing starts at 1 (RF is channel 0)
                     # -> correct indexing to match tuple index
-                    output_channel=int(gradient_index.x-1),
+                    output_channel=int(gradient_index.x - 1),
                 )
-                delay = block.gx.delay
-                delay_samples = round(delay * self.spcm_freq)
+                delay_samples = round(block.gx.delay * self.spcm_freq)
                 waveform_start_gx = waveform_start + 4 * delay_samples
                 gx_slice = slice(
                     waveform_start_gx + gradient_index.x,
@@ -340,13 +349,12 @@ class SequenceProvider(Sequence):
                     # Offset value are set independent of the sequence orientation,
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
-                    offset=parameter.gradient_offset.to_list()[int(gradient_index.y-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.y - 1)],
                     # Gradient indexing starts at 1 (RF is channel 0)
                     # -> correct indexing to match tuple index
-                    output_channel=int(gradient_index.y-1),
+                    output_channel=int(gradient_index.y - 1),
                 )
-                delay = block.gy.delay
-                delay_samples = round(delay * self.spcm_freq)
+                delay_samples = round(block.gy.delay * self.spcm_freq)
                 waveform_start_gy = waveform_start + 4 * delay_samples
                 gy_slice = slice(
                     waveform_start_gy + gradient_index.y,
@@ -363,13 +371,12 @@ class SequenceProvider(Sequence):
                     # Offset value are set independent of the sequence orientation,
                     # must be considered with respect to the target output channel!
                     # Offsets mapping: x -> channel 1, y -> channel 2, z -> channel 3
-                    offset=parameter.gradient_offset.to_list()[int(gradient_index.z-1)],
+                    offset=parameter.gradient_offset.to_list()[int(gradient_index.z - 1)],
                     # Gradient indexing starts at 1 (RF is channel 0)
                     # -> correct indexing to match tuple index
-                    output_channel=int(gradient_index.z-1),
+                    output_channel=int(gradient_index.z - 1),
                 )
-                delay = block.gz.delay
-                delay_samples = round(delay * self.spcm_freq)
+                delay_samples = round(block.gz.delay * self.spcm_freq)
                 waveform_start_gz = waveform_start + 4 * delay_samples
                 gz_slice = slice(
                     waveform_start_gz + gradient_index.z,
@@ -397,7 +404,7 @@ class SequenceProvider(Sequence):
                 # Add RF waveform
                 _seq[rf_start:rf_end:4] = rf_waveform
                 # Add deblanking signal to Z gradient
-                _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
+                _seq[rf_start + 3 : rf_end + 3 : 4] = _seq[rf_start + 3 : rf_end + 3 : 4] | rf_unblanking
 
             if block.label is not None:
                 # Update dictionary with current labels
@@ -423,9 +430,13 @@ class SequenceProvider(Sequence):
                 # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
                 _seq[slice(adc_start + 1, adc_end + 1, 4)] |= np.uint16(2**15)
 
+                # Create metadata-only RxData object
+                raw_shape = (self.num_rx_channels, num_samples_raw)
+                proc_shape = (self.num_rx_channels, block.adc.num_samples + 2 * num_samples_discard)
+
                 _rx_data.append(
                     RxData(
-                        index=adc_count,
+                        index=adc_count_in_avg,
                         num_samples=block.adc.num_samples,
                         num_samples_raw=num_samples_raw,
                         num_samples_discard=num_samples_discard,
@@ -434,12 +445,44 @@ class SequenceProvider(Sequence):
                         phase_offset=block.adc.phase_offset,
                         freq_offset=block.adc.freq_offset,
                         total_averages=parameter.num_averages,
+                        average_index=0,
                         ddc_method=parameter.ddc_method,
-                        labels=labels,
+                        labels=labels.copy(),
+                        raw_shape=raw_shape,
+                        proc_shape=proc_shape,
                     )
                 )
-                adc_count += 1
-                labels = {}  # Reset labels dict
+                adc_count_in_avg += 1
+                labels = {}
+
+        adc_count = adc_count_in_avg
+
+        # Calculate memory requirements from the generated descriptors
+        rx_heap_size_per_average = sum(rx.heap_size for rx in _rx_data)
+        total_rx_heap_size = rx_heap_size_per_average * parameter.num_averages
+        shm_rx = shared_memory.SharedMemory(create=True, size=total_rx_heap_size)
+
+        # Update metadata with SHM info for the first average
+        current_rx_offset = 0
+        for rx in _rx_data:
+            rx.shm_name = shm_rx.name
+            rx.raw_offset = current_rx_offset
+            rx.proc_offset = current_rx_offset + rx.raw_size
+            current_rx_offset += rx.heap_size
+
+        # Third pass: Replicate descriptors for all remaining averages
+        first_avg_rx_data = _rx_data.copy()
+        for avg_idx in range(1, parameter.num_averages):
+            for rx_obj in first_avg_rx_data:
+                # Create a shallow copy and update SHM offsets and avg_idx
+                new_rx_obj = copy.copy(rx_obj)
+                new_rx_obj.average_index = avg_idx
+                new_rx_obj.raw_offset += avg_idx * rx_heap_size_per_average
+                new_rx_obj.proc_offset += avg_idx * rx_heap_size_per_average
+                # Reset private SHM handles for the new object
+                new_rx_obj._shm_raw = None
+                new_rx_obj._shm_proc = None
+                _rx_data.append(new_rx_obj)
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
@@ -448,7 +491,8 @@ class SequenceProvider(Sequence):
         )
 
         return UnrolledSequence(
-            seq=_seq,
+            shm_tx=shm_tx,
+            shm_rx=shm_rx,
             sample_count=seq_samples,
             gpa_gain=self.gpa_gain,
             gradient_efficiency=self.grad_eff,
@@ -494,7 +538,7 @@ class SequenceProvider(Sequence):
         try:
             if not block.type == "rf":
                 raise ValueError("Sequence block event is not a valid RF event.")
-            if not larmor_frequency > 0.:
+            if not larmor_frequency > 0.0:
                 raise ValueError(f"Invalid Larmor frequency: {larmor_frequency}")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
@@ -638,8 +682,8 @@ class SequenceProvider(Sequence):
     def _check_gradient_amplitude(self, idx: int, rel_value: float) -> None:
         """Raise error if amplitude exceeds output limit."""
         limit = self.gradient_out_limits[idx]
-        if np.abs(rel_value) > 1.:
-            msg = f"Amplitude of gradient channel {idx+1} ({rel_value*limit}) exceeded output limit ({limit}))"
+        if np.abs(rel_value) > 1.0:
+            msg = f"Amplitude of gradient channel {idx + 1} ({rel_value * limit}) exceeded output limit ({limit}))"
             raise ValueError(msg)
 
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:

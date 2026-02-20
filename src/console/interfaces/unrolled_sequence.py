@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+from multiprocessing import shared_memory
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.rx_data import RxData
@@ -18,15 +19,18 @@ class UnrolledSequence:
     `unroll_sequence` function.
     """
 
-    seq: np.ndarray
-    """Replay data as int16 values in a list of numpy arrays. The sequence data already
-    contains the digital adc and unblanking signals in the channels gx and gy."""
-
     sample_count: int
     """Total number of samples per channel."""
 
     rx_data: list[RxData]
-    """List containing the data and metadata of all receive events"""
+    """List containing the data and metadata of all receive events."""
+
+    shm_tx: shared_memory.SharedMemory
+    """Shared memory object for the TX sequence."""
+
+    shm_rx: shared_memory.SharedMemory
+    """Shared memory object for the RX data heap.
+    This is contained here manage their lifecycle and prevent the memory blocks from being unlinked prematurely."""
 
     gpa_gain: tuple[float, float, float]
     """The gradient waveforms in pulseq are defined in Hz/m.
@@ -65,4 +69,9 @@ class UnrolledSequence:
     """Number of adc events in the sequence."""
 
     parameter: AcquisitionParameter
-    """Hash of acquisition parameters used to calculate the sequence."""
+    """Original acquisition parameters."""
+
+    @property
+    def seq(self) -> np.ndarray:
+        """Return a numpy view of the TX sequence in shared memory."""
+        return np.ndarray((4 * self.sample_count,), dtype=np.int16, buffer=self.shm_tx.buf)

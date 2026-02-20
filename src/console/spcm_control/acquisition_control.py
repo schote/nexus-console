@@ -1,11 +1,9 @@
-"""Acquisition Control Class."""
-
-import copy
 import logging
 import logging.config
+import multiprocessing
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -15,9 +13,9 @@ import numpy as np
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
-from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
+from console.spcm_control.processing_worker import ProcessingWorker
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_configuration import load_nexus_config
@@ -84,16 +82,26 @@ class AcquisitionControl:
             rf_50ohms=self.config.tx.rf_terminated_50ohm,
             gradient_output_limits=self.config.tx.channel_max_amplitude[1:],
             rf_output_limit=self.config.tx.channel_max_amplitude[0],
-            spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
+            spcm_dwell_time=self.config.rx.spcm_dwell_time,
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
+            num_rx_channels=sum(self.config.rx.channel_enable),
             system_limits=self.config.system,
         )
+        # >> Multiprocessing setup
+        # Create Queues
+        self.rx_command_queue = multiprocessing.Queue()
+        self.rx_input_queue = multiprocessing.Queue()
+        self.rx_processing_queue = multiprocessing.Queue()
+        self.rx_result_queue = multiprocessing.Queue()
+        self.tx_command_queue = multiprocessing.Queue()
+
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(
             path=self.config.tx.device_path,
             max_amplitude=self.config.tx.channel_max_amplitude,
             filter_type=self.config.tx.channel_filter_type,
             sample_rate=self.config.tx.sampling_rate,
+            command_queue=self.tx_command_queue,
         )
         # Create receive card instance
         self.rx_card: RxCard = RxCard(
@@ -102,20 +110,22 @@ class AcquisitionControl:
             channel_enable=self.config.rx.channel_enable,
             max_amplitude=self.config.rx.channel_max_amplitude,
             impedance_50_ohms=self.config.rx.channel_terminated_50ohm,
+            command_queue=self.rx_command_queue,
+            input_queue=self.rx_input_queue,
+            processing_queue=self.rx_processing_queue,
+        )
+        # Create processing worker
+        self.proc_worker = ProcessingWorker(
+            processing_queue=self.rx_processing_queue,
+            result_queue=self.rx_result_queue,
         )
 
-        # Setup the cards
-        self.is_setup: bool = False
-        try:
-            if self.tx_card.connect() and self.rx_card.connect():
-                self.log.info("Setup of measurement cards successful.")
-                self.is_setup = True
-        except Exception:
-            self.log.exception("Error during card connection.")
-            if self.tx_card:
-                self.tx_card.disconnect()
-            if self.rx_card:
-                self.rx_card.disconnect()
+        # Start processes
+        self.tx_card.start()
+        self.rx_card.start()
+        self.proc_worker.start()
+
+        self.is_setup: bool = True  # We assume setup happens in subprocesses
 
         # Get the rx sampling rate for DDC
         self.f_spcm = self.rx_card.sample_rate * 1e6
@@ -128,14 +138,29 @@ class AcquisitionControl:
         self._raw: list[np.ndarray] = []
         self._unproc: list[np.ndarray] = []
 
-    def __del__(self):
-        """Class destructor disconnecting measurement cards."""
+    def shutdown(self):
+        """Shutdown all subprocesses."""
+        self.log.info("Shutting down processes...")
         if self.tx_card:
-            self.tx_card.disconnect()
+            self.tx_card.shutdown()
         if self.rx_card:
-            self.rx_card.disconnect()
-        self.log.info("Measurement cards disconnected")
-        self.log.info("Acquisition control terminated\n---------------------------------------------------\n")
+            self.rx_card.shutdown()
+        if self.proc_worker:
+            self.rx_processing_queue.put(None)  # Shutdown sentinel
+            self.proc_worker.join()
+
+        if self.sequence:
+            self.sequence.shm_tx.close()
+            self.sequence.shm_tx.unlink()
+            self.sequence.shm_rx.close()
+            self.sequence.shm_rx.unlink()
+
+        self.log.info("Acquisition control terminated")
+
+    def __del__(self):
+        """Class destructor."""
+        # Note: We don't want to call complex shutdown here if already called.
+        pass
 
     def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
@@ -202,123 +227,59 @@ class AcquisitionControl:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
         # Calculate sequence with parameter
+        if self.sequence:
+            self.sequence.shm_tx.close()
+            self.sequence.shm_tx.unlink()
+            self.sequence.shm_rx.close()
+            self.sequence.shm_rx.unlink()
+
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
     def run(self, store_unprocessed: bool = False) -> AcquisitionData:
-        """Run an acquisition job.
+        """Run an acquisition job."""
+        if not self.is_setup:
+            raise RuntimeError("Measurement cards are not setup.")
+        if self.sequence is None:
+            raise ValueError("No sequence set.")
 
-        Parameters
-        ----------
-        store_unprocessed
-            Flag for whether to keep the raw, undecimated data after decimation
-        realtime_proccessing
-            flag for processing the data in real time using the multiprocessing or
-            using threading to process the data after it has all been acquired.
+        self.log.info("Starting acquisition orchestration...")
 
-        Raises
-        ------
-        RuntimeError
-            The measurement cards are not setup properly
-        ValueError
-            Missing raw data or missing averages
-        """
-        try:
-            # Check setup
-            if not self.is_setup:
-                raise RuntimeError("Measurement cards are not setup.")
-            if self.sequence is None:
-                raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
-        except (RuntimeError, ValueError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        # Populate input queue with pre-allocated RxData objects
+        for rx_data in self.sequence.rx_data:
+            rx_data.larmor_frequency = self.sequence.parameter.larmor_frequency
+            self.rx_input_queue.put(rx_data)
 
-        # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + self.sequence.duration
+        # Start acquisition
+        self.rx_card.start_operation()
+        self.tx_card.start_operation(self.sequence)
 
-        self.store_unprocessed = store_unprocessed
+        # Collect results
+        total_events = len(self.sequence.rx_data)
+        collected_data = []
 
-        # Create a list to store rx_data for all averages
-        self.receive_data: list = []
-        self.num_adc_events = len(self.sequence.rx_data)
+        self.log.info(f"Waiting for {total_events} ADC events...")
+        timeout = self.sequence.duration + 5
+        start_time = time.time()
 
-        # Set gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=self.sequence.parameter.gradient_offset,
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
-
-        for k in range(self.sequence.parameter.num_averages):
-            # Create a copy of rx_data to store the current acquisition in and label scan number.
-            self.rx_card.rx_data = copy.deepcopy(self.sequence.rx_data)
-
-            self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
-
-            # Start measurement card operations
-            self.rx_card.start_operation()
-
-            while not self.rx_card.is_receiving.is_set():
-                time.sleep(0.01)
-                # self.log.debug("Waiting for RX card to start receiving...")
-            self.tx_card.start_operation(self.sequence)
-
-            # Get start time of acquisition
-            time_start = time.time()
-
-            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                # Delay poll by 10 ms
-                time.sleep(0.01)
-
-                if (time.time() - time_start) > timeout:
-                    # Could not receive all the data before timeout
-                    self.log.warning(
-                        "Acquisition Timeout: Only received %s/%s adc events",
-                        num_gates, self.sequence.adc_count
-                    )
+        while len(collected_data) < total_events:
+            try:
+                rx_data = self.rx_result_queue.get(timeout=1.0)
+                collected_data.append(rx_data)
+                if len(collected_data) % 10 == 0:
+                    self.log.info(f"Collected {len(collected_data)}/{total_events} events")
+            except Exception:
+                if time.time() - start_time > timeout:
+                    self.log.error(f"Acquisition timeout! Only collected {len(collected_data)}/{total_events}")
                     break
 
-                if num_gates >= self.sequence.adc_count and num_gates > 0:
-                    break
+        self.log.info("Acquisition completed.")
 
-            # Append the receive data with current scan data
-            scan_data: list = self.rx_card.rx_data.copy()
-            self.rx_card.rx_data = None
-
-            for data in scan_data:
-                data.average_index = k
-            self.receive_data.extend(scan_data)
-
-            self.tx_card.stop_operation()
-            self.rx_card.stop_operation()
-
-            if self.sequence.parameter.averaging_delay > 0:
-                time.sleep(self.sequence.parameter.averaging_delay)
-
-        # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=Dimensions(x=0, y=0, z=0),
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
-
-        if len(self.receive_data) > 0:
-            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
-            # Process all the data at the end of the acquisition
-            self.post_processing(self.sequence.parameter)
-        else:
-            raise RuntimeError("No ADC events present")
-
-        try:
-            averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
-                averages_idc = np.arange(self.sequence.parameter.num_averages)
-                missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
-                raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
+        # Sort collected data by index/average to ensure correct order
+        collected_data.sort(key=lambda x: (x.average_index, x.index))
 
         return AcquisitionData(
-            receive_data=self.receive_data,
+            receive_data=collected_data,
             sequence=self.seq_provider.to_pypulseq(),
             session_path=self.session_path,
             meta={"device_configuration": self.config.model_dump()},
@@ -328,28 +289,6 @@ class AcquisitionControl:
     def get_device_configuration(self) -> NexusConfiguration:
         """Get nexus device configuration."""
         return self.config
-
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
-        """Process acquired NMR data.
-
-        Post processing contains the following steps (per readout sample size):
-        (1) Scaling of receive data
-        (2) Demodulation along readout dimensions
-        (3) Decimation along readout dimension
-
-        Parameters
-        ----------
-        parameter
-            Acquisition parameter
-        """
-        # Set the larmor frequency for all data to the defined larmor_frequency
-        for rx_data in self.receive_data:
-            rx_data.larmor_frequency = parameter.larmor_frequency
-
-        # Process the data in parallel
-        with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
-                         , self.receive_data)
 
     def plot_waveforms(
         self,

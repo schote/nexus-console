@@ -1,4 +1,5 @@
 """Interface class for acquisition data."""
+
 import json
 import logging
 from dataclasses import dataclass, field
@@ -65,7 +66,8 @@ class AcquisitionData:
                     "duration": self.sequence.duration()[0],
                     "definitions": {
                         # Write all sequence definitions, turn numpy arrays into lists
-                        k: v.tolist() if isinstance(v, np.ndarray) else v for k, v in self.sequence.definitions.items()
+                        k: v.tolist() if isinstance(v, np.ndarray) else v
+                        for k, v in self.sequence.definitions.items()
                     },
                 },
                 "info": {},
@@ -247,3 +249,6 @@ class AcquisitionData:
                     rx_group.create_dataset("processed_data", data=rx_data.processed_data)
                 if rx_data.raw_data is not None:
                     rx_group.create_dataset("raw_data", data=rx_data.raw_data)
+
+
+AcquisitionResult = AcquisitionData

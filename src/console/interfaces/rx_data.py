@@ -1,7 +1,9 @@
-""""Define the dataclass and processing of receiver data."""
+""" "Define the dataclass and processing of receiver data."""
+
 from dataclasses import asdict, dataclass, field
 
 import numpy as np
+from multiprocessing import shared_memory
 from scipy import signal
 
 from console.interfaces.acquisition_parameter import DDCMethod
@@ -12,13 +14,16 @@ from console.utilities import ddc
 class RxData:
     """Receive data object containing both the data and metadata of each receive event."""
 
-    # Rx data event number
     index: int
+    """Index of the receive event within an average."""
+
+    average_index: int = 0
+    """Index of the average this receive event belongs to."""
 
     # Data characteristics, defined by the ADC event in sequence definition
     num_samples: int
     num_samples_raw: int
-    num_samples_discard: int    # Number of samples to be discarded before and after ADC, defined by dead time
+    num_samples_discard: int  # Number of samples to be discarded before and after ADC, defined by dead time
     dwell_time: float
     dwell_time_raw: float
 
@@ -48,15 +53,81 @@ class RxData:
     # Scaling factor for each receive channel
     scaling_factor: None | np.ndarray | list[float] = None
 
+    # Shared memory metadata
+    shm_name: str | None = None
+    raw_offset: int | None = None
+    raw_shape: tuple[int, int] | None = None
+    proc_offset: int | None = None
+    proc_shape: tuple[int, int] | None = None
+
+    # Internal buffers for when not using SHM
+    _raw_data: None | np.ndarray = field(default=None, repr=False)
+    _processed_data: None | np.ndarray = field(default=None, repr=False)
+    _shm_raw: None | shared_memory.SharedMemory = field(default=None, repr=False, init=False)
+    _shm_proc: None | shared_memory.SharedMemory = field(default=None, repr=False, init=False)
+
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     # Shape of Raw data is (num_channels_enabled, raw number of samples)
-    raw_data: None | np.ndarray = None
+    @property
+    def raw_data(self) -> np.ndarray | None:
+        if self._raw_data is not None:
+            return self._raw_data
+        if self.shm_name and self.raw_offset is not None and self.raw_shape:
+            if self._shm_raw is None:
+                self._shm_raw = shared_memory.SharedMemory(name=self.shm_name)
+            return np.ndarray(self.raw_shape, dtype=np.int16, buffer=self._shm_raw.buf, offset=self.raw_offset)
+        return None
+
+    @raw_data.setter
+    def raw_data(self, value: np.ndarray | None):
+        if self.shm_name and self.raw_offset is not None:
+            target = self.raw_data
+            if target is not None and value is not None:
+                target[:] = value
+        else:
+            self._raw_data = value
 
     # Timestamp of start of data acquisition
     time_stamp: None | float = None
 
     # Proc data is the demodulated, phased and decimated data
-    processed_data: None | np.ndarray = None
+    @property
+    def processed_data(self) -> np.ndarray | None:
+        if self._processed_data is not None:
+            return self._processed_data
+        if self.shm_name and self.proc_offset is not None and self.proc_shape:
+            if self._shm_proc is None:
+                self._shm_proc = shared_memory.SharedMemory(name=self.shm_name)
+            return np.ndarray(self.proc_shape, dtype=complex, buffer=self._shm_proc.buf, offset=self.proc_offset)
+        return None
+
+    @processed_data.setter
+    def processed_data(self, value: np.ndarray | None):
+        if self.shm_name and self.proc_offset is not None:
+            target = self.processed_data
+            if target is not None and value is not None:
+                target[:] = value
+        else:
+            self._processed_data = value
+
+    @property
+    def raw_size(self) -> int:
+        """Return the required heap size (in bytes) for the raw data."""
+        if self.raw_shape is None:
+            return 0
+        return int(np.prod(self.raw_shape) * 2)  # int16 (2 bytes)
+
+    @property
+    def proc_size(self) -> int:
+        """Return the required heap size (in bytes) for the processed data."""
+        if self.proc_shape is None:
+            return 0
+        return int(np.prod(self.proc_shape) * 16)  # complex128 (16 bytes)
+
+    @property
+    def heap_size(self) -> int:
+        """Return the total required heap size (in bytes) for this RxData object."""
+        return self.raw_size + self.proc_size
 
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
@@ -127,8 +198,10 @@ class RxData:
             raise RuntimeError("Can't process data; No raw data present in RxData object")
 
         if np.size(self.raw_data, axis=-1) != self.num_samples_raw:
-            raise ValueError(f"Number of collected samples is different from expected: "
-                             f"{np.size(self.raw_data, axis = -1)} collected vs {self.num_samples_raw} expected")
+            raise ValueError(
+                f"Number of collected samples is different from expected: "
+                f"{np.size(self.raw_data, axis=-1)} collected vs {self.num_samples_raw} expected"
+            )
 
         self.demod_frequency = self.larmor_frequency + self.freq_offset
 
@@ -139,7 +212,7 @@ class RxData:
         # Creating the processed data output array first and copying the values of the output of the decimation
         # avoids an apparent memory leak when using the scipy.decimate with the 'iir' ftype
         # Note that the processed data may contain samples from pre and post sampling
-        output_shape = (*np.shape(demod_data)[:-1], self.num_samples + int(2*self.num_samples_discard))
+        output_shape = (*np.shape(demod_data)[:-1], self.num_samples + int(2 * self.num_samples_discard))
         self.processed_data = np.zeros(output_shape, dtype=complex)
         self.processed_data[:] = self.decimate_data(demod_data)
 
