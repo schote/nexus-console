@@ -21,7 +21,7 @@ class RxData:
     num_samples_raw: int
     # Number of samples to be discarded before and after ADC, defined by dead time
     num_samples_discard: int
-    # Dwell time of decimated data in s 
+    # Dwell time of decimated data in s
     dwell_time: float
     # Dwell time of undecimated data in s
     dwell_time_raw: float
@@ -111,11 +111,11 @@ class RxData:
 
     def demod_and_phase_data(self, data) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data.
-        
+
         This step first demodulates the acquired data using the demodulation frequency,
         which is usually the Larmor frequency. If a phase reference has been acquired,
         the phase reference signal is demodulated at the phase reference frequency.
-        The phase correction term calculated from the phase reference is used to correct the 
+        The phase correction term calculated from the phase reference is used to correct the
         acquired MR data. In a last step the phase offset defined by the sequence is applied.
         """
         if self.demod_frequency is None:
