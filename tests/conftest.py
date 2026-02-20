@@ -29,7 +29,7 @@ def seq_provider() -> SequenceProvider:
         rf_50ohms=True,
         rf_to_mvolt=5e-3,
         spcm_dwell_time=5e-8,
-        system_limits=system_limits,
+        system=system_limits.get_opts(),
     )
 
 
@@ -110,7 +110,8 @@ def test_spectrum() -> Callable:
 @pytest.fixture()
 def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
-    seq = pp.Sequence(system=system)
+    system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
+    seq = pp.Sequence(system=system_limits.get_opts())
     seq.set_definition("Name", "test_sequence")
     seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2, system=system, delay=system.rf_dead_time))
     seq.add_block(pp.make_delay(10e-6))
