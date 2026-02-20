@@ -13,7 +13,6 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
-from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
@@ -67,7 +66,7 @@ class SequenceProvider(Sequence):
         rf_50ohms: bool,
         rf_to_mvolt: float,
         spcm_dwell_time: float,
-        system_limits: SystemLimits,
+        system: Opts,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -95,21 +94,13 @@ class SequenceProvider(Sequence):
             Absolute maximum system limits defined in the device configuration.
             Used to instantiate the pypulseq `Opts()` class.
         """
-        super().__init__(
-            system=Opts(
-                **system_limits.model_dump(),
-                B0=50e-3,
-                grad_unit="Hz/m",   # system limit is defined in this units
-                slew_unit="Hz/m/s",  # system limit is defined in this units
-            ),
-        )
+        super().__init__(system=system)
         self.log = logging.getLogger("SeqProv")
 
         # Set class instance attributes
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_dwell_time = spcm_dwell_time
         self.spcm_freq = 1 / spcm_dwell_time
-        self.system_limits = system_limits
         self.gpa_gain = gpa_gain
         self.grad_eff = gradient_efficiency
 
@@ -127,10 +118,7 @@ class SequenceProvider(Sequence):
     # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
-        """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
-
-        If argument is a valid ``Sequence`` instance, all the attributes of
-        ``Sequence`` are set in this ``SequenceProvider`` (inherits from ``Sequence``).
+        """Read a pypulseq sequence to sequence provider.
 
         Parameters
         ----------
@@ -139,57 +127,24 @@ class SequenceProvider(Sequence):
 
         Raises
         ------
-        ValueError
-            seq is not a valid pypulseq ``Sequence`` instance
         AttributeError
-            Key of Sequence instance not
+            seq is not a valid pypulseq ``Sequence`` instance
         """
-        try:
-            # List of (attribute, comparison function, message operator symbol) to check system limits
-            limits = [
-                ("max_grad", operator.gt, "<="),
-                ("max_slew", operator.gt, "<="),
-                ("grad_raster_time", operator.lt, ">="),
-                ("adc_raster_time", operator.lt, ">="),
-                ("rf_raster_time", operator.lt, ">="),
-                ("block_duration_raster", operator.lt, ">="),
-                ("adc_dead_time", operator.lt, ">="),
-                ("rf_dead_time", operator.lt, ">="),
-                ("rf_ringdown_time", operator.lt, ">="),
-            ]
-            errors = []
-            for attr, compare, symbol in limits:
-                limit_val = getattr(self.system_limits, attr)
-                # Compare can be done without converting gradient/slew-rate values
-                # -> internally stored in Hz/m and Hz/m/s
-                if compare(system_value := getattr(seq.system, attr), limit_val):
-                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val}) (system value: {system_value})")
-            if errors:
-                raise ValueError("; ".join(errors))
-
-            if not isinstance(seq, Sequence):
-                raise ValueError("Provided object is not an instance of pypulseq Sequence")
-            for key, value in seq.__dict__.items():
-                # Check if attribute exists
-                if not hasattr(self, key):   # dont't overwrite system
-                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
-                    continue
-                # Set attribute
-                setattr(self, key, value)
-        except (ValueError, AttributeError) as exc:
-            self.log.exception("Could not set sequence: %s" % exc, exc_info=True)
-            raise exc
+        if not isinstance(seq, Sequence):
+            raise AttributeError("Invalid sequence.")
+        for block_index, _ in seq.block_events.items():
+            block = seq.get_block(block_index)
+            self.add_block(block)
+        # Set definitions
+        self.definitions = seq.definitions
 
     def to_pypulseq(self) -> Sequence | None:
-        """Slice sequence provider to return pypulseq sequence."""
-        seq = Sequence()
-        try:
-            for key, value in vars(self).items():
-                if hasattr(seq, key):
-                    setattr(seq, key, value)
-        except Exception as exc:
-            self.log.error("Could not slice pypulseq sequence from sequence provider.", exc_info=exc)
-            return None
+        """Create a pypulseq sequence from sequence provider."""
+        seq = Sequence(system=self.system)
+        for block_index, _ in self.block_events.items():
+            block = self.get_block(block_index)
+            seq.add_block(block)
+        seq.definitions = self.definitions
         return seq
 
     # -------- Public interface -------- #
