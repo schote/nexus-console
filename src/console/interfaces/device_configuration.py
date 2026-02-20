@@ -1,6 +1,7 @@
 """Implementation of the device configuration models."""
 from typing import Annotated
 
+from pypulseq import Opts
 from pydantic import BaseModel, Field, model_validator
 
 # Ensure that max. amplitude is within 1 and 6000 mV.
@@ -80,6 +81,21 @@ class SystemLimits(BaseModel):
     rf_raster_time: float = Field(..., strict=True)
     grad_raster_time: float = Field(..., strict=True)
     adc_raster_time: float = Field(..., strict=True)
+    
+    def get_opts(self) -> Opts:
+        return Opts(
+            max_grad=self.max_grad,
+            max_slew=self.max_slew,
+            grad_unit="Hz/m",
+            slew_unit="Hz/m/s",
+            rf_dead_time=self.rf_dead_time,
+            rf_ringdown_time=self.rf_ringdown_time,
+            adc_dead_time=self.adc_dead_time,
+            block_duration_raster=self.block_duration_raster,
+            rf_raster_time=self.rf_raster_time,
+            grad_raster_time=self.grad_raster_time,
+            adc_raster_time=self.adc_raster_time
+        )
 
 
 class NexusConfiguration(BaseModel):
