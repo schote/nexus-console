@@ -42,6 +42,9 @@ class RxData:
     # Frequency with which the data are demodulated
     demod_frequency: None | float = None
 
+    # Frequency with which the reference signal is demodulated
+    phase_ref_frequency: float | None = None
+
     # Set the default demod method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
 
@@ -51,7 +54,7 @@ class RxData:
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     # Shape of Raw data is (num_channels_enabled, raw number of samples)
     raw_data: None | np.ndarray = None
-    
+
     # Phase reference signal
     phase_reference: None | np.ndarray = None
 
@@ -107,10 +110,17 @@ class RxData:
         if self.demod_frequency is None:
             raise RuntimeError("Demodulation frequency not set")
         # Demodulate the data
-        time_axis = np.arange(np.size(data, -1)) * self.dwell_time_raw
-        data_demod = data * np.exp(-2j * np.pi * time_axis * self.demod_frequency)
+        time = np.arange(np.size(data, -1)) * self.dwell_time_raw
+        data_demod = data * np.exp(-2j * np.pi * time * self.demod_frequency)
 
-        # Apply receive phase correction to data and return data
+        # Demodulate the reference signal if available and correct acquired data
+        if self.phase_reference is not None and self.phase_ref_frequency is not None:
+            time_reference = np.arange(self.phase_reference) * self.dwell_time_raw
+            ref_demod = self.phase_reference * np.exp(-2j * np.pi * self.phase_ref_frequency * time_reference)
+            phase_correction = np.sum(ref_demod) * (self.demod_frequency / self.phase_ref_frequency)
+            data_demod *= np.exp(-1j * phase_correction[None, ...])
+
+        # Apply receive phase offset to data and return data
         return data_demod * np.exp(1j * self.phase_offset)
 
     def scale_data(self, data) -> np.ndarray:
@@ -134,9 +144,7 @@ class RxData:
                              f"{np.size(self.raw_data, axis = -1)} collected vs {self.num_samples_raw} expected")
 
         self.demod_frequency = self.larmor_frequency + self.freq_offset
-
         scaled_data = self.scale_data(self.raw_data)
-
         demod_data = self.demod_and_phase_data(scaled_data)
 
         # Creating the processed data output array first and copying the values of the output of the decimation

@@ -29,6 +29,9 @@ except ImportError:
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
 
+NUM_REFERENCE_SAMPLES = 1000
+REFERENCE_FREQUENCY = 1.095e6
+
 
 @dataclass
 class ADCGate:
@@ -123,16 +126,12 @@ class SequenceProvider(Sequence):
             gradient_output_limits[1] if gradients_50ohms else int(2 * gradient_output_limits[1]),
             gradient_output_limits[2] if gradients_50ohms else int(2 * gradient_output_limits[2]),
         )
-        
+
         # Setup phase reference signal
-        # TODO: Configure values in device configuration
-        _phase_reference_frequency = 1.2e6
-        _phase_reference_num_samples = 1000
-        _reference_signal = np.exp(2j*np.pi*(
-            _phase_reference_frequency*np.arange(_phase_reference_num_samples)*self.spcm_dwell_time
-        ))
-        self.phase_reference = np.zeros(_reference_signal.size, dtype=np.uint16)
-        self.phase_reference[_reference_signal > 0] = np.uint16(2**15)
+        time = np.arange(NUM_REFERENCE_SAMPLES) * self.spcm_dwell_time
+        signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
+        self.phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
+        self.phase_reference[signal > 0] = np.uint16(2**15)
 
     # -------- PyPulseq interface -------- #
 
@@ -428,13 +427,11 @@ class SequenceProvider(Sequence):
 
                 # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
                 _seq[adc_start + 1:adc_end + 1:4] |= np.uint16(2**15)
-                
-                
+
                 # Add phase reference signal
                 num_samples_reference = min(num_samples_raw, self.phase_reference.size)
                 phase_ref_end = adc_start + num_samples_reference * 4
                 _seq[adc_start + 2:phase_ref_end + 2:4] |= self.phase_reference[:num_samples_reference]
-                
 
                 _rx_data.append(
                     RxData(
@@ -448,6 +445,7 @@ class SequenceProvider(Sequence):
                         freq_offset=block.adc.freq_offset,
                         total_averages=parameter.num_averages,
                         ddc_method=parameter.ddc_method,
+                        phase_ref_frequency=REFERENCE_FREQUENCY,
                         labels=labels,
                     )
                 )
