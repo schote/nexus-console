@@ -113,15 +113,33 @@ def test_sequence() -> pp.Sequence:
     system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     seq = pp.Sequence(system=system_limits.get_opts())
     seq.set_definition("Name", "test_sequence")
-    seq.add_block(pp.make_sinc_pulse(flip_angle=np.pi / 2, system=system, delay=system.rf_dead_time))
+    seq.set_definition("label_float", 123.123)
+    seq.set_definition("label_int", 123)
+    seq.set_definition("label_str", "string")
+    rng = np.random.default_rng(seed=0)
+    rf_sinc = pp.make_sinc_pulse(flip_angle=np.pi / 2, delay=system.rf_dead_time, use="excitation", system=system)
+    rf_rect = pp.make_block_pulse(flip_angle=np.pi, duration=200e-6, delay=system.rf_dead_time, system=system)
+    rf_arbi = pp.make_arbitrary_rf(
+        signal=rng.random(size=100), flip_angle=np.pi / 3, dwell=1e-6, delay=system.rf_dead_time, system=system
+    )
+    grad_trap = pp.make_trapezoid(channel="x", area=rng.random(), system=system)
+    grad_arbi = pp.make_arbitrary_grad(channel="y", waveform=rng.random(50), system=system)
+    label1 = pp.make_label(type="SET", label="LIN", value=1)
+    label2 = pp.make_label(type="SET", label="PAR", value=2)
+    label3 = pp.make_label(type="SET", label="ECO", value=3)
+    label4 = pp.make_label(type="SET", label="REP", value=4)
+    label5 = pp.make_label(type="SET", label="IMA", value=True)
+    adc1 = pp.make_adc(num_samples=200, dwell=1e-5, system=system)
+    adc2 = pp.make_adc(num_samples=500, dwell=1e-5, system=system)
+    seq.add_block(rf_sinc)
     seq.add_block(pp.make_delay(10e-6))
-    seq.add_block(pp.make_trapezoid(channel="x", area=5e-3, system=system))
-    seq.add_block(pp.make_arbitrary_grad(
-        channel="y",
-        waveform=np.array([0, 200, 400, 400, 400, 600, 600, 400, 200, 0]),
-        system=system,
-    ))
-    seq.add_block(pp.make_adc(num_samples=200, dwell=1e-5))
+    seq.add_block(grad_arbi, adc1)
+    seq.add_block(rf_rect)
+    seq.add_block(grad_trap, label1, label2)
+    seq.add_block(pp.make_delay(4e-6))
+    seq.add_block(rf_arbi, label3)
+    seq.add_block(pp.make_delay(1e-6), label4)
+    seq.add_block(adc2, label5)
     return seq
 
 
