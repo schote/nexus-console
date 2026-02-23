@@ -1,6 +1,5 @@
 """Sequence provider class."""
 import logging
-import operator
 from collections.abc import Callable
 from dataclasses import dataclass
 from math import floor

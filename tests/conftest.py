@@ -9,17 +9,16 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter, Dimensions
-from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.rx_data import RxData
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.load_configuration import load_system_limits
-from console.utilities.sequences.system_settings import system
+
+system = load_system_limits(Path("examples/example_device_config.yaml")).get_opts()
 
 
 @pytest.fixture()
 def seq_provider() -> SequenceProvider:
     """Construct default sequence provider as fixture for testing."""
-    system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
     return SequenceProvider(
         gradient_efficiency=(0.4, 0.4, 0.4),
         gpa_gain=(1.0, 1.0, 1.0),
@@ -29,7 +28,7 @@ def seq_provider() -> SequenceProvider:
         rf_50ohms=True,
         rf_to_mvolt=5e-3,
         spcm_dwell_time=5e-8,
-        system=system_limits.get_opts(),
+        system=system,
     )
 
 
@@ -110,20 +109,29 @@ def test_spectrum() -> Callable:
 @pytest.fixture()
 def test_sequence() -> pp.Sequence:
     """Construct a test sequence."""
-    system_limits: SystemLimits = load_system_limits(Path("examples/example_device_config.yaml"))
-    seq = pp.Sequence(system=system_limits.get_opts())
+    seq = pp.Sequence(system=system)
     seq.set_definition("Name", "test_sequence")
     seq.set_definition("label_float", 123.123)
     seq.set_definition("label_int", 123)
     seq.set_definition("label_str", "string")
-    rng = np.random.default_rng(seed=0)
+
     rf_sinc = pp.make_sinc_pulse(flip_angle=np.pi / 2, delay=system.rf_dead_time, use="excitation", system=system)
     rf_rect = pp.make_block_pulse(flip_angle=np.pi, duration=200e-6, delay=system.rf_dead_time, system=system)
-    rf_arbi = pp.make_arbitrary_rf(
-        signal=rng.random(size=100), flip_angle=np.pi / 3, dwell=1e-6, delay=system.rf_dead_time, system=system
+    # rf_arbi = pp.make_arbitrary_rf(
+    #     signal=np.linspace(0, 0.0001, 100),
+    #     flip_angle=np.pi / 3,
+    #     dwell=system.rf_raster_time,
+    #     delay=system.rf_dead_time,
+    #     system=system,
+    # )
+    grad_trap = pp.make_trapezoid(channel="x", area=system.max_grad*5e-3, system=system)
+    grad_arbi = pp.make_arbitrary_grad(
+        channel="y",
+        first=0.,
+        last=0.,
+        waveform=np.sin(np.linspace(0, 2*np.pi, 120))*25, # 50 mT max
+        system=system,
     )
-    grad_trap = pp.make_trapezoid(channel="x", area=rng.random(), system=system)
-    grad_arbi = pp.make_arbitrary_grad(channel="y", waveform=rng.random(50), system=system)
     label1 = pp.make_label(type="SET", label="LIN", value=1)
     label2 = pp.make_label(type="SET", label="PAR", value=2)
     label3 = pp.make_label(type="SET", label="ECO", value=3)
@@ -131,14 +139,12 @@ def test_sequence() -> pp.Sequence:
     label5 = pp.make_label(type="SET", label="IMA", value=True)
     adc1 = pp.make_adc(num_samples=200, dwell=1e-5, system=system)
     adc2 = pp.make_adc(num_samples=500, dwell=1e-5, system=system)
+
     seq.add_block(rf_sinc)
-    seq.add_block(pp.make_delay(10e-6))
     seq.add_block(grad_arbi, adc1)
     seq.add_block(rf_rect)
     seq.add_block(grad_trap, label1, label2)
-    seq.add_block(pp.make_delay(4e-6))
-    seq.add_block(rf_arbi, label3)
-    seq.add_block(pp.make_delay(1e-6), label4)
+    seq.add_block(pp.make_delay(4e-6), label3, label4)
     seq.add_block(adc2, label5)
     return seq
 

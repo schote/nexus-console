@@ -1,8 +1,8 @@
 """Implementation of the device configuration models."""
 from typing import Annotated
 
-from pypulseq import Opts
 from pydantic import BaseModel, Field, model_validator
+from pypulseq import Opts
 
 # Ensure that max. amplitude is within 1 and 6000 mV.
 # Limits may depend on specific configuration of spectrum cards.
@@ -81,8 +81,9 @@ class SystemLimits(BaseModel):
     rf_raster_time: float = Field(..., strict=True)
     grad_raster_time: float = Field(..., strict=True)
     adc_raster_time: float = Field(..., strict=True)
-    
+
     def get_opts(self) -> Opts:
+        """Return system limits of the MR scanner as PyPulseq `Opts` object."""
         return Opts(
             max_grad=self.max_grad,
             max_slew=self.max_slew,
@@ -94,7 +95,7 @@ class SystemLimits(BaseModel):
             block_duration_raster=self.block_duration_raster,
             rf_raster_time=self.rf_raster_time,
             grad_raster_time=self.grad_raster_time,
-            adc_raster_time=self.adc_raster_time
+            adc_raster_time=self.adc_raster_time,
         )
 
 
