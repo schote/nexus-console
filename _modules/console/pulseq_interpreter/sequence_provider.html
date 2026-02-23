@@ -444,6 +444,9 @@
 <span class="n">INT16_MAX</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
 <span class="n">INT16_MIN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">min</span>
 
+<span class="n">NUM_REFERENCE_SAMPLES</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">REFERENCE_FREQUENCY</span> <span class="o">=</span> <span class="mf">1.095e6</span>
+
 
 <div class="viewcode-block" id="ADCGate">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.ADCGate">[docs]</a>
@@ -543,6 +546,12 @@
             <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">gradients_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
             <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">if</span> <span class="n">gradients_50ohms</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">gradient_output_limits</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span>
         <span class="p">)</span>
+
+        <span class="c1"># Setup phase reference signal</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NUM_REFERENCE_SAMPLES</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span>
+        <span class="n">signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">2</span><span class="n">j</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">REFERENCE_FREQUENCY</span> <span class="o">*</span> <span class="n">time</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_reference</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">NUM_REFERENCE_SAMPLES</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_reference</span><span class="p">[</span><span class="n">signal</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
 
     <span class="c1"># -------- PyPulseq interface -------- #</span>
 
@@ -845,10 +854,15 @@
                 <span class="n">num_delay_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">remaining_delay</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
 
                 <span class="n">adc_start</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">num_delay_samples</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
-                <span class="n">adc_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">num_delay_samples</span> <span class="o">+</span> <span class="n">num_samples_raw</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="n">adc_end</span> <span class="o">=</span> <span class="n">adc_start</span> <span class="o">+</span> <span class="n">num_samples_raw</span> <span class="o">*</span> <span class="mi">4</span>
 
                 <span class="c1"># Add ADC gate to 16th bit of output channel 1 (first gradient channel)</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">)]</span> <span class="o">|=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="n">adc_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">15</span><span class="p">)</span>
+
+                <span class="c1"># Add phase reference signal</span>
+                <span class="n">num_samples_reference</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">num_samples_raw</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase_reference</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+                <span class="n">phase_ref_end</span> <span class="o">=</span> <span class="n">adc_start</span> <span class="o">+</span> <span class="n">num_samples_reference</span> <span class="o">*</span> <span class="mi">4</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">adc_start</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="n">phase_ref_end</span> <span class="o">+</span> <span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">phase_reference</span><span class="p">[:</span><span class="n">num_samples_reference</span><span class="p">]</span>
 
                 <span class="n">_rx_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                     <span class="n">RxData</span><span class="p">(</span>
@@ -862,6 +876,7 @@
                         <span class="n">freq_offset</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">freq_offset</span><span class="p">,</span>
                         <span class="n">total_averages</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">num_averages</span><span class="p">,</span>
                         <span class="n">ddc_method</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">ddc_method</span><span class="p">,</span>
+                        <span class="n">phase_ref_frequency</span><span class="o">=</span><span class="n">REFERENCE_FREQUENCY</span><span class="p">,</span>
                         <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
