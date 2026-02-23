@@ -369,7 +369,7 @@ class RxCard(SpectrumDevice):
                 total_bytes_gate = (num_gate_samples + self.pre_trigger) * 2 * self.num_channels.value
                 # Get the total data duration, including post trigger, to accurately track buffer position
                 samples_sequence = (num_gate_samples + self.pre_trigger + self.post_trigger)
-                # Ensure data aligmment
+                # Ensure data alignment
                 alignment_samples = samples_sequence % self.gate_alignment
                 samples_sequence += alignment_samples
                 bytes_sequence = samples_sequence * 2 * self.num_channels.value
