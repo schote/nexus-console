@@ -10,6 +10,7 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.interfaces.rx_data import RxData
+from console.pulseq_interpreter.sequence_provider import NUM_REFERENCE_SAMPLES
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 
@@ -459,10 +460,10 @@ class RxCard(SpectrumDevice):
                         (self.num_channels.value, num_gate_samples),
                         order="F",
                     )
-                    # Store raw data in RxData object
+                    # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
                     self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
                     self.rx_data[self._total_gates].phase_reference = (
-                        gate_data[0, 0:min(num_gate_samples, 1000)].astype(np.uint16) >> 15
+                        gate_data[0, 0:min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
                     ).copy()
                     self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
                     self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
