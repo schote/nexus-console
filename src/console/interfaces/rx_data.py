@@ -49,7 +49,7 @@ class RxData:
     # Frequency in Hz with which the reference signal is demodulated
     phase_ref_frequency: float | None = None
 
-    # Set the default demod method to FIR
+    # Set the default demodulation method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
 
     # Scaling factor for each receive channel
@@ -65,7 +65,7 @@ class RxData:
     # Timestamp in s of start of data acquisition relative to sequence execution start
     time_stamp: None | float = None
 
-    # Proc data is the demodulated, phased and decimated data
+    # Processed data is the demodulated, phased and decimated data
     processed_data: None | np.ndarray = None
 
     def __post_init__(self) -> None:
@@ -146,7 +146,7 @@ class RxData:
             return data.astype(float)
 
     def process_data(self, store_unprocessed: bool = True) -> None:
-        """Proces (demodulate, phase and downsample) the raw data contained in the rx object."""
+        """Process (demodulate, phase and downsample) the raw data contained in the rx object."""
         if self.larmor_frequency is None:
             raise RuntimeError("Larmor frequency not set, please set prior to processing data")
 
