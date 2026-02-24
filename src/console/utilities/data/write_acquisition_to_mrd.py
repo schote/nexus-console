@@ -74,7 +74,7 @@ def write_acquisition_to_mrd(
             # If trajectory is available
             if traj_dims.sum() > 0:
                 traj = trajectory[traj_dims, trajectory_position:trajectory_position + rx_data.num_samples].T
-                acq.traj[:] = np.pad(traj, ((acq.discard_pre, acq.discard_post), (0, 0)), mode='constant')
+                acq.traj[:] = np.pad(traj, ((acq.discard_pre, acq.discard_post), (0,0)), mode='edge')
                 trajectory_position += rx_data.num_samples
 
             # Set the data and append
