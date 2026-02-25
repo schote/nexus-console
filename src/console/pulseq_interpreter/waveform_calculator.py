@@ -18,9 +18,9 @@ class WaveformConfig:
 
     spcm_dwell_time: float
     rf_to_mvolt: float
-    gpa_gain: tuple(float, float, float)
-    grad_eff: tuple(float, float, float)
-    gradient_out_limits: tuple(int, int, int)
+    gpa_gain: tuple[float, float, float]
+    grad_eff: tuple[float, float, float]
+    gradient_out_limits: tuple[int, int, int]
     rf_out_limit: int
     gamma: float
 
@@ -201,7 +201,6 @@ def calculate_block(
         # Open memmap
         seq = np.memmap(memmap_path, dtype=memmap_dtype, mode="r+", shape=memmap_shape)
         waveform_start = block_pos * 4
-        spcm_freq = 1 / config.spcm_dwell_time
 
         # RF Calculation
         if hasattr(block, 'rf') and getattr(block, 'rf') is not None:
@@ -231,11 +230,11 @@ def calculate_block(
         }
 
         # Iterate over axes
-        for axis, phys_channel in channel_map.items():
+        for axis, physical_channel in channel_map.items():
             # Check if block has this gradient (gx, gy, gz)
             gradient_axis = f"g{axis}"
             if hasattr(block, gradient_axis) and getattr(block, gradient_axis) is not None:
-                grad_data = getattr(block, gradient_axis)
+                gradient = getattr(block, gradient_axis)
 
                 # Get scaling and offset
                 fov_scaling = getattr(parameter.fov_scaling, axis)
@@ -243,23 +242,21 @@ def calculate_block(
                 # Gradient offset is bound to the physical output channel.
                 # Channel 1 -> x, Channel 2 -> y, Channel 3 -> z
                 # This must not be affected by the channel assignment.
-                offset_val = parameter.gradient_offset.to_list()[phys_channel-1]
+                offset_val = parameter.gradient_offset.to_list()[physical_channel-1]
 
                 waveform = calculate_gradient(
-                    block=grad_data,
+                    block=gradient,
                     fov_scaling=fov_scaling,
                     offset=offset_val,
-                    output_channel=phys_channel,
+                    output_channel=physical_channel,
                     config=config,
                 )
 
-                delay = grad_data.delay
-                delay_samples = round(delay * spcm_freq)
+                delay_samples = round(gradient.delay / config.spcm_dwell_time)
                 waveform_start_grad = waveform_start + 4 * delay_samples
-
                 grad_slice = slice(
-                    waveform_start_grad + phys_channel,
-                    waveform_start_grad + 4 * np.size(waveform) + phys_channel,
+                    waveform_start_grad + physical_channel,
+                    waveform_start_grad + 4 * np.size(waveform) + physical_channel,
                     4,
                 )
 
