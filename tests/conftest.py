@@ -117,13 +117,6 @@ def test_sequence() -> pp.Sequence:
 
     rf_sinc = pp.make_sinc_pulse(flip_angle=np.pi / 2, delay=system.rf_dead_time, use="excitation", system=system)
     rf_rect = pp.make_block_pulse(flip_angle=np.pi, duration=200e-6, delay=system.rf_dead_time, system=system)
-    # rf_arbi = pp.make_arbitrary_rf(
-    #     signal=np.linspace(0, 0.0001, 100),
-    #     flip_angle=np.pi / 3,
-    #     dwell=system.rf_raster_time,
-    #     delay=system.rf_dead_time,
-    #     system=system,
-    # )
     grad_trap = pp.make_trapezoid(channel="x", area=system.max_grad*5e-3, system=system)
     grad_arbi = pp.make_arbitrary_grad(
         channel="y",
@@ -137,8 +130,8 @@ def test_sequence() -> pp.Sequence:
     label3 = pp.make_label(type="SET", label="ECO", value=3)
     label4 = pp.make_label(type="SET", label="REP", value=4)
     label5 = pp.make_label(type="SET", label="IMA", value=True)
-    adc1 = pp.make_adc(num_samples=200, dwell=1e-5, system=system)
-    adc2 = pp.make_adc(num_samples=500, dwell=1e-5, system=system)
+    adc1 = pp.make_adc(num_samples=200, dwell=1e-5, delay=system.adc_dead_time, system=system)
+    adc2 = pp.make_adc(num_samples=500, dwell=1e-5, delay=system.adc_dead_time, system=system)
 
     seq.add_block(rf_sinc)
     seq.add_block(grad_arbi, adc1)
