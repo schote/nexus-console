@@ -131,6 +131,8 @@ class SequenceProvider(Sequence):
         """
         if not isinstance(seq, Sequence):
             raise AttributeError("Invalid sequence.")
+        # Re-initialize the parent to start from a clean pypulseq sequence
+        super().__init__(system=self.system)
         for block_index, _ in seq.block_events.items():
             block = seq.get_block(block_index)
             self.add_block(block)
