@@ -69,6 +69,7 @@ class SequenceProvider(Sequence):
         rf_to_mvolt: float,
         spcm_dwell_time: float,
         system: Opts,
+        system: Opts,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -129,6 +130,7 @@ class SequenceProvider(Sequence):
 
     def from_pypulseq(self, seq: Sequence) -> None:
         """Read a pypulseq sequence to sequence provider.
+        """Read a pypulseq sequence to sequence provider.
 
         Parameters
         ----------
@@ -137,6 +139,7 @@ class SequenceProvider(Sequence):
 
         Raises
         ------
+        AttributeError
         AttributeError
             seq is not a valid pypulseq ``Sequence`` instance
         """
@@ -149,8 +152,24 @@ class SequenceProvider(Sequence):
             self.add_block(block)
         # Set definitions
         self.definitions = seq.definitions
+        """
+        if not isinstance(seq, Sequence):
+            raise AttributeError("Invalid sequence.")
+        # Re-initialize the parent to start from a clean pypulseq sequence
+        super().__init__(system=self.system)
+        for block_index, _ in seq.block_events.items():
+            block = seq.get_block(block_index)
+            self.add_block(block)
+        # Set definitions
+        self.definitions = seq.definitions
 
     def to_pypulseq(self) -> Sequence | None:
+        """Create a pypulseq sequence from sequence provider."""
+        seq = Sequence(system=self.system)
+        for block_index, _ in self.block_events.items():
+            block = self.get_block(block_index)
+            seq.add_block(block)
+        seq.definitions = self.definitions
         """Create a pypulseq sequence from sequence provider."""
         seq = Sequence(system=self.system)
         for block_index, _ in self.block_events.items():

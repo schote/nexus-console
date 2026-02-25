@@ -101,6 +101,22 @@ class SystemLimits(BaseModel):
             B0=self.B0
         )
 
+    def get_opts(self) -> Opts:
+        """Return system limits of the MR scanner as PyPulseq `Opts` object."""
+        return Opts(
+            max_grad=self.max_grad,
+            max_slew=self.max_slew,
+            grad_unit="Hz/m",
+            slew_unit="Hz/m/s",
+            rf_dead_time=self.rf_dead_time,
+            rf_ringdown_time=self.rf_ringdown_time,
+            adc_dead_time=self.adc_dead_time,
+            block_duration_raster=self.block_duration_raster,
+            rf_raster_time=self.rf_raster_time,
+            grad_raster_time=self.grad_raster_time,
+            adc_raster_time=self.adc_raster_time,
+        )
+
 
 class NexusConfiguration(BaseModel):
     """Nexus console configuration."""
