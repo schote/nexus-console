@@ -4,6 +4,7 @@ from math import pi
 import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system as default_system
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -38,26 +39,26 @@ def constructor(
     -------
         Pypulseq ``Sequence`` instance
     """
-    seq = pp.Sequence(system=system)
+    seq = pp.Sequence(system=system) if system is not None else pp.Sequence(system=default_system)
     seq.set_definition("Name", "fid")
 
     # Define RF pulse for excitation
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
-            system=system,
+            system=seq.system,
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
             time_bw_product=time_bw_product,
-            delay=system.rf_dead_time,
+            delay=seq.system.rf_dead_time,
         )
     else:
         rf_90 = pp.make_block_pulse(
-            system=system,
+            system=seq.system,
             flip_angle=flip_angle,
             duration=rf_duration,
             phase_offset=0,
-            delay=system.rf_dead_time,
+            delay=seq.system.rf_dead_time,
         )
 
     # Define ADC event
@@ -65,7 +66,7 @@ def constructor(
         num_samples=num_samples,
         dwell=1 / acq_bandwidth,
         phase_offset=0,
-        system=system,
+        system=seq.system,
     )
 
     seq.add_block(rf_90)
