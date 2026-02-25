@@ -1,5 +1,6 @@
 """Testing of sequence unrolling function."""
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
 
 import numpy as np
@@ -13,7 +14,6 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.pulseq_interpreter.waveform_calculator import calculate_gradient, calculate_rf
 from console.utilities.sequences import tse_3d
-from dataclasses import asdict
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
