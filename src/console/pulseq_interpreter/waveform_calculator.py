@@ -58,11 +58,6 @@ def calculate_rf(
     if not larmor_frequency > 0.0:
         raise ValueError(f"Invalid Larmor frequency: {larmor_frequency}")
 
-    # Calculate the number of delay samples before an RF event (and unblanking)
-    # Note that the RF ring-down time is handled implicitly: the block duration used to place the RF waveform
-    # already includes the post-pulse dead time, so no additional handling is required.
-    # Dead-time is automatically set as delay! Delay accounts for start of RF event
-    num_samples_delay = round(max(block.dead_time, block.delay) / config.spcm_dwell_time)
     # Calculate the number of RF shape sample points
     num_samples = round(block.shape_dur / config.spcm_dwell_time)
 
@@ -87,11 +82,7 @@ def calculate_rf(
     carrier_time = np.arange(num_samples) * config.spcm_dwell_time
     carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
 
-    waveform_rf = np.concatenate(
-        (np.zeros(num_samples_delay, dtype=complex), (envelope * carrier))
-    )
-
-    return waveform_rf
+    return (envelope * carrier).real.astype(np.int16)
 
 
 def calculate_gradient(
@@ -216,15 +207,19 @@ def calculate_block(
                 b1_scaling=parameter.b1_scaling,
                 config=config,
             )
-            rf_waveform_i16 = rf_waveform.real.astype(np.int16)
-            rf_size = np.size(rf_waveform_i16)
+
+            # Calculate the number of delay samples before an RF event (and unblanking)
+            # Note that the RF ring-down time is handled implicitly: the block duration used to place the RF waveform
+            # already includes the post-pulse dead time, so no additional handling is required.
+            # Dead-time is automatically set as delay! Delay accounts for start of RF event
+            num_samples_delay = round(max(block.rf.dead_time, block.rf.delay) / config.spcm_dwell_time)
 
             # Write to memmap
-            rf_start = waveform_start
-            rf_end = waveform_start + rf_size * 4
+            rf_start = waveform_start + num_samples_delay
+            rf_end = rf_start + rf_waveform.size * 4
 
             # Channel 0: RF
-            seq[rf_start:rf_end:4] = rf_waveform_i16
+            seq[rf_start:rf_end:4] = rf_waveform
 
         # Gradient Calculation
         # Map logical axis to physical channel
@@ -259,20 +254,11 @@ def calculate_block(
                 )
 
                 delay_samples = round(gradient.delay / config.spcm_dwell_time)
-                waveform_start_grad = waveform_start + 4 * delay_samples
-                grad_slice = slice(
-                    waveform_start_grad + physical_channel,
-                    waveform_start_grad + 4 * np.size(waveform) + physical_channel,
-                    4,
-                )
+                grad_start = waveform_start + 4 * delay_samples + physical_channel
+                grad_end = grad_start + 4 * np.size(waveform)
 
                 # Write to memmap (bitwise OR to preserve digital bits)
-                # Note: If concurrent RF and Gradient exist in same block,
-                # they act on different channels (RF=0, Grads=1,2,3).
-                # Digital bits are on 1, 2, 3 (ADC on 1/2, Unblanking on 3/4).
-                # So OR is necessary and correct.
-                current_val = seq[grad_slice]
-                seq[grad_slice] = current_val | waveform
+                seq[grad_start:grad_end:4] |= waveform
 
     except Exception as e:
         # Logging in workers is tricky, usually print or re-raise

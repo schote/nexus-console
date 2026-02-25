@@ -184,23 +184,15 @@ def test_calculate_rf_block(seq_provider: SequenceProvider):
 
     # Basic checks
     assert isinstance(rf_waveform, np.ndarray)
-    assert rf_waveform.dtype == complex
+    assert rf_waveform.dtype == np.int16
 
     # Number of computed RF samples must follow logic:
     num_samples = round(block.shape_dur / config.spcm_dwell_time)
     assert rf_waveform.size == num_samples
 
     # Check dead time
-    block.dead_time = 20e-6
-    dead_time_samples = round(block.dead_time / config.spcm_dwell_time)
     rf_waveform = calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6, config=config)
-    assert rf_waveform.size == num_samples + dead_time_samples
-
-    # Check delay (note only max(delay, dead_time) is added)
-    block.delay = 100e-6
-    delay_samples = round(block.delay / config.spcm_dwell_time)
-    rf_waveform = calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6, config=config)
-    assert rf_waveform.size == num_samples + delay_samples
+    assert rf_waveform.size == num_samples
 
     # Check exception with invalid scaling (110%)
     invalid_scaling = 1.1 * np.iinfo(np.int16).max / np.amax(rf_waveform)

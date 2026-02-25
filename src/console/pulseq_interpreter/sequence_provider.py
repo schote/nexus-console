@@ -263,14 +263,14 @@ class SequenceProvider(Sequence):
                 num_samples_raw = round(total_gate_duration / spcm_dwell)
 
                 # Remaining delay = dead_time minus pre- and post-sampling fractions
-                remaining_delay = block.adc.dead_time - num_samples_discard * block.adc.dwell
+                remaining_delay = block.adc.delay - num_samples_discard * block.adc.dwell
                 num_delay_samples = round(remaining_delay / spcm_dwell)
 
                 adc_start = (current_block_pos + num_delay_samples) * 4
-                adc_end = (current_block_pos + num_delay_samples + num_samples_raw) * 4
+                adc_end = adc_start + num_samples_raw * 4
 
                 # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
-                _seq[slice(adc_start + 1, adc_end + 1, 4)] |= np.uint16(2**15)
+                _seq[adc_start + 1:adc_end + 1: 4] |= np.uint16(2**15)
 
                 # Add phase reference signal to 16th bit of output channel 2 (second gradient channel)
                 num_samples_reference = min(num_samples_raw, self.phase_reference.size)
