@@ -11,7 +11,9 @@ from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
+from console.pulseq_interpreter.waveform_calculator import calculate_gradient, calculate_rf
 from console.utilities.sequences import tse_3d
+from dataclasses import asdict
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
@@ -35,11 +37,12 @@ def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
     np.testing.assert_array_equal(t_excitation_1, t_excitation_2)
     np.testing.assert_array_equal(t_refocusing_1, t_refocusing_2)
 
-def test_unrolling(seq_provider: SequenceProvider, test_sequence, acquisition_parameter):
+@pytest.mark.parametrize("num_processes", [1, 2])
+def test_unrolling(seq_provider: SequenceProvider, test_sequence, acquisition_parameter, num_processes):
     """Test unrolled sequence plot."""
     assert test_sequence.check_timing()[0]
     seq_provider.from_pypulseq(test_sequence)
-    unrolled_seq: UnrolledSequence = seq_provider.unroll_sequence(acquisition_parameter)
+    unrolled_seq: UnrolledSequence = seq_provider.unroll_sequence(acquisition_parameter, num_processes)
     assert unrolled_seq.duration == test_sequence.duration()[0]
 
 def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequence: pp.Sequence) -> None:
@@ -92,17 +95,10 @@ def test_dict_contains_basic_config(seq_provider: SequenceProvider):
     """Ensure dict() exposes the main configuration for logging/debugging."""
     d = seq_provider.dict()
     assert set(d.keys()) == {
-        "rf_to_mvolt",
-        "spcm_freq",
-        "spcm_dwell_time",
-        "gpa_gain",
-        "gradient_efficiency",
-        "output_limits",
+        "system",
+        "config"
     }
-    # Values agree with constructor
-    np.testing.assert_approx_equal(d["spcm_freq"], 1 / seq_provider.spcm_dwell_time)
-    assert d["rf_to_mvolt"] == seq_provider.rf_to_mvolt
-    assert d["output_limits"] == seq_provider.gradient_out_limits
+    assert d["config"] == asdict(seq_provider.config)
 
 def test_invalid_larmor_frequency(
     seq_provider: SequenceProvider,
@@ -111,8 +107,9 @@ def test_invalid_larmor_frequency(
 ):
     """unroll_sequence should fail when Larmor frequency violates Nyquist limit."""
     seq_provider.from_pypulseq(test_sequence)
+    spcm_freq = 1 / seq_provider.config.spcm_dwell_time
     # Set invalid larmor frequencies
-    acquisition_parameter.larmor_frequency = seq_provider.spcm_freq / 2
+    acquisition_parameter.larmor_frequency = spcm_freq / 2
     with pytest.raises(ValueError):
         seq_provider.unroll_sequence(acquisition_parameter)
     acquisition_parameter.larmor_frequency = 0.
@@ -138,20 +135,20 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
         channel="x",
         waveform=np.array([0.0, 0.5, 0.9], dtype=float),
     )
-
-    grad = seq_provider._calculate_gradient(
-        block=block, fov_scaling=1.0, offset=0.0, output_channel=1,
+    config = seq_provider.config
+    grad = calculate_gradient(
+        block=block, fov_scaling=1.0, offset=0.0, output_channel=1, config=config
     )
 
     # Output is uint16-view of int16 >> 1
     assert isinstance(grad, np.ndarray)
     assert grad.dtype == np.uint16
-    assert grad.size == pytest.approx(round(block.shape_dur / seq_provider.spcm_dwell_time))
+    assert grad.size == pytest.approx(round(block.shape_dur / config.spcm_dwell_time))
 
     # Test exceptions
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
+        _ = calculate_gradient(
+            block=block, fov_scaling=1., offset=config.gradient_out_limits[1], output_channel=1, config=config
         )
 
 def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
@@ -163,62 +160,55 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
         flat_time=200e-6,
         fall_time=100e-6,
     )
-
+    config = seq_provider.config
     total_dur = block.rise_time + block.flat_time + block.fall_time
-    grad = seq_provider._calculate_gradient(
-        block=block, fov_scaling=1.0, offset=0.0, output_channel=1,
+    grad = calculate_gradient(
+        block=block, fov_scaling=1.0, offset=0.0, output_channel=1, config=config
     )
 
     assert isinstance(grad, np.ndarray)
     assert grad.dtype == np.uint16
-    assert grad.size == pytest.approx(round(total_dur / seq_provider.spcm_dwell_time))
+    assert grad.size == pytest.approx(round(total_dur / config.spcm_dwell_time))
 
     # Test exceptions
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_gradient(
-            block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
+        _ = calculate_gradient(
+            block=block, fov_scaling=1., offset=config.gradient_out_limits[1], output_channel=1, config=config
         )
 
 def test_calculate_rf_block(seq_provider: SequenceProvider):
     """Cover _calculate_rf for valid and invalid RF blocks."""
     block = pp.make_block_pulse(flip_angle=np.pi, duration=100e-6)
-    rf_waveform, rf_unblanking = seq_provider._calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6)
+    config = seq_provider.config
+    rf_waveform = calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6, config=config)
 
     # Basic checks
     assert isinstance(rf_waveform, np.ndarray)
-    assert isinstance(rf_unblanking, np.ndarray)
     assert rf_waveform.dtype == complex
-    assert rf_unblanking.dtype == np.uint16
 
     # Number of computed RF samples must follow logic:
-    num_samples = round(block.shape_dur * seq_provider.spcm_freq)
+    num_samples = round(block.shape_dur / config.spcm_dwell_time)
     assert rf_waveform.size == num_samples
-    assert rf_unblanking.size == num_samples
-
-    # Unblanking must have high bit from start (no delay or ring down here)
-    assert np.all(rf_unblanking[:] == 2**15)
 
     # Check dead time
     block.dead_time = 20e-6
-    dead_time_samples = round(block.dead_time * seq_provider.spcm_freq)
-    rf_waveform, rf_unblanking = seq_provider._calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6)
+    dead_time_samples = round(block.dead_time / config.spcm_dwell_time)
+    rf_waveform = calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6, config=config)
     assert rf_waveform.size == num_samples + dead_time_samples
-    assert rf_unblanking.size == num_samples + dead_time_samples
 
     # Check delay (note only max(delay, dead_time) is added)
     block.delay = 100e-6
-    delay_samples = round(block.delay * seq_provider.spcm_freq)
-    rf_waveform, rf_unblanking = seq_provider._calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6)
+    delay_samples = round(block.delay / config.spcm_dwell_time)
+    rf_waveform = calculate_rf(block=block, b1_scaling=1.0, larmor_frequency=2.e6, config=config)
     assert rf_waveform.size == num_samples + delay_samples
-    assert rf_unblanking.size == num_samples + delay_samples
 
     # Check exception with invalid scaling (110%)
     invalid_scaling = 1.1 * np.iinfo(np.int16).max / np.amax(rf_waveform)
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=2.e6)
+        _ = calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=2.e6, config=config)
     # Check exception with invalid Larmor frequency (<0)
     with pytest.raises(ValueError):
-        _ = seq_provider._calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=-1.e3)
+        _ = calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=-1.e3, config=config)
 
 
 def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
@@ -241,7 +231,7 @@ def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter:
         assert k == rx0.labels[label]
 
     assert rx0.num_samples == n_samples
-    assert rx0.num_samples_raw == n_samples / (bw*seq_provider.spcm_dwell_time)
+    assert rx0.num_samples_raw == n_samples / (bw*seq_provider.config.spcm_dwell_time)
     assert rx0.dwell_time == 1/bw
 
 

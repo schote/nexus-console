@@ -103,7 +103,7 @@ class SequenceProvider(Sequence):
         )
 
         # Configuration for calculator
-        self.waveform_config = WaveformConfig(
+        self.config = WaveformConfig(
             spcm_dwell_time=spcm_dwell_time,
             rf_to_mvolt=rf_to_mvolt,
             gpa_gain=gpa_gain,
@@ -177,7 +177,7 @@ class SequenceProvider(Sequence):
         """Abstract method which returns variables for logging in dictionary."""
         return {
             "system": vars(self.system),
-            "config": asdict(self.waveform_config),
+            "config": asdict(self.config),
         }
 
     @profile
@@ -206,7 +206,7 @@ class SequenceProvider(Sequence):
             self.log.exception("Checks not passed")
             raise
 
-        spcm_dwell = self.waveform_config.spcm_dwell_time
+        spcm_dwell = self.config.spcm_dwell_time
 
         # Get list of all events and list
         events_list = self.block_events
@@ -327,7 +327,7 @@ class SequenceProvider(Sequence):
                         current_block_pos,
                         block,
                         parameter,
-                        self.waveform_config,
+                        self.config,
                     )
                 )
 
@@ -353,12 +353,12 @@ class SequenceProvider(Sequence):
         return UnrolledSequence(
             seq=_seq,
             sample_count=seq_samples,
-            gpa_gain=self.waveform_config.gpa_gain,
-            gradient_efficiency=self.waveform_config.grad_eff,
-            rf_to_mvolt=self.waveform_config.rf_to_mvolt,
+            gpa_gain=self.config.gpa_gain,
+            gradient_efficiency=self.config.grad_eff,
+            rf_to_mvolt=self.config.rf_to_mvolt,
             dwell_time=spcm_dwell,
-            gradient_output_limits=self.waveform_config.gradient_out_limits,
-            rf_output_limit=self.waveform_config.rf_out_limit,
+            gradient_output_limits=self.config.gradient_out_limits,
+            rf_output_limit=self.config.rf_out_limit,
             duration=self.duration()[0],
             adc_count=adc_count,
             parameter=parameter,
@@ -370,7 +370,7 @@ class SequenceProvider(Sequence):
 
     def _check_gradient_amplitude(self, idx: int, rel_value: float) -> None:
         """Raise error if amplitude exceeds output limit."""
-        limit = self.waveform_config.gradient_out_limits[idx]
+        limit = self.config.gradient_out_limits[idx]
         if np.abs(rel_value) > 1.:
             msg = f"Amplitude of gradient channel {idx+1} ({rel_value*limit}) exceeded output limit ({limit}))"
             raise ValueError(msg)
@@ -378,7 +378,7 @@ class SequenceProvider(Sequence):
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:
         """Check acquisition parameter and raise error if invalid."""
         # Check larmor frequency
-        f0_limit = 1 / (2 * self.waveform_config.spcm_dwell_time)
+        f0_limit = 1 / (2 * self.config.spcm_dwell_time)
         if parameter.larmor_frequency >= f0_limit:
             msg = f"Larmor frequency too high ({parameter.larmor_frequency * 1e-6} MHz), violating sampling theorem"
             raise ValueError(msg)

@@ -120,8 +120,6 @@ def test_sequence() -> pp.Sequence:
     grad_trap = pp.make_trapezoid(channel="x", area=system.max_grad*5e-3, system=system)
     grad_arbi = pp.make_arbitrary_grad(
         channel="y",
-        first=0.,
-        last=0.,
         waveform=np.sin(np.linspace(0, 2*np.pi, 120))*25, # 50 mT max
         system=system,
     )
