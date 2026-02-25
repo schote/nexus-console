@@ -162,7 +162,12 @@ class AcquisitionControl:
         log_console.setFormatter(formatter)
         logging.getLogger("").addHandler(log_console)
 
-    def set_sequence(self, sequence: str | Sequence, parameter: AcquisitionParameter) -> None:
+    def set_sequence(
+        self,
+        sequence: str | Sequence,
+        parameter: AcquisitionParameter,
+        num_processes: int = 1,
+    ) -> None:
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -201,7 +206,7 @@ class AcquisitionControl:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
         # Calculate sequence with parameter
-        self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
+        self.sequence = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
     def run(self, store_unprocessed: bool = False) -> AcquisitionData:
