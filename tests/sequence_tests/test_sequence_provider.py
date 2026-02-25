@@ -7,11 +7,11 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences import tse_3d
-from console.interfaces.dimensions import Dimensions
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
@@ -66,6 +66,7 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
     assert content_sliced == content_ref
 
 def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
+    """Ensure TSE sequence remains unchanged when imported to sequence provider."""
     seq, _ = tse_3d.constructor(
         n_enc=Dimensions(16, 32, 32),
         # fov=Dimensions(x=140., y=140., z=140.),
