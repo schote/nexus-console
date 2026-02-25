@@ -76,7 +76,7 @@ def calculate_rf(
         )
 
     # Apply the static phase offset, defined by RF pulse
-    envelope_scaled *= np.exp(1j * block.phase_offset)
+    envelope_scaled = envelope_scaled * np.exp(1j * block.phase_offset)
     # Translate to int16
     envelope_scaled *= INT16_MAX / config.rf_out_limit
 
