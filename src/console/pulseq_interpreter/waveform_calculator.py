@@ -58,8 +58,6 @@ def calculate_rf(
     if not larmor_frequency > 0.0:
         raise ValueError(f"Invalid Larmor frequency: {larmor_frequency}")
 
-
-
     # Calculate the number of delay samples before an RF event (and unblanking)
     # Note that the RF ring-down time is handled implicitly: the block duration used to place the RF waveform
     # already includes the post-pulse dead time, so no additional handling is required.
@@ -68,17 +66,19 @@ def calculate_rf(
     # Calculate the number of RF shape sample points
     num_samples = round(block.shape_dur / config.spcm_dwell_time)
 
-    # Calculate the static phase offset, defined by RF pulse
-    phase_offset = np.exp(1j * block.phase_offset)
-
     # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
-    rf_scaling = b1_scaling * config.rf_to_mvolt * phase_offset / config.rf_out_limit
-    envelope_scaled = block.signal * phase_offset * rf_scaling
+    envelope_scaled = block.signal * b1_scaling * config.rf_to_mvolt
+    if np.abs(np.amax(envelope_scaled)) > config.rf_out_limit:
+        raise ValueError(
+            "RF magnitude (%s mV) exceeded output limit (%s mV)",
+            np.amax(envelope_scaled),
+            config.rf_out_limit
+        )
 
-    if np.abs(np.amax(envelope_scaled)) > 1:
-        raise ValueError("RF magnitude exceeds output limits.")
-
-    envelope_scaled = envelope_scaled * INT16_MAX
+    # Apply the static phase offset, defined by RF pulse
+    envelope_scaled *= np.exp(1j * block.phase_offset)
+    # Translate to int16
+    envelope_scaled *= INT16_MAX / config.rf_out_limit
 
     # Resampling of scaled complex envelope
     envelope = resample(envelope_scaled, num=num_samples)
@@ -138,7 +138,10 @@ def calculate_gradient(
         waveform = block.waveform * scaling
         if np.amax(waveform) > config.gradient_out_limits[idx]:
             raise ValueError(
-                f"Amplitude of channel {output_channel} ({np.amax(waveform)}) exceeded output limit ({limit})"
+                "Amplitude of channel %s (%s) exceeded output limit (%s)",
+                output_channel,
+                np.amax(waveform),
+                config.gradient_out_limits[idx]
             )
         # Transfer mV floating point waveform values to int16
         waveform *= INT16_MAX / config.gradient_out_limits[idx]
@@ -157,7 +160,10 @@ def calculate_gradient(
         flat_amp = block.amplitude * scaling
         if np.amax(flat_amp) > config.gradient_out_limits[idx]:
             raise ValueError(
-                f"Amplitude of channel {output_channel} ({np.amax(flat_amp)}) exceeded output limit ({limit})"
+                "Amplitude of channel %s (%s) exceeded output limit (%s)",
+                output_channel,
+                np.amax(flat_amp),
+                config.gradient_out_limits[idx]
             )
         # Transfer mV floating point waveform values to int16
         flat_amp *= INT16_MAX / config.gradient_out_limits[idx]

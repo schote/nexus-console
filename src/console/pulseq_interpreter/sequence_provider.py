@@ -1,17 +1,15 @@
 """Sequence provider class."""
 import logging
-from collections.abc import Callable
-from math import floor
-from types import SimpleNamespace
-from typing import Any
 import tempfile
-from multiprocessing import Pool
+from collections.abc import Callable
 from dataclasses import asdict
+from math import floor
+from multiprocessing import Pool
+from typing import Any
 
 import numpy as np
 from pypulseq.opts import Opts
 from pypulseq.Sequence.sequence import Sequence
-from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
