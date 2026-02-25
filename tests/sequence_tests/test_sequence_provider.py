@@ -10,6 +10,8 @@ from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
+from console.utilities.sequences import tse_3d
+from console.interfaces.dimensions import Dimensions
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
@@ -62,6 +64,23 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
         content_sliced = fh_sliced.read()
         content_ref = fh_ref.read()
     assert content_sliced == content_ref
+
+def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
+    seq, _ = tse_3d.constructor(
+        n_enc=Dimensions(16, 32, 32),
+        # fov=Dimensions(x=140., y=140., z=140.),
+        etl=7,
+        echo_time=20.e-3,
+        trajectory=tse_3d.Trajectory.INOUT,
+        system=seq_provider.system,
+    )
+
+    seq_provider.from_pypulseq(seq)
+    sequence_out = seq_provider.to_pypulseq()
+
+    _compare_sequences(seq, seq_provider)
+    _compare_sequences(seq, sequence_out)
+
 
 def test_from_pypulseq(seq_provider):
     """from_pypulseq must raise AttributeError when passed an object without .system."""

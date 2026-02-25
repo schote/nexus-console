@@ -14,8 +14,9 @@ import ismrmrd
 import numpy as np
 import pypulseq as pp
 
-from console.interfaces.acquisition_parameter import Dimensions
-from console.utilities.sequences.system_settings import raster, system
+from console.interfaces.dimensions import Dimensions
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 class Trajectory(str, Enum):
@@ -53,7 +54,8 @@ def constructor(
     channel_ro: str = "y",
     channel_pe1: str = "z",
     channel_pe2: str = "x",
-    noise_scan: bool = False
+    noise_scan: bool = False,
+    system: pp.Opts = default_system,
 ) -> tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]:
     """Construct 3D turbo spin echo sequence.
 
