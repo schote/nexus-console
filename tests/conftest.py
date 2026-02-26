@@ -1,7 +1,7 @@
 """Test configuration file."""
 
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from pathlib import Path
 
 import numpy as np
@@ -125,7 +125,7 @@ def test_sequence() -> pp.Sequence:
 
 
 @pytest.fixture()
-def acquisition_parameter() -> AcquisitionParameter:
+def acquisition_parameter() -> Generator[AcquisitionParameter, None, None]:
     """Construct acquisition parameter object for testing."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield AcquisitionParameter(

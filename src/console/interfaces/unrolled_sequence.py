@@ -55,7 +55,7 @@ class UnrolledSequence:
     dwell_time: float
     """Dwell time of the spectrum card replay data (unrolled sequence).
     Defines the distance in time between to sample points.
-    Note that this dwell time does not correlate to the larmor frequecy. Due to the sampling theorem
+    Note that this dwell time does not correlate to the larmor frequency. Due to the sampling theorem
     `dwell_time < 1/(2*larmor_frequency)` must be satisfied. Usually a higher factor is chosen."""
 
     duration: float

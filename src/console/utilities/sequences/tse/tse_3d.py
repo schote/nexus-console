@@ -3,7 +3,7 @@
 TODO: add sampling patterns (elliptical masks, partial fourier, CS)
 TODO: add optional inversion pulse
 TODO: add optional variable refocussing pulses (pass list rather than float)
-TODO: move trajectory calculation to seperate file to sharew with other imaging experiments (needed?)
+TODO: move trajectory calculation to separate file to shared with other imaging experiments (needed?)
 
 """
 # %%
@@ -81,7 +81,7 @@ def constructor(
     n_enc, optional
         Number of encoding steps per dimension, by default default_encoding = Dimensions(x=70, y=70, z=49).
         If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
-    trajectroy, optional
+    trajectory, optional
         The k-space trajectory, by default set to in-out, other currently implemented options are out in and linear
     excitation_angle, excitation_phase, optional
         set the flip angle and phase of the excitation pulse in radians, defaults to 90 degree flip angle, 0 phase
@@ -273,7 +273,7 @@ def constructor(
         # Add gradient correction time and ADC correction time
         flat_time=raster(adc_duration, precision=system.grad_raster_time),
     )
-    # using the previous calculation for the amplitde, hacky, should find a better way
+    # using the previous calculation for the amplitude, hacky, should find a better way
     grad_ro = pp.make_trapezoid(
         channel=channel_ro,
         system=system,

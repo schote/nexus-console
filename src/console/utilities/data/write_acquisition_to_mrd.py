@@ -74,7 +74,7 @@ def write_acquisition_to_mrd(
             # Resize each acquisition to the individual number of sample points and active channels
             num_coils = rx_data.processed_data.shape[0]
             acq.resize(
-                number_of_samples=rx_data.num_samples,
+                number_of_samples=rx_data.num_samples+2*rx_data.num_samples_discard,
                 active_channels=num_coils,
                 trajectory_dimensions=traj_dims.sum()
             )
@@ -100,7 +100,7 @@ def write_acquisition_to_mrd(
             # If trajectory is available
             if traj_dims.sum() > 0:
                 traj = trajectory[traj_dims, trajectory_position:trajectory_position + rx_data.num_samples].T
-                acq.traj[:] = traj
+                acq.traj[:] = np.pad(traj, ((acq.discard_pre, acq.discard_post), (0,0)), mode='edge')
                 trajectory_position += rx_data.num_samples
 
             # Set the data and append

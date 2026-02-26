@@ -29,10 +29,9 @@ except ImportError:
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
 
+NUM_REFERENCE_SAMPLES = 1000
+REFERENCE_FREQUENCY = 1.095e6
 
-default_fov_scaling: Dimensions = Dimensions(1, 1, 1)
-default_fov_offset: Dimensions = Dimensions(0, 0, 0)
-default_orientation: Dimensions = Dimensions(1, 2, 3)
 
 @dataclass
 class ADCGate:
@@ -127,6 +126,12 @@ class SequenceProvider(Sequence):
             gradient_output_limits[1] if gradients_50ohms else int(2 * gradient_output_limits[1]),
             gradient_output_limits[2] if gradients_50ohms else int(2 * gradient_output_limits[2]),
         )
+
+        # Setup phase reference signal
+        time = np.arange(NUM_REFERENCE_SAMPLES) * self.spcm_dwell_time
+        signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
+        self.phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
+        self.phase_reference[signal > 0] = np.uint16(2**15)
 
     # -------- PyPulseq interface -------- #
 
@@ -396,7 +401,7 @@ class SequenceProvider(Sequence):
 
                 # Add RF waveform
                 _seq[rf_start:rf_end:4] = rf_waveform
-                # Add deblanking signal to Z gradient
+                # Add unblanking signal to Z gradient
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
             if block.label is not None:
@@ -418,10 +423,15 @@ class SequenceProvider(Sequence):
                 num_delay_samples = round(remaining_delay * self.spcm_freq)
 
                 adc_start = (block_pos[event_idx] + num_delay_samples) * 4
-                adc_end = (block_pos[event_idx] + num_delay_samples + num_samples_raw) * 4
+                adc_end = adc_start + num_samples_raw * 4
 
                 # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
-                _seq[slice(adc_start + 1, adc_end + 1, 4)] |= np.uint16(2**15)
+                _seq[adc_start + 1:adc_end + 1:4] |= np.uint16(2**15)
+
+                # Add phase reference signal
+                num_samples_reference = min(num_samples_raw, self.phase_reference.size)
+                phase_ref_end = adc_start + num_samples_reference * 4
+                _seq[adc_start + 2:phase_ref_end + 2:4] |= self.phase_reference[:num_samples_reference]
 
                 _rx_data.append(
                     RxData(
@@ -435,6 +445,7 @@ class SequenceProvider(Sequence):
                         freq_offset=block.adc.freq_offset,
                         total_averages=parameter.num_averages,
                         ddc_method=parameter.ddc_method,
+                        phase_ref_frequency=REFERENCE_FREQUENCY,
                         labels=labels,
                     )
                 )
@@ -536,7 +547,7 @@ class SequenceProvider(Sequence):
         # Resampling of scaled complex envelope
         envelope = resample(envelope_scaled, num=num_samples)
 
-        # Only precalculate carrier time array, calculate carriere here to take into account the
+        # Only precalculate carrier time array, calculate carrier here to take into account the
         # frequency and phase offsets of an RF block event
         carrier_time = np.arange(num_samples) * self.spcm_dwell_time
         carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
@@ -658,7 +669,7 @@ class SequenceProvider(Sequence):
         if not all(isinstance(v, int) for v in (grad_ch.x, grad_ch.y, grad_ch.z)):
             raise TypeError("All channel_assignment values must be integers.")
         if {grad_ch.x, grad_ch.y, grad_ch.z} != {1, 2, 3}:
-            msg = f"Invalid channel assigment, must contain each of 1, 2, and 3 exactly once, got: {grad_ch}"
+            msg = f"Invalid channel assignment, must contain each of 1, 2, and 3 exactly once, got: {grad_ch}"
             raise ValueError(msg)
 
     def _check_sequence(self) -> None:
