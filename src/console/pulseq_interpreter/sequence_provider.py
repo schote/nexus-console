@@ -273,19 +273,6 @@ class SequenceProvider(Sequence):
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
-
-        # Calculate rf pulse and unblanking waveforms from RF event
-        rf_events = [
-            (rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in self.rf_library.data.items()
-        ]
-        rf_pulses = {}
-        for rf_event in rf_events:
-            rf_pulses[rf_event[0]] = self._calculate_rf(
-                block=rf_event[1],
-                b1_scaling=parameter.b1_scaling,
-                larmor_frequency=parameter.larmor_frequency,
-            )
-
         seq_duration, _, _ = self.duration()
         seq_samples = round(seq_duration * self.spcm_freq)
 
@@ -387,8 +374,11 @@ class SequenceProvider(Sequence):
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
-                rf_waveform = rf_pulses[event[1]][0].real.astype(np.int16)
-                rf_unblanking = rf_pulses[event[1]][1]
+                rf_waveform, rf_unblanking = self._calculate_rf(
+                    block=block.rf,
+                    b1_scaling=parameter.b1_scaling,
+                    larmor_frequency=parameter.larmor_frequency,
+                )
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[event_idx + 1] - block_pos[event_idx]):
@@ -400,7 +390,7 @@ class SequenceProvider(Sequence):
                 rf_end = (block_pos[event_idx] + rf_size) * 4
 
                 # Add RF waveform
-                _seq[rf_start:rf_end:4] = rf_waveform
+                _seq[rf_start:rf_end:4] = rf_waveform.real.astype(np.int16)
                 # Add unblanking signal to Z gradient
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
