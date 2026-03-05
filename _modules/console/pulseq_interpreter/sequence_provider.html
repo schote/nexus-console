@@ -704,19 +704,6 @@
 
         <span class="c1"># Get list of all events and list of unique RF and ADC events, since they are frequently reused</span>
         <span class="n">events_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_events</span>
-
-        <span class="c1"># Calculate rf pulse and unblanking waveforms from RF event</span>
-        <span class="n">rf_events</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">rf_pulse</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Sequence</span><span class="o">.</span><span class="n">rf_from_lib_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_pulse</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">rf_pulse</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_library</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-        <span class="p">]</span>
-        <span class="n">rf_pulses</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">rf_event</span> <span class="ow">in</span> <span class="n">rf_events</span><span class="p">:</span>
-            <span class="n">rf_pulses</span><span class="p">[</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_rf</span><span class="p">(</span>
-                <span class="n">block</span><span class="o">=</span><span class="n">rf_event</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
-                <span class="n">larmor_frequency</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span>
-            <span class="p">)</span>
-
         <span class="n">seq_duration</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span>
         <span class="n">seq_samples</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">seq_duration</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">)</span>
 
@@ -818,8 +805,11 @@
                 <span class="c1"># Pre-calculated RF event size can be shorter than the duration of the block since it doesn&#39;t</span>
                 <span class="c1"># consider the post-pulse ring-down time. The RF waveform is placed at the start of the block</span>
                 <span class="c1"># and the array is then sliced using the duration of the RF waveform to ensure a good fit</span>
-                <span class="n">rf_waveform</span> <span class="o">=</span> <span class="n">rf_pulses</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
-                <span class="n">rf_unblanking</span> <span class="o">=</span> <span class="n">rf_pulses</span><span class="p">[</span><span class="n">event</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">rf_waveform</span><span class="p">,</span> <span class="n">rf_unblanking</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_rf</span><span class="p">(</span>
+                    <span class="n">block</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">rf</span><span class="p">,</span>
+                    <span class="n">b1_scaling</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">b1_scaling</span><span class="p">,</span>
+                    <span class="n">larmor_frequency</span><span class="o">=</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="p">,</span>
+                <span class="p">)</span>
 
                 <span class="n">rf_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">rf_waveform</span><span class="p">)</span>  <span class="c1"># Get size of the RF waveform</span>
                 <span class="k">if</span> <span class="n">rf_size</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]):</span>
@@ -831,7 +821,7 @@
                 <span class="n">rf_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">+</span> <span class="n">rf_size</span><span class="p">)</span> <span class="o">*</span> <span class="mi">4</span>
 
                 <span class="c1"># Add RF waveform</span>
-                <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span><span class="p">:</span><span class="n">rf_end</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rf_waveform</span>
+                <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span><span class="p">:</span><span class="n">rf_end</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">rf_waveform</span><span class="o">.</span><span class="n">real</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
                 <span class="c1"># Add unblanking signal to Z gradient</span>
                 <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">_seq</span><span class="p">[</span><span class="n">rf_start</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="n">rf_end</span> <span class="o">+</span> <span class="mi">3</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">|</span> <span class="n">rf_unblanking</span>
 

@@ -423,6 +423,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">mpl</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pypulseq</span><span class="w"> </span><span class="kn">import</span> <span class="n">Opts</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionData</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">AcquisitionParameter</span>
@@ -750,6 +751,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_device_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NexusConfiguration</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get nexus device configuration.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span></div>
+
+
+<div class="viewcode-block" id="AcquisitionControl.get_sequence_system">
+<a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.spcm_control.acquisition_control.AcquisitionControl.get_sequence_system">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_sequence_system</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Opts</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get pypulseq sequence system from sequence provider.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="o">.</span><span class="n">system</span></div>
 
 
 <div class="viewcode-block" id="AcquisitionControl.post_processing">
