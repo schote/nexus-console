@@ -19,8 +19,8 @@ class UnrolledSequence:
     """
 
     seq: np.ndarray
-    """Replay data as int16 values in a list of numpy arrays. The sequence data already
-    contains the digital adc and unblanking signals in the channels gx and gy."""
+    """Array containing the information to replay the sequence.
+    Normally the sequence data is passed as a memory-map file."""
 
     sample_count: int
     """Total number of samples per channel."""
@@ -63,6 +63,9 @@ class UnrolledSequence:
 
     adc_count: int
     """Number of adc events in the sequence."""
+
+    gamma: float
+    """Gyromagnetic ratio for gradient calculation."""
 
     parameter: AcquisitionParameter
     """Hash of acquisition parameters used to calculate the sequence."""

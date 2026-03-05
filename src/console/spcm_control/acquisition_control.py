@@ -17,7 +17,7 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
-from console.interfaces.unrolled_sequence import UnrolledSequence
+from console.pulseq_interpreter.block_streamer import BlockStreamer
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
@@ -121,7 +121,7 @@ class AcquisitionControl:
         # Set sequence provider max. amplitude per channel according to values from tx_card
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.sequence: UnrolledSequence | None = None
+        self.streamer: BlockStreamer | None = None
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -198,7 +198,7 @@ class AcquisitionControl:
             raise err
 
         # Reset unrolled sequence
-        self.sequence = None
+        self.streamer = None
         seq_name = str(self.seq_provider.get_definition("Name"))
         if not seq_name:
             seq_name = str(self.seq_provider.get_definition("name"))
@@ -206,8 +206,8 @@ class AcquisitionControl:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
         # Calculate sequence with parameter
-        self.sequence = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
-        self.log.info("Sequence duration: %s s", self.sequence.duration)
+        self.streamer = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
+        self.log.info("Sequence duration: %s s", self.streamer.sample_count * self.streamer.config.spcm_dwell_time)
 
     def run(self, store_unprocessed: bool = False) -> AcquisitionData:
         """Run an acquisition job.
@@ -231,30 +231,31 @@ class AcquisitionControl:
             # Check setup
             if not self.is_setup:
                 raise RuntimeError("Measurement cards are not setup.")
-            if self.sequence is None:
+            if self.streamer is None:
                 raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
         except (RuntimeError, ValueError) as err:
             self.log.exception(err, exc_info=True)
             raise err
 
+        sequence_duration = self.streamer.sample_count * self.streamer.config.spcm_dwell_time
         # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + self.sequence.duration
+        timeout = 5 + sequence_duration
 
         self.store_unprocessed = store_unprocessed
 
         # Create a list to store rx_data for all averages
         self.receive_data: list = []
-        self.num_adc_events = len(self.sequence.rx_data)
+        self.num_adc_events = len(self.streamer.rx_data)
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
-            offsets=self.sequence.parameter.gradient_offset,
+            offsets=self.streamer.parameter.gradient_offset,
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        for k in range(self.sequence.parameter.num_averages):
+        for k in range(self.streamer.parameter.num_averages):
             # Create a copy of rx_data to store the current acquisition in and label scan number.
-            self.rx_card.rx_data = copy.deepcopy(self.sequence.rx_data)
+            self.rx_card.rx_data = copy.deepcopy(self.streamer.rx_data)
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
@@ -264,20 +265,21 @@ class AcquisitionControl:
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
                 # self.log.debug("Waiting for RX card to start receiving...")
-            self.tx_card.start_operation(self.sequence)
+
+            self.streamer.start()
+            self.tx_card.start_operation(self.streamer)
 
             # Get start time of acquisition
             time_start = time.time()
 
-            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
+            while (num_gates := self.rx_card.total_gates) < len(self.streamer.rx_data) or num_gates == 0:
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
                 if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
                     self.log.warning(
-                        "Acquisition Timeout: Only received %s/%s adc events",
-                        num_gates, self.sequence.adc_count
+                        "Acquisition Timeout: Only received %s/%s adc events", num_gates, len(self.streamer.rx_data)
                     )
                     break
 
@@ -295,8 +297,8 @@ class AcquisitionControl:
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
 
-            if self.sequence.parameter.averaging_delay > 0:
-                time.sleep(self.sequence.parameter.averaging_delay)
+            if self.streamer.parameter.averaging_delay > 0:
+                time.sleep(self.streamer.parameter.averaging_delay)
 
         # Reset gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -313,10 +315,10 @@ class AcquisitionControl:
 
         try:
             averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
-                averages_idc = np.arange(self.sequence.parameter.num_averages)
+            if not (np.unique(averages).size == self.streamer.parameter.num_averages):
+                averages_idc = np.arange(self.streamer.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
-                raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
+                raise ValueError(f"Missing averages: {missing_averages} out of {self.streamer.parameter.num_averages}")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -326,7 +328,7 @@ class AcquisitionControl:
             sequence=self.seq_provider.to_pypulseq(),
             session_path=self.session_path,
             meta={"device_configuration": self.config.model_dump()},
-            acquisition_parameters=self.sequence.parameter,
+            acquisition_parameters=self.streamer.parameter,
         )
 
     def get_device_configuration(self) -> NexusConfiguration:
@@ -356,15 +358,18 @@ class AcquisitionControl:
 
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
-                         , self.receive_data)
+            executor.map(
+                lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed), self.receive_data
+            )
 
     def plot_waveforms(
         self,
         time_range: tuple[float, float],
     ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
         """Plot internally stored waveforms."""
-        if self.sequence is not None:
-            return plot_unrolled_sequence(self.sequence, time_range=time_range)
+        if self.streamer is not None:
+            # Fully unroll sequence for plotting
+            unrolled_sequence = self.streamer.unroll_fully()
+            return plot_unrolled_sequence(unrolled_sequence, time_range=time_range)
         self.log.warning("No sequence to plot. Set sequence first.")
         return None

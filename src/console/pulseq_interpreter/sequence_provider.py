@@ -1,10 +1,9 @@
 """Sequence provider class."""
+
 import logging
-import tempfile
 from collections.abc import Callable
 from dataclasses import asdict
 from math import floor
-from multiprocessing import Pool
 from typing import Any
 
 import numpy as np
@@ -14,18 +13,17 @@ from pypulseq.Sequence.sequence import Sequence
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
-from console.interfaces.unrolled_sequence import UnrolledSequence
-from console.pulseq_interpreter.waveform_calculator import WaveformConfig, calculate_block
+
+from console.pulseq_interpreter.block_calculator import BlockTask, WaveformConfig
+from console.pulseq_interpreter.block_streamer import BlockStreamer
 
 try:
     from line_profiler import profile
 except ImportError:
+
     def profile(func: Callable[..., Any]) -> Callable[..., Any]:
         """Define placeholder for profile decorator."""
         return func
-
-NUM_REFERENCE_SAMPLES = 1000
-REFERENCE_FREQUENCY = 1.095e6
 
 
 class SequenceProvider(Sequence):
@@ -113,12 +111,6 @@ class SequenceProvider(Sequence):
             gamma=self.system.gamma,
         )
 
-        # Setup phase reference signal
-        time = np.arange(NUM_REFERENCE_SAMPLES) * spcm_dwell_time
-        signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
-        self.phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
-        self.phase_reference[signal > 0] = np.uint16(2**15)
-
     # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
@@ -181,7 +173,7 @@ class SequenceProvider(Sequence):
         }
 
     @profile
-    def unroll_sequence(self, parameter: AcquisitionParameter, num_processes: int = 1) -> UnrolledSequence:
+    def unroll_sequence(self, parameter: AcquisitionParameter, num_processes: int = 2) -> BlockStreamer:
         """Unroll the pypulseq sequence description.
 
         Parameters
@@ -214,9 +206,7 @@ class SequenceProvider(Sequence):
         seq_duration, _, _ = self.duration()
         seq_samples = round(seq_duration / spcm_dwell)
         # Calculate the start time (and sample position) and duration of each block
-        block_durations = np.array(
-            [self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())]
-        )
+        block_durations = np.array([self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())])
         block_samples = np.round(block_durations / spcm_dwell).astype(int)
         block_pos = np.cumsum(block_samples, dtype=np.int64)
         block_pos = np.insert(block_pos, 0, 0)
@@ -229,23 +219,15 @@ class SequenceProvider(Sequence):
                 msg = "Number of sequence samples does not match total number of block samples"
                 raise IndexError(msg)
 
-        # Create temporary file for memmap and resize
-        self._temp_file = tempfile.NamedTemporaryFile(delete=True)
-        self._temp_file.truncate(4 * seq_samples * 2)  # 2 bytes per int16
-        # Create memmap
-        _seq = np.memmap(
-            self._temp_file.name, dtype=np.int16, mode="r+", shape=(4 * seq_samples,)
-        )
-
         _rx_data = []
         adc_count: int = 0
         labels = {}
-        tasks = []
+        execution_plan = []
 
         for event_idx, (event_key, event) in enumerate(events_list.items()):
             block = self.get_block(event_key)
             current_block_pos = block_pos[event_idx]
-            waveform_start = current_block_pos * 4
+            current_block_samples = block_samples[event_idx]
 
             # Handle Labels
             if block.label is not None:
@@ -261,21 +243,6 @@ class SequenceProvider(Sequence):
                 # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
                 total_gate_duration = (block.adc.num_samples + 2 * num_samples_discard) * block.adc.dwell
                 num_samples_raw = round(total_gate_duration / spcm_dwell)
-
-                # Remaining delay = dead_time minus pre- and post-sampling fractions
-                remaining_delay = block.adc.delay - num_samples_discard * block.adc.dwell
-                num_delay_samples = round(remaining_delay / spcm_dwell)
-
-                adc_start = (current_block_pos + num_delay_samples) * 4
-                adc_end = adc_start + num_samples_raw * 4
-
-                # Add ADC gate to 16th bit of output channel 1 (first gradient channel)
-                _seq[adc_start + 1:adc_end + 1: 4] |= np.uint16(2**15)
-
-                # Add phase reference signal to 16th bit of output channel 2 (second gradient channel)
-                num_samples_reference = min(num_samples_raw, self.phase_reference.size)
-                phase_ref_end = adc_start + num_samples_reference * 4
-                _seq[adc_start + 2:phase_ref_end + 2:4] |= self.phase_reference[:num_samples_reference]
 
                 _rx_data.append(
                     RxData(
@@ -295,54 +262,17 @@ class SequenceProvider(Sequence):
                 adc_count += 1
                 labels = {}  # Reset labels dict
 
-            # Handle RF Unblanking (Digital Signal)
-            if block.rf is not None:
-                 # Calculate timing (replaces logic from original _calculate_rf)
-                num_samples_delay = round(max(block.rf.dead_time, block.rf.delay) / spcm_dwell)
-                num_samples_dead_time = round(block.rf.dead_time / spcm_dwell)
-                num_samples = round(block.rf.shape_dur / spcm_dwell)
-
-                rf_unblanking_start = num_samples_delay - num_samples_dead_time
-                rf_unblanking_end = num_samples_delay + num_samples
-
-                # Start index in _seq
-                abs_start = waveform_start + rf_unblanking_start * 4
-                abs_end = waveform_start + rf_unblanking_end * 4
-
-                # Add RF unblanking to 16th bit of output channel 4 (last gradient channel)
-                _seq[abs_start + 3 : abs_end + 3 : 4] |= np.uint16(2**15)
-
-            # Handle RF and gradient Waveforms: Prepare calculation tasks for phase 2
-            # Check if block has any analog components
-            block_has_waveform = (
-                (block.rf is not None) or (block.gx is not None) or (block.gy is not None) or (block.gz is not None)
-            )
-            if block_has_waveform:
-                tasks.append(
-                    (
-                        self._temp_file.name,
-                        _seq.shape,
-                        _seq.dtype,
-                        event_idx,
-                        current_block_pos,
-                        block,
-                        parameter,
-                        self.config,
-                    )
+            # Add block task to execution plan
+            execution_plan.append(
+                BlockTask(
+                    block_index=event_idx,
+                    block_pos=int(current_block_pos),
+                    block_samples=int(current_block_samples),
+                    block=block,
                 )
+            )
 
-        self.log.info(f"Generated {len(tasks)} calculation tasks.")
-
-        # Phase 2: Parallel Waveform Calculation
-        if num_processes > 1 and len(tasks) > 0:
-            self.log.info(f"Starting pool with {num_processes} processes.")
-            # Pool context manager avoids leaking processes
-            with Pool(processes=num_processes) as pool:
-                pool.starmap(calculate_block, tasks)
-        elif len(tasks) > 0:
-            self.log.info("Executing sequentially.")
-            for task in tasks:
-                calculate_block(*task)
+        self.log.info(f"Generated {len(execution_plan)} calculation tasks.")
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",
@@ -350,29 +280,31 @@ class SequenceProvider(Sequence):
             len(block_durations),
         )
 
-        return UnrolledSequence(
-            seq=_seq,
-            sample_count=seq_samples,
-            gpa_gain=self.config.gpa_gain,
-            gradient_efficiency=self.config.grad_eff,
+        config = WaveformConfig(
+            spcm_dwell_time=spcm_dwell,
             rf_to_mvolt=self.config.rf_to_mvolt,
-            dwell_time=spcm_dwell,
-            gradient_output_limits=self.config.gradient_out_limits,
-            rf_output_limit=self.config.rf_out_limit,
-            duration=self.duration()[0],
-            adc_count=adc_count,
-            parameter=parameter,
-            rx_data=_rx_data,
+            gpa_gain=self.config.gpa_gain,
+            grad_eff=self.config.grad_eff,
+            gradient_out_limits=self.config.gradient_out_limits,
+            rf_out_limit=self.config.rf_out_limit,
+            gamma=self.system.gamma,
         )
 
+        return BlockStreamer(
+            execution_plan=execution_plan,
+            parameter=parameter,
+            config=config,
+            sample_count=seq_samples,
+            rx_data=_rx_data,
+        )
 
     # -------- Private validation methods -------- #
 
     def _check_gradient_amplitude(self, idx: int, rel_value: float) -> None:
         """Raise error if amplitude exceeds output limit."""
         limit = self.config.gradient_out_limits[idx]
-        if np.abs(rel_value) > 1.:
-            msg = f"Amplitude of gradient channel {idx+1} ({rel_value*limit}) exceeded output limit ({limit}))"
+        if np.abs(rel_value) > 1.0:
+            msg = f"Amplitude of gradient channel {idx + 1} ({rel_value * limit}) exceeded output limit ({limit}))"
             raise ValueError(msg)
 
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:

@@ -1,4 +1,5 @@
 """Implementation of transmit card."""
+
 import ctypes
 import logging
 import threading
@@ -7,9 +8,9 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
 from console.interfaces.acquisition_parameter import Dimensions
-from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
+from console.pulseq_interpreter.block_streamer import BlockStreamer
 
 TX_NOTIFY_RATE = 16
 
@@ -113,11 +114,13 @@ class TxCard(SpectrumDevice):
             self.sample_rate = int(sample_rate.value * 1e-6)
 
         # Enable and setup channels
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPC_CHENABLE,
-            spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3,
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPC_CHENABLE,
+                spcm.CHANNEL0 | spcm.CHANNEL1 | spcm.CHANNEL2 | spcm.CHANNEL3,
+            )
+        )
 
         self.log.info("Setup max. output amplitude: %s.", self.max_amplitude)
 
@@ -147,41 +150,51 @@ class TxCard(SpectrumDevice):
 
         # >> Setup digital output channels
         # Channel X1: dig. ADC gate (15th bit from analog channel 1)
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X1_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPCM_X1_MODE,
+                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            )
+        )
         # Channel X2: dig. reference signal (15th bit from analog channel 2)
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X2_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPCM_X2_MODE,
+                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH2 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            )
+        )
         # Channel X3: dig. unblanking signal (15th bit of analog channel 3)
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPCM_X3_MODE,
-            (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPCM_X3_MODE,
+                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+            )
+        )
 
         # >> Setup additional GPIO ports, if extender is available
         if card_features.value & (spcm.SPCM_FEAT_DIG16_FX2 | spcm.SPCM_FEAT_DIG16_SMB):
             self.log.info("IO expansion card with FX2 connector detected, performing additional setup...")
 
             # Replicate ADC gate on extension port X12
-            self.handle_error(spcm.spcm_dwSetParam_i32(
-                self.card,
-                spcm.SPCM_X12_MODE,
-                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-            ))
+            self.handle_error(
+                spcm.spcm_dwSetParam_i32(
+                    self.card,
+                    spcm.SPCM_X12_MODE,
+                    (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH1 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+                )
+            )
 
             # Replicate unblanking signal at extension port X13
-            self.handle_error(spcm.spcm_dwSetParam_i32(
-                self.card,
-                spcm.SPCM_X13_MODE,
-                (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
-            ))
+            self.handle_error(
+                spcm.spcm_dwSetParam_i32(
+                    self.card,
+                    spcm.SPCM_X13_MODE,
+                    (spcm.SPCM_XMODE_DIGOUT | spcm.SPCM_XMODE_DIGOUTSRC_CH3 | spcm.SPCM_XMODE_DIGOUTSRC_BIT15),
+                )
+            )
 
         self.log.debug("Device setup completed")
 
@@ -217,7 +230,7 @@ class TxCard(SpectrumDevice):
 
         # If the outputs are terminated with high impedance, only half of the offsets need to be set,
         # as the value at the card output automatically doubles.
-        z_scaling = 1. if is_50ohms else 0.5
+        z_scaling = 1.0 if is_50ohms else 0.5
 
         # Set offset values, scale offset by 0.5 if channel is terminated into high impedance
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_OFFS1, int(offsets.x * z_scaling))
@@ -244,58 +257,32 @@ class TxCard(SpectrumDevice):
         if not (set_offsets[0] == offsets.x and set_offsets[1] == offsets.y and set_offsets[2] == offsets.z):
             self.log.error(
                 "Actual gradient offsets do not correspond to the values to be set (x=%s, y=%s, z=%s mV)",
-                offsets.x, offsets.y, offsets.z
+                offsets.x,
+                offsets.y,
+                offsets.z,
             )
 
-    def start_operation(self, data: UnrolledSequence | None = None) -> None:
-        """Start transmit (TX) card operation.
-
-        Steps:
-        (1) Setup the transmit card
-        (2) Clear emergency stop flag, reset to False
-        (3) Start worker thread (card streaming mode), with provided replay data
-
-        Parameters
-        ----------
-        data
-            Sequence replay data as int16 numpy array in correct order.
-            Checkout `prepare_sequence` function for reference of correct replay data format.
-            This value is None per default
-
-        Raises
-        ------
-        ValueError
-            Raised if replay data is not provided as numpy int16 values
-        """
+    def start_operation(self, streamer: "BlockStreamer" = None) -> None:
+        """Start transmit (TX) card operation."""
         try:
-            # Data must have a default value as start_operation is an abstract method and data is optional
-            if not data:
-                raise ValueError("No unrolled sequence data provided.")
-            sqnc = data.seq
+            if not streamer:
+                raise ValueError("No BlockStreamer provided.")
 
-            # Check if sequence datatype is valid
-            if sqnc.dtype != np.int16:
-                raise ValueError("Sequence replay data is not int16, please unroll sequence to int16.")
-
-            # Check if card connection is established
             if not self.card:
                 raise ConnectionError("No connection to card established...")
-
         except Exception as exc:
             self.log.exception(exc, exc_info=True)
             raise exc
 
-        # Check if sequence dwell time is valid
-        if sqnc_sample_rate := 1 / (data.dwell_time * 1e6) != self.sample_rate:
+        if sqnc_sample_rate := 1 / (streamer.config.spcm_dwell_time * 1e6) != self.sample_rate:
             self.log.warning(
                 "Sequence sample rate (%s MHz) differs from device sample rate (%s MHz).",
                 sqnc_sample_rate,
                 self.sample_rate,
             )
 
-        # Setup card, clear emergency stop thread event and start thread
         self.is_running.clear()
-        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(sqnc,))
+        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(streamer,))
         self.worker.start()
 
     def stop_operation(self) -> None:
@@ -304,40 +291,33 @@ class TxCard(SpectrumDevice):
             self.is_running.set()
             self.worker.join()
 
-            self.handle_error(spcm.spcm_dwSetParam_i32(
-                self.card,
-                spcm.SPC_M2CMD,
-                spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA,
-            ))
+            self.handle_error(
+                spcm.spcm_dwSetParam_i32(
+                    self.card,
+                    spcm.SPC_M2CMD,
+                    spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA,
+                )
+            )
             self.worker = None
         else:
             print("No active replay thread found...")
 
-    def _fifo_stream_worker(self, data: np.ndarray) -> None:
-        """Continuous FIFO mode examples.
+    def _fifo_stream_worker(self, streamer: "BlockStreamer") -> None:
+        """Continuous FIFO mode stream worker."""
 
-        Parameters
-        ----------
-        data
-            Numpy array of data to be replayed by card.
-            Replay data should be in the format:
-            >>> [c0_0, c1_0, c2_0, c3_0, c0_1, c1_1, c2_1, c3_1, ..., cX_N]
-            Here, X denotes the channel and the subsequent index N the sample index.
-        """
-        # Get total size of data buffer to be played out
-        self.data_buffer_size = data.nbytes
+        self.data_buffer_size = streamer.sample_count * 8
         self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 
-        # Calculate notify size is set to 1/16 of the replay buffer size
-        # Ensure that minimum notify size is 4096 bytes
-        notify_size = spcm.int32(max(4096, min(
-            int(((self.data_buffer_size / TX_NOTIFY_RATE) // 4096) * 4096),
-            int(((self.max_ring_buffer_size.value / TX_NOTIFY_RATE) // 4096) * 4096),
-        )))
+        notify_size = spcm.int32(
+            max(
+                4096,
+                min(
+                    int(((self.data_buffer_size / TX_NOTIFY_RATE) // 4096) * 4096),
+                    int(((self.max_ring_buffer_size.value / TX_NOTIFY_RATE) // 4096) * 4096),
+                ),
+            )
+        )
 
-        # >> Define software buffer
-        # Setup replay data buffer
-        data_buffer = data.ctypes.data_as(ctypes.POINTER(ctypes.c_int16))
         # Allocate continuous ring buffer with minimum necessary amount of memory, ensure multiple of notify size
         min_ring_buffer_size = int(np.ceil(self.data_buffer_size / notify_size.value) * notify_size.value)
         # Create page-aligned ring buffer
@@ -368,17 +348,14 @@ class TxCard(SpectrumDevice):
 
         try:
             # Perform initial memory transfer: Fill the whole ring buffer
-            if (_ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value) and \
-                (_data_buffer_pos := ctypes.cast(data_buffer, ctypes.c_void_p).value):
-                if self.data_buffer_size < ring_buffer_size.value:
-                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, self.data_buffer_size)
-                    transferred_bytes = self.data_buffer_size
-                else:
-                    ctypes.memmove(_ring_buffer_pos, _data_buffer_pos, ring_buffer_size.value)
-                    transferred_bytes = ring_buffer_size.value
+            if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
+                initial_transfer = min(self.data_buffer_size, ring_buffer_size.value)
+                streamer.copy_to_memory(_ring_buffer_pos, initial_transfer)
+                transferred_bytes = initial_transfer
             else:
-                raise RuntimeError("Could not get ring or data buffer position.")
+                raise RuntimeError("Could not get ring buffer position.")
         except RuntimeError as err:
+            streamer.stop()
             self.log.exception(err, exc_info=True)
             raise err
 
@@ -396,19 +373,23 @@ class TxCard(SpectrumDevice):
         self.handle_error(spcm.spcm_dwSetParam_i64(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, ring_buffer_size))
 
         self.log.debug("Starting card memory transfer")
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPC_M2CMD,
-            spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPC_M2CMD,
+                spcm.M2CMD_DATA_STARTDMA | spcm.M2CMD_DATA_WAITDMA,
+            )
+        )
 
         # Start card
         self.log.debug("Starting card operation")
-        self.handle_error(spcm.spcm_dwSetParam_i32(
-            self.card,
-            spcm.SPC_M2CMD,
-            spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
-        ))
+        self.handle_error(
+            spcm.spcm_dwSetParam_i32(
+                self.card,
+                spcm.SPC_M2CMD,
+                spcm.M2CMD_CARD_START | spcm.M2CMD_CARD_ENABLETRIGGER,
+            )
+        )
 
         avail_bytes = spcm.int32(0)
         usr_position = spcm.int32(0)
@@ -423,43 +404,29 @@ class TxCard(SpectrumDevice):
             if avail_bytes.value >= notify_size.value:
                 transfer_count += 1
 
-                ring_buffer_position = ctypes.cast((
-                    ctypes.c_char * (self.max_ring_buffer_size.value - usr_position.value)).from_buffer(
-                        ring_buffer, usr_position.value), ctypes.c_void_p
-                    ).value
+                ring_buffer_position = ctypes.cast(
+                    (ctypes.c_char * (self.max_ring_buffer_size.value - usr_position.value)).from_buffer(
+                        ring_buffer, usr_position.value
+                    ),
+                    ctypes.c_void_p,
+                ).value
 
-                current_data_buffer = ctypes.cast(data_buffer, ctypes.c_void_p).value
-
-                # Get new buffer positions
-                if ring_buffer_position and current_data_buffer:
-                    data_buffer_position = current_data_buffer + transferred_bytes
-
+                if ring_buffer_position:
                     if (bytes_remaining := self.data_buffer_size - transferred_bytes) >= notify_size.value:
-                        # Enough data available -> copy notify size
-                        ctypes.memmove(
-                            ring_buffer_position,
-                            data_buffer_position,
-                            notify_size.value,
-                        )
+                        streamer.copy_to_memory(ring_buffer_position, notify_size.value)
                     else:
-                        # Not enough data available -> set remaining bytes to zero
-                        ctypes.memmove(
-                            ring_buffer_position,
-                            data_buffer_position,
-                            bytes_remaining,
-                        )
+                        streamer.copy_to_memory(ring_buffer_position, bytes_remaining)
                         ctypes.memset(
                             ring_buffer_position + bytes_remaining,
                             0,
                             notify_size.value - bytes_remaining,
                         )
 
-                    self.handle_error(
-                        spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, notify_size)
-                    )
+                    self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_DATA_AVAIL_CARD_LEN, notify_size))
                     transferred_bytes += notify_size.value
 
                 self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
 
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
+        streamer.stop()
         self.log.debug("Card operation stopped")
