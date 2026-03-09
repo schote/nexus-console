@@ -1,15 +1,16 @@
 """Implementation of the device configuration models."""
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
 from pypulseq import Opts
 
-# Ensure that max. amplitude is within 1 and 6000 mV.
-# Limits may depend on specific configuration of spectrum cards.
-AmplitudeInt = Annotated[int, Field(ge=1, le=6000)]
+# Ensure that max. amplitude is within 1 and 6000 mV (step size 1 mV).
+# Limits depend on card version.
+TxAmplitudeType = Annotated[int, Field(ge=1, le=6000)]
+# RX amplitude must be one of 200, 500, 1000, 2000, 5000 or 10000 (in mV), depends on card version.
+RxAmplitudeType = Literal[200, 500, 1000, 2000, 5000, 10000]
 # Ensure valid filter type, channel filter type must be 0, 1, 2 or 3.
-# See spectrum instrumentation manual for reference.
-# This may depend on the specific card configuration.
+# See spectrum instrumentation manual for reference, depends on card version.
 FilterTypeInt = Annotated[int, Field(ge=0, le=3)]
 
 class TxConfiguration(BaseModel):
@@ -19,7 +20,7 @@ class TxConfiguration(BaseModel):
 
     device_path: str = Field(..., strict=True)
     sampling_rate: int = Field(..., strict=True)
-    channel_max_amplitude: tuple[AmplitudeInt, AmplitudeInt, AmplitudeInt, AmplitudeInt] = Field(...)
+    channel_max_amplitude: tuple[TxAmplitudeType, TxAmplitudeType, TxAmplitudeType, TxAmplitudeType] = Field(...)
     channel_filter_type: tuple[FilterTypeInt, FilterTypeInt, FilterTypeInt, FilterTypeInt] = Field(...)
     rf_terminated_50ohm: bool = Field(..., strict=True)
     gradients_terminated_50ohm: bool = Field(..., strict=True)
@@ -37,7 +38,7 @@ class RxConfiguration(BaseModel):
     sampling_rate: int = Field(..., strict=True)
     max_available_channels: int = Field(..., strict=True)
     channel_enable: tuple[bool, ...] = Field(...)
-    channel_max_amplitude: tuple[AmplitudeInt, ...] = Field(...)
+    channel_max_amplitude: tuple[RxAmplitudeType, ...] = Field(...)
     channel_terminated_50ohm: tuple[bool, ...] = Field(...)
 
     @model_validator(mode="after")
@@ -72,15 +73,16 @@ class SystemLimits(BaseModel):
 
     model_config = {"extra": "ignore"}  # Ignore unknown fields instead of raising an error
 
-    max_grad: float = Field(..., strict=True)
-    max_slew: float = Field(..., strict=True)
-    rf_dead_time: float = Field(..., strict=True)
-    rf_ringdown_time: float = Field(..., strict=True)
-    adc_dead_time: float = Field(..., strict=True)
-    block_duration_raster: float = Field(..., strict=True)
-    rf_raster_time: float = Field(..., strict=True)
-    grad_raster_time: float = Field(..., strict=True)
-    adc_raster_time: float = Field(..., strict=True)
+    max_grad: float = Field(..., strict=True, gt=0)
+    max_slew: float = Field(..., strict=True, gt=0)
+    rf_dead_time: float = Field(..., strict=True, ge=0)
+    rf_ringdown_time: float = Field(..., strict=True, ge=0)
+    adc_dead_time: float = Field(..., strict=True, ge=0)
+    block_duration_raster: float = Field(..., strict=True, gt=0)
+    rf_raster_time: float = Field(..., strict=True, ge=0)
+    grad_raster_time: float = Field(..., strict=True, gt=0)
+    adc_raster_time: float = Field(..., strict=True, gt=0)
+    B0: float = Field(default=50e-3, strict=True, gt=0)
 
     def get_opts(self) -> Opts:
         """Return system limits of the MR scanner as PyPulseq `Opts` object."""
@@ -96,6 +98,7 @@ class SystemLimits(BaseModel):
             rf_raster_time=self.rf_raster_time,
             grad_raster_time=self.grad_raster_time,
             adc_raster_time=self.adc_raster_time,
+            B0=self.B0
         )
 
 
