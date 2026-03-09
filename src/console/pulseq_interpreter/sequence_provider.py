@@ -93,6 +93,8 @@ class SequenceProvider(Sequence):
             Absolute maximum system limits defined in the device configuration.
             Used to instantiate the pypulseq `Opts()` class.
         """
+        if not isinstance(system, Opts):
+            raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")
         super().__init__(system=system)
         self.log = logging.getLogger("SeqProv")
 
