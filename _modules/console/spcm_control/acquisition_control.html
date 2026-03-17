@@ -488,8 +488,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;AcqCtrl&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;--- Acquisition control started</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Load device configuration and create instances</span>
-        <span class="c1"># TODO: Generalize Nexus configuration to allow different setups</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span> <span class="n">NexusConfiguration</span> <span class="o">=</span> <span class="n">load_nexus_config</span><span class="p">(</span><span class="n">configuration_file</span><span class="p">)</span>
         <span class="c1"># Create sequence provider instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">seq_provider</span><span class="p">:</span> <span class="n">SequenceProvider</span> <span class="o">=</span> <span class="n">SequenceProvider</span><span class="p">(</span>
@@ -501,7 +499,7 @@
             <span class="n">rf_output_limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">channel_max_amplitude</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">spcm_dwell_time</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">sampling_rate</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">),</span>
             <span class="n">rf_to_mvolt</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tx</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
-            <span class="n">system_limits</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">system</span><span class="p">,</span>
+            <span class="n">system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">get_opts</span><span class="p">(),</span>
         <span class="p">)</span>
         <span class="c1"># Create transmit card instance</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tx_card</span><span class="p">:</span> <span class="n">TxCard</span> <span class="o">=</span> <span class="n">TxCard</span><span class="p">(</span>
