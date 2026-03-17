@@ -74,8 +74,6 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
-        # Load device configuration and create instances
-        # TODO: Generalize Nexus configuration to allow different setups
         self.config: NexusConfiguration = load_nexus_config(configuration_file)
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
@@ -87,7 +85,7 @@ class AcquisitionControl:
             rf_output_limit=self.config.tx.channel_max_amplitude[0],
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
-            system_limits=self.config.system,
+            system=self.config.system.get_opts(),
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(

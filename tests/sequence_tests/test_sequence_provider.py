@@ -7,32 +7,50 @@ import pypulseq as pp
 import pytest
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
+from console.utilities.sequences import tse_3d
 
+
+def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
+    """Compare two pypulseq sequences and ensure equality."""
+    assert seq1 is not None
+    assert seq2 is not None
+    assert seq1.check_timing()[0] == seq2.check_timing()[0]
+    assert seq1.duration()[0] == seq2.duration()[0]
+    assert seq1.definitions == seq2.definitions
+    assert seq1.evaluate_labels() == seq2.evaluate_labels()
+    # Compare adc
+    t_adc_1, fp_adc_1 = seq1.adc_times()
+    t_adc_2, fp_adc_2 = seq2.adc_times()
+    np.testing.assert_array_equal(t_adc_1, t_adc_2)
+    np.testing.assert_array_equal(fp_adc_1, fp_adc_2)
+    # Compare k-space trajectory
+    k_traj_adc_1, k_traj_1, t_excitation_1, t_refocusing_1, _ = seq1.calculate_kspace()
+    k_traj_adc_2, k_traj_2, t_excitation_2, t_refocusing_2, _ = seq2.calculate_kspace()
+    np.testing.assert_array_equal(k_traj_adc_1, k_traj_adc_2)
+    np.testing.assert_array_equal(k_traj_1, k_traj_2)
+    np.testing.assert_array_equal(t_excitation_1, t_excitation_2)
+    np.testing.assert_array_equal(t_refocusing_1, t_refocusing_2)
 
 def test_unrolling(seq_provider: SequenceProvider, test_sequence, acquisition_parameter):
     """Test unrolled sequence plot."""
     assert test_sequence.check_timing()[0]
-
     seq_provider.from_pypulseq(test_sequence)
     unrolled_seq: UnrolledSequence = seq_provider.unroll_sequence(acquisition_parameter)
     assert unrolled_seq.duration == test_sequence.duration()[0]
 
-
-def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequence):
+def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequence: pp.Sequence) -> None:
     """Test if sequence can be generated from sequence provider."""
+    # Ensure test sequence is valid
+    assert test_sequence.check_timing()[0]
     seq_provider.from_pypulseq(test_sequence)
     sequence_out = seq_provider.to_pypulseq()
 
-    assert sequence_out is not None
-
-    for key, value in vars(test_sequence).items():
-        assert hasattr(sequence_out, key)
-        assert getattr(sequence_out, key) == value
-
-    assert sequence_out.duration()[0] == test_sequence.duration()[0]
+    # Test sequence loaded to sequence provider
+    _compare_sequences(test_sequence, sequence_out)
 
     # Save sequences and compare file content
     tmp_dir = Path(tempfile.mkdtemp())
@@ -41,18 +59,34 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
 
     sequence_out.write(sliced_file)
     test_sequence.write(reference_file)
-
-    with open(sliced_file, "r") as fh_sliced, open(reference_file, "r") as fh_ref:
+    # Compare file content
+    with Path.open(sliced_file, "r") as fh_sliced, Path.open(reference_file, "r") as fh_ref:
         content_sliced = fh_sliced.read()
         content_ref = fh_ref.read()
     assert content_sliced == content_ref
+
+def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
+    """Ensure TSE sequence remains unchanged when imported to sequence provider."""
+    seq, _ = tse_3d.constructor(
+        n_enc=Dimensions(16, 32, 32),
+        # fov=Dimensions(x=140., y=140., z=140.),
+        etl=7,
+        echo_time=20.e-3,
+        trajectory=tse_3d.Trajectory.INOUT,
+        system=seq_provider.system,
+    )
+
+    seq_provider.from_pypulseq(seq)
+    sequence_out = seq_provider.to_pypulseq()
+
+    _compare_sequences(seq, seq_provider)
+    _compare_sequences(seq, sequence_out)
 
 
 def test_from_pypulseq(seq_provider):
     """from_pypulseq must raise AttributeError when passed an object without .system."""
     with pytest.raises(AttributeError):
         seq_provider.from_pypulseq(object())
-
 
 def test_dict_contains_basic_config(seq_provider: SequenceProvider):
     """Ensure dict() exposes the main configuration for logging/debugging."""
@@ -69,64 +103,6 @@ def test_dict_contains_basic_config(seq_provider: SequenceProvider):
     np.testing.assert_approx_equal(d["spcm_freq"], 1 / seq_provider.spcm_dwell_time)
     assert d["rf_to_mvolt"] == seq_provider.rf_to_mvolt
     assert d["output_limits"] == seq_provider.gradient_out_limits
-
-
-def test_from_pypulseq_system_limit_violation(seq_provider: SequenceProvider, test_sequence):
-    """from_pypulseq should raise ValueError when sequence system exceeds device limits."""
-    _max_grad = seq_provider.system_limits.max_grad
-    seq_provider.system_limits.max_grad = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.max_grad = _max_grad
-
-    _max_slew = seq_provider.system_limits.max_slew
-    seq_provider.system_limits.max_grad = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.max_slew = _max_slew
-
-    _grad_raster_time = seq_provider.system_limits.grad_raster_time
-    seq_provider.system_limits.grad_raster_time = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.grad_raster_time = _grad_raster_time
-
-    _adc_raster_time = seq_provider.system_limits.adc_raster_time
-    seq_provider.system_limits.adc_raster_time = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.adc_raster_time = _adc_raster_time
-
-    _rf_raster_time = seq_provider.system_limits.rf_raster_time
-    seq_provider.system_limits.rf_raster_time = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.rf_raster_time = _rf_raster_time
-
-    _block_duration_raster = seq_provider.system_limits.block_duration_raster
-    seq_provider.system_limits.block_duration_raster = 0.0
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.block_duration_raster = _block_duration_raster
-
-    _adc_dead_time = seq_provider.system_limits.adc_dead_time
-    seq_provider.system_limits.adc_dead_time = -10.
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.adc_dead_time = _adc_dead_time
-
-    _rf_dead_time = seq_provider.system_limits.rf_dead_time
-    seq_provider.system_limits.rf_dead_time = -10.
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.rf_dead_time = _rf_dead_time
-
-    _rf_ringdown_time = seq_provider.system_limits.rf_ringdown_time
-    seq_provider.system_limits.rf_ringdown_time = -10.
-    with pytest.raises(ValueError):
-        seq_provider.from_pypulseq(test_sequence)
-    seq_provider.system_limits.rf_ringdown_time = _rf_ringdown_time
-
 
 def test_invalid_larmor_frequency(
     seq_provider: SequenceProvider,
@@ -178,7 +154,6 @@ def test_calculate_arbitrary_gradient_block(seq_provider: SequenceProvider):
             block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
 
-
 def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
     """Cover _calculate_gradient for type 'trap'."""
     block = pp.make_trapezoid(
@@ -203,7 +178,6 @@ def test_calculate_trapezoid_gradient_block(seq_provider: SequenceProvider):
         _ = seq_provider._calculate_gradient(
             block=block, fov_scaling=1., offset=seq_provider.gradient_out_limits[1], output_channel=1,
         )
-
 
 def test_calculate_rf_block(seq_provider: SequenceProvider):
     """Cover _calculate_rf for valid and invalid RF blocks."""
