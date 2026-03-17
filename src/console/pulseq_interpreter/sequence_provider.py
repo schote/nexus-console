@@ -1,9 +1,17 @@
 """Sequence provider class."""
-
+import contextlib
+import ctypes
 import logging
+import multiprocessing as mp
+import queue
+import sys
+import threading
 from collections.abc import Callable
 from dataclasses import asdict
+from functools import partial
 from math import floor
+from multiprocessing.pool import Pool
+from types import SimpleNamespace
 from typing import Any
 
 import numpy as np
@@ -13,17 +21,8 @@ from pypulseq.Sequence.sequence import Sequence
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
-
-from console.pulseq_interpreter.block_calculator import BlockTask, WaveformConfig
-from console.pulseq_interpreter.block_streamer import BlockStreamer
-
-try:
-    from line_profiler import profile
-except ImportError:
-
-    def profile(func: Callable[..., Any]) -> Callable[..., Any]:
-        """Define placeholder for profile decorator."""
-        return func
+from console.interfaces.unrolled_sequence import UnrolledSequence
+from console.pulseq_interpreter.block_calculator import WaveformConfig, calculate_block
 
 
 class SequenceProvider(Sequence):
@@ -56,7 +55,7 @@ class SequenceProvider(Sequence):
         rf_to_mvolt: float,
         spcm_dwell_time: float,
         system: Opts,
-        system: Opts,
+        max_queue_size: int = 50,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -80,9 +79,8 @@ class SequenceProvider(Sequence):
             Translation of RF waveform from pulseq (Hz) to mV.
         spcm_dwell_time, optional
             Sampling time raster of the output waveform (depends on spectrum card).
-        system_limits
-            Absolute maximum system limits defined in the device configuration.
-            Used to instantiate the pypulseq `Opts()` class.
+        system
+            Pypulseq sequence system
         """
         if not isinstance(system, Opts):
             raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")
@@ -111,10 +109,23 @@ class SequenceProvider(Sequence):
             gamma=self.system.gamma,
         )
 
+        # Setup queue for sequence block processing
+        self.max_queue_size = max_queue_size
+        self.queue: queue.Queue = queue.Queue() if max_queue_size <= 0 else queue.Queue(maxsize=max_queue_size)
+        self.processing_plan: list[tuple[int, SimpleNamespace]] = []
+        self.num_sequence_samples: int = 0
+        self.sequence_size: int = 0
+        self.current_block = None
+        self.block_offset = 0
+        self.num_blocks_obtained = 0
+
+        self.pool: Pool | None = None
+        self.thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
+
     # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
-        """Read a pypulseq sequence to sequence provider.
         """Read a pypulseq sequence to sequence provider.
 
         Parameters
@@ -125,18 +136,7 @@ class SequenceProvider(Sequence):
         Raises
         ------
         AttributeError
-        AttributeError
             seq is not a valid pypulseq ``Sequence`` instance
-        """
-        if not isinstance(seq, Sequence):
-            raise AttributeError("Invalid sequence.")
-        # Re-initialize the parent to start from a clean pypulseq sequence
-        super().__init__(system=self.system)
-        for block_index, _ in seq.block_events.items():
-            block = seq.get_block(block_index)
-            self.add_block(block)
-        # Set definitions
-        self.definitions = seq.definitions
         """
         if not isinstance(seq, Sequence):
             raise AttributeError("Invalid sequence.")
@@ -155,13 +155,8 @@ class SequenceProvider(Sequence):
             block = self.get_block(block_index)
             seq.add_block(block)
         seq.definitions = self.definitions
-        """Create a pypulseq sequence from sequence provider."""
-        seq = Sequence(system=self.system)
-        for block_index, _ in self.block_events.items():
-            block = self.get_block(block_index)
-            seq.add_block(block)
-        seq.definitions = self.definitions
         return seq
+
 
     # -------- Public interface -------- #
 
@@ -172,8 +167,151 @@ class SequenceProvider(Sequence):
             "config": asdict(self.config),
         }
 
-    @profile
-    def unroll_sequence(self, parameter: AcquisitionParameter, num_processes: int = 2) -> BlockStreamer:
+
+    def start(self, parameter: AcquisitionParameter, num_worker: int = 0) -> None:
+        """Start generating blocks in the background."""
+        # Strict concurrency guard
+        if self.thread is not None and self.thread.is_alive():
+            msg = (
+                "A sequence computation is already running. \
+                You must wait for it to finish or call stop() before restarting."
+            )
+            raise RuntimeError(msg)
+
+        self._stop_event.clear()
+
+        # Clear the queue cleanly just in case previous interrupted runs left debris
+        while not self.queue.empty():
+            try:
+                self.queue.get_nowait()
+            except queue.Empty:
+                break
+
+        self._prepare_rx_data(parameter)
+        self.thread = threading.Thread(target=self._producer_thread, args=(num_worker, parameter), daemon=True)
+        self.thread.start()
+
+
+    def stop(self) -> None:
+        """Stop production of blocks."""
+        self._stop_event.set()
+
+        # Drain the queue continuously while the producer is still alive
+        while self.thread is not None and self.thread.is_alive():
+            try:
+                self.queue.get(timeout=0.05)
+            except queue.Empty:
+                pass
+
+        if self.thread and self.thread.is_alive():
+            self.thread.join()
+
+
+    def copy_to_memory(self, dest_ptr: int, n_bytes: int) -> bool:
+        """Dynamically fetch calculated blocks from queue and fill hardware memory pointers."""
+        bytes_written = 0
+        while bytes_written < n_bytes:
+
+            block = self.current_block
+
+            if block is None:
+                block = self.queue.get()
+
+                if isinstance(block, Exception):
+                    self.stop()
+                    msg = "Background block calculation failed during hardware streaming."
+                    raise RuntimeError(msg) from block
+
+                if block is None:
+                    # EOF Reached, fill the rest with zeros
+                    ctypes.memset(dest_ptr + bytes_written, 0, n_bytes - bytes_written)
+                    if self.num_blocks_obtained < len(self.block_events):
+                        self.stop()
+                        raise RuntimeError(
+                            f"Premature EOF: Expected {len(self.block_events)} blocks, "
+                            f"got {self.num_blocks_obtained}."
+                        )
+                    return False
+
+                self.num_blocks_obtained += 1
+                self.current_block = block
+                self.block_offset = 0
+
+            block_bytes = block.nbytes
+            available = block_bytes - self.block_offset
+            to_copy = min(available, n_bytes - bytes_written)
+
+            if to_copy > 0:
+                src_ptr = block.ctypes.data + self.block_offset
+                ctypes.memmove(dest_ptr + bytes_written, src_ptr, to_copy)
+
+                bytes_written += to_copy
+                self.block_offset += to_copy
+
+            if self.block_offset == block_bytes:
+                self.current_block = None
+
+        return True
+
+
+    def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
+        """Evaluate the entire sequence and return it as a populated UnrolledSequence object."""
+        self.start(parameter)
+
+        seq = np.zeros(self.num_sequence_samples * 4, dtype=np.int16)
+        self.num_blocks_obtained = 0
+        block_position = 0
+
+        while True:
+            block = self.queue.get()
+
+            if isinstance(block, Exception):
+                self.stop()
+                msg = "Background calculation failed."
+                raise RuntimeError(msg) from block
+
+            if block is None:
+                if self.num_blocks_obtained < len(self.block_events):
+                    self.stop()
+                    msg = f"Premature EOF: Expected {len(self.block_events)} blocks, got {self.num_blocks_obtained}."
+                    raise RuntimeError(msg)
+                break
+
+            block_samples = block.size // 4
+
+            if block_position + block_samples > self.num_sequence_samples:
+                self.stop()
+                raise RuntimeError(
+                    f"Buffer Overflow: Calculated sequence exceeded pre-allocated size of "
+                    f"{self.num_sequence_samples} samples."
+                )
+
+            seq[block_position * 4 : (block_position + block_samples) * 4] = block
+            block_position += block_samples
+            self.num_blocks_obtained += 1
+
+        self.stop()
+
+        return UnrolledSequence(
+            seq=seq,
+            sample_count=self.num_sequence_samples,
+            rx_data=self.rx_data,
+            gpa_gain=self.config.gpa_gain,
+            gradient_efficiency=self.config.grad_eff,
+            gradient_output_limits=self.config.gradient_out_limits,
+            rf_to_mvolt=self.config.rf_to_mvolt,
+            rf_output_limit=self.config.rf_out_limit,
+            dwell_time=self.config.spcm_dwell_time,
+            duration=self.num_sequence_samples * self.config.spcm_dwell_time,
+            adc_count=len(self.rx_data),
+            parameter=parameter,
+            gamma=self.config.gamma,
+        )
+
+
+    # -------- Private methods -------- #
+
+    def _prepare_rx_data(self, parameter: AcquisitionParameter) -> None:
         """Unroll the pypulseq sequence description.
 
         Parameters
@@ -198,36 +336,19 @@ class SequenceProvider(Sequence):
             self.log.exception("Checks not passed")
             raise
 
-        spcm_dwell = self.config.spcm_dwell_time
-
-        # Get list of all events and list
-        events_list = self.block_events
-        # Calculate sequence duration and number of samples
-        seq_duration, _, _ = self.duration()
-        seq_samples = round(seq_duration / spcm_dwell)
-        # Calculate the start time (and sample position) and duration of each block
-        block_durations = np.array([self.get_block(block_idx).block_duration for block_idx in list(events_list.keys())])
-        block_samples = np.round(block_durations / spcm_dwell).astype(int)
-        block_pos = np.cumsum(block_samples, dtype=np.int64)
-        block_pos = np.insert(block_pos, 0, 0)
-
-        if seq_samples != block_pos[-1]:
-            # Adjust if simple rounding error
-            if abs(seq_samples - block_pos[-1]) <= 1:
-                seq_samples = block_pos[-1]
-            else:
-                msg = "Number of sequence samples does not match total number of block samples"
-                raise IndexError(msg)
-
-        _rx_data = []
+        self.rx_data = []
+        self.num_sequence_samples = 0
+        self.sequence_size = 0
+        self.num_blocks_obtained = 0
         adc_count: int = 0
         labels = {}
-        execution_plan = []
+        self.processing_plan = []
 
-        for event_idx, (event_key, event) in enumerate(events_list.items()):
-            block = self.get_block(event_key)
-            current_block_pos = block_pos[event_idx]
-            current_block_samples = block_samples[event_idx]
+        for index, key in enumerate(self.block_events):
+            block = self.get_block(key)
+            # Sequence block indexing starts at 1
+            self.processing_plan.append((index+1, block))
+            self.num_sequence_samples += round(block.block_duration / self.config.spcm_dwell_time)
 
             # Handle Labels
             if block.label is not None:
@@ -242,63 +363,65 @@ class SequenceProvider(Sequence):
                 # and two times the number of discarded samples for symmetric adc dead time
                 # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
                 total_gate_duration = (block.adc.num_samples + 2 * num_samples_discard) * block.adc.dwell
-                num_samples_raw = round(total_gate_duration / spcm_dwell)
+                num_samples_raw = round(total_gate_duration / self.config.spcm_dwell_time)
 
-                _rx_data.append(
+                self.rx_data.append(
                     RxData(
                         index=adc_count,
                         num_samples=block.adc.num_samples,
                         num_samples_raw=num_samples_raw,
                         num_samples_discard=num_samples_discard,
                         dwell_time=block.adc.dwell,
-                        dwell_time_raw=spcm_dwell,
+                        dwell_time_raw=self.config.spcm_dwell_time,
                         phase_offset=block.adc.phase_offset,
                         freq_offset=block.adc.freq_offset,
                         total_averages=parameter.num_averages,
                         ddc_method=parameter.ddc_method,
                         labels=labels,
-                    )
+                    ),
                 )
                 adc_count += 1
                 labels = {}  # Reset labels dict
 
-            # Add block task to execution plan
-            execution_plan.append(
-                BlockTask(
-                    block_index=event_idx,
-                    block_pos=int(current_block_pos),
-                    block_samples=int(current_block_samples),
-                    block=block,
-                )
+        self.log.info("Prepared sequence for calculation: Got %s ADC events.", len(self.rx_data))
+        # Sequence memory = num_samples * 4 (channels) * 2 (bytes per sample)
+        self.sequence_size = self.num_sequence_samples * 8
+
+    def _producer_thread(self, num_workers: int, parameter: AcquisitionParameter) -> None:
+        """Run producer thread core loop that calculates blocks and pushes to queue."""
+        try:
+            calc_func = partial(
+                calculate_block,
+                parameter=parameter,
+                config=self.config,
             )
 
-        self.log.info(f"Generated {len(execution_plan)} calculation tasks.")
+            if num_workers == 0:
+                for result_block in map(calc_func, self.processing_plan):
+                    if self._stop_event.is_set():
+                        break
+                    self.queue.put(result_block)
+            else:
+                self.pool = mp.Pool(num_workers)
+                for result_block in self.pool.imap(calc_func, self.processing_plan, chunksize=1):
+                    if self._stop_event.is_set():
+                        break
+                    self.queue.put(result_block)
 
-        self.log.debug(
-            "Unrolled sequence; Total sample points: %s; Total block events: %s",
-            seq_samples,
-            len(block_durations),
-        )
+        except Exception as e:
+            self.log.error(f"Error in BlockStreamer: {e}")
+            with contextlib.suppress(queue.Full):
+                self.queue.put(e, timeout=1.0)
+        finally:
+            with contextlib.suppress(queue.Full):
+                self.queue.put(None, timeout=1.0)  # EOF
+            if self.pool is not None:
+                if self._stop_event.is_set() or isinstance(sys.exc_info()[1], Exception):
+                    self.pool.terminate()
+                else:
+                    self.pool.close()
+                self.pool.join()
 
-        config = WaveformConfig(
-            spcm_dwell_time=spcm_dwell,
-            rf_to_mvolt=self.config.rf_to_mvolt,
-            gpa_gain=self.config.gpa_gain,
-            grad_eff=self.config.grad_eff,
-            gradient_out_limits=self.config.gradient_out_limits,
-            rf_out_limit=self.config.rf_out_limit,
-            gamma=self.system.gamma,
-        )
-
-        return BlockStreamer(
-            execution_plan=execution_plan,
-            parameter=parameter,
-            config=config,
-            sample_count=seq_samples,
-            rx_data=_rx_data,
-        )
-
-    # -------- Private validation methods -------- #
 
     def _check_gradient_amplitude(self, idx: int, rel_value: float) -> None:
         """Raise error if amplitude exceeds output limit."""
@@ -306,6 +429,7 @@ class SequenceProvider(Sequence):
         if np.abs(rel_value) > 1.0:
             msg = f"Amplitude of gradient channel {idx + 1} ({rel_value * limit}) exceeded output limit ({limit}))"
             raise ValueError(msg)
+
 
     def _check_parameter(self, parameter: AcquisitionParameter) -> None:
         """Check acquisition parameter and raise error if invalid."""
@@ -325,6 +449,7 @@ class SequenceProvider(Sequence):
         if {grad_ch.x, grad_ch.y, grad_ch.z} != {1, 2, 3}:
             msg = f"Invalid channel assignment, must contain each of 1, 2, and 3 exactly once, got: {grad_ch}"
             raise ValueError(msg)
+
 
     def _check_sequence(self) -> None:
         """Check sequence."""

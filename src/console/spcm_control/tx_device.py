@@ -10,7 +10,7 @@ import console.spcm_control.spcm.pyspcm as spcm
 from console.interfaces.acquisition_parameter import Dimensions
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
-from console.pulseq_interpreter.block_streamer import BlockStreamer
+from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
 TX_NOTIFY_RATE = 16
 
@@ -262,11 +262,11 @@ class TxCard(SpectrumDevice):
                 offsets.z,
             )
 
-    def start_operation(self, streamer: "BlockStreamer" = None) -> None:
+    def start_operation(self, provider: SequenceProvider | None = None) -> None:
         """Start transmit (TX) card operation."""
         try:
-            if not streamer:
-                raise ValueError("No BlockStreamer provided.")
+            if not provider:
+                raise ValueError("No sequence provider.")
 
             if not self.card:
                 raise ConnectionError("No connection to card established...")
@@ -274,7 +274,7 @@ class TxCard(SpectrumDevice):
             self.log.exception(exc, exc_info=True)
             raise exc
 
-        if sqnc_sample_rate := 1 / (streamer.config.spcm_dwell_time * 1e6) != self.sample_rate:
+        if sqnc_sample_rate := 1 / (provider.config.spcm_dwell_time * 1e6) != self.sample_rate:
             self.log.warning(
                 "Sequence sample rate (%s MHz) differs from device sample rate (%s MHz).",
                 sqnc_sample_rate,
@@ -282,7 +282,7 @@ class TxCard(SpectrumDevice):
             )
 
         self.is_running.clear()
-        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(streamer,))
+        self.worker = threading.Thread(target=self._fifo_stream_worker, args=(provider,))
         self.worker.start()
 
     def stop_operation(self) -> None:
@@ -302,10 +302,10 @@ class TxCard(SpectrumDevice):
         else:
             print("No active replay thread found...")
 
-    def _fifo_stream_worker(self, streamer: "BlockStreamer") -> None:
+    def _fifo_stream_worker(self, provider: SequenceProvider) -> None:
         """Continuous FIFO mode stream worker."""
 
-        self.data_buffer_size = streamer.sample_count * 8
+        self.data_buffer_size = provider.sequence_size
         self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 
         notify_size = spcm.int32(
@@ -350,12 +350,12 @@ class TxCard(SpectrumDevice):
             # Perform initial memory transfer: Fill the whole ring buffer
             if _ring_buffer_pos := ctypes.cast(ring_buffer, ctypes.c_void_p).value:
                 initial_transfer = min(self.data_buffer_size, ring_buffer_size.value)
-                streamer.copy_to_memory(_ring_buffer_pos, initial_transfer)
+                provider.copy_to_memory(_ring_buffer_pos, initial_transfer)
                 transferred_bytes = initial_transfer
             else:
                 raise RuntimeError("Could not get ring buffer position.")
         except RuntimeError as err:
-            streamer.stop()
+            provider.stop()
             self.log.exception(err, exc_info=True)
             raise err
 
@@ -413,9 +413,9 @@ class TxCard(SpectrumDevice):
 
                 if ring_buffer_position:
                     if (bytes_remaining := self.data_buffer_size - transferred_bytes) >= notify_size.value:
-                        streamer.copy_to_memory(ring_buffer_position, notify_size.value)
+                        provider.copy_to_memory(ring_buffer_position, notify_size.value)
                     else:
-                        streamer.copy_to_memory(ring_buffer_position, bytes_remaining)
+                        provider.copy_to_memory(ring_buffer_position, bytes_remaining)
                         ctypes.memset(
                             ring_buffer_position + bytes_remaining,
                             0,
@@ -428,5 +428,5 @@ class TxCard(SpectrumDevice):
                 self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
 
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_M2CMD, spcm.M2CMD_DATA_WAITDMA))
-        streamer.stop()
+        provider.stop()
         self.log.debug("Card operation stopped")

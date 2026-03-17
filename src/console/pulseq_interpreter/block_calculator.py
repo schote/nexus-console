@@ -8,11 +8,10 @@ import numpy as np
 from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
-from console.interfaces.unrolled_sequence import BlockTask
 
+# Constants
 INT16_MAX = np.iinfo(np.int16).max
 INT16_MIN = np.iinfo(np.int16).min
-
 NUM_REFERENCE_SAMPLES = 1000
 REFERENCE_FREQUENCY = 1.095e6
 
@@ -30,11 +29,11 @@ class WaveformConfig:
     gamma: float
 
 
-def generate_phase_reference(spcm_dwell_time: float) -> np.ndarray:
-    """Generate the phase reference signal for the ADC."""
-    time = np.arange(NUM_REFERENCE_SAMPLES) * spcm_dwell_time
-    signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
-    phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
+def get_phase_reference(num_samples: int, frequency: float, dwell_time: float) -> np.ndarray:
+    """Return phase reference signal."""
+    time = np.arange(num_samples) * dwell_time
+    signal = np.exp(2j * np.pi * frequency * time)
+    phase_reference = np.zeros(num_samples, dtype=np.uint16)
     phase_reference[signal > 0] = np.uint16(2**15)
     return phase_reference
 
@@ -137,17 +136,15 @@ def calculate_gradient(
 
 
 def calculate_block(
-    task: BlockTask,
+    payload: tuple[int, SimpleNamespace],
     parameter: AcquisitionParameter,
     config: WaveformConfig,
-    phase_reference: np.ndarray,
 ) -> np.ndarray:
     """Calculate the waveforms and digital signals of a block, returning an interleaved int16 array."""
     try:
-        block = task.block
-        block_samples = task.block_samples
-
+        index, block = payload
         # Create a zero-initialized array for the block: 4 channels of int16
+        block_samples = np.round(block.block_duration / config.spcm_dwell_time).astype(int)
         seq_block = np.zeros(block_samples * 4, dtype=np.int16)
 
         # 1. Analog Signals
@@ -214,9 +211,13 @@ def calculate_block(
             seq_block[adc_start + 1 : adc_end + 1 : 4] |= np.uint16(2**15).view(np.int16)
 
             # Add phase reference signal to 16th bit of output channel 2 (second gradient channel)
-            num_samples_reference = min(num_samples_raw, phase_reference.size)
-            phase_ref_end = adc_start + num_samples_reference * 4
-            seq_block[adc_start + 2 : phase_ref_end + 2 : 4] |= phase_reference[:num_samples_reference].view(np.int16)
+            phase_reference = get_phase_reference(
+                num_samples=min(num_samples_raw, NUM_REFERENCE_SAMPLES),
+                frequency=REFERENCE_FREQUENCY,
+                dwell_time=config.spcm_dwell_time,
+            )
+            phase_ref_end = adc_start + phase_reference.size * 4
+            seq_block[adc_start + 2 : phase_ref_end + 2 : 4] |= phase_reference[:phase_reference.size].view(np.int16)
 
         # RF unblanking
         if hasattr(block, "rf") and getattr(block, "rf") is not None:
@@ -236,5 +237,5 @@ def calculate_block(
         return seq_block
 
     except Exception as e:
-        print(f"Error in worker {task.block_index}: {e}")
+        print(f"Error in worker {index}: {e}")
         raise e

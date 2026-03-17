@@ -10,7 +10,7 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as sp
 from console.interfaces.rx_data import RxData
-from console.pulseq_interpreter.sequence_provider import NUM_REFERENCE_SAMPLES
+from console.pulseq_interpreter.block_calculator import NUM_REFERENCE_SAMPLES
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
 

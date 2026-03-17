@@ -198,7 +198,7 @@ class AcquisitionControl:
             raise err
 
         # Reset unrolled sequence
-        self.streamer = None
+        # self.streamer = None
         seq_name = str(self.seq_provider.get_definition("Name"))
         if not seq_name:
             seq_name = str(self.seq_provider.get_definition("name"))
@@ -206,8 +206,8 @@ class AcquisitionControl:
                 seq_name = "unknown"
         self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
         # Calculate sequence with parameter
-        self.streamer = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
-        self.log.info("Sequence duration: %s s", self.streamer.sample_count * self.streamer.config.spcm_dwell_time)
+        # self.streamer = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
+        # self.log.info("Sequence duration: %s s", self.streamer.sample_count * self.streamer.config.spcm_dwell_time)
 
     def run(self, store_unprocessed: bool = False) -> AcquisitionData:
         """Run an acquisition job.
