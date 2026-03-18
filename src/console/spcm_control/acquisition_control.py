@@ -17,7 +17,6 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
-from console.pulseq_interpreter.block_streamer import BlockStreamer
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.tx_device import TxCard
@@ -118,14 +117,7 @@ class AcquisitionControl:
 
         # Get the rx sampling rate for DDC
         self.f_spcm = self.rx_card.sample_rate * 1e6
-        # Set sequence provider max. amplitude per channel according to values from tx_card
-        self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
-        self.streamer: BlockStreamer | None = None
-
-        # Attributes for data and dwell time of downsampled signal
-        self._raw: list[np.ndarray] = []
-        self._unproc: list[np.ndarray] = []
 
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
@@ -135,6 +127,164 @@ class AcquisitionControl:
             self.rx_card.disconnect()
         self.log.info("Measurement cards disconnected")
         self.log.info("Acquisition control terminated\n---------------------------------------------------\n")
+
+
+    # -------- Public methods -------- #
+
+    def run(
+        self,
+        sequence: str | Sequence,
+        parameter: AcquisitionParameter,
+        store_unprocessed: bool = False,
+        num_processes: int = 1,
+        timeout: float = 5.,
+    ) -> AcquisitionData:
+        """Run an acquisition job.
+
+        Parameters
+        ----------
+        store_unprocessed
+            Flag for whether to keep the raw, undecimated data after decimation
+        realtime_proccessing
+            flag for processing the data in real time using the multiprocessing or
+            using threading to process the data after it has all been acquired.
+
+        Raises
+        ------
+        RuntimeError
+            The measurement cards are not setup properly
+        ValueError
+            Missing raw data or missing averages
+        """
+        try:
+            # Check setup
+            if not self.is_setup:
+                raise RuntimeError("Measurement cards are not setup.")
+        except (RuntimeError, ValueError) as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        self._load_sequence(sequence)
+        self.seq_provider.prepare_rx_data(parameter)
+        sequence_duration = round(self.seq_provider.num_sequence_samples * self.seq_provider.config.spcm_dwell_time)
+        self.log.info("Sequence duration: %s s", sequence_duration)
+
+        # Create a list to store rx_data for all averages
+        self.receive_data: list = []
+        self.store_unprocessed = store_unprocessed
+        self.num_adc_events = len(self.seq_provider.rx_data)
+
+        # Set gradient offset values
+        self.tx_card.set_gradient_offsets(
+            offsets=parameter.gradient_offset,
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
+        )
+
+        for k in range(parameter.num_averages):
+            # Create a copy of rx_data to store the current acquisition in and label scan number.
+            self.rx_card.rx_data = copy.deepcopy(self.seq_provider.rx_data)
+
+            self.log.info("Acquisition %s/%s", k + 1, parameter.num_averages)
+
+            # Start measurement card operations
+            self.rx_card.start_operation()
+
+            while not self.rx_card.is_receiving.is_set():
+                time.sleep(0.01)
+
+            self.seq_provider.start(num_worker=num_processes)
+            self.tx_card.start_operation(self.seq_provider)
+
+            # Get start time of acquisition
+            time_start = time.time()
+            num_gates = 0
+            num_expected_gates = len(self.seq_provider.rx_data)
+
+            while self.rx_card.total_gates < num_expected_gates:
+                # Delay poll by 10 ms
+                time.sleep(0.01)
+
+                if self.rx_card.total_gates > num_gates:
+                    num_gates = self.rx_card.total_gates
+                    time_start = time.time()
+
+                elif (time.time() - time_start) > timeout:
+                    # Could not receive all the data before timeout
+                    self.log.warning(
+                        "Acquisition Timeout: Only received %s/%s adc events", num_gates, num_expected_gates,
+                    )
+                    break
+
+            # Append the receive data with current scan data
+            scan_data: list = self.rx_card.rx_data.copy()
+            self.rx_card.rx_data = None
+
+            for data in scan_data:
+                data.average_index = k
+            self.receive_data.extend(scan_data)
+
+            self.seq_provider.stop()
+            self.tx_card.stop_operation()
+            self.rx_card.stop_operation()
+
+            if parameter.averaging_delay > 0:
+                time.sleep(parameter.averaging_delay)
+
+        # Reset gradient offset values
+        self.tx_card.set_gradient_offsets(
+            offsets=Dimensions(x=0, y=0, z=0),
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
+        )
+
+        if len(self.receive_data) > 0:
+            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
+            # Process all the data at the end of the acquisition
+            self._start_post_processing()
+        else:
+            raise RuntimeError("No ADC events present")
+
+        try:
+            averages = [data.average_index for data in self.receive_data]
+            if not (np.unique(averages).size == parameter.num_averages):
+                averages_idc = np.arange(parameter.num_averages)
+                missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
+                raise ValueError(f"Missing averages: {missing_averages} out of {parameter.num_averages}")
+        except ValueError as err:
+            self.log.exception(err, exc_info=True)
+            raise err
+
+        return AcquisitionData(
+            receive_data=self.receive_data,
+            sequence=self.seq_provider.to_pypulseq(),
+            session_path=self.session_path,
+            meta={"device_configuration": self.config.model_dump()},
+            acquisition_parameters=parameter,
+        )
+
+
+    def get_device_configuration(self) -> NexusConfiguration:
+        """Get nexus device configuration."""
+        return self.config
+
+
+    def get_sequence_system(self) -> Opts:
+        """Get pypulseq sequence system from sequence provider."""
+        return self.seq_provider.system
+
+
+    def plot_waveforms(
+        self,
+        sequence: str | Sequence,
+        parameter: AcquisitionParameter,
+        time_range: tuple[float, float],
+    ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
+        """Plot internally stored waveforms."""
+        self._load_sequence(sequence=sequence)
+        unrolled_sequence = self.seq_provider.unroll_sequence(parameter)
+        return plot_unrolled_sequence(unrolled_sequence, time_range=time_range)
+
+
+    # -------- Private methods -------- #
 
     def _setup_logging(self, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
@@ -162,12 +312,8 @@ class AcquisitionControl:
         log_console.setFormatter(formatter)
         logging.getLogger("").addHandler(log_console)
 
-    def set_sequence(
-        self,
-        sequence: str | Sequence,
-        parameter: AcquisitionParameter,
-        num_processes: int = 1,
-    ) -> None:
+
+    def _load_sequence(self, sequence: str | Sequence) -> None:
         """Set sequence and acquisition parameter.
 
         Parameters
@@ -185,7 +331,6 @@ class AcquisitionControl:
             Invalid file ending of sequence file.
         """
         try:
-            # Check sequence
             if isinstance(sequence, Sequence):
                 self.seq_provider.from_pypulseq(sequence)
             elif isinstance(sequence, str):
@@ -197,179 +342,24 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Reset unrolled sequence
-        # self.streamer = None
-        seq_name = str(self.seq_provider.get_definition("Name"))
-        if not seq_name:
-            seq_name = str(self.seq_provider.get_definition("name"))
-            if not seq_name:
-                seq_name = "unknown"
-        self.log.info("Unrolling sequence: %s", seq_name.replace(" ", "_"))
-        # Calculate sequence with parameter
-        # self.streamer = self.seq_provider.unroll_sequence(parameter=parameter, num_processes=num_processes)
-        # self.log.info("Sequence duration: %s s", self.streamer.sample_count * self.streamer.config.spcm_dwell_time)
+        raw_name = self.seq_provider.get_definition("Name") or self.seq_provider.get_definition("name")
+        seq_name = str(raw_name) if raw_name else "unknown"
+        self.log.info("Sequence loaded: %s", seq_name)
 
-    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
-        """Run an acquisition job.
 
-        Parameters
-        ----------
-        store_unprocessed
-            Flag for whether to keep the raw, undecimated data after decimation
-        realtime_proccessing
-            flag for processing the data in real time using the multiprocessing or
-            using threading to process the data after it has all been acquired.
-
-        Raises
-        ------
-        RuntimeError
-            The measurement cards are not setup properly
-        ValueError
-            Missing raw data or missing averages
-        """
-        try:
-            # Check setup
-            if not self.is_setup:
-                raise RuntimeError("Measurement cards are not setup.")
-            if self.streamer is None:
-                raise ValueError("No sequence set, call set_sequence() to set a sequence and acquisition parameter.")
-        except (RuntimeError, ValueError) as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-        sequence_duration = self.streamer.sample_count * self.streamer.config.spcm_dwell_time
-        # Define timeout for acquisition process: 5 sec + sequence duration
-        timeout = 5 + sequence_duration
-
-        self.store_unprocessed = store_unprocessed
-
-        # Create a list to store rx_data for all averages
-        self.receive_data: list = []
-        self.num_adc_events = len(self.streamer.rx_data)
-
-        # Set gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=self.streamer.parameter.gradient_offset,
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
-
-        for k in range(self.streamer.parameter.num_averages):
-            # Create a copy of rx_data to store the current acquisition in and label scan number.
-            self.rx_card.rx_data = copy.deepcopy(self.streamer.rx_data)
-
-            self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
-
-            # Start measurement card operations
-            self.rx_card.start_operation()
-
-            while not self.rx_card.is_receiving.is_set():
-                time.sleep(0.01)
-                # self.log.debug("Waiting for RX card to start receiving...")
-
-            self.streamer.start()
-            self.tx_card.start_operation(self.streamer)
-
-            # Get start time of acquisition
-            time_start = time.time()
-
-            while (num_gates := self.rx_card.total_gates) < len(self.streamer.rx_data) or num_gates == 0:
-                # Delay poll by 10 ms
-                time.sleep(0.01)
-
-                if (time.time() - time_start) > timeout:
-                    # Could not receive all the data before timeout
-                    self.log.warning(
-                        "Acquisition Timeout: Only received %s/%s adc events", num_gates, len(self.streamer.rx_data)
-                    )
-                    break
-
-                if num_gates >= self.sequence.adc_count and num_gates > 0:
-                    break
-
-            # Append the receive data with current scan data
-            scan_data: list = self.rx_card.rx_data.copy()
-            self.rx_card.rx_data = None
-
-            for data in scan_data:
-                data.average_index = k
-            self.receive_data.extend(scan_data)
-
-            self.tx_card.stop_operation()
-            self.rx_card.stop_operation()
-
-            if self.streamer.parameter.averaging_delay > 0:
-                time.sleep(self.streamer.parameter.averaging_delay)
-
-        # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=Dimensions(x=0, y=0, z=0),
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
-
-        if len(self.receive_data) > 0:
-            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
-            # Process all the data at the end of the acquisition
-            self.post_processing(self.sequence.parameter)
-        else:
-            raise RuntimeError("No ADC events present")
-
-        try:
-            averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.streamer.parameter.num_averages):
-                averages_idc = np.arange(self.streamer.parameter.num_averages)
-                missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
-                raise ValueError(f"Missing averages: {missing_averages} out of {self.streamer.parameter.num_averages}")
-        except ValueError as err:
-            self.log.exception(err, exc_info=True)
-            raise err
-
-        return AcquisitionData(
-            receive_data=self.receive_data,
-            sequence=self.seq_provider.to_pypulseq(),
-            session_path=self.session_path,
-            meta={"device_configuration": self.config.model_dump()},
-            acquisition_parameters=self.streamer.parameter,
-        )
-
-    def get_device_configuration(self) -> NexusConfiguration:
-        """Get nexus device configuration."""
-        return self.config
-
-    def get_sequence_system(self) -> Opts:
-        """Get pypulseq sequence system from sequence provider."""
-        return self.seq_provider.system
-
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
+    def _start_post_processing(self) -> None:
         """Process acquired NMR data.
 
-        Post processing contains the following steps (per readout sample size):
-        (1) Scaling of receive data
-        (2) Demodulation along readout dimensions
-        (3) Decimation along readout dimension
+        Post processing scales, demodulates and decimates each readout contained in `rx_data`.
 
         Parameters
         ----------
         parameter
             Acquisition parameter
         """
-        # Set the larmor frequency for all data to the defined larmor_frequency
-        for rx_data in self.receive_data:
-            rx_data.larmor_frequency = parameter.larmor_frequency
-
         # Process the data in parallel
         with ThreadPoolExecutor() as executor:
             executor.map(
-                lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed), self.receive_data
+                lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed),
+                self.receive_data,
             )
-
-    def plot_waveforms(
-        self,
-        time_range: tuple[float, float],
-    ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
-        """Plot internally stored waveforms."""
-        if self.streamer is not None:
-            # Fully unroll sequence for plotting
-            unrolled_sequence = self.streamer.unroll_fully()
-            return plot_unrolled_sequence(unrolled_sequence, time_range=time_range)
-        self.log.warning("No sequence to plot. Set sequence first.")
-        return None

@@ -6,13 +6,11 @@ import multiprocessing as mp
 import queue
 import sys
 import threading
-from collections.abc import Callable
 from dataclasses import asdict
 from functools import partial
 from math import floor
 from multiprocessing.pool import Pool
 from types import SimpleNamespace
-from typing import Any
 
 import numpy as np
 from pypulseq.opts import Opts
@@ -118,6 +116,7 @@ class SequenceProvider(Sequence):
         self.current_block = None
         self.block_offset = 0
         self.num_blocks_obtained = 0
+        self.acquisition_parameter: AcquisitionParameter | None = None
 
         self.pool: Pool | None = None
         self.thread: threading.Thread | None = None
@@ -142,7 +141,7 @@ class SequenceProvider(Sequence):
             raise AttributeError("Invalid sequence.")
         # Re-initialize the parent to start from a clean pypulseq sequence
         super().__init__(system=self.system)
-        for block_index, _ in seq.block_events.items():
+        for block_index in seq.block_events:
             block = seq.get_block(block_index)
             self.add_block(block)
         # Set definitions
@@ -151,7 +150,7 @@ class SequenceProvider(Sequence):
     def to_pypulseq(self) -> Sequence | None:
         """Create a pypulseq sequence from sequence provider."""
         seq = Sequence(system=self.system)
-        for block_index, _ in self.block_events.items():
+        for block_index in self.block_events:
             block = self.get_block(block_index)
             seq.add_block(block)
         seq.definitions = self.definitions
@@ -168,7 +167,7 @@ class SequenceProvider(Sequence):
         }
 
 
-    def start(self, parameter: AcquisitionParameter, num_worker: int = 0) -> None:
+    def start(self, num_worker: int = 0) -> None:
         """Start generating blocks in the background."""
         # Strict concurrency guard
         if self.thread is not None and self.thread.is_alive():
@@ -176,6 +175,9 @@ class SequenceProvider(Sequence):
                 "A sequence computation is already running. \
                 You must wait for it to finish or call stop() before restarting."
             )
+            raise RuntimeError(msg)
+        if self.acquisition_parameter is None or not self.rx_data:
+            msg = "Acquisition parameter not set or receive data missing: Run `prepare_rx_data` first."
             raise RuntimeError(msg)
 
         self._stop_event.clear()
@@ -187,8 +189,11 @@ class SequenceProvider(Sequence):
             except queue.Empty:
                 break
 
-        self._prepare_rx_data(parameter)
-        self.thread = threading.Thread(target=self._producer_thread, args=(num_worker, parameter), daemon=True)
+        self.thread = threading.Thread(
+            target=self._producer_thread,
+            args=(num_worker, self.acquisition_parameter),
+            daemon=True,
+        )
         self.thread.start()
 
 
@@ -206,6 +211,83 @@ class SequenceProvider(Sequence):
         if self.thread and self.thread.is_alive():
             self.thread.join()
 
+    def prepare_rx_data(self, parameter: AcquisitionParameter) -> None:
+            """Prepare rx data objects filled during sequence execution.
+
+            Parameters
+            ----------
+            parameter
+                Instance of AcquisitionParameter containing all necessary parameters to
+                calculate the sequence waveforms, i.e. larmor frequency, gradient offsets, etc.
+            num_processes
+                Number of processes to use for parallel calculation. Default is 1 (sequential).
+                If > 1, multiprocessing is used.
+
+            Returns
+            -------
+                    signal encoded by 15th bit. Only the RF channel does not contain a digital signal.
+                    In addition, all receive events are described and returned in a list within the unrolled
+                    sequence object.
+            """
+            try:
+                self._check_parameter(parameter)
+                self.acquisition_parameter = parameter
+                self._check_sequence()
+            except Exception:
+                self.log.exception("Checks not passed")
+                raise
+
+            self.rx_data = []
+            self.num_sequence_samples = 0
+            self.sequence_size = 0
+            self.num_blocks_obtained = 0
+            adc_count: int = 0
+            labels = {}
+            self.processing_plan = []
+
+            for index, key in enumerate(self.block_events):
+                block = self.get_block(key)
+                # Sequence block indexing starts at 1
+                self.processing_plan.append((index+1, block))
+                self.num_sequence_samples += round(block.block_duration / self.config.spcm_dwell_time)
+
+                # Handle Labels
+                if block.label is not None:
+                    for label in block.label.values():
+                        labels[label.label] = label.value
+
+                # Handle ADC (Metadata + Gate)
+                if block.adc is not None:
+                    # Calculate the number of samples to be discarded from the decimated signal
+                    num_samples_discard = floor(block.adc.dead_time / block.adc.dwell)
+                    # Calculate the total gate duration, given by number of samples
+                    # and two times the number of discarded samples for symmetric adc dead time
+                    # The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
+                    total_gate_duration = (block.adc.num_samples + 2 * num_samples_discard) * block.adc.dwell
+                    num_samples_raw = round(total_gate_duration / self.config.spcm_dwell_time)
+
+                    self.rx_data.append(
+                        RxData(
+                            index=adc_count,
+                            num_samples=block.adc.num_samples,
+                            num_samples_raw=num_samples_raw,
+                            num_samples_discard=num_samples_discard,
+                            dwell_time=block.adc.dwell,
+                            dwell_time_raw=self.config.spcm_dwell_time,
+                            larmor_frequency=parameter.larmor_frequency,
+                            phase_offset=block.adc.phase_offset,
+                            freq_offset=block.adc.freq_offset,
+                            total_averages=self.acquisition_parameter.num_averages,
+                            ddc_method=self.acquisition_parameter.ddc_method,
+                            labels=labels,
+                        ),
+                    )
+                    adc_count += 1
+                    labels = {}  # Reset labels dict
+
+            self.log.info("Prepared sequence for calculation: Got %s ADC events.", len(self.rx_data))
+            # Sequence memory = num_samples * 4 (channels) * 2 (bytes per sample)
+            self.sequence_size = self.num_sequence_samples * 8
 
     def copy_to_memory(self, dest_ptr: int, n_bytes: int) -> bool:
         """Dynamically fetch calculated blocks from queue and fill hardware memory pointers."""
@@ -256,7 +338,8 @@ class SequenceProvider(Sequence):
 
     def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Evaluate the entire sequence and return it as a populated UnrolledSequence object."""
-        self.start(parameter)
+        self.prepare_rx_data(parameter)
+        self.start()
 
         seq = np.zeros(self.num_sequence_samples * 4, dtype=np.int16)
         self.num_blocks_obtained = 0
@@ -310,82 +393,6 @@ class SequenceProvider(Sequence):
 
 
     # -------- Private methods -------- #
-
-    def _prepare_rx_data(self, parameter: AcquisitionParameter) -> None:
-        """Unroll the pypulseq sequence description.
-
-        Parameters
-        ----------
-        parameter
-            Instance of AcquisitionParameter containing all necessary parameters to
-            calculate the sequence waveforms, i.e. larmor frequency, gradient offsets, etc.
-        num_processes
-            Number of processes to use for parallel calculation. Default is 1 (sequential).
-            If > 1, multiprocessing is used.
-
-        Returns
-        -------
-                signal encoded by 15th bit. Only the RF channel does not contain a digital signal.
-                In addition, all receive events are described and returned in a list within the unrolled
-                sequence object.
-        """
-        try:
-            self._check_parameter(parameter)
-            self._check_sequence()
-        except Exception:
-            self.log.exception("Checks not passed")
-            raise
-
-        self.rx_data = []
-        self.num_sequence_samples = 0
-        self.sequence_size = 0
-        self.num_blocks_obtained = 0
-        adc_count: int = 0
-        labels = {}
-        self.processing_plan = []
-
-        for index, key in enumerate(self.block_events):
-            block = self.get_block(key)
-            # Sequence block indexing starts at 1
-            self.processing_plan.append((index+1, block))
-            self.num_sequence_samples += round(block.block_duration / self.config.spcm_dwell_time)
-
-            # Handle Labels
-            if block.label is not None:
-                for label in block.label.values():
-                    labels[label.label] = label.value
-
-            # Handle ADC (Metadata + Gate)
-            if block.adc is not None:
-                # Calculate the number of samples to be discarded from the decimated signal
-                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell)
-                # Calculate the total gate duration, given by number of samples
-                # and two times the number of discarded samples for symmetric adc dead time
-                # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
-                total_gate_duration = (block.adc.num_samples + 2 * num_samples_discard) * block.adc.dwell
-                num_samples_raw = round(total_gate_duration / self.config.spcm_dwell_time)
-
-                self.rx_data.append(
-                    RxData(
-                        index=adc_count,
-                        num_samples=block.adc.num_samples,
-                        num_samples_raw=num_samples_raw,
-                        num_samples_discard=num_samples_discard,
-                        dwell_time=block.adc.dwell,
-                        dwell_time_raw=self.config.spcm_dwell_time,
-                        phase_offset=block.adc.phase_offset,
-                        freq_offset=block.adc.freq_offset,
-                        total_averages=parameter.num_averages,
-                        ddc_method=parameter.ddc_method,
-                        labels=labels,
-                    ),
-                )
-                adc_count += 1
-                labels = {}  # Reset labels dict
-
-        self.log.info("Prepared sequence for calculation: Got %s ADC events.", len(self.rx_data))
-        # Sequence memory = num_samples * 4 (channels) * 2 (bytes per sample)
-        self.sequence_size = self.num_sequence_samples * 8
 
     def _producer_thread(self, num_workers: int, parameter: AcquisitionParameter) -> None:
         """Run producer thread core loop that calculates blocks and pushes to queue."""

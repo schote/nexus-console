@@ -8,9 +8,9 @@ import numpy as np
 
 import console.spcm_control.spcm.pyspcm as spcm
 from console.interfaces.acquisition_parameter import Dimensions
+from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.spcm_control.abstract_device import SpectrumDevice
 from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
-from console.pulseq_interpreter.sequence_provider import SequenceProvider
 
 TX_NOTIFY_RATE = 16
 
@@ -304,7 +304,6 @@ class TxCard(SpectrumDevice):
 
     def _fifo_stream_worker(self, provider: SequenceProvider) -> None:
         """Continuous FIFO mode stream worker."""
-
         self.data_buffer_size = provider.sequence_size
         self.log.debug("Replay data buffer: %s bytes", self.data_buffer_size)
 

@@ -6,13 +6,13 @@ from pathlib import Path
 import numpy as np
 import pypulseq as pp
 import pytest
+from console.pulseq_interpreter.waveform_calculator import calculate_gradient, calculate_rf
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
-from console.pulseq_interpreter.waveform_calculator import calculate_gradient, calculate_rf
 from console.utilities.sequences import tse_3d
 
 

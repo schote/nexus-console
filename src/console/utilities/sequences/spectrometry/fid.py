@@ -4,7 +4,6 @@ from math import pi
 import pypulseq as pp
 
 from console.utilities.sequences.system_settings import system as default_system
-from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
