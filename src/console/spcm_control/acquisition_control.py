@@ -11,6 +11,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import numpy as np
+from pypulseq import Opts
 
 from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
@@ -73,8 +74,6 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
-        # Load device configuration and create instances
-        # TODO: Generalize Nexus configuration to allow different setups
         self.config: NexusConfiguration = load_nexus_config(configuration_file)
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
@@ -86,7 +85,7 @@ class AcquisitionControl:
             rf_output_limit=self.config.tx.channel_max_amplitude[0],
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
-            system_limits=self.config.system,
+            system=self.config.system.get_opts(),
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(
@@ -328,6 +327,10 @@ class AcquisitionControl:
     def get_device_configuration(self) -> NexusConfiguration:
         """Get nexus device configuration."""
         return self.config
+
+    def get_sequence_system(self) -> Opts:
+        """Get pypulseq sequence system from sequence provider."""
+        return self.seq_provider.system
 
     def post_processing(self, parameter: AcquisitionParameter) -> None:
         """Process acquired NMR data.

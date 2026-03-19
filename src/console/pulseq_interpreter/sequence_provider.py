@@ -1,6 +1,5 @@
 """Sequence provider class."""
 import logging
-import operator
 from collections.abc import Callable
 from dataclasses import dataclass
 from math import floor
@@ -13,7 +12,6 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
-from console.interfaces.device_configuration import SystemLimits
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
@@ -70,7 +68,7 @@ class SequenceProvider(Sequence):
         rf_50ohms: bool,
         rf_to_mvolt: float,
         spcm_dwell_time: float,
-        system_limits: SystemLimits,
+        system: Opts,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -98,21 +96,15 @@ class SequenceProvider(Sequence):
             Absolute maximum system limits defined in the device configuration.
             Used to instantiate the pypulseq `Opts()` class.
         """
-        super().__init__(
-            system=Opts(
-                **system_limits.model_dump(),
-                B0=50e-3,
-                grad_unit="Hz/m",   # system limit is defined in this units
-                slew_unit="Hz/m/s",  # system limit is defined in this units
-            ),
-        )
+        if not isinstance(system, Opts):
+            raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")
+        super().__init__(system=system)
         self.log = logging.getLogger("SeqProv")
 
         # Set class instance attributes
         self.rf_to_mvolt = rf_to_mvolt
         self.spcm_dwell_time = spcm_dwell_time
         self.spcm_freq = 1 / spcm_dwell_time
-        self.system_limits = system_limits
         self.gpa_gain = gpa_gain
         self.grad_eff = gradient_efficiency
 
@@ -136,10 +128,7 @@ class SequenceProvider(Sequence):
     # -------- PyPulseq interface -------- #
 
     def from_pypulseq(self, seq: Sequence) -> None:
-        """Cast a pypulseq ``Sequence`` instance to this ``SequenceProvider``.
-
-        If argument is a valid ``Sequence`` instance, all the attributes of
-        ``Sequence`` are set in this ``SequenceProvider`` (inherits from ``Sequence``).
+        """Read a pypulseq sequence to sequence provider.
 
         Parameters
         ----------
@@ -148,57 +137,26 @@ class SequenceProvider(Sequence):
 
         Raises
         ------
-        ValueError
-            seq is not a valid pypulseq ``Sequence`` instance
         AttributeError
-            Key of Sequence instance not
+            seq is not a valid pypulseq ``Sequence`` instance
         """
-        try:
-            # List of (attribute, comparison function, message operator symbol) to check system limits
-            limits = [
-                ("max_grad", operator.gt, "<="),
-                ("max_slew", operator.gt, "<="),
-                ("grad_raster_time", operator.lt, ">="),
-                ("adc_raster_time", operator.lt, ">="),
-                ("rf_raster_time", operator.lt, ">="),
-                ("block_duration_raster", operator.lt, ">="),
-                ("adc_dead_time", operator.lt, ">="),
-                ("rf_dead_time", operator.lt, ">="),
-                ("rf_ringdown_time", operator.lt, ">="),
-            ]
-            errors = []
-            for attr, compare, symbol in limits:
-                limit_val = getattr(self.system_limits, attr)
-                # Compare can be done without converting gradient/slew-rate values
-                # -> internally stored in Hz/m and Hz/m/s
-                if compare(system_value := getattr(seq.system, attr), limit_val):
-                    errors.append(f"{attr} out of bounds (limit {symbol} {limit_val}) (system value: {system_value})")
-            if errors:
-                raise ValueError("; ".join(errors))
-
-            if not isinstance(seq, Sequence):
-                raise ValueError("Provided object is not an instance of pypulseq Sequence")
-            for key, value in seq.__dict__.items():
-                # Check if attribute exists
-                if not hasattr(self, key):   # dont't overwrite system
-                    # raise AttributeError("Attribute %s not found in SequenceProvider" % key)
-                    continue
-                # Set attribute
-                setattr(self, key, value)
-        except (ValueError, AttributeError) as exc:
-            self.log.exception("Could not set sequence: %s" % exc, exc_info=True)
-            raise exc
+        if not isinstance(seq, Sequence):
+            raise AttributeError("Invalid sequence.")
+        # Re-initialize the parent to start from a clean pypulseq sequence
+        super().__init__(system=self.system)
+        for block_index, _ in seq.block_events.items():
+            block = seq.get_block(block_index)
+            self.add_block(block)
+        # Set definitions
+        self.definitions = seq.definitions
 
     def to_pypulseq(self) -> Sequence | None:
-        """Slice sequence provider to return pypulseq sequence."""
-        seq = Sequence()
-        try:
-            for key, value in vars(self).items():
-                if hasattr(seq, key):
-                    setattr(seq, key, value)
-        except Exception as exc:
-            self.log.error("Could not slice pypulseq sequence from sequence provider.", exc_info=exc)
-            return None
+        """Create a pypulseq sequence from sequence provider."""
+        seq = Sequence(system=self.system)
+        for block_index, _ in self.block_events.items():
+            block = self.get_block(block_index)
+            seq.add_block(block)
+        seq.definitions = self.definitions
         return seq
 
     # -------- Public interface -------- #
@@ -273,19 +231,6 @@ class SequenceProvider(Sequence):
 
         # Get list of all events and list of unique RF and ADC events, since they are frequently reused
         events_list = self.block_events
-
-        # Calculate rf pulse and unblanking waveforms from RF event
-        rf_events = [
-            (rf_pulse[0], Sequence.rf_from_lib_data(self, rf_pulse[1])) for rf_pulse in self.rf_library.data.items()
-        ]
-        rf_pulses = {}
-        for rf_event in rf_events:
-            rf_pulses[rf_event[0]] = self._calculate_rf(
-                block=rf_event[1],
-                b1_scaling=parameter.b1_scaling,
-                larmor_frequency=parameter.larmor_frequency,
-            )
-
         seq_duration, _, _ = self.duration()
         seq_samples = round(seq_duration * self.spcm_freq)
 
@@ -387,8 +332,11 @@ class SequenceProvider(Sequence):
                 # Pre-calculated RF event size can be shorter than the duration of the block since it doesn't
                 # consider the post-pulse ring-down time. The RF waveform is placed at the start of the block
                 # and the array is then sliced using the duration of the RF waveform to ensure a good fit
-                rf_waveform = rf_pulses[event[1]][0].real.astype(np.int16)
-                rf_unblanking = rf_pulses[event[1]][1]
+                rf_waveform, rf_unblanking = self._calculate_rf(
+                    block=block.rf,
+                    b1_scaling=parameter.b1_scaling,
+                    larmor_frequency=parameter.larmor_frequency,
+                )
 
                 rf_size = np.size(rf_waveform)  # Get size of the RF waveform
                 if rf_size > (block_pos[event_idx + 1] - block_pos[event_idx]):
@@ -400,7 +348,7 @@ class SequenceProvider(Sequence):
                 rf_end = (block_pos[event_idx] + rf_size) * 4
 
                 # Add RF waveform
-                _seq[rf_start:rf_end:4] = rf_waveform
+                _seq[rf_start:rf_end:4] = rf_waveform.real.astype(np.int16)
                 # Add unblanking signal to Z gradient
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
