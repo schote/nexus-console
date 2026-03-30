@@ -12,6 +12,7 @@ from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences import tse_3d
+from console.utilities.sequences.spectrometry import fid
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
@@ -48,6 +49,7 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
     assert test_sequence.check_timing()[0]
     seq_provider.from_pypulseq(test_sequence)
     sequence_out = seq_provider.to_pypulseq()
+    assert isinstance(sequence_out, pp.Sequence)
 
     # Test sequence loaded to sequence provider
     _compare_sequences(test_sequence, sequence_out)
@@ -64,6 +66,29 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
         content_sliced = fh_sliced.read()
         content_ref = fh_ref.read()
     assert content_sliced == content_ref
+
+def test_sequence_provider_write_fid_sequence(seq_provider: SequenceProvider, tmp_path: Path) -> None:
+    """Test if sequence can be generated from sequence provider."""
+    seq = fid.constructor()
+    seq_provider.from_pypulseq(seq)
+
+    # Save and reload reference sequence
+    reference_file = tmp_path / "reference.seq"
+    seq.write(reference_file)
+    seq_1 = pp.Sequence()
+    seq_1.read(reference_file)
+
+    # Save and reload sequence through sequence provider
+    provider_file = tmp_path / "seq_provider.seq"
+    seq_provider.write(provider_file)
+    seq_2 = pp.Sequence()
+    seq_2.read(provider_file)
+
+    # Compare block durations
+    for k in range(len(seq.block_events)):
+        block_1 = seq_1.get_block(k+1)
+        block_2 = seq_2.get_block(k+1)
+        assert block_1.block_duration == block_2.block_duration
 
 def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
     """Ensure TSE sequence remains unchanged when imported to sequence provider."""
