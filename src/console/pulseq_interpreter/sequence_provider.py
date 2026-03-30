@@ -147,8 +147,9 @@ class SequenceProvider(Sequence):
         for block_index, _ in seq.block_events.items():
             block = seq.get_block(block_index)
             self.add_block(block)
-        # Set definitions
-        self.definitions = seq.definitions
+        # Set definitions without overwriting existing ones
+        for key, value in seq.definitions.items():
+            self.definitions.setdefault(key, value)
 
     def to_pypulseq(self) -> Sequence | None:
         """Create a pypulseq sequence from sequence provider."""
