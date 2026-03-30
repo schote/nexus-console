@@ -12,6 +12,7 @@ from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import SequenceProvider
 from console.utilities.sequences import tse_3d
+from console.utilities.sequences.spectrometry import fid
 
 
 def _compare_sequences(seq1: pp.Sequence, seq2: pp.Sequence) -> None:
@@ -48,6 +49,7 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
     assert test_sequence.check_timing()[0]
     seq_provider.from_pypulseq(test_sequence)
     sequence_out = seq_provider.to_pypulseq()
+    assert isinstance(sequence_out, pp.Sequence)
 
     # Test sequence loaded to sequence provider
     _compare_sequences(test_sequence, sequence_out)
@@ -63,6 +65,25 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
     with Path.open(sliced_file, "r") as fh_sliced, Path.open(reference_file, "r") as fh_ref:
         content_sliced = fh_sliced.read()
         content_ref = fh_ref.read()
+    assert content_sliced == content_ref
+
+def test_sequence_provider_write_fid_sequence(seq_provider: SequenceProvider, tmp_path: Path) -> None:
+    """Test if sequence can be generated from sequence provider."""
+    seq = fid.constructor(system=seq_provider.system)
+    seq_provider.from_pypulseq(seq)
+
+    # Save sequences and compare file content
+    provider_file = tmp_path / "seq_provider.seq"
+    reference_file = tmp_path / "reference.seq"
+
+    seq.write(reference_file)
+    seq_provider.write(provider_file)
+
+    # Compare file content
+    with Path.open(provider_file, "r") as fh_provider, Path.open(reference_file, "r") as fh_reference:
+        content_sliced = fh_provider.read()
+        content_ref = fh_reference.read()
+
     assert content_sliced == content_ref
 
 def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
