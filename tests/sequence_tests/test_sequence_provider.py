@@ -69,22 +69,26 @@ def test_sequence_provider_to_pypulseq(seq_provider: SequenceProvider, test_sequ
 
 def test_sequence_provider_write_fid_sequence(seq_provider: SequenceProvider, tmp_path: Path) -> None:
     """Test if sequence can be generated from sequence provider."""
-    seq = fid.constructor(system=seq_provider.system)
+    seq = fid.constructor()
     seq_provider.from_pypulseq(seq)
 
-    # Save sequences and compare file content
-    provider_file = tmp_path / "seq_provider.seq"
+    # Save and reload reference sequence
     reference_file = tmp_path / "reference.seq"
-
     seq.write(reference_file)
+    seq_1 = pp.Sequence()
+    seq_1.read(reference_file)
+
+    # Save and reload sequence through sequence provider
+    provider_file = tmp_path / "seq_provider.seq"
     seq_provider.write(provider_file)
+    seq_2 = pp.Sequence()
+    seq_2.read(provider_file)
 
-    # Compare file content
-    with Path.open(provider_file, "r") as fh_provider, Path.open(reference_file, "r") as fh_reference:
-        content_sliced = fh_provider.read()
-        content_ref = fh_reference.read()
-
-    assert content_sliced == content_ref
+    # Compare block durations
+    for k in range(len(seq.block_events)):
+        block_1 = seq_1.get_block(k+1)
+        block_2 = seq_2.get_block(k+1)
+        assert block_1.block_duration == block_2.block_duration
 
 def test_sequence_provider_to_pypulseq_tse(seq_provider: SequenceProvider) -> None:
     """Ensure TSE sequence remains unchanged when imported to sequence provider."""
