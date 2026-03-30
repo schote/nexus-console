@@ -569,8 +569,9 @@
         <span class="k">for</span> <span class="n">block_index</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">seq</span><span class="o">.</span><span class="n">block_events</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">block</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">block_index</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_block</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
-        <span class="c1"># Set definitions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span> <span class="o">=</span> <span class="n">seq</span><span class="o">.</span><span class="n">definitions</span></div>
+        <span class="c1"># Set definitions without overwriting existing ones</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">seq</span><span class="o">.</span><span class="n">definitions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SequenceProvider.to_pypulseq">
