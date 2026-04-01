@@ -16,7 +16,7 @@ def constructor(
     rf_duration: float = 400e-6,
     acq_bandwidth: float | int = 50e3,
     use_sinc: bool = False,
-    system: pp.Opts = default_system,    
+    system: pp.Opts = default_system,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -38,7 +38,7 @@ def constructor(
         Use sinc pulse if True, block pulse otherwise
     system
         Sequence system to be used for sequence construction
-        
+
     Returns
     -------
         Pypulseq ``Sequence`` instance and flip angles in rad

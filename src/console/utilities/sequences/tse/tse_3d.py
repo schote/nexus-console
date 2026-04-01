@@ -71,7 +71,7 @@ def constructor(
         Number of dummy shots to acquire
     rf_duration
         Duration of the RF pulses (90 and 180 degree)
-    ramp_duration        
+    ramp_duration
         Duration of the gradient ramps
     gradient_correction
         Time constant to center ADC event
@@ -103,7 +103,7 @@ def constructor(
     noise_scan
         If true, a noise scan is acquired after each echo train, with the same duration as the echo train
     system
-        Sequence system to be used for sequence construction       
+        Sequence system to be used for sequence construction
 
     Returns
     -------

@@ -36,7 +36,7 @@ def constructor(
     use_fid
         If true, only acquire FID part of the spin-echo
     system
-        Sequence system to be used for sequence construction       
+        Sequence system to be used for sequence construction
 
     Returns
     -------

@@ -34,7 +34,7 @@ def constructor(
     acq_bandwidth
         Bandwidth of the acquisition in Hz
     system
-        Sequence system to be used for sequence construction        
+        Sequence system to be used for sequence construction
 
     Returns
     -------

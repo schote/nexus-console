@@ -41,7 +41,7 @@ def constructor(
     ring_down_time
         RF ring down time in s
     system
-        Sequence system to be used for sequence construction      
+        Sequence system to be used for sequence construction
 
     Returns
     -------

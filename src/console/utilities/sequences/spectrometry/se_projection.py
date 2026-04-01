@@ -41,7 +41,7 @@ def constructor(
     use_sinc
         RF pulse type, if true: sinc pulse is used, rect otherwise
     system
-        Sequence system to be used for sequence construction    
+        Sequence system to be used for sequence construction
 
     Returns
     -------
