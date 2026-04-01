@@ -19,19 +19,19 @@ def constructor(
 
     Parameters
     ----------
-    rf_duration
+    rf_duration, optional
         RF duration in s
-    num_samples
+    num_samples, optional
         Number of ADC sample points
-    acq_bandwidth
+    acq_bandwidth, optional
         Acquisition bandwidth in Hz
-    use_sinc
+    use_sinc, optional
         If set, sinc RF pulse is used, otherwise block pulse
-    time_bw_product
+    time_bw_product, optional
         Time bandwidth product
-    flip_angle
+    flip_angle, optional
         Flip angle of RF pulse
-    system
+    system, optional
         Sequence system to be used for sequence construction
 
     Returns

@@ -61,48 +61,48 @@ def constructor(
 
     Parameters
     ----------
-    echo_time
+    echo_time, optional
         Time constant between center of 90 degree pulse and center of ADC
-    repetition_time
+    repetition_time, optional
         Time constant between two subsequent 90 degree pulses (echo trains)
-    etl
+    etl, optional
         Echo train length
-    dummies
+    dummies, optional
         Number of dummy shots to acquire
-    rf_duration
+    rf_duration, optional
         Duration of the RF pulses (90 and 180 degree)
-    ramp_duration
+    ramp_duration, optional
         Duration of the gradient ramps
-    gradient_correction
+    gradient_correction, optional
         Time constant to center ADC event
-    adc_correction
+    adc_correction, optional
         Time constant which is added at the end of the ADC and readout gradient.
         This value is not taken into account for the prephaser calculation.
-    ro_bandwidth
+    ro_bandwidth, optional
         Readout bandwidth in Hz
-    fov
+    fov, optional
         Field of view per dimension
-    n_enc
+    n_enc, optional
         Number of encoding steps per dimension
         If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
-    trajectory
+    trajectory, optional
         The k-space trajectory, options are in-out, out-in and linear
-    excitation_angle, excitation_phase
+    excitation_angle, excitation_phase, optional
         set the flip angle and phase of the excitation pulse in radians
-    refocussing_angle, refocussing_phase
+    refocussing_angle, refocussing_phase, optional
         Set the flip angle and phase of the refocussing pulse in radians
         TODO: allow this to be a list/array to vary flip angle along echo train.
-    inversion_pulse
+    inversion_pulse, optional
         If true, an inversion pulse is added at the beginning of each TR, with inversion time defined by inversion_time
-    inversion_time
+    inversion_time, optional
         Time between inversion pulse and excitation pulse in s, only used if inversion_pulse is true
-    inversion_angle
+    inversion_angle, optional
         Flip angle of the inversion pulse in radians, only used if inversion_pulse is true
-    channel_ro, channel_pe1, channel_pe2
+    channel_ro, channel_pe1, channel_pe2, optional
         set the readout, phase1 and phase2 encoding directions
-    noise_scan
+    noise_scan, optional
         If true, a noise scan is acquired after each echo train, with the same duration as the echo train
-    system
+    system, optional
         Sequence system to be used for sequence construction
 
     Returns
