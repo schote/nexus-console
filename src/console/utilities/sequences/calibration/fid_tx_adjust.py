@@ -5,7 +5,8 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import raster, system
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -16,7 +17,8 @@ def constructor(
     use_sinc: bool = False,
     num_adc_samples: int = 256,
     acq_bandwidth: float | int = 20e3,
-    ring_down_time: float = 2e-3
+    ring_down_time: float = 2e-3,
+    system: pp.Opts = default_system,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
@@ -38,6 +40,8 @@ def constructor(
         Acquisition bandwidth in Hz
     ring_down_time
         RF ring down time in s
+    system
+        Sequence system to be used for sequence construction      
 
     Returns
     -------

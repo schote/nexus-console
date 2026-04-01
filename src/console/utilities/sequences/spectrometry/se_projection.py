@@ -5,7 +5,8 @@ from math import pi
 
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import raster, system
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -17,6 +18,7 @@ def constructor(
     rf_duration: float = 400e-6,
     channel: str = "x",
     use_sinc: bool = False,
+    system: pp.Opts = default_system,
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence with projection gradient (1D).
 
@@ -38,6 +40,8 @@ def constructor(
         Gradient channel to use for projection
     use_sinc
         RF pulse type, if true: sinc pulse is used, rect otherwise
+    system
+        Sequence system to be used for sequence construction    
 
     Returns
     -------
