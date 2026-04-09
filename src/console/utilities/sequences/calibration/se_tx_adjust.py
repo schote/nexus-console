@@ -4,7 +4,8 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import raster, system
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -14,26 +15,29 @@ def constructor(
     echo_time: float = 20e-3,
     rf_duration: float = 400e-6,
     acq_bandwidth: float | int = 50e3,
-    use_sinc: bool = False
+    use_sinc: bool = False,
+    system: pp.Opts = default_system,
 ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct transmit adjust sequence.
 
     Parameters
     ----------
-    n_steps
+    n_steps, optional
         Number of flip angles
-    flip_angle_range
+    flip_angle_range, optional
         Range of flip angles in rad
-    repetition_time
+    repetition_time, optional
         Repetition time in s
-    echo_time
+    echo_time, optional
         Echo time in s
-    rf_duration
+    rf_duration, optional
         RF duration in s
-    acq_bandwidth
+    acq_bandwidth, optional
         Acquisition bandwidth in Hz
-    use_sinc
+    use_sinc, optional
         Use sinc pulse if True, block pulse otherwise
+    system, optional
+        Sequence system to be used for sequence construction
 
     Returns
     -------

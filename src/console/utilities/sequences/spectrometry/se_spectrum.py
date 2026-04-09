@@ -15,26 +15,28 @@ def constructor(
     use_sinc: bool = False,
     time_bw_product: float = 4,
     use_fid: bool = True,
-    system: pp.Opts | None = None,
+    system: pp.Opts = default_system,
 ) -> pp.Sequence:
     """Construct spin echo spectrum sequence.
 
     Parameters
     ----------
-    echo_time
+    echo_time, optional
         Time between center of 90 degree pulse and center of ADC in s
-    rf_duration
+    rf_duration, optional
         Duration of the RF pulses in s
-    num_samples
+    num_samples, optional
         Number of data points to acquire
-    acq_bandwidth
+    acq_bandwidth, optional
         Bandwidth of the acquisition in Hz
-    use_sinc
+    use_sinc, optional
         RF pulse type, if true sinc pulse is used, rect otherwise
-    time_bw_product
+    time_bw_product, optional
         Time-bandwidth product for the sinc pulse
-    use_fid
+    use_fid, optional
         If true, only acquire FID part of the spin-echo
+    system, optional
+        Sequence system to be used for sequence construction
 
     Returns
     -------
@@ -45,7 +47,7 @@ def constructor(
     ValueError
         Sequence timing check failed
     """
-    seq = pp.Sequence(system=system) if system is not None else pp.Sequence(system=default_system)
+    seq = pp.Sequence(system=system)
 
     if use_fid:
         seq.set_definition("Name", "se_decay_spectrum")
@@ -55,60 +57,60 @@ def constructor(
     # Define RF pulses for excitation and refocusing
     if use_sinc:
         rf_90 = pp.make_sinc_pulse(
-            system=seq.system,
+            system=system,
             flip_angle=pi / 2,
             phase_offset=0,
             duration=rf_duration,
             time_bw_product=time_bw_product,
-            delay=seq.system.rf_dead_time,
+            delay=system.rf_dead_time,
         )
         rf_180 = pp.make_sinc_pulse(
-            system=seq.system,
+            system=system,
             flip_angle=pi,
             phase_offset=pi / 2,
             duration=rf_duration,
             time_bw_product=time_bw_product,
-            delay=seq.system.rf_dead_time,
+            delay=system.rf_dead_time,
         )
     else:
         rf_90 = pp.make_block_pulse(
-            system=seq.system,
+            system=system,
             flip_angle=pi / 2,
             phase_offset=0,
             duration=rf_duration,
-            delay=seq.system.rf_dead_time,
+            delay=system.rf_dead_time,
         )
         rf_180 = pp.make_block_pulse(
-            system=seq.system,
+            system=system,
             flip_angle=pi,
             phase_offset=pi / 2,
             duration=rf_duration,
-            delay=seq.system.rf_dead_time,
+            delay=system.rf_dead_time,
         )
     # Define ADC duration
-    adc_duration = raster(val=num_samples / acq_bandwidth, precision=seq.system.adc_raster_time)
+    adc_duration = raster(val=num_samples / acq_bandwidth, precision=system.adc_raster_time)
 
     # Define ADC event
     adc = pp.make_adc(
         num_samples=num_samples,
         duration=adc_duration,
-        system=seq.system,
+        system=system,
     )
 
     # Calculate delays to achieve desired echo time
     te_delay_1 = raster(
         echo_time / 2 - rf_duration - rf_90.ringdown_time - rf_180.delay,
-        seq.system.grad_raster_time,
+        system.grad_raster_time,
     )
     if use_fid:
         te_delay_2 = raster(
             echo_time / 2 - rf_duration / 2 - rf_180.ringdown_time - adc.dead_time,
-            seq.system.grad_raster_time,
+            system.grad_raster_time,
         )
     else:
         te_delay_2 = raster(
             echo_time / 2 - rf_duration / 2 - adc_duration / 2 - rf_180.ringdown_time - adc.dead_time,
-            seq.system.grad_raster_time,
+            system.grad_raster_time,
         )
 
     seq.add_block(rf_90)

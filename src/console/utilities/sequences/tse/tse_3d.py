@@ -62,43 +62,54 @@ def constructor(
     Parameters
     ----------
     echo_time, optional
-        Time constant between center of 90 degree pulse and center of ADC, by default 15e-3
+        Time constant between center of 90 degree pulse and center of ADC
     repetition_time, optional
-        Time constant between two subsequent 90 degree pulses (echo trains), by default 600e-3
+        Time constant between two subsequent 90 degree pulses (echo trains)
     etl, optional
-        Echo train length, by default 7
+        Echo train length
     dummies, optional
-        Number of dummy shots to acquire, default is 0
+        Number of dummy shots to acquire
     rf_duration, optional
-        Duration of the RF pulses (90 and 180 degree), by default 400e-6
+        Duration of the RF pulses (90 and 180 degree)
+    ramp_duration, optional
+        Duration of the gradient ramps
     gradient_correction, optional
-        Time constant to center ADC event, by default 510e-6
+        Time constant to center ADC event
     adc_correction, optional
         Time constant which is added at the end of the ADC and readout gradient.
         This value is not taken into account for the prephaser calculation.
     ro_bandwidth, optional
-        Readout bandwidth in Hz, by default 20e3
+        Readout bandwidth in Hz
     fov, optional
-        Field of view per dimension, by default default_fov
+        Field of view per dimension
     n_enc, optional
-        Number of encoding steps per dimension, by default default_encoding = Dimensions(x=70, y=70, z=49).
+        Number of encoding steps per dimension
         If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
     trajectory, optional
-        The k-space trajectory, by default set to in-out, other currently implemented options are out in and linear
+        The k-space trajectory, options are in-out, out-in and linear
     excitation_angle, excitation_phase, optional
-        set the flip angle and phase of the excitation pulse in radians, defaults to 90 degree flip angle, 0 phase
+        set the flip angle and phase of the excitation pulse in radians
     refocussing_angle, refocussing_phase, optional
-        Set the flip angle and phase of the refocussing pulse in radians,
-        defaults to 180 degree flip angle, 90 degree phase
+        Set the flip angle and phase of the refocussing pulse in radians
         TODO: allow this to be a list/array to vary flip angle along echo train.
+    inversion_pulse, optional
+        If true, an inversion pulse is added at the beginning of each TR, with inversion time defined by inversion_time
+    inversion_time, optional
+        Time between inversion pulse and excitation pulse in s, only used if inversion_pulse is true
+    inversion_angle, optional
+        Flip angle of the inversion pulse in radians, only used if inversion_pulse is true
     channel_ro, channel_pe1, channel_pe2, optional
-        set the readout, phase1 and phase2 encoding directions, default to y, z and x.
+        set the readout, phase1 and phase2 encoding directions
+    noise_scan, optional
+        If true, a noise scan is acquired after each echo train, with the same duration as the echo train
+    system, optional
+        Sequence system to be used for sequence construction
 
     Returns
     -------
         Pulseq sequence and a list which describes the trajectory
     """
-    seq = pp.Sequence(system)
+    seq = pp.Sequence(system=system)
     # Get the dimension and type of the sequence and set the name accordingly
     n_dim = int(n_enc.x > 1) + int(n_enc.y > 1) + int(n_enc.z > 1)
     seq_type = "tse" if etl > 1 else "se"

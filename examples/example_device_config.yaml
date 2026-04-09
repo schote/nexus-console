@@ -48,18 +48,18 @@ SystemLimits:
   # Maximum gradient amplitude in Hz/m (PyPulseq system stores this unit)
   max_grad: 1703040.0 # equals 40 mT/m
   # Maximum slew rate in Hz/m/s (PyPulseq system stores this unit)
-  max_slew: 4257600000.0 # equals 100 T/m/s
+  max_slew: 2128800000.0 # equals 100 T/m/s
   # Dead time at the beginning of RF event in s, covered by rf_delay
   rf_dead_time: 20.e-6
   # Time delay at the end of an RF event in s
-  rf_ringdown_time: 20.e-6
+  rf_ringdown_time: 30.e-6
   # Time delay at the beginning of an ADC event in s
   adc_dead_time: 0.
   # Raster time for block durations
-  block_duration_raster: 5.e-8
+  block_duration_raster: 1.e-6
   # Raster time for RF pulses.
-  rf_raster_time: 5.e-8
+  rf_raster_time: 1.e-6
   # Raster time for gradient waveforms.
-  grad_raster_time: 5.e-8
+  grad_raster_time: 1.e-6
   # Raster time for ADC readout.
-  adc_raster_time: 5.e-8
+  adc_raster_time: 1.e-6

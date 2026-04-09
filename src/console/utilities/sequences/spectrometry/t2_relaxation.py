@@ -4,7 +4,8 @@ from math import pi
 import numpy as np
 import pypulseq as pp
 
-from console.utilities.sequences.system_settings import raster, system
+from console.utilities.sequences.system_settings import raster
+from console.utilities.sequences.system_settings import system as default_system
 
 
 def constructor(
@@ -13,24 +14,27 @@ def constructor(
     repetition_time: float = 600e-3,
     rf_duration: float = 400e-6,
     num_samples: int = 64,
-    acq_bandwidth: float | int = 20e3
+    acq_bandwidth: float | int = 20e3,
+    system: pp.Opts = default_system,
     ) -> tuple[pp.Sequence, np.ndarray]:
     """Construct spin echo T2 relaxation sequence.
 
     Parameters
     ----------
-    echo_time_range
+    echo_time_range, optional
         Range of echo times in s
-    num_steps
+    num_steps, optional
         Number of echo times to sample
-    repetition_time
+    repetition_time, optional
         Time between two subsequent 90 degree pulses in s
-    rf_duration
+    rf_duration, optional
         Duration of the RF pulses in s
-    num_samples
+    num_samples, optional
         Number of data points to acquire
-    acq_bandwidth
+    acq_bandwidth, optional
         Bandwidth of the acquisition in Hz
+    system, optional
+        Sequence system to be used for sequence construction
 
     Returns
     -------
