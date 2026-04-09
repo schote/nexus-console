@@ -210,6 +210,7 @@ class AcquisitionData:
                 header=header,
                 sequence=self.sequence,
                 dataset_path=dataset_path,
+                channel_assignment=self.acquisition_parameters.channel_assignment,
             )
 
         log.warning("Invalid MRD header, could not write MRD file.")
