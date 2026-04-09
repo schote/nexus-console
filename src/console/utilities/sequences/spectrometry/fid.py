@@ -8,6 +8,7 @@ from console.utilities.sequences.system_settings import system as default_system
 
 def constructor(
     rf_duration: float = 200e-6,
+    dead_time: float = 0.,
     num_samples: int = 256,
     acq_bandwidth: float | int = 20e3,
     use_sinc: bool = False,
@@ -21,6 +22,8 @@ def constructor(
     ----------
     rf_duration, optional
         RF duration in s
+    dead_time, optional
+        Additional time delay between RF pulse and ADC readout
     num_samples, optional
         Number of ADC sample points
     acq_bandwidth, optional
@@ -67,8 +70,13 @@ def constructor(
         phase_offset=0,
         system=system,
     )
+    # Define delay to account for RF ringing
+    ring_down_delay = pp.make_delay(
+        round((dead_time) / 1e-6) * 1e-6,
+    )
 
     seq.add_block(rf_90)
+    seq.add_block(ring_down_delay)
     seq.add_block(adc)
 
     return seq
