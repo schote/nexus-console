@@ -55,7 +55,6 @@ def translate_error(error: int) -> str | None:
     if error in error_reg.keys():
         if error_reg[error] is not ERR_OK:
             return f"ERROR: {error_reg[error]}"
-        return None
     return "Unknown error"
 
 
