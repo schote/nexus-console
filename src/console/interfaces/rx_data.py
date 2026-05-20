@@ -1,5 +1,6 @@
 """"Define the dataclass and processing of receiver data."""
 from dataclasses import asdict, dataclass, field
+from multiprocessing.shared_memory import SharedMemory
 
 import numpy as np
 from scipy import signal
@@ -68,9 +69,59 @@ class RxData:
     # Processed data is the demodulated, phased and decimated data
     processed_data: None | np.ndarray = None
 
+    # Shared memory fields (not part of public interface)
+    _shm: SharedMemory | None = field(default=None, init=False, repr=False, compare=False)
+    _shm_name: str | None = field(default=None, init=False, repr=False, compare=False)
+    _shm_shape: tuple[int, ...] | None = field(default=None, init=False, repr=False, compare=False)
+
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
+
+    def __getstate__(self) -> dict:
+        """Custom pickle: exclude raw_data array and SharedMemory handle when using shared memory."""
+        state = self.__dict__.copy()
+        if self._shm_name is not None:
+            state["raw_data"] = None
+            state["_shm"] = None
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        """Custom unpickle: reattach to shared memory if a name is present."""
+        self.__dict__.update(state)
+        if self._shm_name is not None:
+            self.attach_shared_raw_data()
+
+    def allocate_shared_raw_data(self, num_channels: int) -> None:
+        """Allocate shared memory for raw_data and set raw_data as a numpy view.
+
+        Parameters
+        ----------
+        num_channels
+            Number of receive channels.
+        """
+        shape = (num_channels, self.num_samples_raw)
+        nbytes = int(np.prod(shape)) * np.dtype(np.int16).itemsize
+        self._shm = SharedMemory(create=True, size=nbytes)
+        self._shm_name = self._shm.name
+        self._shm_shape = shape
+        self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
+
+    def attach_shared_raw_data(self) -> None:
+        """Attach to existing shared memory by name (for use in a worker process)."""
+        if self._shm_name is None:
+            raise RuntimeError("No shared memory name set, cannot attach.")
+        self._shm = SharedMemory(name=self._shm_name, create=False)
+        self.raw_data = np.ndarray(self._shm_shape, dtype=np.int16, buffer=self._shm.buf)
+
+    def release_shared_raw_data(self) -> None:
+        """Close and unlink shared memory (call from the allocating process)."""
+        if self._shm is not None:
+            self._shm.close()
+            self._shm.unlink()
+            self._shm = None
+            self._shm_name = None
+            self._shm_shape = None
 
     def __str__(self) -> str:
         """Return string representation of information contained within RxData class."""

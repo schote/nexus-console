@@ -5,7 +5,6 @@ import logging
 import logging.config
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +19,7 @@ from console.interfaces.dimensions import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
+from console.spcm_control.rx_processor import RxProcessor
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_configuration import load_nexus_config
 from console.utilities.plot import plot_unrolled_sequence
@@ -238,9 +238,14 @@ class AcquisitionControl:
 
         self.store_unprocessed = store_unprocessed
 
-        # Create a list to store rx_data for all averages
-        self.receive_data: list = []
         self.num_adc_events = len(self.sequence.rx_data)
+
+        # Create and start the processing worker
+        processor = RxProcessor(store_unprocessed=store_unprocessed)
+        processor.start()
+
+        # Track all rx_data lists for shared memory cleanup
+        all_rx_data_lists: list[list] = []
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -248,64 +253,86 @@ class AcquisitionControl:
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        for k in range(self.sequence.parameter.num_averages):
-            # Create a copy of rx_data to store the current acquisition in and label scan number.
-            self.rx_card.rx_data = copy.deepcopy(self.sequence.rx_data)
+        try:
+            for k in range(self.sequence.parameter.num_averages):
+                # Create a copy of rx_data, pre-set fields needed for processing,
+                # and allocate shared memory for raw data.
+                rx_data_list = copy.deepcopy(self.sequence.rx_data)
+                for data in rx_data_list:
+                    data.average_index = k
+                    data.larmor_frequency = self.sequence.parameter.larmor_frequency
+                    data.allocate_shared_raw_data(num_channels=self.rx_card.num_channels.value)
+                all_rx_data_lists.append(rx_data_list)
 
-            self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
+                self.rx_card.rx_data = rx_data_list
+                self.rx_card.processing_queue = processor.input_queue
+                self.rx_card.queue_index_offset = k * self.num_adc_events
 
-            # Start measurement card operations
-            self.rx_card.start_operation()
+                self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-            while not self.rx_card.is_receiving.is_set():
-                time.sleep(0.01)
-                # self.log.debug("Waiting for RX card to start receiving...")
-            self.tx_card.start_operation(self.sequence)
+                # Start measurement card operations
+                self.rx_card.start_operation()
 
-            # Get start time of acquisition
-            time_start = time.time()
+                while not self.rx_card.is_receiving.is_set():
+                    time.sleep(0.01)
+                self.tx_card.start_operation(self.sequence)
 
-            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                # Delay poll by 10 ms
-                time.sleep(0.01)
+                # Get start time of acquisition
+                time_start = time.time()
 
-                if (time.time() - time_start) > timeout:
-                    # Could not receive all the data before timeout
-                    self.log.warning(
-                        "Acquisition Timeout: Only received %s/%s adc events",
-                        num_gates, self.sequence.adc_count
-                    )
-                    break
+                while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
+                    # Delay poll by 10 ms
+                    time.sleep(0.01)
 
-                if num_gates >= self.sequence.adc_count and num_gates > 0:
-                    break
+                    if (time.time() - time_start) > timeout:
+                        # Could not receive all the data before timeout
+                        self.log.warning(
+                            "Acquisition Timeout: Only received %s/%s adc events", num_gates, self.sequence.adc_count
+                        )
+                        break
 
-            # Append the receive data with current scan data
-            scan_data: list = self.rx_card.rx_data.copy()
-            self.rx_card.rx_data = None
+                    if num_gates >= self.sequence.adc_count and num_gates > 0:
+                        break
 
-            for data in scan_data:
-                data.average_index = k
-            self.receive_data.extend(scan_data)
+                # Clear rx_card references (data already pushed to processing queue)
+                self.rx_card.rx_data = None
+                self.rx_card.processing_queue = None
 
-            self.tx_card.stop_operation()
-            self.rx_card.stop_operation()
+                self.tx_card.stop_operation()
+                self.rx_card.stop_operation()
 
-            if self.sequence.parameter.averaging_delay > 0:
-                time.sleep(self.sequence.parameter.averaging_delay)
+                if self.sequence.parameter.averaging_delay > 0:
+                    time.sleep(self.sequence.parameter.averaging_delay)
 
-        # Reset gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=Dimensions(x=0, y=0, z=0),
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
+            # Reset gradient offset values
+            self.tx_card.set_gradient_offsets(
+                offsets=Dimensions(x=0, y=0, z=0),
+                is_50ohms=self.config.tx.gradients_terminated_50ohm,
+            )
 
-        if len(self.receive_data) > 0:
-            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
-            # Process all the data at the end of the acquisition
-            self.post_processing(self.sequence.parameter)
-        else:
+            # Calculate processing timeout: scale with total data volume
+            total_raw_samples = (
+                sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+            )
+            processing_timeout = max(30.0, total_raw_samples * 1e-5)
+
+            # Collect processed results from worker
+            total_expected = self.sequence.parameter.num_averages * self.num_adc_events
+            self.receive_data = processor.stop_and_collect(
+                expected_count=total_expected,
+                timeout=processing_timeout,
+            )
+
+        finally:
+            # Release all shared memory regardless of success or failure
+            for rx_data_list in all_rx_data_lists:
+                for data in rx_data_list:
+                    data.release_shared_raw_data()
+
+        if len(self.receive_data) == 0:
             raise RuntimeError("No ADC events present")
+
+        self.log.debug("Total number of ADC events: %d", len(self.receive_data))
 
         try:
             averages = [data.average_index for data in self.receive_data]
@@ -332,28 +359,6 @@ class AcquisitionControl:
     def get_sequence_system(self) -> Opts:
         """Get pypulseq sequence system from sequence provider."""
         return self.seq_provider.system
-
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
-        """Process acquired NMR data.
-
-        Post processing contains the following steps (per readout sample size):
-        (1) Scaling of receive data
-        (2) Demodulation along readout dimensions
-        (3) Decimation along readout dimension
-
-        Parameters
-        ----------
-        parameter
-            Acquisition parameter
-        """
-        # Set the larmor frequency for all data to the defined larmor_frequency
-        for rx_data in self.receive_data:
-            rx_data.larmor_frequency = parameter.larmor_frequency
-
-        # Process the data in parallel
-        with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
-                         , self.receive_data)
 
     def plot_waveforms(
         self,
