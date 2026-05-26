@@ -1,4 +1,5 @@
 """"Define the dataclass and processing of receiver data."""
+import copy
 from dataclasses import asdict, dataclass, field
 from multiprocessing.shared_memory import SharedMemory
 
@@ -78,6 +79,24 @@ class RxData:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
+    def __deepcopy__(self, memo):
+        """Custom deepcopy: create independent copy with fresh shared memory state."""
+        # Create a new instance without calling __init__
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+
+        # Copy all fields, resetting shared memory fields
+        for k, v in self.__dict__.items():
+            if k.startswith('_shm'):
+                # Reset all shared memory fields - new copy doesn't share memory
+                setattr(result, k, None)
+            else:
+                # Regular deep copy for all other fields
+                setattr(result, k, copy.deepcopy(v, memo))
+
+        return result
+
     def __getstate__(self) -> dict:
         """Custom pickle: exclude raw_data array and SharedMemory handle when using shared memory."""
         state = self.__dict__.copy()
@@ -90,7 +109,12 @@ class RxData:
         """Custom unpickle: reattach to shared memory if a name is present."""
         self.__dict__.update(state)
         if self._shm_name is not None:
-            self.attach_shared_raw_data()
+            try:
+                self.attach_shared_raw_data()
+            except Exception as e:
+                raise RuntimeError(
+                    f"Failed to reattach to shared memory '{self._shm_name}': {e}"
+                ) from e
 
     def allocate_shared_raw_data(self, num_channels: int) -> None:
         """Allocate shared memory for raw_data and set raw_data as a numpy view.

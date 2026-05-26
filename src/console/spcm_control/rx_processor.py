@@ -105,6 +105,13 @@ class RxProcessor:
             # __setstate__ has already called attach_shared_raw_data()
 
             try:
+                # Validate that shared memory was attached successfully
+                if rx_data._shm_name is not None and rx_data._shm is None:
+                    raise RuntimeError(
+                        f"Shared memory not attached for index {index}: "
+                        f"name={rx_data._shm_name}, raw_data={'set' if rx_data.raw_data is not None else 'None'}"
+                    )
+
                 rx_data.process_data(store_unprocessed=store_unprocessed)
                 processed_count += 1
                 logger.debug("Processed item %d (total: %d)", index, processed_count)
@@ -114,13 +121,18 @@ class RxProcessor:
             # Detach from shared memory before putting on result queue.
             # Copy raw_data to a regular array if it should be kept.
             if rx_data._shm is not None:
-                if store_unprocessed and rx_data.raw_data is not None:
-                    rx_data.raw_data = rx_data.raw_data.copy()
-                else:
-                    rx_data.raw_data = None
-                rx_data._shm.close()
-                rx_data._shm = None
-                rx_data._shm_name = None
-                rx_data._shm_shape = None
+                try:
+                    if store_unprocessed and rx_data.raw_data is not None:
+                        # Copy to regular array before detaching
+                        rx_data.raw_data = rx_data.raw_data.copy()
+                    else:
+                        rx_data.raw_data = None
+                    # Close (but don't unlink) - parent will unlink
+                    rx_data._shm.close()
+                finally:
+                    # Clear references regardless of close success
+                    rx_data._shm = None
+                    rx_data._shm_name = None
+                    rx_data._shm_shape = None
 
             result_queue.put((index, rx_data))

@@ -270,7 +270,7 @@ class AcquisitionControl:
 
                 self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-                # Start measurement card operations
+                # Start measurement card operations after queues are ready
                 self.rx_card.start_operation()
 
                 while not self.rx_card.is_receiving.is_set():
