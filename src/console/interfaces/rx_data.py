@@ -1,5 +1,4 @@
 """"Define the dataclass and processing of receiver data."""
-import copy
 from dataclasses import asdict, dataclass, field
 from multiprocessing.shared_memory import SharedMemory
 
@@ -79,24 +78,6 @@ class RxData:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
-    def __deepcopy__(self, memo):
-        """Custom deepcopy: create independent copy with fresh shared memory state."""
-        # Create a new instance without calling __init__
-        cls = self.__class__
-        result = cls.__new__(cls)
-        memo[id(self)] = result
-
-        # Copy all fields, resetting shared memory fields
-        for k, v in self.__dict__.items():
-            if k.startswith('_shm'):
-                # Reset all shared memory fields - new copy doesn't share memory
-                setattr(result, k, None)
-            else:
-                # Regular deep copy for all other fields
-                setattr(result, k, copy.deepcopy(v, memo))
-
-        return result
-
     def __getstate__(self) -> dict:
         """Custom pickle: exclude raw_data array and SharedMemory handle when using shared memory."""
         state = self.__dict__.copy()
@@ -110,36 +91,56 @@ class RxData:
         self.__dict__.update(state)
         if self._shm_name is not None:
             try:
-                self.attach_shared_raw_data()
+                self._attach_shm()
             except Exception as e:
                 raise RuntimeError(
                     f"Failed to reattach to shared memory '{self._shm_name}': {e}"
                 ) from e
 
-    def allocate_shared_raw_data(self, num_channels: int) -> None:
-        """Allocate shared memory for raw_data and set raw_data as a numpy view.
+    def write_raw_data(self, data: np.ndarray) -> None:
+        """Copy ADC data into shared memory, allocating it on the first call.
 
         Parameters
         ----------
-        num_channels
-            Number of receive channels.
+        data
+            Raw int16 ADC data with shape (num_channels, num_samples_raw).
         """
-        shape = (num_channels, self.num_samples_raw)
-        nbytes = int(np.prod(shape)) * np.dtype(np.int16).itemsize
-        self._shm = SharedMemory(create=True, size=nbytes)
-        self._shm_name = self._shm.name
-        self._shm_shape = shape
-        self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
+        if self._shm is None:
+            shape = data.shape
+            nbytes = int(np.prod(shape)) * np.dtype(np.int16).itemsize
+            self._shm = SharedMemory(create=True, size=nbytes)
+            self._shm_name = self._shm.name
+            self._shm_shape = shape
+            self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
+        self.raw_data[:] = data
 
-    def attach_shared_raw_data(self) -> None:
+    def materialize(self, keep: bool = False) -> None:
+        """Finalize raw_data after processing, releasing shared memory.
+
+        Parameters
+        ----------
+        keep
+            If True, copy raw_data to a regular numpy array before releasing
+            shared memory so the data survives. If False, raw_data is set to None.
+        """
+        if self._shm is None:
+            return
+        if keep and self.raw_data is not None:
+            regular_array = self.raw_data.copy()
+        else:
+            regular_array = None
+        self._release_shm()
+        self.raw_data = regular_array
+
+    def _attach_shm(self) -> None:
         """Attach to existing shared memory by name (for use in a worker process)."""
         if self._shm_name is None:
             raise RuntimeError("No shared memory name set, cannot attach.")
         self._shm = SharedMemory(name=self._shm_name, create=False)
         self.raw_data = np.ndarray(self._shm_shape, dtype=np.int16, buffer=self._shm.buf)
 
-    def release_shared_raw_data(self) -> None:
-        """Close and unlink shared memory (call from the allocating process)."""
+    def _release_shm(self) -> None:
+        """Close and unlink shared memory."""
         if self._shm is not None:
             self._shm.close()
             self._shm.unlink()

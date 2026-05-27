@@ -102,7 +102,7 @@ class RxProcessor:
                 break
 
             index, rx_data = item
-            # __setstate__ has already called attach_shared_raw_data()
+            # __setstate__ has already called _attach_shm()
 
             try:
                 # Validate that shared memory was attached successfully
@@ -118,21 +118,6 @@ class RxProcessor:
             except Exception:
                 logger.warning("Failed to process RxData index %d, continuing", index, exc_info=True)
 
-            # Detach from shared memory before putting on result queue.
-            # Copy raw_data to a regular array if it should be kept.
-            if rx_data._shm is not None:
-                try:
-                    if store_unprocessed and rx_data.raw_data is not None:
-                        # Copy to regular array before detaching
-                        rx_data.raw_data = rx_data.raw_data.copy()
-                    else:
-                        rx_data.raw_data = None
-                    # Close (but don't unlink) - parent will unlink
-                    rx_data._shm.close()
-                finally:
-                    # Clear references regardless of close success
-                    rx_data._shm = None
-                    rx_data._shm_name = None
-                    rx_data._shm_shape = None
-
+            # Release shared memory; optionally copy raw_data to a regular array first.
+            rx_data.materialize(keep=store_unprocessed)
             result_queue.put((index, rx_data))

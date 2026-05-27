@@ -477,7 +477,7 @@ class RxCard(SpectrumDevice):
                     )
                     # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
                     rx_data_item = self.rx_data[self._total_gates]
-                    rx_data_item.raw_data[:] = gate_data << 1
+                    rx_data_item.write_raw_data(gate_data << 1)
                     rx_data_item.phase_reference = (
                         gate_data[0, 0 : min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
                     ).copy()

@@ -244,90 +244,76 @@ class AcquisitionControl:
         processor = RxProcessor(store_unprocessed=store_unprocessed)
         processor.start()
 
-        # Track all rx_data lists for shared memory cleanup
-        all_rx_data_lists: list[list] = []
-
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
             offsets=self.sequence.parameter.gradient_offset,
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        try:
-            for k in range(self.sequence.parameter.num_averages):
-                # Create a copy of rx_data, pre-set fields needed for processing,
-                # and allocate shared memory for raw data.
-                rx_data_list = copy.deepcopy(self.sequence.rx_data)
-                for data in rx_data_list:
-                    data.average_index = k
-                    data.larmor_frequency = self.sequence.parameter.larmor_frequency
-                    data.allocate_shared_raw_data(num_channels=self.rx_card.num_channels.value)
-                all_rx_data_lists.append(rx_data_list)
+        for k in range(self.sequence.parameter.num_averages):
+            rx_data_list = copy.deepcopy(self.sequence.rx_data)
+            for data in rx_data_list:
+                data.average_index = k
+                data.larmor_frequency = self.sequence.parameter.larmor_frequency
 
-                self.rx_card.rx_data = rx_data_list
-                self.rx_card.processing_queue = processor.input_queue
-                self.rx_card.queue_index_offset = k * self.num_adc_events
+            self.rx_card.rx_data = rx_data_list
+            self.rx_card.processing_queue = processor.input_queue
+            self.rx_card.queue_index_offset = k * self.num_adc_events
 
-                self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
+            self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-                # Start measurement card operations after queues are ready
-                self.rx_card.start_operation()
+            # Start measurement card operations after queues are ready
+            self.rx_card.start_operation()
 
-                while not self.rx_card.is_receiving.is_set():
-                    time.sleep(0.01)
-                self.tx_card.start_operation(self.sequence)
+            while not self.rx_card.is_receiving.is_set():
+                time.sleep(0.01)
+            self.tx_card.start_operation(self.sequence)
 
-                # Get start time of acquisition
-                time_start = time.time()
+            # Get start time of acquisition
+            time_start = time.time()
 
-                while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                    # Delay poll by 10 ms
-                    time.sleep(0.01)
+            while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
+                # Delay poll by 10 ms
+                time.sleep(0.01)
 
-                    if (time.time() - time_start) > timeout:
-                        # Could not receive all the data before timeout
-                        self.log.warning(
-                            "Acquisition Timeout: Only received %s/%s adc events", num_gates, self.sequence.adc_count
-                        )
-                        break
+                if (time.time() - time_start) > timeout:
+                    # Could not receive all the data before timeout
+                    self.log.warning(
+                        "Acquisition Timeout: Only received %s/%s adc events", num_gates, self.sequence.adc_count
+                    )
+                    break
 
-                    if num_gates >= self.sequence.adc_count and num_gates > 0:
-                        break
+                if num_gates >= self.sequence.adc_count and num_gates > 0:
+                    break
 
-                # Clear rx_card references (data already pushed to processing queue)
-                self.rx_card.rx_data = None
-                self.rx_card.processing_queue = None
+            # Clear rx_card references (data already pushed to processing queue)
+            self.rx_card.rx_data = None
+            self.rx_card.processing_queue = None
 
-                self.tx_card.stop_operation()
-                self.rx_card.stop_operation()
+            self.tx_card.stop_operation()
+            self.rx_card.stop_operation()
 
-                if self.sequence.parameter.averaging_delay > 0:
-                    time.sleep(self.sequence.parameter.averaging_delay)
+            if self.sequence.parameter.averaging_delay > 0:
+                time.sleep(self.sequence.parameter.averaging_delay)
 
-            # Reset gradient offset values
-            self.tx_card.set_gradient_offsets(
-                offsets=Dimensions(x=0, y=0, z=0),
-                is_50ohms=self.config.tx.gradients_terminated_50ohm,
-            )
+        # Reset gradient offset values
+        self.tx_card.set_gradient_offsets(
+            offsets=Dimensions(x=0, y=0, z=0),
+            is_50ohms=self.config.tx.gradients_terminated_50ohm,
+        )
 
-            # Calculate processing timeout: scale with total data volume
-            total_raw_samples = (
-                sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
-            )
-            processing_timeout = max(30.0, total_raw_samples * 1e-5)
+        # Calculate processing timeout: scale with total data volume
+        total_raw_samples = (
+            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+        )
+        processing_timeout = max(30.0, total_raw_samples * 1e-5)
 
-            # Collect processed results from worker
-            total_expected = self.sequence.parameter.num_averages * self.num_adc_events
-            self.receive_data = processor.stop_and_collect(
-                expected_count=total_expected,
-                timeout=processing_timeout,
-            )
-
-        finally:
-            # Release all shared memory regardless of success or failure
-            for rx_data_list in all_rx_data_lists:
-                for data in rx_data_list:
-                    data.release_shared_raw_data()
+        # Collect processed results from worker
+        total_expected = self.sequence.parameter.num_averages * self.num_adc_events
+        self.receive_data = processor.stop_and_collect(
+            expected_count=total_expected,
+            timeout=processing_timeout,
+        )
 
         if len(self.receive_data) == 0:
             raise RuntimeError("No ADC events present")
