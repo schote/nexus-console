@@ -108,7 +108,11 @@ class RxData:
         if self._shm is None:
             shape = data.shape
             nbytes = int(np.prod(shape)) * np.dtype(np.int16).itemsize
-            self._shm = SharedMemory(create=True, size=nbytes)
+            # track=False: ownership is transferred to the worker process which
+            # calls unlink() explicitly. Keeping the name in this process's
+            # resource tracker causes a spurious 'leaked shared_memory' warning
+            # at shutdown when the tracker finds the name already gone.
+            self._shm = SharedMemory(create=True, size=nbytes, track=False)
             self._shm_name = self._shm.name
             self._shm_shape = shape
             self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
@@ -136,7 +140,9 @@ class RxData:
         """Attach to existing shared memory by name (for use in a worker process)."""
         if self._shm_name is None:
             raise RuntimeError("No shared memory name set, cannot attach.")
-        self._shm = SharedMemory(name=self._shm_name, create=False)
+        # track=False: the worker calls unlink() explicitly in _release_shm(),
+        # so the resource tracker must not attempt a second unlink at exit.
+        self._shm = SharedMemory(name=self._shm_name, create=False, track=False)
         self.raw_data = np.ndarray(self._shm_shape, dtype=np.int16, buffer=self._shm.buf)
 
     def _release_shm(self) -> None:

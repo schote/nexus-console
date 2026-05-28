@@ -1,11 +1,20 @@
 """Processing worker for RxData objects using multiprocessing."""
 
 import logging
-from multiprocessing import Process, Queue
+import multiprocessing
+import time
+from multiprocessing.queues import Queue
+from queue import Empty
 
 from console.interfaces.rx_data import RxData
 
 log = logging.getLogger("RxProc")
+
+# Use 'spawn' instead of the platform default 'fork' on Linux.
+# fork() in a multi-threaded process (e.g. inside a BaseManager server) can
+# deadlock the child if another thread holds a lock at the fork point.
+# spawn starts a clean interpreter and is the only method supported on Windows.
+_mp_ctx = multiprocessing.get_context("spawn")
 
 
 class RxProcessor:
@@ -24,15 +33,15 @@ class RxProcessor:
     """
 
     def __init__(self, store_unprocessed: bool = False) -> None:
-        self.input_queue: Queue = Queue()
-        self._result_queue: Queue = Queue()
+        self.input_queue: Queue = _mp_ctx.Queue()
+        self._result_queue: Queue = _mp_ctx.Queue()
         self._store_unprocessed = store_unprocessed
-        self._process: Process | None = None
+        self._process: multiprocessing.Process | None = None
 
     def start(self) -> None:
         """Start the worker process."""
-        self._process = Process(
-            target=self._worker_loop,
+        self._process = _mp_ctx.Process(
+            target=RxProcessor._worker_loop,
             args=(self.input_queue, self._result_queue, self._store_unprocessed),
             daemon=True,
         )
@@ -61,19 +70,39 @@ class RxProcessor:
         # Signal worker to stop
         self.input_queue.put(None)
 
-        if self._process is not None:
-            self._process.join(timeout=timeout)
-            if self._process.is_alive():
-                log.error("Processing worker did not finish within %.1fs, terminating.", timeout)
-                self._process.terminate()
-                self._process.join(timeout=5)
-                raise RuntimeError("RxProcessor worker timed out")
-
-        # Collect all results
+        # Drain _result_queue while waiting for the worker to exit.
+        # We must read concurrently with join() — if the result queue's OS pipe
+        # buffer fills up (e.g. large raw_data with store_unprocessed=True) the
+        # worker's internal feeder thread blocks and the process never terminates,
+        # causing join() to time out.
         results: dict[int, RxData] = {}
-        while not self._result_queue.empty():
-            idx, rx_data = self._result_queue.get_nowait()
-            results[idx] = rx_data
+        deadline = time.monotonic() + timeout
+
+        if self._process is not None:
+            while self._process.is_alive():
+                # Non-blocking drain of whatever has arrived so far
+                while True:
+                    try:
+                        idx, rx_data = self._result_queue.get(timeout=0.05)
+                        results[idx] = rx_data
+                    except Empty:
+                        break
+
+                if time.monotonic() > deadline:
+                    log.error("Processing worker did not finish within %.1fs, terminating.", timeout)
+                    self._process.terminate()
+                    self._process.join(timeout=5)
+                    raise RuntimeError("RxProcessor worker timed out")
+
+            self._process.join()
+
+        # Drain any items that arrived after the process exited
+        while True:
+            try:
+                idx, rx_data = self._result_queue.get_nowait()
+                results[idx] = rx_data
+            except Empty:
+                break
 
         if len(results) != expected_count:
             log.warning(
