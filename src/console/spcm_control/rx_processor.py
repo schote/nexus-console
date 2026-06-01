@@ -3,6 +3,7 @@
 import logging
 import multiprocessing
 import queue
+import signal
 import threading
 from concurrent.futures import Future, ProcessPoolExecutor, wait
 
@@ -13,6 +14,11 @@ log = logging.getLogger("RxProc")
 # 'spawn' is the only safe start method on Windows and avoids fork-related
 # deadlocks in multi-threaded processes on Linux.
 _mp_ctx = multiprocessing.get_context("spawn")
+
+
+def _worker_init() -> None:
+    """Ignore SIGINT in worker processes so Ctrl-C is handled by the main process only."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def _noop() -> None:
@@ -57,7 +63,7 @@ class RxProcessor:
 
     def start(self) -> None:
         """Create the process pool and pre-warm all worker processes."""
-        self._executor = ProcessPoolExecutor(max_workers=self._num_workers, mp_context=_mp_ctx)
+        self._executor = ProcessPoolExecutor(max_workers=self._num_workers, mp_context=_mp_ctx, initializer=_worker_init)
         # Submit one no-op per worker to force all processes to spawn now so
         # the first real acquisition doesn't pay the spawn cost.
         warm = [self._executor.submit(_noop) for _ in range(self._num_workers)]

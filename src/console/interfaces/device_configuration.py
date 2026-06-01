@@ -42,7 +42,6 @@ class RxConfiguration(BaseModel):
     channel_enable: tuple[bool, ...] = Field(...)
     channel_max_amplitude: tuple[RxAmplitudeType, ...] = Field(...)
     channel_terminated_50ohm: tuple[bool, ...] = Field(...)
-
     num_processing_workers: int = Field(
         default=1,
         ge=0,
