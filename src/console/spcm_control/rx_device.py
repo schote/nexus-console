@@ -6,7 +6,7 @@ import time
 from ctypes import POINTER, addressof, byref, c_short, cast
 from dataclasses import dataclass
 from itertools import compress
-from multiprocessing import Queue as MpQueue
+import queue
 
 import numpy as np
 
@@ -88,7 +88,7 @@ class RxCard(SpectrumDevice):
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
         # Processing queue (set externally by AcquisitionControl)
-        self.processing_queue: MpQueue | None = None
+        self.processing_queue: queue.Queue | None = None
         self.queue_index_offset: int = 0
 
     @property

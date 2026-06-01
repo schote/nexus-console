@@ -16,6 +16,7 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
+from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
@@ -128,12 +129,24 @@ class AcquisitionControl:
         self._raw: list[np.ndarray] = []
         self._unproc: list[np.ndarray] = []
 
+        # Persistent processing worker pool (None when num_processing_workers == 0)
+        num_workers = self.config.rx.num_processing_workers
+        if num_workers > 0:
+            self._processor: RxProcessor | None = RxProcessor(num_workers=num_workers)
+            self._processor.start()
+            self.log.info("RxProcessor pool started with %d worker(s)", num_workers)
+        else:
+            self._processor = None
+            self.log.info("RxProcessor disabled — using in-process fallback")
+
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
+        if self._processor is not None:
+            self._processor.shutdown()
         self.log.info("Measurement cards disconnected")
         self.log.info("Acquisition control terminated\n---------------------------------------------------\n")
 
@@ -240,15 +253,24 @@ class AcquisitionControl:
 
         self.num_adc_events = len(self.sequence.rx_data)
 
-        # Create and start the processing worker
-        processor = RxProcessor(store_unprocessed=store_unprocessed)
-        processor.start()
+        total_raw_samples = (
+            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+        )
+        threshold = self.config.rx.inprocess_sample_threshold
+        use_inprocess = self._processor is None or (threshold > 0 and total_raw_samples < threshold)
+        self.log.debug("Processing path: %s (total raw samples: %d)", "in-process" if use_inprocess else "pool", total_raw_samples)
+
+        if not use_inprocess:
+            self._processor.begin_batch(store_unprocessed=store_unprocessed)
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
             offsets=self.sequence.parameter.gradient_offset,
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
+
+        # Accumulates (global_index, rx_data) pairs when using the in-process path
+        inprocess_items: list[tuple[int, RxData]] = []
 
         for k in range(self.sequence.parameter.num_averages):
             rx_data_list = copy.deepcopy(self.sequence.rx_data)
@@ -257,7 +279,7 @@ class AcquisitionControl:
                 data.larmor_frequency = self.sequence.parameter.larmor_frequency
 
             self.rx_card.rx_data = rx_data_list
-            self.rx_card.processing_queue = processor.input_queue
+            self.rx_card.processing_queue = None if use_inprocess else self._processor.input_queue
             self.rx_card.queue_index_offset = k * self.num_adc_events
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
@@ -286,7 +308,11 @@ class AcquisitionControl:
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            # Clear rx_card references (data already pushed to processing queue)
+            if use_inprocess:
+                for j, rx in enumerate(rx_data_list):
+                    if rx is not None:
+                        inprocess_items.append((k * self.num_adc_events + j, rx))
+
             self.rx_card.rx_data = None
             self.rx_card.processing_queue = None
 
@@ -302,18 +328,19 @@ class AcquisitionControl:
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        # Calculate processing timeout: scale with total data volume
-        total_raw_samples = (
-            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
-        )
+        total_expected = self.sequence.parameter.num_averages * self.num_adc_events
         processing_timeout = max(30.0, total_raw_samples * 1e-5)
 
-        # Collect processed results from worker
-        total_expected = self.sequence.parameter.num_averages * self.num_adc_events
-        self.receive_data = processor.stop_and_collect(
-            expected_count=total_expected,
-            timeout=processing_timeout,
-        )
+        if use_inprocess:
+            for _, rx in inprocess_items:
+                rx.process_data(store_unprocessed=store_unprocessed)
+                rx.materialize(keep=store_unprocessed)
+            self.receive_data = [rx for _, rx in sorted(inprocess_items, key=lambda x: x[0])]
+        else:
+            self.receive_data = self._processor.collect_batch(
+                expected_count=total_expected,
+                timeout=processing_timeout,
+            )
 
         if len(self.receive_data) == 0:
             raise RuntimeError("No ADC events present")

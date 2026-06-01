@@ -1,152 +1,143 @@
-"""Processing worker for RxData objects using multiprocessing."""
+"""Processing worker for RxData objects using a persistent process pool."""
 
 import logging
 import multiprocessing
-import time
-from multiprocessing.queues import Queue
-from queue import Empty
+import queue
+import threading
+from concurrent.futures import Future, ProcessPoolExecutor, wait
 
 from console.interfaces.rx_data import RxData
 
 log = logging.getLogger("RxProc")
 
-# Use 'spawn' instead of the platform default 'fork' on Linux.
-# fork() in a multi-threaded process (e.g. inside a BaseManager server) can
-# deadlock the child if another thread holds a lock at the fork point.
-# spawn starts a clean interpreter and is the only method supported on Windows.
+# 'spawn' is the only safe start method on Windows and avoids fork-related
+# deadlocks in multi-threaded processes on Linux.
 _mp_ctx = multiprocessing.get_context("spawn")
 
 
-class RxProcessor:
-    """Runs RxData.process_data() in a separate process fed by a queue.
+def _noop() -> None:
+    """No-op submitted to pre-warm pool worker processes."""
 
-    The RxCard pushes lightweight RxData items (with raw_data in shared memory)
-    onto ``input_queue``. The worker process reattaches to the shared memory,
-    processes the data, and puts the result on an internal result queue.
+
+def _process_one(index: int, rx_data: RxData, store_unprocessed: bool) -> tuple[int, RxData]:
+    """Process a single RxData item inside a worker process."""
+    rx_data.process_data(store_unprocessed=store_unprocessed)
+    rx_data.materialize(keep=store_unprocessed)
+    return index, rx_data
+
+
+class RxProcessor:
+    """Processes RxData items using a persistent pool of worker processes.
+
+    A feeder thread drains ``input_queue`` and submits each item to a
+    ``ProcessPoolExecutor``, allowing multiple ADC events to be processed
+    concurrently.  The pool workers are kept alive across acquisition runs,
+    eliminating per-run process-spawn overhead.
 
     Usage
     -----
-    >>> processor = RxProcessor(store_unprocessed=False)
+    >>> processor = RxProcessor(num_workers=2)
     >>> processor.start()
-    >>> # ... RxCard pushes items to processor.input_queue ...
-    >>> results = processor.stop_and_collect(expected_count=N, timeout=T)
+    >>> # --- acquisition run ---
+    >>> processor.begin_batch(store_unprocessed=False)
+    >>> # rx_card pushes (index, rx_data) to processor.input_queue ...
+    >>> results = processor.collect_batch(expected_count=N, timeout=T)
+    >>> # Repeat begin_batch / collect_batch for each subsequent run.
+    >>> processor.shutdown()
     """
 
-    def __init__(self, store_unprocessed: bool = False) -> None:
-        self.input_queue: Queue = _mp_ctx.Queue()
-        self._result_queue: Queue = _mp_ctx.Queue()
-        self._store_unprocessed = store_unprocessed
-        self._process: multiprocessing.Process | None = None
+    def __init__(self, num_workers: int = 1) -> None:
+        self.input_queue: queue.Queue = queue.Queue()
+        self._num_workers = num_workers
+        self._executor: ProcessPoolExecutor | None = None
+        self._futures: dict[int, Future] = {}
+        self._feeder: threading.Thread | None = None
+        self._batch_done = threading.Event()
+        self._store_unprocessed: bool = False
 
     def start(self) -> None:
-        """Start the worker process."""
-        self._process = _mp_ctx.Process(
-            target=RxProcessor._worker_loop,
-            args=(self.input_queue, self._result_queue, self._store_unprocessed),
-            daemon=True,
-        )
-        self._process.start()
-        log.debug("Processing worker started (PID %s)", self._process.pid)
+        """Create the process pool and pre-warm all worker processes."""
+        self._executor = ProcessPoolExecutor(max_workers=self._num_workers, mp_context=_mp_ctx)
+        # Submit one no-op per worker to force all processes to spawn now so
+        # the first real acquisition doesn't pay the spawn cost.
+        warm = [self._executor.submit(_noop) for _ in range(self._num_workers)]
+        for f in warm:
+            f.result()
+        log.debug("RxProcessor pool started with %d worker(s)", self._num_workers)
+        self._start_feeder()
 
-    def stop_and_collect(self, expected_count: int, timeout: float = 60.0) -> list[RxData]:
-        """Send sentinel, join worker, return results ordered by global index.
+    def begin_batch(self, store_unprocessed: bool = False) -> None:
+        """Prepare for a new acquisition batch.
+
+        Must be called before the rx_card starts pushing items to
+        ``input_queue``.
+        """
+        self._store_unprocessed = store_unprocessed
+
+    def collect_batch(self, expected_count: int, timeout: float = 60.0) -> list[RxData]:
+        """Signal end of batch, collect results, and reset for the next run.
 
         Parameters
         ----------
         expected_count
-            Total number of RxData items expected (num_averages*adc_count).
+            Number of RxData items expected in this batch.
         timeout
-            Maximum seconds to wait for the worker process to finish.
+            Maximum seconds to wait for all futures to complete.
 
         Returns
         -------
-            Ordered list of processed RxData objects.
+            List of processed RxData objects ordered by global index.
 
         Raises
         ------
         RuntimeError
-            If the worker times out.
+            If the feeder thread does not finish within *timeout* seconds.
         """
-        # Signal worker to stop
-        self.input_queue.put(None)
+        self.input_queue.put(None)  # sentinel — tells feeder the batch is over
 
-        # Drain _result_queue while waiting for the worker to exit.
-        # We must read concurrently with join() — if the result queue's OS pipe
-        # buffer fills up (e.g. large raw_data with store_unprocessed=True) the
-        # worker's internal feeder thread blocks and the process never terminates,
-        # causing join() to time out.
+        if not self._batch_done.wait(timeout=timeout):
+            log.error("Feeder thread did not finish within %.1fs", timeout)
+            raise RuntimeError("RxProcessor feeder timed out")
+
+        done, not_done = wait(list(self._futures.values()), timeout=timeout)
+        if not_done:
+            log.warning("%d future(s) did not complete within timeout", len(not_done))
+
         results: dict[int, RxData] = {}
-        deadline = time.monotonic() + timeout
-
-        if self._process is not None:
-            while self._process.is_alive():
-                # Non-blocking drain of whatever has arrived so far
-                while True:
-                    try:
-                        idx, rx_data = self._result_queue.get(timeout=0.05)
-                        results[idx] = rx_data
-                    except Empty:
-                        break
-
-                if time.monotonic() > deadline:
-                    log.error("Processing worker did not finish within %.1fs, terminating.", timeout)
-                    self._process.terminate()
-                    self._process.join(timeout=5)
-                    raise RuntimeError("RxProcessor worker timed out")
-
-            self._process.join()
-
-        # Drain any items that arrived after the process exited
-        while True:
-            try:
-                idx, rx_data = self._result_queue.get_nowait()
-                results[idx] = rx_data
-            except Empty:
-                break
+        for future in done:
+            idx, rx_data = future.result()
+            results[idx] = rx_data
 
         if len(results) != expected_count:
-            log.warning(
-                "Expected %d processed items but collected %d",
-                expected_count,
-                len(results),
-            )
+            log.warning("Expected %d items but collected %d", expected_count, len(results))
 
-        # Return ordered by global index, skip missing
+        self._start_feeder()  # reset for next batch
         return [results[i] for i in range(expected_count) if i in results]
 
-    @staticmethod
-    def _worker_loop(
-        input_queue: Queue,
-        result_queue: Queue,
-        store_unprocessed: bool,
-    ) -> None:
-        """Worker loop running in a separate process."""
-        processed_count = 0
-        logger = logging.getLogger("RxProc")
+    def shutdown(self) -> None:
+        """Shut down the process pool."""
+        if self._executor is not None:
+            self._executor.shutdown(wait=False, cancel_futures=True)
+            self._executor = None
+            log.debug("RxProcessor pool shut down")
 
+    def _start_feeder(self) -> None:
+        """(Re)start the feeder thread for a new batch."""
+        self._futures.clear()
+        self._batch_done.clear()
+        self._feeder = threading.Thread(target=self._feeder_loop, daemon=True)
+        self._feeder.start()
+
+    def _feeder_loop(self) -> None:
+        """Drain input_queue and submit items to the executor until sentinel."""
         while True:
-            item = input_queue.get()
-            if item is None:
-                logger.debug("Sentinel received, worker processed %d items", processed_count)
-                break
-
-            index, rx_data = item
-            # __setstate__ has already called _attach_shm()
-
             try:
-                # Validate that shared memory was attached successfully
-                if rx_data._shm_name is not None and rx_data._shm is None:
-                    raise RuntimeError(
-                        f"Shared memory not attached for index {index}: "
-                        f"name={rx_data._shm_name}, raw_data={'set' if rx_data.raw_data is not None else 'None'}"
-                    )
-
-                rx_data.process_data(store_unprocessed=store_unprocessed)
-                processed_count += 1
-                logger.debug("Processed item %d (total: %d)", index, processed_count)
-            except Exception:
-                logger.warning("Failed to process RxData index %d, continuing", index, exc_info=True)
-
-            # Release shared memory; optionally copy raw_data to a regular array first.
-            rx_data.materialize(keep=store_unprocessed)
-            result_queue.put((index, rx_data))
+                item = self.input_queue.get(timeout=0.05)
+            except queue.Empty:
+                continue
+            if item is None:
+                self._batch_done.set()
+                return
+            index, rx_data = item
+            future = self._executor.submit(_process_one, index, rx_data, self._store_unprocessed)
+            self._futures[index] = future
