@@ -253,15 +253,11 @@ class AcquisitionControl:
 
         self.num_adc_events = len(self.sequence.rx_data)
 
-        total_raw_samples = (
-            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+        use_pool = self._processor is not None
+        submit_fn = (
+            lambda idx, rx: self._processor.submit(idx, rx, store_unprocessed)
+            if use_pool else None
         )
-        threshold = self.config.rx.inprocess_sample_threshold
-        use_inprocess = self._processor is None or (threshold > 0 and total_raw_samples < threshold)
-        self.log.debug("Processing path: %s (total raw samples: %d)", "in-process" if use_inprocess else "pool", total_raw_samples)
-
-        if not use_inprocess:
-            self._processor.begin_batch(store_unprocessed=store_unprocessed)
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -269,7 +265,7 @@ class AcquisitionControl:
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        # Accumulates (global_index, rx_data) pairs when using the in-process path
+        # Accumulates (global_index, rx_data) pairs when processing in the main process
         inprocess_items: list[tuple[int, RxData]] = []
 
         for k in range(self.sequence.parameter.num_averages):
@@ -279,13 +275,10 @@ class AcquisitionControl:
                 data.larmor_frequency = self.sequence.parameter.larmor_frequency
 
             self.rx_card.rx_data = rx_data_list
-            self.rx_card.processing_queue = None if use_inprocess else self._processor.input_queue
-            self.rx_card.queue_index_offset = k * self.num_adc_events
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-            # Start measurement card operations after queues are ready
-            self.rx_card.start_operation()
+            self.rx_card.start_operation(submit_fn=submit_fn, index_offset=k * self.num_adc_events)
 
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
@@ -308,13 +301,12 @@ class AcquisitionControl:
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            if use_inprocess:
+            if not use_pool:
                 for j, rx in enumerate(rx_data_list):
                     if rx is not None:
                         inprocess_items.append((k * self.num_adc_events + j, rx))
 
             self.rx_card.rx_data = None
-            self.rx_card.processing_queue = None
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -329,18 +321,21 @@ class AcquisitionControl:
         )
 
         total_expected = self.sequence.parameter.num_averages * self.num_adc_events
+        total_raw_samples = (
+            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+        )
         processing_timeout = max(30.0, total_raw_samples * 1e-5)
 
-        if use_inprocess:
+        if use_pool:
+            self.receive_data = self._processor.collect(
+                expected_count=total_expected,
+                timeout=processing_timeout,
+            )
+        else:
             for _, rx in inprocess_items:
                 rx.process_data(store_unprocessed=store_unprocessed)
                 rx.materialize(keep=store_unprocessed)
             self.receive_data = [rx for _, rx in sorted(inprocess_items, key=lambda x: x[0])]
-        else:
-            self.receive_data = self._processor.collect_batch(
-                expected_count=total_expected,
-                timeout=processing_timeout,
-            )
 
         if len(self.receive_data) == 0:
             raise RuntimeError("No ADC events present")

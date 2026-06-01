@@ -69,33 +69,34 @@ class RxData:
     # Processed data is the demodulated, phased and decimated data
     processed_data: None | np.ndarray = None
 
-    # Shared memory fields (not part of public interface)
+    # Shared memory handle and (name, shape) needed to reattach after pickling.
+    # track=False on both sides: the worker unlinks explicitly, avoiding a
+    # spurious 'leaked shared_memory' warning from the resource tracker.
     _shm: SharedMemory | None = field(default=None, init=False, repr=False, compare=False)
-    _shm_name: str | None = field(default=None, init=False, repr=False, compare=False)
-    _shm_shape: tuple[int, ...] | None = field(default=None, init=False, repr=False, compare=False)
+    _shm_meta: tuple[str, tuple[int, ...]] | None = field(default=None, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         """Post init method to calculate the decimation factor."""
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
     def __getstate__(self) -> dict:
-        """Custom pickle: exclude raw_data array and SharedMemory handle when using shared memory."""
+        """Custom pickle: strip the live handle and raw_data view; keep the shm name/shape."""
         state = self.__dict__.copy()
-        if self._shm_name is not None:
+        if self._shm is not None:
             state["raw_data"] = None
             state["_shm"] = None
         return state
 
     def __setstate__(self, state: dict) -> None:
-        """Custom unpickle: reattach to shared memory if a name is present."""
+        """Custom unpickle: reattach to shared memory if a name/shape pair is present."""
         self.__dict__.update(state)
-        if self._shm_name is not None:
+        if self._shm_meta is not None:
+            name, shape = self._shm_meta
             try:
-                self._attach_shm()
+                self._shm = SharedMemory(name=name, create=False, track=False)
+                self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
             except Exception as e:
-                raise RuntimeError(
-                    f"Failed to reattach to shared memory '{self._shm_name}': {e}"
-                ) from e
+                raise RuntimeError(f"Failed to reattach to shared memory '{name}': {e}") from e
 
     def write_raw_data(self, data: np.ndarray) -> None:
         """Copy ADC data into shared memory, allocating it on the first call.
@@ -106,16 +107,9 @@ class RxData:
             Raw int16 ADC data with shape (num_channels, num_samples_raw).
         """
         if self._shm is None:
-            shape = data.shape
-            nbytes = int(np.prod(shape)) * np.dtype(np.int16).itemsize
-            # track=False: ownership is transferred to the worker process which
-            # calls unlink() explicitly. Keeping the name in this process's
-            # resource tracker causes a spurious 'leaked shared_memory' warning
-            # at shutdown when the tracker finds the name already gone.
-            self._shm = SharedMemory(create=True, size=nbytes, track=False)
-            self._shm_name = self._shm.name
-            self._shm_shape = shape
-            self.raw_data = np.ndarray(shape, dtype=np.int16, buffer=self._shm.buf)
+            self._shm = SharedMemory(create=True, size=data.nbytes, track=False)
+            self._shm_meta = (self._shm.name, data.shape)
+            self.raw_data = np.ndarray(data.shape, dtype=np.int16, buffer=self._shm.buf)
         self.raw_data[:] = data
 
     def materialize(self, keep: bool = False) -> None:
@@ -129,30 +123,12 @@ class RxData:
         """
         if self._shm is None:
             return
-        if keep and self.raw_data is not None:
-            regular_array = self.raw_data.copy()
-        else:
-            regular_array = None
-        self._release_shm()
+        regular_array = self.raw_data.copy() if keep and self.raw_data is not None else None
+        self._shm.close()
+        self._shm.unlink()
+        self._shm = None
+        self._shm_meta = None
         self.raw_data = regular_array
-
-    def _attach_shm(self) -> None:
-        """Attach to existing shared memory by name (for use in a worker process)."""
-        if self._shm_name is None:
-            raise RuntimeError("No shared memory name set, cannot attach.")
-        # track=False: the worker calls unlink() explicitly in _release_shm(),
-        # so the resource tracker must not attempt a second unlink at exit.
-        self._shm = SharedMemory(name=self._shm_name, create=False, track=False)
-        self.raw_data = np.ndarray(self._shm_shape, dtype=np.int16, buffer=self._shm.buf)
-
-    def _release_shm(self) -> None:
-        """Close and unlink shared memory."""
-        if self._shm is not None:
-            self._shm.close()
-            self._shm.unlink()
-            self._shm = None
-            self._shm_name = None
-            self._shm_shape = None
 
     def __str__(self) -> str:
         """Return string representation of information contained within RxData class."""
@@ -164,18 +140,15 @@ class RxData:
 
     def dict(self) -> dict:
         """Return RxData meta information as string."""
-        _dict = asdict(self)
-        for key, value in _dict.items():
-            # Remove private/protected attributes
-            if key.startswith("_"):
-                _dict.pop(key)
-            # Stringify none values
-            if value is None:
-                _dict[key] = "None"
-            # Replace data attributes by their shape
-            if key in ["processed_data", "raw_data"] and value is not None:
-                _dict[key] = value.shape
-        return _dict
+        return {
+            key: (
+                value.shape if key in ("processed_data", "raw_data") and value is not None
+                else "None" if value is None
+                else value
+            )
+            for key, value in asdict(self).items()
+            if not key.startswith("_")
+        }
 
     def decimate_data(self, data) -> np.ndarray:
         """Decimate the data using the defined `DDCMethod` method."""

@@ -50,14 +50,6 @@ class RxConfiguration(BaseModel):
             "Set to 0 to always process in the main process (no multiprocessing)."
         ),
     )
-    inprocess_sample_threshold: int = Field(
-        default=0,
-        ge=0,
-        description=(
-            "Total raw-sample count below which processing falls back to the main process "
-            "even when num_processing_workers >= 1. Set to 0 to disable the adaptive fallback."
-        ),
-    )
 
     @model_validator(mode="after")
     def validate_channel_lengths(self) -> "RxConfiguration":

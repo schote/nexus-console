@@ -3,10 +3,10 @@
 import logging
 import threading
 import time
+from collections.abc import Callable
 from ctypes import POINTER, addressof, byref, c_short, cast
 from dataclasses import dataclass
 from itertools import compress
-import queue
 
 import numpy as np
 
@@ -87,9 +87,8 @@ class RxCard(SpectrumDevice):
 
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
-        # Processing queue (set externally by AcquisitionControl)
-        self.processing_queue: queue.Queue | None = None
-        self.queue_index_offset: int = 0
+        self._submit_fn: Callable[[int, RxData], None] | None = None
+        self._index_offset: int = 0
 
     @property
     def total_gates(self) -> int:
@@ -233,24 +232,39 @@ class RxCard(SpectrumDevice):
 
         self.log.debug("Device setup completed")
 
-    def start_operation(self):
-        """Start card operation."""
-        # Clear the emergency stop flag
+    def start_operation(
+        self,
+        submit_fn: Callable[[int, RxData], None] | None = None,
+        index_offset: int = 0,
+    ) -> None:
+        """Start card operation.
+
+        Parameters
+        ----------
+        submit_fn
+            Optional callback invoked as ``submit_fn(global_index, rx_data)``
+            for each completed gate.  When provided the gate's slot in
+            ``rx_data`` is set to ``None`` immediately after the call so the
+            caller owns the object.  When ``None`` the populated items remain
+            in ``rx_data`` for the caller to collect after ``stop_operation()``.
+        index_offset
+            Added to the per-gate index before calling *submit_fn*, allowing
+            the caller to assign globally unique indices across multiple averages.
+        """
+        self._submit_fn = submit_fn
+        self._index_offset = index_offset
         self.is_running.clear()
         self.is_receiving.clear()
-
-        # Start card thread. if time stamp mode is not available use the example function.
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
 
     def stop_operation(self):
         """Stop card thread."""
-        # Check if thread is running
         if self.worker is not None:
-            # Signal thread to stop
             self.is_running.set()
-            # Wait for thread to complete
             self.worker.join()
+            self._submit_fn = None
+            self._index_offset = 0
 
             # Stop card operation with the following steps:
             # 1. Stop card acquisition
@@ -484,10 +498,8 @@ class RxCard(SpectrumDevice):
                     rx_data_item.scaling_factor = self.rx_scaling[: self.num_channels.value]
                     rx_data_item.time_stamp = timestamp_0 / (self.sample_rate * 1e6)
 
-                    if self.processing_queue is not None:
-                        global_index = self.queue_index_offset + self._total_gates
-                        self.processing_queue.put((global_index, rx_data_item))
-                        # Release reference from rx_data list; shared memory stays alive in AcquisitionControl
+                    if self._submit_fn is not None:
+                        self._submit_fn(self._index_offset + self._total_gates, rx_data_item)
                         self.rx_data[self._total_gates] = None
 
                     # Store raw data in RxData object (in the following referenced as `gate`)
