@@ -609,8 +609,8 @@ class SequenceProvider(Sequence):
         if parameter.larmor_frequency >= f0_limit:
             msg = f"Larmor frequency too high ({parameter.larmor_frequency * 1e-6} MHz), violating sampling theorem"
             raise ValueError(msg)
-        if parameter.larmor_frequency <= 0:
-            msg = "Larmor frequency invalid (<= 0)."
+        if parameter.larmor_frequency < 0:
+            msg = "Larmor frequency invalid (< 0)."
             raise ValueError(msg)
 
         # Validate channel assignment
