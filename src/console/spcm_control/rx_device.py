@@ -460,17 +460,13 @@ class RxCard(SpectrumDevice):
                         (self.num_channels.value, num_gate_samples),
                         order="F",
                     )
-
-                    # Store raw data in RxData object (in the following referenced as `gate`)
-                    gate = self.rx_data[self._total_gates]
-                    gate.raw_data = gate_data.copy()
-                    # Shift bits of first channel, which contains digital phase reference in 16th bit
-                    gate.raw_data[0] = (gate.raw_data[0].view(np.uint16) << 1).view(np.int16)
-                    # Extract the reference signal (only 16th bit)
-                    reference_len = min(num_gate_samples, NUM_REFERENCE_SAMPLES)
-                    gate.phase_reference = (gate_data[0, :reference_len].astype(np.uint16) >> 15).copy()
-                    gate.scaling_factor = self.rx_scaling[:self.num_channels.value]
-                    gate.time_stamp = timestamp_0 / (self.sample_rate * 1e6)
+                    # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
+                    self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
+                    self.rx_data[self._total_gates].phase_reference = (
+                        gate_data[0, 0:min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
+                    ).copy()
+                    self.rx_data[self._total_gates].scaling_factor = self.rx_scaling[:self.num_channels.value]
+                    self.rx_data[self._total_gates].time_stamp = timestamp_0 / (self.sample_rate * 1e6)
 
                     # The accumulation of the leftover bytes is positive,
                     # if if the post-trigger event was not fully captured (accumulated sum increases),
