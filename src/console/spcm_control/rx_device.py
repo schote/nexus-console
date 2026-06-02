@@ -189,7 +189,7 @@ class RxCard(SpectrumDevice):
         # Digital filter setting for receiver, 0 = disable digital bandwidth filter
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGITALBWFILTER, 0)
 
-        # Setup digital input channel for the phase reference signal
+        # Configure X2 as digital input for phase reference signal and sample it in sync with analog channel 0
         sp.spcm_dwSetParam_i32(self.card, sp.SPCM_X2_MODE, sp.SPCM_XMODE_DIGIN)
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_DIGMODE0, (sp.DIGMODEMASK_BIT15 & sp.SPCM_DIGMODE_X2))
 
@@ -460,8 +460,10 @@ class RxCard(SpectrumDevice):
                         (self.num_channels.value, num_gate_samples),
                         order="F",
                     )
-                    # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
-                    self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
+                    # Store raw data in RxData object, 16th bit of channel 0 is the digital phase reference 
+                    # Only the resolution of channel 0 is reduced!
+                    self.rx_data[self._total_gates].raw_data = gate_data.copy()
+                    self.rx_data[self._total_gates].raw_data[0] = (self.rx_data[self._total_gates].raw_data[0].astype(np.uint16) << 1).astype(np.int16)
                     self.rx_data[self._total_gates].phase_reference = (
                         gate_data[0, 0:min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
                     ).copy()
