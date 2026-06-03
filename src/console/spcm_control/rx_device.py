@@ -460,8 +460,10 @@ class RxCard(SpectrumDevice):
                         (self.num_channels.value, num_gate_samples),
                         order="F",
                     )
-                    # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
-                    self.rx_data[self._total_gates].raw_data = gate_data.copy() << 1
+                    # Store raw data in RxData object, 16th bit of channel 0 is the digital phase reference 
+                    # Only the resolution of channel 0 is reduced!
+                    self.rx_data[self._total_gates].raw_data = gate_data.copy()
+                    self.rx_data[self._total_gates].raw_data[0] = (self.rx_data[self._total_gates].raw_data[0].astype(np.uint16) << 1).astype(np.int16)
                     self.rx_data[self._total_gates].phase_reference = (
                         gate_data[0, 0:min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
                     ).copy()
