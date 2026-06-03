@@ -101,7 +101,9 @@ class RxData:
             raise ValueError(f"Invalid decimation factor {self.decimation_factor}")
 
         # Recover 50% amplitude loss from filtering the 2*f_Larmor mixing term; at f=0, LO is 1 (identity)
-        scaling = 2. if self.larmor_frequency > 0. else 1.
+        scaling = 1.
+        if self.larmor_frequency is not None and self.larmor_frequency > 0.:
+            scaling = 2.
 
         match self.ddc_method:
             case DDCMethod.CIC:
