@@ -490,28 +490,18 @@ class RxCard(SpectrumDevice):
                         order="F",
                     )
                     # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
-                    rx_data_item = self.rx_data[self._total_gates]
-                    rx_data_item.write_raw_data(gate_data << 1)
-                    rx_data_item.phase_reference = (
-                        gate_data[0, 0 : min(num_gate_samples, NUM_REFERENCE_SAMPLES)].astype(np.uint16) >> 15
-                    ).copy()
-                    rx_data_item.scaling_factor = self.rx_scaling[: self.num_channels.value]
-                    rx_data_item.time_stamp = timestamp_0 / (self.sample_rate * 1e6)
-
-                    if self._submit_fn is not None:
-                        self._submit_fn(self._index_offset + self._total_gates, rx_data_item)
-                        self.rx_data[self._total_gates] = None
-
-                    # Store raw data in RxData object (in the following referenced as `gate`)
                     gate = self.rx_data[self._total_gates]
-                    gate.raw_data = gate_data.copy()
-                    # Shift bits of first channel, which contains digital phase reference in 16th bit
-                    gate.raw_data[0] = (gate.raw_data[0].view(np.uint16) << 1).view(np.int16)
-                    # Extract the reference signal (only 16th bit)
                     reference_len = min(num_gate_samples, NUM_REFERENCE_SAMPLES)
                     gate.phase_reference = (gate_data[0, :reference_len].astype(np.uint16) >> 15).copy()
-                    gate.scaling_factor = self.rx_scaling[:self.num_channels.value]
+                    # Shift first channel only (contains digital phase reference in 16th bit)
+                    gate_data[0] = (gate_data[0].view(np.uint16) << 1).view(np.int16)
+                    gate.write_raw_data(gate_data)
+                    gate.scaling_factor = self.rx_scaling[: self.num_channels.value]
                     gate.time_stamp = timestamp_0 / (self.sample_rate * 1e6)
+
+                    if self._submit_fn is not None:
+                        self._submit_fn(self._index_offset + self._total_gates, gate)
+                        self.rx_data[self._total_gates] = None
 
                     # The accumulation of the leftover bytes is positive,
                     # if if the post-trigger event was not fully captured (accumulated sum increases),
