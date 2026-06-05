@@ -1,6 +1,7 @@
 """Acquisition Control Class."""
 
 import copy
+import functools
 import logging
 import logging.config
 import os
@@ -255,7 +256,7 @@ class AcquisitionControl:
 
         use_pool = self._processor is not None
         submit_fn = (
-            lambda idx, rx: self._processor.submit(idx, rx, store_unprocessed)
+            functools.partial(self._processor.submit, store_unprocessed=store_unprocessed)
             if use_pool else None
         )
 

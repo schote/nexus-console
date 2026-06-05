@@ -80,7 +80,7 @@ class RxData:
         self.decimation_factor = round(self.dwell_time / self.dwell_time_raw)
 
     def __getstate__(self) -> dict:
-        """Custom pickle: strip the live handle and raw_data view; keep the shm name/shape."""
+        """Strip the live handle and raw_data view; keep the shm name/shape (custom pickle)."""
         state = self.__dict__.copy()
         if self._shm is not None:
             state["raw_data"] = None
@@ -88,7 +88,7 @@ class RxData:
         return state
 
     def __setstate__(self, state: dict) -> None:
-        """Custom unpickle: reattach to shared memory if a name/shape pair is present."""
+        """Reattach to shared memory if a name/shape pair is present (custom pickle)."""
         self.__dict__.update(state)
         if self._shm_meta is not None:
             name, shape = self._shm_meta

@@ -92,7 +92,7 @@ class RxCard(SpectrumDevice):
 
     @property
     def total_gates(self) -> int:
-        """ "Helper function to return the number of gates that have been collected by the Rx Card."""
+        """Helper function to return the number of gates that have been collected by the Rx Card."""
         return self._total_gates
 
     def setup_card(self):
