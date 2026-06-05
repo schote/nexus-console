@@ -489,11 +489,12 @@ class RxCard(SpectrumDevice):
                         (self.num_channels.value, num_gate_samples),
                         order="F",
                     )
-                    # Store raw data (15 bit) in RxData object, 16th is the digital phase reference
+
                     gate = self.rx_data[self._total_gates]
+                    # Store digital reference signal first (bit 16 of channel 0)
                     reference_len = min(num_gate_samples, NUM_REFERENCE_SAMPLES)
                     gate.phase_reference = (gate_data[0, :reference_len].astype(np.uint16) >> 15).copy()
-                    # Shift first channel only (contains digital phase reference in 16th bit)
+                    # Modify gate_data by removing digital signal before writing it to RxData instance
                     gate_data[0] = (gate_data[0].view(np.uint16) << 1).view(np.int16)
                     gate.write_raw_data(gate_data)
                     gate.scaling_factor = self.rx_scaling[: self.num_channels.value]
