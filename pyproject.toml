@@ -34,14 +34,13 @@ classifiers = [
 ]
 dependencies = [
     "pypulseq",
-    # "pypulseq@git+https://github.com/imr-framework/pypulseq#egg=dev",
-    "numpy",    # "numpy==1.23.0" for pypulseq master release 1.4
+    "numpy",
     "plotly",
     "PyYAML",
     "pydantic>=2.11.7",
     "matplotlib",
     "pandas",
-    "ismrmrd",
+    "ismrmrd<1.15.0",
     "h5py",
 ]
 

@@ -100,14 +100,19 @@ class RxData:
         if self.decimation_factor <= 1 or not isinstance(self.decimation_factor, int):
             raise ValueError(f"Invalid decimation factor {self.decimation_factor}")
 
+        # Recover 50% amplitude loss from filtering the 2*f_Larmor mixing term; at f=0, LO is 1 (identity)
+        scaling = 1.
+        if self.larmor_frequency is not None and self.larmor_frequency > 0.:
+            scaling = 2.
+
         match self.ddc_method:
             case DDCMethod.CIC:
-                return 2 * ddc.filter_cic_fir_comp(data, decimation=self.decimation_factor, number_of_stages=5)
+                return scaling * ddc.filter_cic_fir_comp(data, decimation=self.decimation_factor, number_of_stages=5)
             case DDCMethod.AVG:
-                return 2 * ddc.filter_moving_average(data, decimation=self.decimation_factor, overlap=8)
+                return scaling * ddc.filter_moving_average(data, decimation=self.decimation_factor, overlap=8)
             case _:
                 # Default case is FIR decimation
-                return 2 * signal.decimate(data, q=self.decimation_factor, ftype="fir", axis=-1)
+                return scaling * signal.decimate(data, q=self.decimation_factor, ftype="fir", axis=-1)
 
     def demod_and_phase_data(self, data) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data.

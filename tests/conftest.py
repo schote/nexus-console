@@ -92,6 +92,74 @@ def random_acquisition_data() -> Callable:
 
 
 @pytest.fixture()
+def rx_data_fid() -> RxData:
+    """Generate RxData with artificial FID signal."""
+    adc_duration = 6.4e-3
+    adc_bandwidth = 20e3
+    total_samples = int(adc_duration*adc_bandwidth)
+    samples_discard = total_samples // 10
+    adc_samples = int(total_samples - 2*samples_discard)
+    f_larmor = 2.021e6
+    f_offset = 0.
+    f_spcm = 20e6
+    t2 = 0.6e-3
+    amplitude = 1.
+
+    t = np.linspace(0, adc_duration, int(adc_duration*f_spcm))
+    complex_envelope = amplitude * np.exp(-t / t2) * np.exp(2j * np.pi * f_offset * t)
+    raw_data = np.real(complex_envelope * np.exp(2j * np.pi * f_larmor * t))
+
+    return RxData(
+        index=0,
+        total_averages=1,
+        average_index=1,
+        num_samples=adc_samples,
+        num_samples_raw=raw_data.size,
+        num_samples_discard=samples_discard,
+        dwell_time=1/adc_bandwidth,
+        dwell_time_raw=1/f_spcm,
+        phase_offset=0,
+        freq_offset=0,
+        larmor_frequency=f_larmor,
+        demod_frequency=f_larmor,
+        raw_data=raw_data[None, ...],
+    )
+
+@pytest.fixture()
+def rx_data_trapezoid() -> RxData:
+    """Generate RxData with trapezoid data used for system testing."""
+    adc_duration = 6.e-3
+    adc_bandwidth = 20e3
+    total_samples = int(adc_duration*adc_bandwidth)
+    samples_discard = total_samples // 10
+    adc_samples = int(total_samples - 2*samples_discard)
+    f_spcm = 20e6
+    ramp_time = 100e-6
+
+    num_samples_ramp = int(ramp_time * f_spcm)
+    num_samples_flat = int(adc_duration*f_spcm - 2*num_samples_ramp)
+    ramp = np.linspace(0., 1., num_samples_ramp)
+    flat = np.ones(num_samples_flat)
+    raw_data = np.concat([ramp, flat, ramp[::-1]])
+
+    return RxData(
+        index=0,
+        total_averages=1,
+        average_index=1,
+        num_samples=adc_samples,
+        num_samples_raw=raw_data.size,
+        num_samples_discard=samples_discard,
+        dwell_time=1/adc_bandwidth,
+        dwell_time_raw=1/f_spcm,
+        phase_offset=0,
+        freq_offset=0,
+        larmor_frequency=0.,
+        demod_frequency=0.,
+        raw_data=raw_data[None, ...],
+    )
+
+
+@pytest.fixture()
 def test_spectrum() -> Callable:
     """Sinusoidal test signal."""
     rng = np.random.default_rng(seed=0)
