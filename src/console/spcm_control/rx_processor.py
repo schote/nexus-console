@@ -71,6 +71,8 @@ class RxProcessor:
         Thread-safe: may be called from any thread, including the rx_card
         streaming thread.
         """
+        if self._executor is None:
+            raise RuntimeError("RxProcessor is not started. Call start() first.")
         self._futures[index] = self._executor.submit(_process_one, index, rx_data, store_unprocessed)
 
     def collect(self, expected_count: int, timeout: float = 60.0) -> list[RxData]:

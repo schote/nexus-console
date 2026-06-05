@@ -8,6 +8,7 @@ import os
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 import matplotlib as mpl
 import numpy as np
@@ -254,10 +255,9 @@ class AcquisitionControl:
 
         self.num_adc_events = len(self.sequence.rx_data)
 
-        use_pool = self._processor is not None
         submit_fn = (
             functools.partial(self._processor.submit, store_unprocessed=store_unprocessed)
-            if use_pool else None
+            if self._processor is not None else None
         )
 
         # Set gradient offset values
@@ -275,7 +275,7 @@ class AcquisitionControl:
                 data.average_index = k
                 data.larmor_frequency = self.sequence.parameter.larmor_frequency
 
-            self.rx_card.rx_data = rx_data_list
+            self.rx_card.rx_data = cast(list[RxData | None], rx_data_list)
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
@@ -302,7 +302,7 @@ class AcquisitionControl:
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            if not use_pool:
+            if self._processor is None:
                 for j, rx in enumerate(rx_data_list):
                     if rx is not None:
                         inprocess_items.append((k * self.num_adc_events + j, rx))
@@ -327,7 +327,7 @@ class AcquisitionControl:
         )
         processing_timeout = max(30.0, total_raw_samples * 1e-5)
 
-        if use_pool:
+        if self._processor is not None:
             self.receive_data = self._processor.collect(
                 expected_count=total_expected,
                 timeout=processing_timeout,

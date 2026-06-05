@@ -110,6 +110,8 @@ class RxData:
             self._shm = SharedMemory(create=True, size=data.nbytes, track=False)
             self._shm_meta = (self._shm.name, data.shape)
             self.raw_data = np.ndarray(data.shape, dtype=np.int16, buffer=self._shm.buf)
+        if self.raw_data is None:
+            raise RuntimeError("Shared memory buffer not initialized.")
         self.raw_data[:] = data
 
     def materialize(self, keep: bool = False) -> None:

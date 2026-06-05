@@ -71,7 +71,7 @@ class RxCard(SpectrumDevice):
         self.channel_enable = [int(val) for val in channel_enable]
         self.max_amplitude = max_amplitude
         self.impedance_50_ohms = [int(val) for val in impedance_50_ohms]
-        self.rx_data: None | list[RxData] = None
+        self.rx_data: list[RxData | None] | None = None
 
         self.num_channels = sp.int32(0)
         self.card_type = sp.int32(0)
@@ -491,6 +491,9 @@ class RxCard(SpectrumDevice):
                     )
 
                     gate = self.rx_data[self._total_gates]
+                    if gate is None:
+                        msg = f"RxData slot {self._total_gates} was already consumed by the processor."
+                        raise RuntimeError(msg)
                     # Store digital reference signal first (bit 16 of channel 0)
                     reference_len = min(num_gate_samples, NUM_REFERENCE_SAMPLES)
                     gate.phase_reference = (gate_data[0, :reference_len].astype(np.uint16) >> 15).copy()
