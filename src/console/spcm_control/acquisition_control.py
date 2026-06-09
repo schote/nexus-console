@@ -86,6 +86,7 @@ class AcquisitionControl:
             spcm_dwell_time=1 / (self.config.tx.sampling_rate * 1e6),
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
             system=self.config.system.get_opts(),
+            rf_gain_lut_path=self.config.tx.rf_gain_lut_path,
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(

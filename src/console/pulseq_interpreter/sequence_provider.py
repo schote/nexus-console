@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from math import floor
 from types import SimpleNamespace
 from typing import Any
+from pathlib import Path
 
 import numpy as np
 from pypulseq.opts import Opts
@@ -69,6 +70,7 @@ class SequenceProvider(Sequence):
         rf_to_mvolt: float,
         spcm_dwell_time: float,
         system: Opts,
+        rf_gain_lut_path: Path | None = None,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -124,6 +126,13 @@ class SequenceProvider(Sequence):
         signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
         self.phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
         self.phase_reference[signal > 0] = np.uint16(2**15)
+
+        # Load LUT for RF gain correction if path to LUT is provided
+        self._rf_gain_lut: np.ndarray | None = None
+        if rf_gain_lut_path is not None and rf_gain_lut_path.exists():
+            if (_lut := np.load(rf_gain_lut_path)).size == INT16_MAX - INT16_MIN + 1:
+                self._rf_gain_lut = _lut
+
 
     # -------- PyPulseq interface -------- #
 
@@ -348,9 +357,8 @@ class SequenceProvider(Sequence):
                 rf_start = block_pos[event_idx] * 4
                 rf_end = (block_pos[event_idx] + rf_size) * 4
 
-                # Add RF waveform
-                _seq[rf_start:rf_end:4] = rf_waveform.real.astype(np.int16)
-                # Add unblanking signal to Z gradient
+                # Add RF waveform and unblanking signal to Z gradient
+                _seq[rf_start:rf_end:4] = rf_waveform
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
             if block.label is not None:
@@ -502,11 +510,15 @@ class SequenceProvider(Sequence):
         carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
 
         try:
-            waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
+            rf_waveform = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
         except IndexError as err:
             self.log.exception(err, exc_info=True)
 
-        return (waveform_rf, rf_unblanking)
+        rf_waveform_i16 = rf_waveform.real.astype(np.int16)
+        if self._rf_gain_lut:
+            rf_waveform_i16 = self._rf_gain_lut[rf_waveform_i16.view(np.uint16)]
+
+        return (rf_waveform_i16, rf_unblanking)
 
     @profile
     def _calculate_gradient(

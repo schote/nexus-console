@@ -1,4 +1,5 @@
 """Implementation of the device configuration models."""
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
@@ -27,6 +28,7 @@ class TxConfiguration(BaseModel):
     gradient_efficiency: tuple[float, float, float] = Field(...)
     gpa_gain: tuple[float, float, float] = Field(...)
     rf_to_mvolt: float = Field(..., strict=True)
+    rf_gain_lut_path: Path | None = Field(default=None)
 
 
 class RxConfiguration(BaseModel):
