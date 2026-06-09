@@ -131,6 +131,7 @@ class SequenceProvider(Sequence):
         self._rf_gain_lut: np.ndarray | None = None
         if rf_gain_lut_path is not None and rf_gain_lut_path.exists():
             if (_lut := np.load(rf_gain_lut_path)).size == INT16_MAX - INT16_MIN + 1:
+                self.log.info("Loaded LUT for RF gain correction.")
                 self._rf_gain_lut = _lut
 
 
@@ -515,7 +516,7 @@ class SequenceProvider(Sequence):
             self.log.exception(err, exc_info=True)
 
         rf_waveform_i16 = rf_waveform.real.astype(np.int16)
-        if self._rf_gain_lut:
+        if self._rf_gain_lut is not None:
             rf_waveform_i16 = self._rf_gain_lut[rf_waveform_i16.view(np.uint16)]
 
         return (rf_waveform_i16, rf_unblanking)
