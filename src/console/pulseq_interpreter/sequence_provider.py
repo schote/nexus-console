@@ -20,8 +20,7 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 try:
     from line_profiler import profile
 except ImportError:
-    def profile(func: Callable[..., Any]) -> Callable[..., Any]:
-        """Define placeholder for profile decorator."""
+    def profile(func):  # type: ignore[misc]
         return func
 
 
@@ -94,9 +93,8 @@ class SequenceProvider(Sequence):
             Translation of RF waveform from pulseq (Hz) to mV.
         spcm_dwell_time
             Sampling time raster of the output waveform (depends on spectrum card).
-        system_limits
-            Absolute maximum system limits defined in the device configuration.
-            Used to instantiate the pypulseq `Opts()` class.
+        system : Opts
+            Pypulseq system limits object used for sequence construction.
         """
         if not isinstance(system, Opts):
             raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")

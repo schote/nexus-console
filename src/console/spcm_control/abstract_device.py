@@ -137,13 +137,7 @@ class SpectrumDevice(ABC):
 
     @abstractmethod
     def start_operation(self) -> None:
-        """Abstract method to start card operation.
-
-        Parameters
-        ----------
-        data, optional
-            Replay data in correct spcm format as numpy array, by default None
-        """
+        """Abstract method to start card operation."""
 
     @abstractmethod
     def stop_operation(self) -> None:

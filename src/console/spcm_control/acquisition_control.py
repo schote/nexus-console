@@ -231,10 +231,7 @@ class AcquisitionControl:
         Parameters
         ----------
         store_unprocessed
-            Flag for whether to keep the raw, undecimated data after decimation
-        realtime_proccessing
-            flag for processing the data in real time using the multiprocessing or
-            using threading to process the data after it has all been acquired.
+            Flag for whether to keep the raw, undecimated data after decimation.
 
         Raises
         ------

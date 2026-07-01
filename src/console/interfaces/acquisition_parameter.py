@@ -168,10 +168,10 @@ class AcquisitionParameter:
 
         Parameters
         ----------
-        file_path, optional
-            Path to the pickle state file, by default None.
-            If None, the default state file path is taken which is <home>/nexus-console/acquisition-parameter.state
-            Default state file path can be changed using the set_default_path method.
+        filepath : str or Path or None, optional
+            Path to the pickle state file. If None, the default path
+            ``<home>/nexus-console/acquisition-parameter.state`` is used.
+            The default path can be changed with the ``set_default_path`` method.
         """
         _path = Path(filepath or self.state_filepath)
         if not _path.name.endswith(".state"):
@@ -186,19 +186,18 @@ class AcquisitionParameter:
 
         Parameters
         ----------
-        file_path, optional
-            Path to acquisition parameter state file.
-            If file_path is not a pickle file, i.e. ends with .json,
-            the default state file designation acquisition-parameter.state is added.
+        filepath : Path or str or None, optional
+            Path to acquisition parameter state file. If the path does not end with
+            ``.state``, the filename ``acquisition-parameter.state`` is appended.
 
         Returns
         -------
-            Instance of acquisition parameters with state loaded from provided file_path.
+            Instance of acquisition parameters with state loaded from the provided path.
 
         Raises
         ------
         FileNotFoundError
-            Provided file_path is not a pickle file or does not exist.
+            Provided filepath does not exist or is not a valid state file.
         EOFError
             Provided state file is corrupted
         """

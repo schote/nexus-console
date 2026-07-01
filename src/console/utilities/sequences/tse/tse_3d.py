@@ -75,9 +75,6 @@ def constructor(
         Duration of the gradient ramps
     gradient_correction, optional
         Time constant to center ADC event
-    adc_correction, optional
-        Time constant which is added at the end of the ADC and readout gradient.
-        This value is not taken into account for the prephaser calculation.
     ro_bandwidth, optional
         Readout bandwidth in Hz
     fov, optional
@@ -531,17 +528,19 @@ def constructor(
 
 
 def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
-    """
-    Sort acquired k-space lines.
+    """Sort acquired k-space lines.
 
     Parameters
     ----------
-    kspace
-        Acquired k-space data in the format (averages, coils, pe, ro)
-    trajectory
-        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
-    dim
-        dimensions of kspace
+    receive_data : list
+        List of received data objects containing processed k-space lines and labels.
+    seq : pp.Sequence
+        Pypulseq sequence used to retrieve encoding dimension definitions.
+
+    Returns
+    -------
+    np.ndarray
+        Sorted k-space array with shape (averages, coils, enc_z, enc_y, enc_x).
     """
     n_avg = receive_data[0].total_averages
     n_coil = np.size(receive_data[0].processed_data, 0)
