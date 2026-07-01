@@ -1,0 +1,115 @@
+site_name: Nexus Console
+site_description: Open-source Python framework for versatile low-field MRI acquisition
+site_url: https://schote.github.io/nexus-console/
+repo_url: https://github.com/schote/nexus-console
+repo_name: schote/nexus-console
+edit_uri: ""
+
+theme:
+  name: material
+  logo: assets/logo.png
+  favicon: assets/favicon.ico
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+    - search.suggest
+    - search.highlight
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+  - assets/js/doc-badges.js
+
+hooks:
+  - docs/hooks.py
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - docs/scripts/gen_ref_pages.py
+  - literate-nav:
+      nav_file: SUMMARY.md
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            docstring_options:
+              warn_unknown_params: false
+            show_source: true
+            show_root_heading: false
+            show_root_full_path: false
+            members_order: source
+            separate_signature: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            unwrap_annotated: true
+            filters:
+              - "!^_"
+
+nav:
+  - Home: index.md
+  - Setup:
+    - Installation: setup/installation.md
+    - Usage: setup/usage.md
+    - System setup: setup/system_setup.md
+    - Measurement cards: setup/cards.md
+  - Examples:
+    - Overview: examples/index.md
+    - Spin-echo spectrum: examples/spin_echo.md
+    - T2 relaxation: examples/t2_measurement.md
+    - 3D turbo spin-echo: examples/tse_3d.md
+  - Reference: reference/
+
+docs_dir: docs
+site_dir: site

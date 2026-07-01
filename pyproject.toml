@@ -49,6 +49,19 @@ dependencies = [
 test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
 lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
+docs-mkdocs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.27.0",
+    "mkdocs-gen-files>=0.5.0",
+    "mkdocs-literate-nav>=0.6.1",
+    "mkdocs-section-index>=0.3.9",
+    "mkdocs-jupyter>=0.24.0",
+    "markdown-exec[ansi]>=1.9.0",
+    "mike>=2.1.0",
+    "pymdown-extensions>=10.7.0",
+    "griffe>=0.47.0",
+    "line_profiler",
+]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [project.scripts]
