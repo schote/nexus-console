@@ -1,6 +1,7 @@
 """Implementation of custom JSON encoder."""
 import dataclasses
 import json
+from pathlib import Path
 from typing import Any
 
 
@@ -21,4 +22,6 @@ class JSONEncoder(json.JSONEncoder):
         """
         if bool(dataclasses.is_dataclass(obj)) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
+        if isinstance(obj, Path):
+            return str(obj)
         return super().default(obj)
