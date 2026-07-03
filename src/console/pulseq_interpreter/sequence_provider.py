@@ -129,10 +129,7 @@ class SequenceProvider(Sequence):
 
         # Load LUT for RF gain correction if path to LUT is provided
         self._rf_gain_lut: np.ndarray | None = None
-        if rf_gain_lut_path is not None and rf_gain_lut_path.exists():
-            if (_lut := np.load(rf_gain_lut_path)).size == INT16_MAX - INT16_MIN + 1:
-                self.log.info("Loaded LUT for RF gain correction.")
-                self._rf_gain_lut = _lut
+        self._load_rfpa_lut(rf_gain_lut_path)
 
 
     # -------- PyPulseq interface -------- #
@@ -495,7 +492,7 @@ class SequenceProvider(Sequence):
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
             rf_scaling = b1_scaling * self.rf_to_mvolt * phase_offset / self.rf_out_limit
             if np.abs(np.amax(envelope_scaled := block.signal * rf_scaling)) > 1:
-                raise ValueError("RF magnitude exceeds output limit.")
+                raise ValueError(f"RF magnitude exceeds output limit by {np.amax(envelope_scaled)*100}%.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -517,7 +514,7 @@ class SequenceProvider(Sequence):
 
         rf_waveform_i16 = rf_waveform.real.astype(np.int16)
         if self._rf_gain_lut is not None:
-            rf_waveform_i16 = self._rf_gain_lut[rf_waveform_i16.view(np.uint16)]
+            rf_waveform_i16 = self._rf_gain_lut[rf_waveform_i16+INT16_MIN]
 
         return (rf_waveform_i16, rf_unblanking)
 
@@ -643,3 +640,21 @@ class SequenceProvider(Sequence):
         check, seq_err = self.check_timing()
         if not check:
             raise ValueError(f"Sequence timing check failed: {seq_err}")
+
+    def _load_rfpa_lut(self, rf_gain_lut_path: Path | None) -> None:
+        if rf_gain_lut_path is None or not rf_gain_lut_path.exists():
+            self.log.info(f"No RFPA LUT file.")
+            return
+        
+        _lut = np.load(rf_gain_lut_path)
+        _required_lut_size = INT16_MAX - INT16_MIN + 1
+        
+        if _lut.size != _required_lut_size:
+            self.log.warning(f"Error loading RFPA gain LUT, invalid size. Loaded size: {_lut.size}, required: {_required_lut_size}")
+            return
+        if _lut.dtype != np.int16:
+            self.log.warning(f"Invalid data type of RFPA gain LUT: {_lut.dtype}")
+            return
+        
+        self.log.info("Successfully loaded LUT for RF gain correction.")
+        self._rf_gain_lut = _lut
