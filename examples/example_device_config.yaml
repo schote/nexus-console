@@ -27,6 +27,8 @@ TxConfiguration:
   gpa_gain: [7.10, 7.10, 7.10]
   # Scales RF in Hz (pulseq) to mV
   rf_to_mvolt: 5.e-3
+  # rf_gain_lut_path: "/path/to/lut.npy"
+
 
 # >> RX DEVICE: M2p.5933-x4 -> /dev/spcm0 (Digitizer)
 # Total number of receive channels: 8
