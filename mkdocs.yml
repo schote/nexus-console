@@ -26,7 +26,6 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
-    - navigation.indexes
     - content.code.copy
     - content.code.annotate
     - toc.follow
@@ -72,12 +71,11 @@ hooks:
 
 plugins:
   - search
-  - gen-files:
-      scripts:
-        - docs/scripts/gen_ref_pages.py
+  # - gen-files:
+  #     scripts:
+  #       - docs/scripts/gen_ref_pages.py
   - literate-nav:
       nav_file: SUMMARY.md
-  - section-index
   - mkdocstrings:
       handlers:
         python:
@@ -86,8 +84,10 @@ plugins:
             docstring_style: numpy
             docstring_options:
               warn_unknown_params: false
+            docstring_section_style: list
+            show_docstring_modules: false
             show_source: true
-            show_root_heading: false
+            show_root_heading: true
             show_root_full_path: false
             members_order: source
             separate_signature: true

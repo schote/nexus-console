@@ -13,7 +13,7 @@ NexusConfiguration
 
 Pydantic enforces type validation and raises descriptive errors if required fields are missing or of the wrong type. Unknown fields in the YAML file are silently ignored (`extra = "ignore"`), allowing the configuration file to carry additional user-defined metadata.
 
-See [Measurement cards](../../hardware/cards.md) for a full description of all fields and their physical significance.
+See [Measurement cards](../../setup/cards.md) for a full description of all fields and their physical significance.
 
 ---
 

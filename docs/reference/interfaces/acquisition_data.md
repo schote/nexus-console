@@ -1,4 +1,4 @@
-# AcquisitionData
+# Acquisition Data
 
 `AcquisitionData` is a frozen (immutable) dataclass that encapsulates the complete result of a successful acquisition: the list of processed `RxData` objects, the acquisition parameters, the PyPulseq sequence object, session path, and extensible metadata. It is the return value of `AcquisitionControl.run()`.
 
@@ -47,4 +47,6 @@ acq_data.save()
 
 ---
 
-::: console.interfaces.acquisition_data
+::: console.interfaces.acquisition_data.AcquisitionData
+
+

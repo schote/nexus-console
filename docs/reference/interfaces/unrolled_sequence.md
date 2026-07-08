@@ -1,4 +1,4 @@
-# UnrolledSequence
+# Unrolled Sequence
 
 `UnrolledSequence` is a frozen (immutable) dataclass produced by `SequenceProvider.unroll_sequence`. It carries the complete, hardware-ready representation of a pulse sequence: the interleaved `int16` waveform array for the TX card, the list of `RxData` descriptors for each ADC gate, and hardware metadata that can be used for waveform analysis or debugging.
 
@@ -6,4 +6,4 @@ The `seq` field holds a flat `int16` array of length `4 × sample_count`, with c
 
 ---
 
-::: console.interfaces.unrolled_sequence
+::: console.interfaces.unrolled_sequence.UnrolledSequence

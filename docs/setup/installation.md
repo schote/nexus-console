@@ -86,4 +86,4 @@ This will print the currently active `AcquisitionParameter` state (loaded from t
 
 Nexus Console requires a YAML configuration file (`device_config.yaml`) describing the hardware: PCIe device paths, per-channel amplitude limits, gradient coil efficiency, gradient power amplifier (GPA) gain, and MRI system limits used to instantiate the PyPulseq sequence system. A reference configuration is included in the repository root and must be adapted to match the target hardware.
 
-See [Measurement cards](../hardware/cards.md) for a description of all configuration parameters.
+See [Measurement cards](../setup/cards.md) for a description of all configuration parameters.

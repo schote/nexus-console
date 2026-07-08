@@ -1,3 +1,7 @@
+---
+icon: material/cogs
+---
+
 # Measurement Cards
 
 Nexus Console relies on two Spectrum Instrumentation PCIe measurement cards. Their roles, pin assignments, and configuration parameters are described below.
