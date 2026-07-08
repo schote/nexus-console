@@ -2,13 +2,12 @@
 import dataclasses
 import json
 from pathlib import Path
-from typing import Any
 
 
 class JSONEncoder(json.JSONEncoder):
     """JSON Encoder class."""
 
-    def default(self, obj) -> dict[str, Any]:
+    def default(self, obj) -> object:
         """Encode object default method.
 
         Parameters

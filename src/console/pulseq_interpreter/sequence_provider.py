@@ -3,9 +3,9 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from math import floor
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from pathlib import Path
 
 import numpy as np
 from pypulseq.opts import Opts
@@ -643,18 +643,20 @@ class SequenceProvider(Sequence):
 
     def _load_rfpa_lut(self, rf_gain_lut_path: Path | None) -> None:
         if rf_gain_lut_path is None or not rf_gain_lut_path.exists():
-            self.log.info(f"No RFPA LUT file.")
+            self.log.info("No RFPA LUT file.")
             return
-        
+
         _lut = np.load(rf_gain_lut_path)
         _required_lut_size = INT16_MAX - INT16_MIN + 1
-        
+
         if _lut.size != _required_lut_size:
-            self.log.warning(f"Error loading RFPA gain LUT, invalid size. Loaded size: {_lut.size}, required: {_required_lut_size}")
+            self.log.warning(
+                f"Error loading RFPA LUT: Invalid size.\nLoaded: {_lut.size}, required: {_required_lut_size}"
+            )
             return
         if _lut.dtype != np.int16:
             self.log.warning(f"Invalid data type of RFPA gain LUT: {_lut.dtype}")
             return
-        
+
         self.log.info("Successfully loaded LUT for RF gain correction.")
         self._rf_gain_lut = _lut
