@@ -90,9 +90,9 @@ class SequenceProvider(Sequence):
             Integer output limit of the RF channel in mV.
         rf_50ohms
             Boolean flag which indicates if the rf output is terminated into 50 ohms (see gradients_50ohms).
-        rf_to_mvolt, optional
+        rf_to_mvolt
             Translation of RF waveform from pulseq (Hz) to mV.
-        spcm_dwell_time, optional
+        spcm_dwell_time
             Sampling time raster of the output waveform (depends on spectrum card).
         system_limits
             Absolute maximum system limits defined in the device configuration.
