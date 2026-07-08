@@ -1,4 +1,4 @@
-# RxData
+# Receive Data
 
 `RxData` is the central data container for a single ADC gate event. It is created by the [Sequence Provider](../pulseq_interpreter/sequence_provider.md) during sequence unrolling and populated with raw sample data by the [RX card](../spcm_control/rx_device.md) during acquisition. After the acquisition loop, `process_data` executes the complete post-processing pipeline in place.
 
@@ -73,4 +73,4 @@ Each `RxData` instance also stores timing and labelling metadata:
 
 ---
 
-::: console.interfaces.rx_data
+::: console.interfaces.rx_data.RxData

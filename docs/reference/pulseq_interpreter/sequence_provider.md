@@ -110,4 +110,4 @@ Before unrolling, two validation checks are performed:
 
 ---
 
-::: console.pulseq_interpreter.sequence_provider
+::: console.pulseq_interpreter.sequence_provider.SequenceProvider

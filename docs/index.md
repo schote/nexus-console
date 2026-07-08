@@ -22,7 +22,7 @@ The console has been validated on a 50 mT Halbach-configured low-field MRI scann
 
     Install the package and run your first acquisition in minutes.
 
-    [:octicons-arrow-right-24: Installation](guide/installation.md)
+    [:octicons-arrow-right-24: Installation](setup/installation.md)
 
 -   :material-developer-board:{ .lg .middle } **Hardware**
 
@@ -30,7 +30,7 @@ The console has been validated on a 50 mT Halbach-configured low-field MRI scann
 
     Understand the MRI system layout, card pinouts, and port assignments.
 
-    [:octicons-arrow-right-24: System setup](hardware/system_setup.md)
+    [:octicons-arrow-right-24: System setup](setup/system_setup.md)
 
 -   :material-flask-outline:{ .lg .middle } **Examples**
 
