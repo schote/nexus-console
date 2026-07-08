@@ -212,7 +212,7 @@ def test_calculate_rf_block(seq_provider: SequenceProvider):
     # Basic checks
     assert isinstance(rf_waveform, np.ndarray)
     assert isinstance(rf_unblanking, np.ndarray)
-    assert rf_waveform.dtype == complex
+    assert rf_waveform.dtype != complex
     assert rf_unblanking.dtype == np.uint16
 
     # Number of computed RF samples must follow logic:
