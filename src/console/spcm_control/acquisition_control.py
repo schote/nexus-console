@@ -15,6 +15,7 @@ import numpy as np
 from pypulseq import Opts
 
 from console.interfaces.acquisition_data import AcquisitionData
+from collections.abc import Callable
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
@@ -220,7 +221,7 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
+    def run(self, store_unprocessed: bool = False, progress_callback: Callable[[float], None] | None = None) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -289,6 +290,9 @@ class AcquisitionControl:
             time_start = time.time()
 
             while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
+                if callable(progress_callback):
+                    progress_callback(num_gates/self.sequence.adc_count)
+
                 # Delay poll by 10 ms
                 time.sleep(0.01)
 
