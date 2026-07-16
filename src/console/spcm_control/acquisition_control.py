@@ -6,6 +6,7 @@ import logging
 import logging.config
 import os
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -15,7 +16,6 @@ import numpy as np
 from pypulseq import Opts
 
 from console.interfaces.acquisition_data import AcquisitionData
-from collections.abc import Callable
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
@@ -221,7 +221,11 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self, store_unprocessed: bool = False, progress_callback: Callable[[int], None] | None = None) -> AcquisitionData:
+    def run(
+        self,
+        store_unprocessed: bool = False,
+        progress_callback: Callable[[int], None] | None = None,
+    ) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
