@@ -45,7 +45,7 @@ def plot_unrolled_sequence(
     unblanking = gz_signal.astype(np.uint16) >> 15
 
     # Get gradient waveforms
-    rf_signal = rf_signal / np.abs(np.iinfo(np.int16).min)
+    rf_signal = rf_signal / np.iinfo(np.int16).max
     gx_signal = np.array((np.uint16(gx_signal) << 1).astype(np.int16) / 2**15)
     gy_signal = np.array((np.uint16(gy_signal) << 1).astype(np.int16) / 2**15)
     gz_signal = np.array((np.uint16(gz_signal) << 1).astype(np.int16) / 2**15)

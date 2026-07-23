@@ -3,6 +3,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from math import floor
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
@@ -69,6 +70,7 @@ class SequenceProvider(Sequence):
         rf_to_mvolt: float,
         spcm_dwell_time: float,
         system: Opts,
+        rf_gain_lut_path: Path | None = None,
     ):
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -124,6 +126,11 @@ class SequenceProvider(Sequence):
         signal = np.exp(2j * np.pi * REFERENCE_FREQUENCY * time)
         self.phase_reference = np.zeros(NUM_REFERENCE_SAMPLES, dtype=np.uint16)
         self.phase_reference[signal > 0] = np.uint16(2**15)
+
+        # Load LUT for RF gain correction if path to LUT is provided
+        self._rf_gain_lut: np.ndarray | None = None
+        self._load_rfpa_lut(rf_gain_lut_path)
+
 
     # -------- PyPulseq interface -------- #
 
@@ -348,9 +355,8 @@ class SequenceProvider(Sequence):
                 rf_start = block_pos[event_idx] * 4
                 rf_end = (block_pos[event_idx] + rf_size) * 4
 
-                # Add RF waveform
-                _seq[rf_start:rf_end:4] = rf_waveform.real.astype(np.int16)
-                # Add unblanking signal to Z gradient
+                # Add RF waveform and unblanking signal to Z gradient
+                _seq[rf_start:rf_end:4] = rf_waveform
                 _seq[rf_start + 3:rf_end + 3:4] = _seq[rf_start + 3:rf_end + 3:4] | rf_unblanking
 
             if block.label is not None:
@@ -486,7 +492,7 @@ class SequenceProvider(Sequence):
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
             rf_scaling = b1_scaling * self.rf_to_mvolt * phase_offset / self.rf_out_limit
             if np.abs(np.amax(envelope_scaled := block.signal * rf_scaling)) > 1:
-                raise ValueError("RF magnitude exceeds output limit.")
+                raise ValueError(f"RF magnitude exceeds output limit by {np.amax(envelope_scaled)*100}%.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -502,11 +508,15 @@ class SequenceProvider(Sequence):
         carrier = np.exp(2j * np.pi * (larmor_frequency + block.freq_offset) * carrier_time)
 
         try:
-            waveform_rf = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
+            rf_waveform = np.concatenate((np.zeros(num_samples_delay, dtype=complex), (envelope * carrier)))
         except IndexError as err:
             self.log.exception(err, exc_info=True)
 
-        return (waveform_rf, rf_unblanking)
+        rf_waveform_i16 = rf_waveform.real.astype(np.int16)
+        if self._rf_gain_lut is not None:
+            rf_waveform_i16 = self._rf_gain_lut[rf_waveform_i16+INT16_MIN]
+
+        return (rf_waveform_i16, rf_unblanking)
 
     @profile
     def _calculate_gradient(
@@ -630,3 +640,23 @@ class SequenceProvider(Sequence):
         check, seq_err = self.check_timing()
         if not check:
             raise ValueError(f"Sequence timing check failed: {seq_err}")
+
+    def _load_rfpa_lut(self, rf_gain_lut_path: Path | None) -> None:
+        if rf_gain_lut_path is None or not rf_gain_lut_path.exists():
+            self.log.info("No RFPA LUT file.")
+            return
+
+        _lut = np.load(rf_gain_lut_path)
+        _required_lut_size = INT16_MAX - INT16_MIN + 1
+
+        if _lut.size != _required_lut_size:
+            self.log.warning(
+                f"Error loading RFPA LUT: Invalid size.\nLoaded: {_lut.size}, required: {_required_lut_size}"
+            )
+            return
+        if _lut.dtype != np.int16:
+            self.log.warning(f"Invalid data type of RFPA gain LUT: {_lut.dtype}")
+            return
+
+        self.log.info("Successfully loaded LUT for RF gain correction.")
+        self._rf_gain_lut = _lut
