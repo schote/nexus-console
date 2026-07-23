@@ -36,11 +36,16 @@ def write_acquisition_to_mrd(
         # ch output3 -> gradient from left to right (Patient: R to L)
         # For LPS coordinates the direction P to A needs to be inverted, i.e., read_dir = [0,-1,0]
 
-        # Map logical gradient axes to physical directions in LPS coordinates
+        # ---OSI v2.1---
+        # Rotated Pypulseq ch1+ch2 -> gradient from right to left (Patient: L to R)
+        # Rotated Pypulseq ch1-ch2 -> gradient from back to front (Patient: S to I)
+        # ch output3 -> gradient from top to bottom (Patient: A to P)
+
+        # ---OSI v2.1---
         direction_map = {
-            1: (2, 1.0),   # I to S -> [0, 0, 1]
-            2: (1, -1.0),  # P to A -> [0, -1, 0] (inverted for LPS)
-            3: (0, 1.0),   # R to L -> [1, 0, 0]
+            1: (0, -1.0),   # L to R -> [-1, 0, 0] (inverted for LPS)
+            2: (2, -1.0),  # S to I -> [0, 0, -1] (inverted for LPS)
+            3: (1, 1.0),   # A to P -> [0, 1, 0]
         }
 
         # Set readout direction
