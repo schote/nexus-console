@@ -1,13 +1,14 @@
 """Acquisition Control Class."""
 
 import copy
+import functools
 import logging
 import logging.config
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
 import matplotlib as mpl
 import numpy as np
@@ -17,9 +18,11 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 from console.interfaces.device_configuration import NexusConfiguration
 from console.interfaces.dimensions import Dimensions
+from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvider
 from console.spcm_control.rx_device import RxCard
+from console.spcm_control.rx_processor import RxProcessor
 from console.spcm_control.tx_device import TxCard
 from console.utilities.load_configuration import load_nexus_config
 from console.utilities.plot import plot_unrolled_sequence
@@ -128,12 +131,24 @@ class AcquisitionControl:
         self._raw: list[np.ndarray] = []
         self._unproc: list[np.ndarray] = []
 
+        # Persistent processing worker pool (None when num_processing_workers == 0)
+        num_workers = self.config.rx.num_processing_workers
+        if num_workers > 0:
+            self._processor: RxProcessor | None = RxProcessor(num_workers=num_workers)
+            self._processor.start()
+            self.log.info("RxProcessor pool started with %d worker(s)", num_workers)
+        else:
+            self._processor = None
+            self.log.info("RxProcessor disabled — using in-process fallback")
+
     def __del__(self):
         """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()
         if self.rx_card:
             self.rx_card.disconnect()
+        if self._processor is not None:
+            self._processor.shutdown()
         self.log.info("Measurement cards disconnected")
         self.log.info("Acquisition control terminated\n---------------------------------------------------\n")
 
@@ -238,9 +253,12 @@ class AcquisitionControl:
 
         self.store_unprocessed = store_unprocessed
 
-        # Create a list to store rx_data for all averages
-        self.receive_data: list = []
         self.num_adc_events = len(self.sequence.rx_data)
+
+        submit_fn = (
+            functools.partial(self._processor.submit, store_unprocessed=store_unprocessed)
+            if self._processor is not None else None
+        )
 
         # Set gradient offset values
         self.tx_card.set_gradient_offsets(
@@ -248,18 +266,23 @@ class AcquisitionControl:
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
+        # Accumulates (global_index, rx_data) pairs when processing in the main process
+        inprocess_items: list[tuple[int, RxData]] = []
+
         for k in range(self.sequence.parameter.num_averages):
-            # Create a copy of rx_data to store the current acquisition in and label scan number.
-            self.rx_card.rx_data = copy.deepcopy(self.sequence.rx_data)
+            rx_data_list = copy.deepcopy(self.sequence.rx_data)
+            for data in rx_data_list:
+                data.average_index = k
+                data.larmor_frequency = self.sequence.parameter.larmor_frequency
+
+            self.rx_card.rx_data = cast(list[RxData | None], rx_data_list)
 
             self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
 
-            # Start measurement card operations
-            self.rx_card.start_operation()
+            self.rx_card.start_operation(submit_fn=submit_fn, index_offset=k * self.num_adc_events)
 
             while not self.rx_card.is_receiving.is_set():
                 time.sleep(0.01)
-                # self.log.debug("Waiting for RX card to start receiving...")
             self.tx_card.start_operation(self.sequence)
 
             # Get start time of acquisition
@@ -272,21 +295,19 @@ class AcquisitionControl:
                 if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
                     self.log.warning(
-                        "Acquisition Timeout: Only received %s/%s adc events",
-                        num_gates, self.sequence.adc_count
+                        "Acquisition Timeout: Only received %s/%s adc events", num_gates, self.sequence.adc_count
                     )
                     break
 
                 if num_gates >= self.sequence.adc_count and num_gates > 0:
                     break
 
-            # Append the receive data with current scan data
-            scan_data: list = self.rx_card.rx_data.copy()
-            self.rx_card.rx_data = None
+            if self._processor is None:
+                for j, rx in enumerate(rx_data_list):
+                    if rx is not None:
+                        inprocess_items.append((k * self.num_adc_events + j, rx))
 
-            for data in scan_data:
-                data.average_index = k
-            self.receive_data.extend(scan_data)
+            self.rx_card.rx_data = None
 
             self.tx_card.stop_operation()
             self.rx_card.stop_operation()
@@ -300,12 +321,27 @@ class AcquisitionControl:
             is_50ohms=self.config.tx.gradients_terminated_50ohm,
         )
 
-        if len(self.receive_data) > 0:
-            self.log.debug(f"Total number of ADC events: {len(self.receive_data)}")
-            # Process all the data at the end of the acquisition
-            self.post_processing(self.sequence.parameter)
+        total_expected = self.sequence.parameter.num_averages * self.num_adc_events
+        total_raw_samples = (
+            sum(rx.num_samples_raw for rx in self.sequence.rx_data) * self.sequence.parameter.num_averages
+        )
+        processing_timeout = max(30.0, total_raw_samples * 1e-5)
+
+        if self._processor is not None:
+            self.receive_data = self._processor.collect(
+                expected_count=total_expected,
+                timeout=processing_timeout,
+            )
         else:
+            for _, rx in inprocess_items:
+                rx.process_data(store_unprocessed=store_unprocessed)
+                rx.materialize(keep=store_unprocessed)
+            self.receive_data = [rx for _, rx in sorted(inprocess_items, key=lambda x: x[0])]
+
+        if len(self.receive_data) == 0:
             raise RuntimeError("No ADC events present")
+
+        self.log.debug("Total number of ADC events: %d", len(self.receive_data))
 
         try:
             averages = [data.average_index for data in self.receive_data]
@@ -332,28 +368,6 @@ class AcquisitionControl:
     def get_sequence_system(self) -> Opts:
         """Get pypulseq sequence system from sequence provider."""
         return self.seq_provider.system
-
-    def post_processing(self, parameter: AcquisitionParameter) -> None:
-        """Process acquired NMR data.
-
-        Post processing contains the following steps (per readout sample size):
-        (1) Scaling of receive data
-        (2) Demodulation along readout dimensions
-        (3) Decimation along readout dimension
-
-        Parameters
-        ----------
-        parameter
-            Acquisition parameter
-        """
-        # Set the larmor frequency for all data to the defined larmor_frequency
-        for rx_data in self.receive_data:
-            rx_data.larmor_frequency = parameter.larmor_frequency
-
-        # Process the data in parallel
-        with ThreadPoolExecutor() as executor:
-            executor.map(lambda rx_obj: rx_obj.process_data(store_unprocessed=self.store_unprocessed)
-                         , self.receive_data)
 
     def plot_waveforms(
         self,

@@ -42,6 +42,14 @@ class RxConfiguration(BaseModel):
     channel_enable: tuple[bool, ...] = Field(...)
     channel_max_amplitude: tuple[RxAmplitudeType, ...] = Field(...)
     channel_terminated_50ohm: tuple[bool, ...] = Field(...)
+    num_processing_workers: int = Field(
+        default=1,
+        ge=0,
+        description=(
+            "Number of worker processes for parallel RxData processing. "
+            "Set to 0 to always process in the main process (no multiprocessing)."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_channel_lengths(self) -> "RxConfiguration":
