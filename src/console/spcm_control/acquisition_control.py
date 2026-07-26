@@ -6,6 +6,7 @@ import logging
 import logging.config
 import os
 import time
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -220,7 +221,11 @@ class AcquisitionControl:
         self.sequence = self.seq_provider.unroll_sequence(parameter=parameter)
         self.log.info("Sequence duration: %s s", self.sequence.duration)
 
-    def run(self, store_unprocessed: bool = False) -> AcquisitionData:
+    def run(
+        self,
+        store_unprocessed: bool = False,
+        progress_callback: Callable[[int], None] | None = None,
+    ) -> AcquisitionData:
         """Run an acquisition job.
 
         Parameters
@@ -287,10 +292,17 @@ class AcquisitionControl:
 
             # Get start time of acquisition
             time_start = time.time()
+            last_progress_step = -1
 
             while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                # Delay poll by 10 ms
-                time.sleep(0.01)
+                if callable(progress_callback):
+                    progress = int(100 * num_gates / self.sequence.adc_count)
+                    if progress > last_progress_step + 2:
+                        last_progress_step = progress
+                        progress_callback(progress)
+
+                # Delay poll by 100 ms
+                time.sleep(0.1)
 
                 if (time.time() - time_start) > timeout:
                     # Could not receive all the data before timeout
