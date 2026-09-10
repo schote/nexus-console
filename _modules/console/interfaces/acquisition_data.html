@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -429,7 +429,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for console.interfaces.acquisition_data</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Interface class for acquisition data.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Interface class for acquisition data."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
@@ -448,67 +448,67 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_nexus_acquisition_system</span><span class="p">,</span> <span class="n">write_acquisition_to_mrd</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.json_encoder</span><span class="w"> </span><span class="kn">import</span> <span class="n">JSONEncoder</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;AcqData&quot;</span><span class="p">)</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"AcqData"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="AcquisitionData">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">slots</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AcquisitionData</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parameters which define an acquisition.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Parameters which define an acquisition."""</span>
 
     <span class="n">receive_data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">RxData</span><span class="p">]</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer</span>
-<span class="sd">    list contains the list of RxData for each average.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">""" A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer</span>
+<span class="sd">    list contains the list of RxData for each average."""</span>
 
     <span class="n">acquisition_parameters</span><span class="p">:</span> <span class="n">AcquisitionParameter</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Acquisition parameters.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Acquisition parameters."""</span>
 
     <span class="n">sequence</span><span class="p">:</span> <span class="n">SequenceProvider</span> <span class="o">|</span> <span class="n">Sequence</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence object used for the acquisition acquisition.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Sequence object used for the acquisition acquisition."""</span>
 
     <span class="n">session_path</span><span class="p">:</span> <span class="nb">str</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Directory the acquisition data will be stored in.</span>
-<span class="sd">    Within the given `storage_path` a new directory with time stamp and sequence name will be created.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Directory the acquisition data will be stored in.</span>
+<span class="sd">    Within the given `storage_path` a new directory with time stamp and sequence name will be created."""</span>
 
     <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Meta data dictionary for additional acquisition info.</span>
-<span class="sd">    Dictionary is updated (extended) by post-init method with some general information.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Meta data dictionary for additional acquisition info.</span>
+<span class="sd">    Dictionary is updated (extended) by post-init method with some general information."""</span>
 
     <span class="n">_additional_numpy_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dictionary containing addition (numpy) data.</span>
+<span class="w">    </span><span class="sd">"""Dictionary containing addition (numpy) data.</span>
 <span class="sd">    Use the function add_data to update this dictionary before saving.</span>
-<span class="sd">    They key of each entry is used as filename.&quot;&quot;&quot;</span>
+<span class="sd">    They key of each entry is used as filename."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Post init method to update meta data object.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Post init method to update meta data object."""</span>
         <span class="n">datetime_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-        <span class="n">seq_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="s2">&quot;Name&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">)</span>
-        <span class="n">acquisition_id</span> <span class="o">=</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">-%H%M%S-&quot;</span><span class="p">)</span> <span class="o">+</span> <span class="n">seq_name</span>
+        <span class="n">seq_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="s2">"Name"</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">)</span>
+        <span class="n">acquisition_id</span> <span class="o">=</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">-%H%M%S-"</span><span class="p">)</span> <span class="o">+</span> <span class="n">seq_name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="n">version</span><span class="p">(</span><span class="s2">&quot;nexus-console&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y-%m-</span><span class="si">%d</span><span class="s2">&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;acquisition_id&quot;</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
-                <span class="s2">&quot;folder_name&quot;</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
-                <span class="s2">&quot;acquisition_parameter&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
-                <span class="s2">&quot;sequence&quot;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">seq_name</span><span class="p">,</span>
-                    <span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">duration</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
-                    <span class="s2">&quot;definitions&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"version"</span><span class="p">:</span> <span class="n">version</span><span class="p">(</span><span class="s2">"nexus-console"</span><span class="p">),</span>
+                <span class="s2">"date"</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y-%m-</span><span class="si">%d</span><span class="s2">"</span><span class="p">),</span>
+                <span class="s2">"time"</span><span class="p">:</span> <span class="n">datetime_now</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%H:%M:%S"</span><span class="p">),</span>
+                <span class="s2">"acquisition_id"</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
+                <span class="s2">"folder_name"</span><span class="p">:</span> <span class="n">acquisition_id</span><span class="p">,</span>
+                <span class="s2">"acquisition_parameter"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+                <span class="s2">"sequence"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"name"</span><span class="p">:</span> <span class="n">seq_name</span><span class="p">,</span>
+                    <span class="s2">"duration"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">duration</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="s2">"definitions"</span><span class="p">:</span> <span class="p">{</span>
                         <span class="c1"># Write all sequence definitions, turn numpy arrays into lists</span>
                         <span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">definitions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
                     <span class="p">},</span>
                 <span class="p">},</span>
-                <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="s2">"info"</span><span class="p">:</span> <span class="p">{},</span>
             <span class="p">}</span>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="AcquisitionData.save">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">overwrite</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save all the acquisition data to a given data path.</span>
+<span class="w">        </span><span class="sd">"""Save all the acquisition data to a given data path.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -519,72 +519,72 @@
 <span class="sd">        overwrite</span>
 <span class="sd">            Flag which indicates whether the acquisition data should be overwritten</span>
 <span class="sd">            in case it already exists from a previous call to this function, default is False.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Add trailing slash and make dir</span>
         <span class="n">base_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">user_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">)</span>
         <span class="n">base_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">acq_folder_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;folder_name&quot;</span><span class="p">]</span>
+        <span class="n">acq_folder_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"folder_name"</span><span class="p">]</span>
         <span class="n">acq_folder_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_write_acquisition_data</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">&quot;rx_data.h5&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_write_acquisition_data</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">"rx_data.h5"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Type error when saving acquisition data to h5 format.&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Type error when saving acquisition data to h5 format."</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unexpected error when saving acquisition data to h5 format.&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Unexpected error when saving acquisition data to h5 format."</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="n">exc</span><span class="p">)</span>
 
         <span class="c1"># Save meta data</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">meta_file</span> <span class="o">:=</span> <span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">&quot;meta.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">meta_file</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">meta_file</span> <span class="o">:=</span> <span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">"meta.json"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">meta_file</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">,</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JSONEncoder</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sequence_file</span> <span class="o">:=</span> <span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">&quot;sequence.seq&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">sequence_file</span> <span class="o">:=</span> <span class="n">acq_folder_path</span> <span class="o">/</span> <span class="s2">"sequence.seq"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="ow">or</span> <span class="n">overwrite</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="c1"># Write sequence .seq file</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sequence</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sequence_file</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Could not save sequence: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Could not save sequence: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_additional_numpy_data</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_additional_numpy_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.npy&quot;</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">acq_folder_path</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">.npy"</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Saved acquisition data to: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">acq_folder_path</span><span class="p">)</span></div>
+        <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Saved acquisition data to: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">acq_folder_path</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AcquisitionData.add_info">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.add_info">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add entries to meta data dictionary.</span>
+<span class="w">        </span><span class="sd">"""Add entries to meta data dictionary.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        info</span>
 <span class="sd">            Information as dictionary to be added.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="bp">cls</span><span class="o">=</span><span class="n">JSONEncoder</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Could not append info to meta data.&quot;</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;info&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
+            <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Could not append info to meta data."</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"info"</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">info</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AcquisitionData.add_data">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_data.AcquisitionData.add_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">add_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add data to additional_data dictionary.</span>
+<span class="w">        </span><span class="sd">"""Add data to additional_data dictionary.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        data</span>
 <span class="sd">            Data which is to be added to acquisition data.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s2">"shape"</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_additional_numpy_data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">detail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Could not add `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` to acquisition data...</span><span class="se">\n\</span>
-<span class="s2">                    Key-value pairs of str: np.ndarray are required.&quot;</span>
+                <span class="n">detail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Could not add `</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` to acquisition data...</span><span class="se">\n\</span>
+<span class="s2">                    Key-value pairs of str: np.ndarray are required."</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
                 <span class="k">continue</span></div>
 
@@ -596,23 +596,23 @@
         <span class="n">header</span><span class="p">:</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">user_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store acquisition data in ISMRMRD format.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Store acquisition data in ISMRMRD format."""</span>
         <span class="c1"># Ensure that receive data is available</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">detail</span> <span class="o">=</span> <span class="s2">&quot;Processed data not found in receive data. Cannot export ISMRMRD.&quot;</span>
+            <span class="n">detail</span> <span class="o">=</span> <span class="s2">"Processed data not found in receive data. Cannot export ISMRMRD."</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
 
         <span class="c1"># Get MRD data path</span>
         <span class="n">base_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">user_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">user_path</span> <span class="k">else</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session_path</span><span class="p">)</span>
-        <span class="n">base_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;folder_name&quot;</span><span class="p">]</span>
+        <span class="n">base_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"folder_name"</span><span class="p">]</span>
         <span class="n">base_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="s2">&quot;data.mrd&quot;</span>
+        <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">base_path</span> <span class="o">/</span> <span class="s2">"data.mrd"</span>
 
         <span class="c1"># Create measurement info from meta</span>
         <span class="n">info</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">measurementInformationType</span><span class="p">(</span>
-            <span class="n">measurementID</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;acquisition_id&quot;</span><span class="p">],</span>
-            <span class="n">seriesDate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">],</span>
-            <span class="n">seriesTime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;time&quot;</span><span class="p">],</span>
+            <span class="n">measurementID</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"acquisition_id"</span><span class="p">],</span>
+            <span class="n">seriesDate</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"date"</span><span class="p">],</span>
+            <span class="n">seriesTime</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">"time"</span><span class="p">],</span>
         <span class="p">)</span>
         <span class="c1"># Get number of coils per receive event and create acquisition system info</span>
         <span class="n">coils_per_rx</span> <span class="o">=</span> <span class="p">[</span>
@@ -629,13 +629,13 @@
 
         <span class="c1"># Create header if not given</span>
         <span class="k">if</span> <span class="n">header</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;ISMRMRD header not given, creating header without encoding/reconstruction info.&quot;</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"ISMRMRD header not given, creating header without encoding/reconstruction info."</span><span class="p">)</span>
             <span class="n">header</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">xsd</span><span class="o">.</span><span class="n">ismrmrdHeader</span><span class="p">()</span>
 
         <span class="c1"># Load header from xml file</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
             <span class="n">header_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Loading ISMRMRD header from file: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">header_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Loading ISMRMRD header from file: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">header_path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="c1"># Open the dataset</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="n">ismrmrd</span><span class="o">.</span><span class="n">Dataset</span><span class="p">(</span><span class="n">header_path</span><span class="p">)</span>
             <span class="c1"># Read the XML file and create header</span>
@@ -657,15 +657,15 @@
                 <span class="n">channel_assignment</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">acquisition_parameters</span><span class="o">.</span><span class="n">channel_assignment</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Invalid MRD header, could not write MRD file.&quot;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Invalid MRD header, could not write MRD file."</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_write_acquisition_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save AcquisitionData and all RxData entries to an HDF5 file.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Save AcquisitionData and all RxData entries to an HDF5 file."""</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_write_dict</span><span class="p">(</span><span class="n">group</span><span class="p">:</span> <span class="n">h5py</span><span class="o">.</span><span class="n">Group</span><span class="p">,</span> <span class="n">_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Write dictionary to h5py group.&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""Write dictionary to h5py group."""</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                     <span class="n">_write_dict</span><span class="p">(</span><span class="n">group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">key</span><span class="p">),</span> <span class="n">value</span><span class="p">)</span>
@@ -674,25 +674,25 @@
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)):</span>
                     <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
                 <span class="k">elif</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;None&quot;</span>
+                    <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"None"</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
             <span class="c1"># --- Metadata</span>
-            <span class="n">meta_group</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">&quot;meta&quot;</span><span class="p">)</span>
+            <span class="n">meta_group</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"meta"</span><span class="p">)</span>
             <span class="n">_write_dict</span><span class="p">(</span><span class="n">meta_group</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">)</span>
 
             <span class="c1"># --- RxData per average</span>
-            <span class="n">receive_data_group</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">&quot;receive_data&quot;</span><span class="p">)</span>
-            <span class="n">receive_data_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;length&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span>
+            <span class="n">receive_data_group</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="s2">"receive_data"</span><span class="p">)</span>
+            <span class="n">receive_data_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">"length"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">rx_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">receive_data</span><span class="p">):</span>
                 <span class="n">rx_group</span> <span class="o">=</span> <span class="n">receive_data_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
                 <span class="n">_write_dict</span><span class="p">(</span><span class="n">rx_group</span><span class="p">,</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
                 <span class="k">if</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">rx_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;processed_data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span><span class="p">)</span>
+                    <span class="n">rx_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">"processed_data"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">raw_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">rx_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">&quot;raw_data&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">rx_data</span><span class="o">.</span><span class="n">raw_data</span><span class="p">)</span></div>
+                    <span class="n">rx_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s2">"raw_data"</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">rx_data</span><span class="o">.</span><span class="n">raw_data</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -723,8 +723,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -750,7 +750,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

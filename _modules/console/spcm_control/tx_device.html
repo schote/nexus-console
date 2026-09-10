@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -429,7 +429,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for console.spcm_control.tx_device</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Implementation of transmit card.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Implementation of transmit card."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
@@ -448,7 +448,7 @@
 <div class="viewcode-block" id="TxCard">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TxCard</span><span class="p">(</span><span class="n">SpectrumDevice</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implementation of TX device.</span>
 
 <span class="sd">    Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(),</span>
@@ -462,9 +462,9 @@
 <span class="sd">    ---------</span>
 <span class="sd">    The TX card operates with a ring buffer on the spectrum card, defined by ring_buffer_size.</span>
 <span class="sd">    The ring buffer is filled in fractions of notify_size.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;TxCard&quot;</span>
+    <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"TxCard"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -494,7 +494,7 @@
 <div class="viewcode-block" id="TxCard.setup_card">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.setup_card">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">setup_card</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up spectrum card in transmit (TX) mode.</span>
+<span class="w">        </span><span class="sd">"""Set up spectrum card in transmit (TX) mode.</span>
 
 <span class="sd">        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,</span>
 <span class="sd">        defined by the class attribute.</span>
@@ -506,15 +506,15 @@
 <span class="sd">        Warning</span>
 <span class="sd">            The actual set sample rate deviates from the corresponding class attribute to be set,</span>
 <span class="sd">            class attribute is overwritten.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Reset card</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_CARD_RESET</span><span class="p">))</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;M2p.65&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="s2">"M2p.65"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
                 <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span>
-                    <span class="s2">&quot;Device with path </span><span class="si">%s</span><span class="s2"> is of type </span><span class="si">%s</span><span class="s2">, no transmit card...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">device_type</span><span class="p">)</span>
+                    <span class="s2">"Device with path </span><span class="si">%s</span><span class="s2"> is of type </span><span class="si">%s</span><span class="s2">, no transmit card..."</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">device_type</span><span class="p">)</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -538,10 +538,10 @@
         <span class="c1"># Check actual sampling rate</span>
         <span class="n">sample_rate</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_SAMPLERATE</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">sample_rate</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Device sampling rate: </span><span class="si">%s</span><span class="s2"> MHz&quot;</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Device sampling rate: </span><span class="si">%s</span><span class="s2"> MHz"</span><span class="p">,</span> <span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span> <span class="o">!=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">MEGA</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Tx device sample rate </span><span class="si">%s</span><span class="s2"> MHz does not match set sample rate of </span><span class="si">%s</span><span class="s2"> MHz&quot;</span><span class="p">,</span>
+                <span class="s2">"Tx device sample rate </span><span class="si">%s</span><span class="s2"> MHz does not match set sample rate of </span><span class="si">%s</span><span class="s2"> MHz"</span><span class="p">,</span>
                 <span class="n">sample_rate</span><span class="o">.</span><span class="n">value</span> <span class="o">*</span> <span class="mf">1e-6</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
             <span class="p">)</span>
@@ -554,7 +554,7 @@
             <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL0</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL1</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">CHANNEL3</span><span class="p">,</span>
         <span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Setup max. output amplitude: </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Setup max. output amplitude: </span><span class="si">%s</span><span class="s2">."</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">)</span>
 
         <span class="c1"># Use loop to enable and setup active channels</span>
         <span class="c1"># Channel 0: RF</span>
@@ -602,7 +602,7 @@
 
         <span class="c1"># &gt;&gt; Setup additional GPIO ports, if extender is available</span>
         <span class="k">if</span> <span class="n">card_features</span><span class="o">.</span><span class="n">value</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_FEAT_DIG16_FX2</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_FEAT_DIG16_SMB</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;IO expansion card with FX2 connector detected, performing additional setup...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"IO expansion card with FX2 connector detected, performing additional setup..."</span><span class="p">)</span>
 
             <span class="c1"># Replicate ADC gate on extension port X12</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
@@ -618,13 +618,13 @@
                 <span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUT</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_CH3</span> <span class="o">|</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPCM_XMODE_DIGOUTSRC_BIT15</span><span class="p">),</span>
             <span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Device setup completed&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Device setup completed"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="TxCard.set_gradient_offsets">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.set_gradient_offsets">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">set_gradient_offsets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offsets</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">,</span> <span class="n">is_50ohms</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set offset values of the gradient output channels.</span>
+<span class="w">        </span><span class="sd">"""Set offset values of the gradient output channels.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -636,22 +636,22 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">            List of integer values read from card for x, y and z offset values</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Check card connection</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No connection to TX card.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">"No connection to TX card."</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
         <span class="c1"># Check offset values</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel x exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Gradient offset of channel x exceeds maximum amplitude."</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel y exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Gradient offset of channel y exceeds maximum amplitude."</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_amplitude</span><span class="p">[</span><span class="mi">3</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Gradient offset of channel z exceeds maximum amplitude.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Gradient offset of channel z exceeds maximum amplitude."</span><span class="p">)</span>
 
         <span class="c1"># If the outputs are terminated with high impedance, only half of the offsets need to be set,</span>
         <span class="c1"># as the value at the card output automatically doubles.</span>
@@ -676,12 +676,12 @@
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_OFFS3</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">offset_z</span><span class="p">))</span>
 
         <span class="n">set_offsets</span> <span class="o">=</span> <span class="p">[</span><span class="n">offset_x</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">offset_y</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">offset_z</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Set gradient values </span><span class="si">%s</span><span class="s2"> mV for x, y and z.&quot;</span><span class="p">,</span> <span class="n">set_offsets</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Set gradient values </span><span class="si">%s</span><span class="s2"> mV for x, y and z."</span><span class="p">,</span> <span class="n">set_offsets</span><span class="p">)</span>
 
         <span class="c1"># Check values read from card and log error if they are not correct</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">set_offsets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">x</span> <span class="ow">and</span> <span class="n">set_offsets</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">y</span> <span class="ow">and</span> <span class="n">set_offsets</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">offsets</span><span class="o">.</span><span class="n">z</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="s2">&quot;Actual gradient offsets do not correspond to the values to be set (x=</span><span class="si">%s</span><span class="s2">, y=</span><span class="si">%s</span><span class="s2">, z=</span><span class="si">%s</span><span class="s2"> mV)&quot;</span><span class="p">,</span>
+                <span class="s2">"Actual gradient offsets do not correspond to the values to be set (x=</span><span class="si">%s</span><span class="s2">, y=</span><span class="si">%s</span><span class="s2">, z=</span><span class="si">%s</span><span class="s2"> mV)"</span><span class="p">,</span>
                 <span class="n">offsets</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">offsets</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">offsets</span><span class="o">.</span><span class="n">z</span>
             <span class="p">)</span></div>
 
@@ -689,7 +689,7 @@
 <div class="viewcode-block" id="TxCard.start_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.start_operation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">UnrolledSequence</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start transmit (TX) card operation.</span>
+<span class="w">        </span><span class="sd">"""Start transmit (TX) card operation.</span>
 
 <span class="sd">        Steps:</span>
 <span class="sd">        (1) Setup the transmit card</span>
@@ -707,20 +707,20 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            Raised if replay data is not provided as numpy int16 values</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Data must have a default value as start_operation is an abstract method and data is optional</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No unrolled sequence data provided.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No unrolled sequence data provided."</span><span class="p">)</span>
             <span class="n">sqnc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">seq</span>
 
             <span class="c1"># Check if sequence datatype is valid</span>
             <span class="k">if</span> <span class="n">sqnc</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sequence replay data is not int16, please unroll sequence to int16.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sequence replay data is not int16, please unroll sequence to int16."</span><span class="p">)</span>
 
             <span class="c1"># Check if card connection is established</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">&quot;No connection to card established...&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="s2">"No connection to card established..."</span><span class="p">)</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -729,7 +729,7 @@
         <span class="c1"># Check if sequence dwell time is valid</span>
         <span class="k">if</span> <span class="n">sqnc_sample_rate</span> <span class="o">:=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">dwell_time</span> <span class="o">*</span> <span class="mf">1e6</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Sequence sample rate (</span><span class="si">%s</span><span class="s2"> MHz) differs from device sample rate (</span><span class="si">%s</span><span class="s2"> MHz).&quot;</span><span class="p">,</span>
+                <span class="s2">"Sequence sample rate (</span><span class="si">%s</span><span class="s2"> MHz) differs from device sample rate (</span><span class="si">%s</span><span class="s2"> MHz)."</span><span class="p">,</span>
                 <span class="n">sqnc_sample_rate</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sample_rate</span><span class="p">,</span>
             <span class="p">)</span>
@@ -743,7 +743,7 @@
 <div class="viewcode-block" id="TxCard.stop_operation">
 <a class="viewcode-back" href="../../../api_reference/spcm_control.html#console.spcm_control.tx_device.TxCard.stop_operation">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop_operation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop card operation by thread event and stop card.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Stop card operation by thread event and stop card."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_running</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
@@ -755,11 +755,11 @@
             <span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">worker</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No active replay thread found...&quot;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"No active replay thread found..."</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_fifo_stream_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Continuous FIFO mode examples.</span>
+<span class="w">        </span><span class="sd">"""Continuous FIFO mode examples.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -768,10 +768,10 @@
 <span class="sd">            Replay data should be in the format:</span>
 <span class="sd">            &gt;&gt;&gt; [c0_0, c1_0, c2_0, c3_0, c0_1, c1_1, c2_1, c3_1, ..., cX_N]</span>
 <span class="sd">            Here, X denotes the channel and the subsequent index N the sample index.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Get total size of data buffer to be played out</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">nbytes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Replay data buffer: </span><span class="si">%s</span><span class="s2"> bytes&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Replay data buffer: </span><span class="si">%s</span><span class="s2"> bytes"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="p">)</span>
 
         <span class="c1"># Calculate notify size is set to 1/16 of the replay buffer size</span>
         <span class="c1"># Ensure that minimum notify size is 4096 bytes</span>
@@ -793,20 +793,20 @@
             <span class="c1"># Check if ring buffer size is multiple of 2*num_ch (2 bytes per sample per channel)</span>
             <span class="k">if</span> <span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span>
-                    <span class="s2">&quot;Ring buffer size is not a multiple of channel sample product </span><span class="se">\</span>
-<span class="s2">                    (number of enables channels times 2 byte per sample)&quot;</span>
+                    <span class="s2">"Ring buffer size is not a multiple of channel sample product </span><span class="se">\</span>
+<span class="s2">                    (number of enables channels times 2 byte per sample)"</span>
                 <span class="p">)</span>
             <span class="c1"># Check size of data buffer</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_ch</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">MemoryError</span><span class="p">(</span>
-                    <span class="s2">&quot;Replay data size is not a multiple of enabled channels times 2 (bytes per sample)...&quot;</span>
+                    <span class="s2">"Replay data size is not a multiple of enabled channels times 2 (bytes per sample)..."</span>
                 <span class="p">)</span>
         <span class="k">except</span> <span class="ne">MemoryError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Ring buffer size: </span><span class="si">%s</span><span class="s2">; Notify size: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"Ring buffer size: </span><span class="si">%s</span><span class="s2">; Notify size: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
         <span class="p">)</span>
@@ -822,7 +822,7 @@
                     <span class="n">ctypes</span><span class="o">.</span><span class="n">memmove</span><span class="p">(</span><span class="n">_ring_buffer_pos</span><span class="p">,</span> <span class="n">_data_buffer_pos</span><span class="p">,</span> <span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
                     <span class="n">transferred_bytes</span> <span class="o">=</span> <span class="n">ring_buffer_size</span><span class="o">.</span><span class="n">value</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Could not get ring or data buffer position.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Could not get ring or data buffer position."</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
@@ -840,7 +840,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i64</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_DATA_AVAIL_CARD_LEN</span><span class="p">,</span> <span class="n">ring_buffer_size</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Starting card memory transfer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Starting card memory transfer"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span>
@@ -848,7 +848,7 @@
         <span class="p">))</span>
 
         <span class="c1"># Start card</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Starting card operation&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Starting card operation"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span>
             <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span>
@@ -907,7 +907,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwSetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_M2CMD</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">M2CMD_DATA_WAITDMA</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Card operation stopped&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"Card operation stopped"</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -938,8 +938,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -965,7 +965,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

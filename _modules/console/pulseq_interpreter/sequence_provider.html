@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -429,7 +429,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for console.pulseq_interpreter.sequence_provider</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Sequence provider class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Sequence provider class."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
@@ -454,7 +454,7 @@
 <div class="viewcode-block" id="profile">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.profile">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">profile</span><span class="p">(</span><span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Define placeholder for profile decorator.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Define placeholder for profile decorator."""</span>
         <span class="k">return</span> <span class="n">func</span></div>
 
 
@@ -470,7 +470,7 @@
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.ADCGate">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ADCGate</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Define precalculated attributes of an ADC gate.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Define precalculated attributes of an ADC gate."""</span>
 
     <span class="n">start</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">num_samples_discard</span><span class="p">:</span> <span class="nb">int</span>
@@ -480,7 +480,7 @@
 <div class="viewcode-block" id="SequenceProvider">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SequenceProvider</span><span class="p">(</span><span class="n">Sequence</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence provider class.</span>
+<span class="w">    </span><span class="sd">"""Sequence provider class.</span>
 
 <span class="sd">    This object is inherited from pulseq sequence object, so that all methods of the</span>
 <span class="sd">    pypulseq ``Sequence`` object can be accessed.</span>
@@ -492,11 +492,11 @@
 <span class="sd">    Example</span>
 <span class="sd">    -------</span>
 <span class="sd">    &gt;&gt;&gt; seq_provider = SequenceProvider()</span>
-<span class="sd">    &gt;&gt;&gt; seq_provider.read(&quot;./seq_file.seq&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; seq_provider.read("./seq_file.seq")</span>
 <span class="sd">    &gt;&gt;&gt; unrolled = seq_provider.unroll_sequence(acquisition_parameter)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SequenceProvider&quot;</span>
+    <span class="vm">__name__</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"SequenceProvider"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -511,7 +511,7 @@
         <span class="n">system</span><span class="p">:</span> <span class="n">Opts</span><span class="p">,</span>
         <span class="n">rf_gain_lut_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize sequence provider class which is used to unroll a pulseq sequence.</span>
+<span class="w">        </span><span class="sd">"""Initialize sequence provider class which is used to unroll a pulseq sequence.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -536,11 +536,11 @@
 <span class="sd">        system_limits</span>
 <span class="sd">            Absolute maximum system limits defined in the device configuration.</span>
 <span class="sd">            Used to instantiate the pypulseq `Opts()` class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">Opts</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Invalid system: Pypulseq `Opts` definition required.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Invalid system: Pypulseq `Opts` definition required."</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="n">system</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;SeqProv&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"SeqProv"</span><span class="p">)</span>
 
         <span class="c1"># Set class instance attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">=</span> <span class="n">rf_to_mvolt</span>
@@ -576,7 +576,7 @@
 <div class="viewcode-block" id="SequenceProvider.from_pypulseq">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.from_pypulseq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_pypulseq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a pypulseq sequence to sequence provider.</span>
+<span class="w">        </span><span class="sd">"""Read a pypulseq sequence to sequence provider.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -587,9 +587,9 @@
 <span class="sd">        ------</span>
 <span class="sd">        AttributeError</span>
 <span class="sd">            seq is not a valid pypulseq ``Sequence`` instance</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">&quot;Invalid sequence.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s2">"Invalid sequence."</span><span class="p">)</span>
         <span class="c1"># Re-initialize the parent to start from a clean pypulseq sequence</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">block_index</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">seq</span><span class="o">.</span><span class="n">block_events</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -603,7 +603,7 @@
 <div class="viewcode-block" id="SequenceProvider.to_pypulseq">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.to_pypulseq">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_pypulseq</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a pypulseq sequence from sequence provider.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Create a pypulseq sequence from sequence provider."""</span>
         <span class="n">seq</span> <span class="o">=</span> <span class="n">Sequence</span><span class="p">(</span><span class="n">system</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">block_index</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_block</span><span class="p">(</span><span class="n">block_index</span><span class="p">)</span>
@@ -617,14 +617,14 @@
 <div class="viewcode-block" id="SequenceProvider.dict">
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Abstract method which returns variables for logging in dictionary.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Abstract method which returns variables for logging in dictionary."""</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;rf_to_mvolt&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
-            <span class="s2">&quot;spcm_freq&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">,</span>
-            <span class="s2">&quot;spcm_dwell_time&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
-            <span class="s2">&quot;gpa_gain&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
-            <span class="s2">&quot;gradient_efficiency&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
-            <span class="s2">&quot;output_limits&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">,</span>
+            <span class="s2">"rf_to_mvolt"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span><span class="p">,</span>
+            <span class="s2">"spcm_freq"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span><span class="p">,</span>
+            <span class="s2">"spcm_dwell_time"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_dwell_time</span><span class="p">,</span>
+            <span class="s2">"gpa_gain"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpa_gain</span><span class="p">,</span>
+            <span class="s2">"gradient_efficiency"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">grad_eff</span><span class="p">,</span>
+            <span class="s2">"output_limits"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
@@ -632,7 +632,7 @@
 <a class="viewcode-back" href="../../../api_reference/pulseq_interpreter.html#console.pulseq_interpreter.sequence_provider.SequenceProvider.unroll_sequence">[docs]</a>
     <span class="nd">@profile</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unroll_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnrolledSequence</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Unroll the pypulseq sequence description.</span>
+<span class="w">        </span><span class="sd">"""Unroll the pypulseq sequence description.</span>
 
 <span class="sd">        TODO: Reduce complexity.</span>
 
@@ -677,12 +677,12 @@
 <span class="sd">        &gt;&gt;&gt; unblanking = seq[3::4].astype(np.uint16) &gt;&gt; 15</span>
 
 <span class="sd">        As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_parameter</span><span class="p">(</span><span class="n">parameter</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_sequence</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Checks not passed&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">"Checks not passed"</span><span class="p">)</span>
             <span class="k">raise</span>
 
         <span class="n">gradient_index</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">channel_assignment</span>
@@ -701,7 +701,7 @@
         <span class="n">block_pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">block_pos</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">seq_samples</span> <span class="o">!=</span> <span class="n">block_pos</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Number of sequence samples does not match total number of block samples&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Number of sequence samples does not match total number of block samples"</span>
             <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Setup output arrays</span>
@@ -787,7 +787,7 @@
                 <span class="n">_seq</span><span class="p">[</span><span class="n">gz_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">waveform</span>
 
             <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">rf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># RF event</span>
-                <span class="c1"># Pre-calculated RF event size can be shorter than the duration of the block since it doesn&#39;t</span>
+                <span class="c1"># Pre-calculated RF event size can be shorter than the duration of the block since it doesn't</span>
                 <span class="c1"># consider the post-pulse ring-down time. The RF waveform is placed at the start of the block</span>
                 <span class="c1"># and the array is then sliced using the duration of the RF waveform to ensure a good fit</span>
                 <span class="n">rf_waveform</span><span class="p">,</span> <span class="n">rf_unblanking</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calculate_rf</span><span class="p">(</span>
@@ -798,7 +798,7 @@
 
                 <span class="n">rf_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">rf_waveform</span><span class="p">)</span>  <span class="c1"># Get size of the RF waveform</span>
                 <span class="k">if</span> <span class="n">rf_size</span> <span class="o">&gt;</span> <span class="p">(</span><span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">block_pos</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]):</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;RF waveform size exceeds block size.&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="s2">"RF waveform size exceeds block size."</span>
                     <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
                 <span class="c1"># Calculate RF waveform start and end positions according to block position</span>
@@ -858,7 +858,7 @@
                 <span class="n">labels</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># Reset labels dict</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-            <span class="s2">&quot;Unrolled sequence; Total sample points: </span><span class="si">%s</span><span class="s2">; Total block events: </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"Unrolled sequence; Total sample points: </span><span class="si">%s</span><span class="s2">; Total block events: </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span>
             <span class="n">seq_samples</span><span class="p">,</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">block_durations</span><span class="p">),</span>
         <span class="p">)</span>
@@ -888,7 +888,7 @@
         <span class="n">larmor_frequency</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">b1_scaling</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate RF sample points to be played by TX card.</span>
+<span class="w">        </span><span class="sd">"""Calculate RF sample points to be played by TX card.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -907,12 +907,12 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            Invalid RF block</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;rf&quot;</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Sequence block event is not a valid RF event.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"rf"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sequence block event is not a valid RF event."</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">larmor_frequency</span> <span class="o">&gt;</span> <span class="mf">0.</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid Larmor frequency: </span><span class="si">{</span><span class="n">larmor_frequency</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid Larmor frequency: </span><span class="si">{</span><span class="n">larmor_frequency</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
@@ -940,10 +940,10 @@
         <span class="c1"># Calculate scaled envelope and convert to int16 scale (not datatype, since we use complex numbers)</span>
         <span class="c1"># Perform this step here to save computation time, num. of envelope samples &lt;&lt; num. of resampled signal</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># RF scaling according to B1 calibration and &quot;device&quot; (translation from pulseq to output voltage)</span>
+            <span class="c1"># RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)</span>
             <span class="n">rf_scaling</span> <span class="o">=</span> <span class="n">b1_scaling</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_to_mvolt</span> <span class="o">*</span> <span class="n">phase_offset</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">rf_out_limit</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span> <span class="o">:=</span> <span class="n">block</span><span class="o">.</span><span class="n">signal</span> <span class="o">*</span> <span class="n">rf_scaling</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;RF magnitude exceeds output limit by </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"RF magnitude exceeds output limit by </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">envelope_scaled</span><span class="p">)</span><span class="o">*</span><span class="mi">100</span><span class="si">}</span><span class="s2">%."</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
@@ -977,7 +977,7 @@
         <span class="n">offset</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">output_channel</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate spectrum-card sample points of a pypulseq gradient block event.</span>
+<span class="w">        </span><span class="sd">"""Calculate spectrum-card sample points of a pypulseq gradient block event.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -998,7 +998,7 @@
 <span class="sd">        ValueError</span>
 <span class="sd">            Invalid block type (must be either ``grad`` or ``trap``),</span>
 <span class="sd">            gradient amplitude exceeds channel maximum output level</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Calculate gradient waveform scaling</span>
             <span class="n">scaling</span> <span class="o">=</span> <span class="n">fov_scaling</span> <span class="o">/</span> <span class="p">(</span>
@@ -1006,7 +1006,7 @@
             <span class="p">)</span>
 
             <span class="c1"># Calculate the gradient waveform relative to max output (within the interval [0, 1])</span>
-            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;grad&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"grad"</span><span class="p">:</span>
                 <span class="c1"># Arbitrary gradient waveform, interpolate linearly</span>
                 <span class="c1"># This function requires float input =&gt; cast to int16 afterwards</span>
                 <span class="n">waveform</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scaling</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
@@ -1020,7 +1020,7 @@
                     <span class="n">fp</span><span class="o">=</span><span class="n">waveform_i16</span><span class="p">,</span>
                 <span class="p">)</span>
 
-            <span class="k">elif</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;trap&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="n">block</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"trap"</span><span class="p">:</span>
                 <span class="c1"># Construct trapezoidal gradient from rise, flat and fall sections</span>
                 <span class="n">flat_amp</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">*</span> <span class="n">scaling</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_check_gradient_amplitude</span><span class="p">(</span><span class="n">output_channel</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">flat_amp</span><span class="p">)))</span>
@@ -1034,7 +1034,7 @@
                 <span class="n">gradient</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">rise</span><span class="p">,</span> <span class="n">flat</span><span class="p">,</span> <span class="n">fall</span><span class="p">))</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Block is not a valid gradient block&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Block is not a valid gradient block"</span><span class="p">)</span>
 
             <span class="c1"># Calculate gradient offset int16 value from mV</span>
             <span class="c1"># Gradient offset is used for calculating output limits but is not added to the waveform</span>
@@ -1044,57 +1044,57 @@
             <span class="k">if</span> <span class="p">(</span><span class="n">max_strength_i16</span> <span class="o">:=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">combined_i16</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">INT16_MAX</span><span class="p">:</span>
                 <span class="c1"># Report maximum strength in mV</span>
                 <span class="n">max_strength</span> <span class="o">=</span> <span class="n">max_strength_i16</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">output_channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">INT16_MAX</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Amplitude of combined gradient and shim waveforms </span><span class="si">{</span><span class="n">max_strength</span><span class="si">}</span><span class="s2"> exceed max gradient amplitude&quot;</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Amplitude of combined gradient and shim waveforms </span><span class="si">{</span><span class="n">max_strength</span><span class="si">}</span><span class="s2"> exceed max gradient amplitude"</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
             <span class="c1"># Shifting gradient waveform to 15 bits already for adding the gate signals later</span>
             <span class="k">return</span> <span class="n">gradient</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">1</span>
 
         <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">&quot;Error calculating gradient&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="s2">"Error calculating gradient"</span><span class="p">)</span>
             <span class="k">raise</span>
 
     <span class="c1"># -------- Private validation methods -------- #</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_gradient_amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rel_value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Raise error if amplitude exceeds output limit.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Raise error if amplitude exceeds output limit."""</span>
         <span class="n">limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_out_limits</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">rel_value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1.</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Amplitude of gradient channel </span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel_value</span><span class="o">*</span><span class="n">limit</span><span class="si">}</span><span class="s2">) exceeded output limit (</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">))&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Amplitude of gradient channel </span><span class="si">{</span><span class="n">idx</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rel_value</span><span class="o">*</span><span class="n">limit</span><span class="si">}</span><span class="s2">) exceeded output limit (</span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">))"</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">:</span> <span class="n">AcquisitionParameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check acquisition parameter and raise error if invalid.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check acquisition parameter and raise error if invalid."""</span>
         <span class="c1"># Check larmor frequency</span>
         <span class="n">f0_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">spcm_freq</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">&gt;=</span> <span class="n">f0_limit</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Larmor frequency too high (</span><span class="si">{</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz), violating sampling theorem&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Larmor frequency too high (</span><span class="si">{</span><span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mf">1e-6</span><span class="si">}</span><span class="s2"> MHz), violating sampling theorem"</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">larmor_frequency</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Larmor frequency invalid (&lt; 0).&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">"Larmor frequency invalid (&lt; 0)."</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
         <span class="c1"># Validate channel assignment</span>
         <span class="n">grad_ch</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">channel_assignment</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">grad_ch</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">z</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;All channel_assignment values must be integers.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"All channel_assignment values must be integers."</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">{</span><span class="n">grad_ch</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">grad_ch</span><span class="o">.</span><span class="n">z</span><span class="p">}</span> <span class="o">!=</span> <span class="p">{</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}:</span>
-            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Invalid channel assignment, must contain each of 1, 2, and 3 exactly once, got: </span><span class="si">{</span><span class="n">grad_ch</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Invalid channel assignment, must contain each of 1, 2, and 3 exactly once, got: </span><span class="si">{</span><span class="n">grad_ch</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_sequence</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check sequence.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Check sequence."""</span>
         <span class="c1"># Check number of block events</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">block_events</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No block events found&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No block events found"</span><span class="p">)</span>
         <span class="c1"># Perform sequence timing check</span>
         <span class="n">check</span><span class="p">,</span> <span class="n">seq_err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_timing</span><span class="p">()</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">check</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sequence timing check failed: </span><span class="si">{</span><span class="n">seq_err</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sequence timing check failed: </span><span class="si">{</span><span class="n">seq_err</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_load_rfpa_lut</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rf_gain_lut_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">rf_gain_lut_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">rf_gain_lut_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No RFPA LUT file.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No RFPA LUT file."</span><span class="p">)</span>
             <span class="k">return</span>
 
         <span class="n">_lut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">rf_gain_lut_path</span><span class="p">)</span>
@@ -1102,14 +1102,14 @@
 
         <span class="k">if</span> <span class="n">_lut</span><span class="o">.</span><span class="n">size</span> <span class="o">!=</span> <span class="n">_required_lut_size</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Error loading RFPA LUT: Invalid size.</span><span class="se">\n</span><span class="s2">Loaded: </span><span class="si">{</span><span class="n">_lut</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, required: </span><span class="si">{</span><span class="n">_required_lut_size</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"Error loading RFPA LUT: Invalid size.</span><span class="se">\n</span><span class="s2">Loaded: </span><span class="si">{</span><span class="n">_lut</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, required: </span><span class="si">{</span><span class="n">_required_lut_size</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">_lut</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid data type of RFPA gain LUT: </span><span class="si">{</span><span class="n">_lut</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid data type of RFPA gain LUT: </span><span class="si">{</span><span class="n">_lut</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Successfully loaded LUT for RF gain correction.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Successfully loaded LUT for RF gain correction."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rf_gain_lut</span> <span class="o">=</span> <span class="n">_lut</span></div>
 
 </pre></div>
@@ -1141,8 +1141,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1168,7 +1168,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

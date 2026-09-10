@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -472,7 +472,7 @@ Here we can also set the log level for the log-file and the console log-output.<
 <li><p>Add additional information, e.g. a note on the acquisition or the sequence parameters, as well as the sorted k-space and the reconstructed image to the acquisition data and save the results.</p></li>
 <li><p>Delete the acquisition control. This is an important step, as the destructor <code class="docutils literal notranslate"><span class="pre">__del__</span></code> of the <code class="docutils literal notranslate"><span class="pre">AcquisitionControl</span></code> class disconnects from the measurement cards.</p></li>
 </ol>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sd">&quot;&quot;&quot;3D turbo spin echo sequence.&quot;&quot;&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="sd">"""3D turbo spin echo sequence."""</span>
 <span class="c1"># %%</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 
@@ -486,24 +486,24 @@ Here we can also set the log level for the log-file and the console log-output.<
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.utilities.sequences</span><span class="w"> </span><span class="kn">import</span> <span class="n">tse_3d</span>
 
 <span class="c1"># Create acquisition control instance</span>
-<span class="n">config_file</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;example_device_config.yaml&quot;</span>
+<span class="n">config_file</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"example_device_config.yaml"</span>
 <span class="n">acq</span> <span class="o">=</span> <span class="n">AcquisitionControl</span><span class="p">(</span><span class="n">configuration_file</span><span class="o">=</span><span class="n">config_file</span><span class="p">,</span>
                          <span class="n">file_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
                          <span class="n">console_log_level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
 <span class="c1"># %%</span>
 <span class="c1"># Create sequence</span>
 <span class="n">params</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;echo_time&quot;</span><span class="p">:</span> <span class="mf">20e-3</span><span class="p">,</span>
-    <span class="s2">&quot;repetition_time&quot;</span><span class="p">:</span> <span class="mf">600e-3</span><span class="p">,</span>
-    <span class="s2">&quot;etl&quot;</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
-    <span class="s2">&quot;gradient_correction&quot;</span><span class="p">:</span> <span class="mf">80e-6</span><span class="p">,</span>
-    <span class="s2">&quot;rf_duration&quot;</span><span class="p">:</span> <span class="mf">200e-6</span><span class="p">,</span>
-    <span class="s2">&quot;fov&quot;</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">),</span>
-    <span class="s2">&quot;channel_ro&quot;</span><span class="p">:</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;channel_pe1&quot;</span><span class="p">:</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;channel_pe2&quot;</span><span class="p">:</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ro_bandwidth&quot;</span><span class="p">:</span> <span class="mf">20e3</span><span class="p">,</span>
-    <span class="s2">&quot;n_enc&quot;</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
+    <span class="s2">"echo_time"</span><span class="p">:</span> <span class="mf">20e-3</span><span class="p">,</span>
+    <span class="s2">"repetition_time"</span><span class="p">:</span> <span class="mf">600e-3</span><span class="p">,</span>
+    <span class="s2">"etl"</span><span class="p">:</span> <span class="mi">7</span><span class="p">,</span>
+    <span class="s2">"gradient_correction"</span><span class="p">:</span> <span class="mf">80e-6</span><span class="p">,</span>
+    <span class="s2">"rf_duration"</span><span class="p">:</span> <span class="mf">200e-6</span><span class="p">,</span>
+    <span class="s2">"fov"</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">240e-3</span><span class="p">),</span>
+    <span class="s2">"channel_ro"</span><span class="p">:</span> <span class="s2">"y"</span><span class="p">,</span>
+    <span class="s2">"channel_pe1"</span><span class="p">:</span> <span class="s2">"z"</span><span class="p">,</span>
+    <span class="s2">"channel_pe2"</span><span class="p">:</span> <span class="s2">"x"</span><span class="p">,</span>
+    <span class="s2">"ro_bandwidth"</span><span class="p">:</span> <span class="mf">20e3</span><span class="p">,</span>
+    <span class="s2">"n_enc"</span><span class="p">:</span> <span class="n">Dimensions</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
 <span class="p">}</span>
 <span class="n">seq</span><span class="p">,</span> <span class="n">header</span> <span class="o">=</span> <span class="n">tse_3d</span><span class="o">.</span><span class="n">constructor</span><span class="p">(</span><span class="o">**</span><span class="n">params</span><span class="p">)</span>
 
@@ -533,21 +533,21 @@ Here we can also set the log level for the log-file and the console log-output.<
 <span class="n">total_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">amax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
 <span class="n">total_min</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># np.amin(np.abs(img))</span>
 <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">img</span><span class="p">[:,</span> <span class="o">...</span><span class="p">]):</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">vmin</span><span class="o">=</span><span class="n">total_min</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">total_max</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">&quot;off&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">vmin</span><span class="o">=</span><span class="n">total_min</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">total_max</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"gray"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">axis</span><span class="p">(</span><span class="s2">"off"</span><span class="p">)</span>
 <span class="n">_</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">remove</span><span class="p">()</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">[</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:]]</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">pad</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
-<span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s2">&quot;black&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s2">"black"</span><span class="p">)</span>
 
 
 <span class="c1"># Complement acquisition data</span>
 <span class="n">acq_data</span><span class="o">.</span><span class="n">add_info</span><span class="p">({</span>
-    <span class="s2">&quot;note&quot;</span><span class="p">:</span> <span class="s2">&quot;sphere phantom&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;sequence_parameter&quot;</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
+    <span class="s2">"note"</span><span class="p">:</span> <span class="s2">"sphere phantom"</span><span class="p">,</span>
+    <span class="s2">"sequence_parameter"</span><span class="p">:</span> <span class="n">params</span><span class="p">,</span>
 <span class="p">})</span>
 <span class="n">acq_data</span><span class="o">.</span><span class="n">add_data</span><span class="p">({</span>
-    <span class="s2">&quot;kspace&quot;</span><span class="p">:</span> <span class="n">ksp</span><span class="p">,</span>
-    <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span>
+    <span class="s2">"kspace"</span><span class="p">:</span> <span class="n">ksp</span><span class="p">,</span>
+    <span class="s2">"image"</span><span class="p">:</span> <span class="n">img</span><span class="p">,</span>
 <span class="p">})</span>
 
 <span class="n">acq_data</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -620,8 +620,8 @@ Here we can also set the log level for the log-file and the console log-output.<
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -647,7 +647,7 @@ Here we can also set the log level for the log-file and the console log-output.<
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

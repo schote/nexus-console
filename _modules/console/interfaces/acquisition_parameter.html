@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -429,7 +429,7 @@
                 <article class="bd-article">
                   
   <h1>Source code for console.interfaces.acquisition_parameter</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Interface class for acquisition parameters.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Interface class for acquisition parameters."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
@@ -454,15 +454,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_dict_factory</span><span class="p">(</span><span class="n">items</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a dictionary containing only fields whose names do not start with &#39;_&#39;.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)}</span>
+<span class="w">    </span><span class="sd">"""Return a dictionary containing only fields whose names do not start with '_'."""</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">items</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)}</span>
 
 
 <div class="viewcode-block" id="AcquisitionParameter">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">AcquisitionParameter</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Parameters to define an acquisition.</span>
 
 <span class="sd">    The acquisition parameters are defined in a dataclass which is hashable but still mutable.</span>
@@ -475,43 +475,43 @@
 <span class="sd">    The autosave option can be deactivated calling `deactivate_autosave`.</span>
 <span class="sd">    Manually storing the acquisition parameters to a specific directory can be achieved</span>
 <span class="sd">    using the `save` method and providing the desired path.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">larmor_frequency</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.e6</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Larmor frequency in Hz.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Larmor frequency in Hz."""</span>
 
     <span class="n">b1_scaling</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Scaling of the B1 field (RF transmit power).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Scaling of the B1 field (RF transmit power)."""</span>
 
     <span class="n">gradient_offset</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_gradient_offset_factory</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Gradient offset values in mV.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Gradient offset values in mV."""</span>
 
     <span class="n">fov_scaling</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_fov_scaling_factory</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Field of view scaling for Gx, Gy and Gz.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Field of view scaling for Gx, Gy and Gz."""</span>
 
     <span class="n">channel_assignment</span><span class="p">:</span> <span class="n">Dimensions</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_channel_factory</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assignment of console output channels to gradient channels x, y, z.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Assignment of console output channels to gradient channels x, y, z."""</span>
 
     <span class="n">ddc_method</span><span class="p">:</span> <span class="n">DDCMethod</span> <span class="o">=</span> <span class="n">DDCMethod</span><span class="o">.</span><span class="n">FIR</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decimation filter method.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Decimation filter method."""</span>
 
     <span class="n">num_averages</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Number of acquisition averages.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Number of acquisition averages."""</span>
 
     <span class="n">averaging_delay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delay in seconds between acquisition averages.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Delay in seconds between acquisition averages."""</span>
 
-    <span class="n">state_filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">&quot;nexus-console/acquisition-parameter.state&quot;</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Default file path for acquisition parameter state.</span>
+    <span class="n">state_filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"nexus-console/acquisition-parameter.state"</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Default file path for acquisition parameter state.</span>
 
-<span class="sd">    Don&#39;t enforce a Path object here to prevent conflicts when sending acquisition parameter</span>
+<span class="sd">    Don't enforce a Path object here to prevent conflicts when sending acquisition parameter</span>
 <span class="sd">    instances between different OS.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">_initialized</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">init</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="nb">repr</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compare</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="nb">hash</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Post initialization method.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Post initialization method."""</span>
         <span class="c1"># Ensure Dimensions type</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">gradient_offset</span> <span class="o">=</span> <span class="n">Dimensions</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gradient_offset</span><span class="p">)</span>
@@ -526,8 +526,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">channel_assignment</span><span class="o">.</span><span class="n">register_on_change_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_child_changed</span><span class="p">)</span>
 
         <span class="n">_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_filepath</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.state&quot;</span><span class="p">):</span>
-            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">&quot;acquisition-parameter.state&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".state"</span><span class="p">):</span>
+            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">"acquisition-parameter.state"</span>
         <span class="c1"># Ensure state filepath is a string</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_filepath</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">_path</span><span class="p">)</span>
 
@@ -535,16 +535,16 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Overwrite __setattr__ function to save object on each mutation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Overwrite __setattr__ function to save object on each mutation."""</span>
         <span class="c1"># Get type hints for the class</span>
         <span class="n">hints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__annotations__</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
             <span class="c1"># Skip validation for private attributes</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">hints</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"_"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">hints</span><span class="p">:</span>
                 <span class="n">expected_type</span> <span class="o">=</span> <span class="n">hints</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">expected_type</span><span class="p">):</span>
                     <span class="c1"># Raise error on type mismatch</span>
-                    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Attribute &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; must be of type </span><span class="si">{</span><span class="n">expected_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"Attribute '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' must be of type </span><span class="si">{</span><span class="n">expected_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
                     <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
             <span class="n">prev</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
@@ -554,36 +554,36 @@
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compare acquisition parameter to other instance.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compare acquisition parameter to other instance."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">other</span><span class="p">,</span> <span class="n">AcquisitionParameter</span><span class="p">):</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="c1"># deep dict comparison, including nested dataclasses</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get string representation of acquisition parameter.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get string representation of acquisition parameter."""</span>
         <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="s2">&quot;Acquisition parameter</span><span class="se">\n</span><span class="s2">----------</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="s2">"Acquisition parameter</span><span class="se">\n</span><span class="s2">----------</span><span class="se">\n</span><span class="s2">"</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-            <span class="n">output</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">output</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">k</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="k">return</span> <span class="n">output</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AcquisitionParameter&quot;</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy acquisition parameter.&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__copy__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"AcquisitionParameter"</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Copy acquisition parameter."""</span>
         <span class="bp">cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
         <span class="n">result</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">result</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_child_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save acquisition parameters if child changed.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Save acquisition parameters if child changed."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 
 <div class="viewcode-block" id="AcquisitionParameter.to_dict">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_strings</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return acquisition parameters as dictionary.</span>
+<span class="w">        </span><span class="sd">"""Return acquisition parameters as dictionary.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -593,7 +593,7 @@
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">            Acquisition parameter dictionary</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">use_strings</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_factory</span><span class="o">=</span><span class="n">_dict_factory</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_factory</span><span class="o">=</span><span class="n">_dict_factory</span><span class="p">)</span></div>
@@ -602,7 +602,7 @@
 <div class="viewcode-block" id="AcquisitionParameter.save">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.save">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save current acquisition parameter state.</span>
+<span class="w">        </span><span class="sd">"""Save current acquisition parameter state.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -610,10 +610,10 @@
 <span class="sd">            Path to the pickle state file, by default None.</span>
 <span class="sd">            If None, the default state file path is taken which is &lt;home&gt;/nexus-console/acquisition-parameter.state</span>
 <span class="sd">            Default state file path can be changed using the set_default_path method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">filepath</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_filepath</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.state&quot;</span><span class="p">):</span>
-            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">&quot;acquisition-parameter.state&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".state"</span><span class="p">):</span>
+            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">"acquisition-parameter.state"</span>
         <span class="n">_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span></div>
 
@@ -621,8 +621,8 @@
 <div class="viewcode-block" id="AcquisitionParameter.load">
 <a class="viewcode-back" href="../../../api_reference/acquisition_control.html#console.interfaces.acquisition_parameter.AcquisitionParameter.load">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">&quot;AcquisitionParameter&quot;</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="s2">"AcquisitionParameter"</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Load and return acquisition parameter state.</span>
 
 <span class="sd">        Parameters</span>
@@ -642,23 +642,23 @@
 <span class="sd">            Provided file_path is not a pickle file or does not exist.</span>
 <span class="sd">        EOFError</span>
 <span class="sd">            Provided state file is corrupted</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;AcqParam&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">"AcqParam"</span><span class="p">)</span>
 
         <span class="c1"># Resolve file path</span>
         <span class="n">_path</span> <span class="o">=</span> <span class="n">filepath</span> <span class="ow">or</span> <span class="bp">cls</span><span class="o">.</span><span class="n">state_filepath</span>
         <span class="n">_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">_path</span><span class="p">)</span>
 
         <span class="c1"># Enforce `.state` suffix</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.state&quot;</span><span class="p">):</span>
-            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">&quot;acquisition-parameter.state&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">_path</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".state"</span><span class="p">):</span>
+            <span class="n">_path</span> <span class="o">=</span> <span class="n">_path</span> <span class="o">/</span> <span class="s2">"acquisition-parameter.state"</span>
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span>
-                <span class="s2">&quot;Error loading AcquisitionParameter state file &#39;</span><span class="si">%s</span><span class="s2">&#39;.&quot;</span><span class="p">,</span>
+                <span class="s2">"Error loading AcquisitionParameter state file '</span><span class="si">%s</span><span class="s2">'."</span><span class="p">,</span>
                 <span class="nb">str</span><span class="p">(</span><span class="n">_path</span><span class="p">),</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span></div>
@@ -693,8 +693,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -720,7 +720,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>
