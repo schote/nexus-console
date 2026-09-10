@@ -1,0 +1,18 @@
+# Store everything as LF in the repo, check out as LF everywhere
+* text=auto eol=lf
+
+# Windows batch files genuinely need CRLF — cmd.exe mis-parses LF-only labels/goto
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Belt and braces for binaries (Git usually detects these, but be explicit)
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.whl binary
+*.pyd binary
+*.so  binary
+*.dll binary
