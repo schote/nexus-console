@@ -1,21 +1,39 @@
 """Implementation of nexus acquisition manager for multiprocessing."""
 import traceback
+from collections.abc import Callable
 from multiprocessing.managers import BaseManager
+from pathlib import Path
 
+from console import NexusNotRunningError
+from console.service.authkey import read_authkey
+from console.service.paths import socket_path
 from console.spcm_control.acquisition_control import AcquisitionControl
 
 
 class AcquisitionControlManager(BaseManager):
-    """Acquisition control manager."""
+    """Acquisition control manager.
+
+    The manager connects to the acquisition service through a unix domain socket
+    in the nexus runtime directory. Address and authentication key are resolved
+    from that directory. It can be used as follows:
+
+        with AcquisitionControlManager() as manager:
+            manager.acquisition.set_sequence(sequence=seq, parameter=parameter)
+            acquisition_data = manager.acquisition.run()
+    """
 
     def __init__(
         self,
-        address=('localhost', 50000),
-        authkey=b'secretkey',
-        callable_acq_control=None,
-        **kwargs
+        address: str | Path | None = None,
+        authkey: bytes | None = None,
+        callable_acq_control: Callable | None = None,
+        **kwargs,
     ):
-        super().__init__(address=address, authkey=authkey, **kwargs)
+        super().__init__(
+            address=str(address or socket_path()),
+            authkey=authkey or read_authkey(),
+            **kwargs,
+        )
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
             self.register('AcquisitionControl', callable=callable_acq_control)
@@ -23,14 +41,20 @@ class AcquisitionControlManager(BaseManager):
             self.register('AcquisitionControl')
 
     def __enter__(self) -> "AcquisitionControlManager":
-        """Enter with context."""
+        """Enter with context.
+
+        Raises
+        ------
+        NexusNotRunningError
+            If the acquisition service is not reachable at the runtime socket.
+        """
         try:
             self.connect()
-            self.acquisition: AcquisitionControl = getattr(self, "AcquisitionControl")()
-            return self
-        except Exception as e:
-            print(f"Error connecting to AcquisitionControlManager: {e}")
-            raise
+        except (ConnectionRefusedError, FileNotFoundError) as exc:
+            msg = "Nexus service is not running. Start it with: systemctl start nexus"
+            raise NexusNotRunningError(msg) from exc
+        self.acquisition: AcquisitionControl = getattr(self, "AcquisitionControl")()
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         """Exit with context."""

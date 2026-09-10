@@ -16,6 +16,7 @@ If you find anything incomprehensible or have suggestions for improvements, plea
    
    system_setup
    acquisition_process
+   acquisition_service
    sequence_unrolling
    spectrum_devices
    post_processing
