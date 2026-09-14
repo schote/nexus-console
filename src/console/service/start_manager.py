@@ -71,9 +71,9 @@ def main():
     ensure_socket_free(address)
 
     if not args.no_verify:
-        input("\n[neXus] Before starting the setup, confirm that all the amplifiers are turned off.\
+        input("\n[nexus] Before starting the setup, confirm that all the amplifiers are turned off.\
             \nPress Enter to continue...")
-    print("\n[neXus] Setting up the acquisition control...\n")
+    print("\n[nexus] Setting up the acquisition control...\n")
 
     # Setup global acquisition control with argparse arguments
     acquisition_control = AcquisitionControl(
@@ -94,22 +94,22 @@ def main():
 
     def shutdown_handler():
         try:
-            print("\n[neXus] Shutting down nexus server...\n")
+            print("\n[nexus] Shutting down nexus server...\n")
             if acquisition_control:
                 acquisition_control.__del__()
-                print("[neXus] Acquisition control shutdown successfully.")
+                print("[nexus] Acquisition control shutdown successfully.")
         except Exception as e:
-            print(f"[neXus] Error during shutdown: {e}")
+            print(f"[nexus] Error during shutdown: {e}")
         finally:
-            address.unlink(missing_ok=True)
+            # The socket file itself is removed by the finalizer of the multiprocessing listener
             (runtime_dir() / "authkey").unlink(missing_ok=True)
-            print("[neXus] Shutdown complete.")
+            print("[nexus] Shutdown complete.")
 
     atexit.register(shutdown_handler)
     # Run the atexit handlers on SIGTERM (systemctl stop) as well, otherwise socket and key would be left behind
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
-    print(f"\n[neXus] AcquisitionControlManager >> Server started on {address}...\n")
+    print(f"\n[nexus] AcquisitionControlManager >> Server started on {address}...\n")
     server.serve_forever()
 
 
