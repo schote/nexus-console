@@ -1,12 +1,6 @@
 """Console package init file."""
 import logging
 
-from console.utilities.exceptions import (
-    HardwareBusyError,
-    NexusError,
-    NexusNotRunningError,
-    NexusServiceError,
-)
 from console.interfaces.acquisition_parameter import AcquisitionParameter
 
 
@@ -23,12 +17,3 @@ else:
     )
     parameter = AcquisitionParameter()
     print(parameter)
-
-__all__ = [
-    "AcquisitionParameter",
-    "HardwareBusyError",
-    "NexusError",
-    "NexusNotRunningError",
-    "NexusServiceError",
-    "parameter",
-]

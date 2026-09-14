@@ -29,9 +29,6 @@ The available arguments are:
      - Path to the device configuration yaml file (required).
    * - ``-f``, ``--sessions_folder``
      - Directory for logs, states and acquisition data of a session.
-   * - ``--authkey-file``
-     - Path to a file containing the authentication key. If omitted, a random key is
-       generated for this service run.
    * - ``-n``, ``--no-verify``
      - Start without asking for confirmation that the amplifiers are turned off.
 
@@ -62,7 +59,7 @@ Both files are removed when the service shuts down.
 The directory is created with mode ``1777``, the same permissions ``/tmp`` itself uses:
 every account on the workstation may use the console, so every account must be able to read
 the key and open the socket. The sticky bit restricts deleting and renaming a file to the
-account which owns it, so no session can remove the socket, the key or the lock of another.
+account which owns it, so no session can remove the socket or the key of another.
 There is no group to create and nothing to configure. The environment variable
 ``NEXUS_RUNTIME_DIR`` overrides the location and exists so that tests can isolate themselves
 from a running service.
@@ -96,21 +93,6 @@ so the manager is constructed without arguments:
        manager.acquisition.set_sequence(sequence=seq, parameter=parameter)
        acquisition_data = manager.acquisition.run()
 
-If the service is not running, the construction of the manager raises a
-:class:`~console.utilities.exceptions.NexusNotRunningError`.
-
-Errors
-------
-
-All errors raised deliberately by the nexus console derive from
-:class:`~console.utilities.exceptions.NexusError`, so a single ``except`` clause catches them:
-
-.. code-block:: python
-
-   from console import NexusError
-
-   try:
-       with AcquisitionControlManager() as manager:
-           ...
-   except NexusError as error:
-       print(error)
+If the service is not running, constructing or entering the manager raises a
+:class:`~console.service.acquisition_manager.NexusNotRunningError`, a ``ConnectionError``
+whose message tells how to start the service.
