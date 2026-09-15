@@ -1,0 +1,19 @@
+[Unit]
+Description=Nexus acquisition service
+
+[Service]
+User=nexus
+Group=nexus
+# /run/nexus: socket and authentication key, created before start and removed after stop
+RuntimeDirectory=nexus
+# /var/lib/nexus: session data, logs and the acquisition parameter state
+StateDirectory=nexus
+# Importing the console package writes $HOME/nexus-console/acquisition-parameter.state, the account has no home
+Environment=HOME=/var/lib/nexus
+# Adapt the paths of the virtual environment and of the device configuration
+ExecStart=/opt/nexus/venv/bin/nexus --no-verify --device_config /etc/nexus/device_config.yaml --sessions_folder /var/lib/nexus
+KillSignal=SIGTERM
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
