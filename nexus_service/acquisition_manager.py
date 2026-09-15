@@ -12,6 +12,8 @@ from pathlib import Path
 from console.spcm_control.acquisition_control import AcquisitionControl
 
 NOT_RUNNING_MSG = "Nexus service is not running. Start it with: systemctl start nexus"
+# Created and removed by systemd (RuntimeDirectory= in deployment/nexus.service), owned by the service account
+SYSTEM_RUNTIME_DIR = Path("/run/nexus")
 
 
 class NexusNotRunningError(ConnectionError):
@@ -21,11 +23,14 @@ class NexusNotRunningError(ConnectionError):
 def runtime_dir() -> Path:
     """Return the directory holding socket and authentication key of the service.
 
-    Defaults to ``<tempdir>/nexus``, ``NEXUS_RUNTIME_DIR`` overrides the location (used by the tests).
-    The directory is created on demand with mode 1777: every account may use the console, so every
-    account must be able to read the key and open the socket, while the sticky bit keeps one account
-    from removing the files of another. A symbolic link or a directory with different permissions,
-    which could have been pre-created by another user, is refused.
+    ``NEXUS_RUNTIME_DIR`` overrides the location (used by the tests). Otherwise, if the service runs as
+    a systemd unit, ``/run/nexus`` exists and is used as-is: systemd creates it for the service account
+    and removes it on stop, so only root can delete it and no other account can place files in it.
+    Without the unit the location defaults to ``<tempdir>/nexus``, created on demand with mode 1777:
+    every account may use the console, so every account must be able to read the key and open the
+    socket, while the sticky bit keeps one account from removing the files of another. A symbolic
+    link or a directory with different permissions, which could have been pre-created by another
+    user, is refused.
 
     Returns
     -------
@@ -36,6 +41,8 @@ def runtime_dir() -> Path:
     RuntimeError
         If the runtime directory is a symbolic link or has unexpected permissions.
     """
+    if "NEXUS_RUNTIME_DIR" not in os.environ and SYSTEM_RUNTIME_DIR.is_dir() and not SYSTEM_RUNTIME_DIR.is_symlink():
+        return SYSTEM_RUNTIME_DIR
     path = Path(os.environ.get("NEXUS_RUNTIME_DIR", Path(tempfile.gettempdir()) / "nexus"))
     if path.is_symlink():
         raise RuntimeError(f"Runtime directory {path} is a symbolic link, refusing to use it.")

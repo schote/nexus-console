@@ -8,8 +8,8 @@ import socket
 import sys
 from pathlib import Path
 
-from console.service.acquisition_manager import AcquisitionControlManager, runtime_dir
 from console.spcm_control.acquisition_control import AcquisitionControl
+from nexus_service.acquisition_manager import AcquisitionControlManager, runtime_dir
 
 
 def ensure_socket_free(path: Path) -> None:

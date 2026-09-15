@@ -5,8 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from console.service.acquisition_manager import AcquisitionControlManager, NexusNotRunningError, runtime_dir
-from console.service.start_manager import ensure_socket_free
+from nexus_service import acquisition_manager
+from nexus_service.acquisition_manager import AcquisitionControlManager, NexusNotRunningError, runtime_dir
+from nexus_service.start_manager import ensure_socket_free
 
 
 class DummyAcquisitionControl:
@@ -83,6 +84,41 @@ def test_runtime_dir_with_wrong_permissions(nexus_runtime_dir: Path, monkeypatch
 
     with pytest.raises(RuntimeError, match="wrong permissions"):
         runtime_dir()
+
+
+def test_system_runtime_dir_is_used_as_is(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A directory provided by systemd is used without changing its permissions."""
+    system_dir = tmp_path / "run" / "nexus"
+    system_dir.mkdir(parents=True)
+    system_dir.chmod(0o755)
+    monkeypatch.delenv("NEXUS_RUNTIME_DIR", raising=False)
+    monkeypatch.setattr(acquisition_manager, "SYSTEM_RUNTIME_DIR", system_dir)
+
+    assert runtime_dir() == system_dir
+    assert stat.S_IMODE(system_dir.stat().st_mode) == 0o755
+
+
+def test_environment_overrides_system_runtime_dir(
+    tmp_path: Path, nexus_runtime_dir: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The environment variable wins over the systemd directory, so tests stay isolated from a service."""
+    system_dir = tmp_path / "run" / "nexus"
+    system_dir.mkdir(parents=True)
+    monkeypatch.setattr(acquisition_manager, "SYSTEM_RUNTIME_DIR", system_dir)
+
+    assert runtime_dir() == nexus_runtime_dir
+
+
+def test_missing_system_runtime_dir_falls_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without the systemd directory the temporary directory is used as before."""
+    fallback = tmp_path / "tmp"
+    fallback.mkdir()
+    monkeypatch.delenv("NEXUS_RUNTIME_DIR", raising=False)
+    monkeypatch.setattr(acquisition_manager, "SYSTEM_RUNTIME_DIR", tmp_path / "run" / "nexus")
+    monkeypatch.setattr(acquisition_manager.tempfile, "gettempdir", lambda: str(fallback))
+
+    assert runtime_dir() == fallback / "nexus"
+    assert stat.S_IMODE((fallback / "nexus").stat().st_mode) == 0o1777
 
 
 def test_stale_socket_is_removed(nexus_runtime_dir: Path) -> None:
