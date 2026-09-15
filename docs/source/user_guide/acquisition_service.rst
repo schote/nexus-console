@@ -42,7 +42,7 @@ Runtime Directory
 -----------------
 
 Service and clients exchange the connection details through a runtime directory,
-by default ``<tempdir>/nexus``:
+``/run/nexus`` when the service runs as a systemd unit and ``<tempdir>/nexus`` otherwise:
 
 .. list-table::
    :widths: 35 65
@@ -56,13 +56,22 @@ by default ``<tempdir>/nexus``:
      - Authentication key of the running service, readable by every account.
 
 Both files are removed when the service shuts down.
-The directory is created with mode ``1777``, the same permissions ``/tmp`` itself uses:
-every account on the workstation may use the console, so every account must be able to read
-the key and open the socket. The sticky bit restricts deleting and renaming a file to the
-account which owns it, so no session can remove the socket or the key of another.
-There is no group to create and nothing to configure. The environment variable
-``NEXUS_RUNTIME_DIR`` overrides the location and exists so that tests can isolate themselves
-from a running service.
+
+As a systemd unit (see ``nexus_service/deployment/README.md`` for the setup) the service runs under a dedicated
+account and systemd creates ``/run/nexus`` for it before start and removes it after stop,
+also after a crash. Since ``/run`` belongs to root, only root can delete the directory and no
+other account can place files in it. Clients need no write access to the directory: the
+socket is world-accessible and the key world-readable.
+
+Started by hand, the service falls back to ``<tempdir>/nexus``, created with mode ``1777``,
+the same permissions ``/tmp`` itself uses: every account on the workstation may use the
+console, so every account must be able to read the key and open the socket. The sticky bit
+restricts deleting and renaming a file to the account which owns it, so no session can
+remove the socket or the key of another. In this case there is no group to create and
+nothing to configure, but note that ``/tmp`` is periodically cleaned by the system and that
+leftovers of another account can only be removed by that account or root. The environment
+variable ``NEXUS_RUNTIME_DIR`` overrides the location and exists so that tests can isolate
+themselves from a running service.
 
 .. note::
    The authentication key is therefore readable by every account on the workstation and is
@@ -87,12 +96,12 @@ so the manager is constructed without arguments:
 
 .. code-block:: python
 
-   from console.service.acquisition_manager import AcquisitionControlManager
+   from nexus_service.acquisition_manager import AcquisitionControlManager
 
    with AcquisitionControlManager() as manager:
        manager.acquisition.set_sequence(sequence=seq, parameter=parameter)
        acquisition_data = manager.acquisition.run()
 
 If the service is not running, constructing or entering the manager raises a
-:class:`~console.service.acquisition_manager.NexusNotRunningError`, a ``ConnectionError``
+:class:`~nexus_service.acquisition_manager.NexusNotRunningError`, a ``ConnectionError``
 whose message tells how to start the service.

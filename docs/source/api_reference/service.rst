@@ -9,7 +9,7 @@ Service
 Acquisition Manager
 -------------------
 
-.. automodule:: console.service.acquisition_manager
+.. automodule:: nexus_service.acquisition_manager
    :members:
    :undoc-members:
    :show-inheritance:
@@ -18,7 +18,7 @@ Acquisition Manager
 Service Start-Up
 ----------------
 
-.. automodule:: console.service.start_manager
+.. automodule:: nexus_service.start_manager
    :members:
    :undoc-members:
    :show-inheritance:
