@@ -14,7 +14,7 @@ working as described in the user guide (runtime directory `<tempdir>/nexus`).
   "flowchart": {
     "curve": "basis",
     "nodeSpacing": 40,
-    "rankSpacing": 60,
+    "rankSpacing": 80,
     "padding": 12
   }
 }}%%
@@ -31,33 +31,31 @@ flowchart LR
     run("`**runtime directory**
     /run/nexus
     contains nexus.sock & authkey
-    *nexus*`")
+    *owned by nexus*`")
     sessions("`**session directory**
     /srv/nexus
     contains session folders
-    *nexus*`")
+    *owned by nexus*`")
     logs("`**log directory**
     /var/log/nexus
     contains one log file per day
-    *nexus*`")
+    *owned by nexus*`")
 
     systemd -- "creates /run/nexus and /var/log/nexus, starts" --> service
-    service -- writes --> run
-    service -- writes --> sessions
-    service -- writes --> logs
-    user -- connects --> run
-    user -. reads .-> sessions
-    user -. reads .-> logs
+    service -- "publishes socket and key" --> run
+    service -- "writes session data" --> sessions
+    service -- "writes log files" --> logs
+    run <-- "connects via socket, authenticates with key" --> user
 
-    classDef actor fill:#e6fbf6,stroke:#2ec4a5,stroke-width:1.5px,color:#1e293b
-    classDef location fill:#fff1e6,stroke:#f5a05a,stroke-width:1.5px,color:#1e293b
+    classDef actor fill:#e6fbf6,stroke:#2ec4a5,stroke-width:2px,color:#1e293b,rx:10px,ry:10px
+    classDef location fill:#fff1e6,stroke:#f5a05a,stroke-width:2px,color:#1e293b,rx:10px,ry:10px
     class systemd,service,user actor
     class run,sessions,logs location
 ```
 
-*Figure: deployment overview. Teal boxes are actors, orange boxes are locations on disk; solid
-arrows change something, dotted arrows only read. The permission modes used in the steps below
-mean the following:
+*Figure: deployment overview. Teal boxes are actors, orange boxes are locations on disk. The
+session and log directories are not accessed by `AcquisitionControlManager`; users inspect them
+manually. The permission modes used in the steps below mean the following:
 `755`: the owner (`nexus`) may create and delete entries, everyone else may only list and enter
 the directory. `666`: everyone may read and write; for a socket, "write" is what a `connect()`
 requires, so any account can reach the service. `644`: everyone may read, only the owner (`nexus`)
