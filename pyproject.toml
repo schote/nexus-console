@@ -12,8 +12,10 @@ dirty_template = "{tag}+dirty" # Simple dirty indicator, if you have untracked c
 tag_filter = '^v'
 
 [tool.setuptools]
-packages = ["console", "nexus_service"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [project]
 name = "nexus-console"
