@@ -7,21 +7,21 @@ working as described in the user guide (runtime directory `<tempdir>/nexus`).
 
 ## 1. Service account
 
-The daemon must run as some account. Do not use root: a client holding the authentication key
-(readable by every account) can make the service execute code on its behalf, so a root service
-would hand root to every user of the workstation. Do not use a personal account either: the
-service would depend on that person's home, password and account lifetime, and clients could
-act with that person's rights. Create an unprivileged system account instead:
+To run the daemon we use an unprivileged system account which can be created by:
 
 ```bash
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin --comment "Nexus acquisition service" nexus
 ```
 
-`--system` takes a UID from the system range and creates neither mail spool nor password
-aging, no password is set so nobody can log in, `nologin` rejects shells, and there is no home
-directory (the unit sets `HOME` to the state directory). The account is not a member of any
-other group and has no sudo rights. It can open the measurement cards because
-`/dev/spcm*` are world-accessible (`MODE="0666"` in `/etc/udev/rules.d/99-spcm4.rules`).
+| Part                                    | Meaning                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `useradd`                               | Linux command for creating a user account.                                                  |
+| `--system`                              | Create a **system account**, intended for services/daemons rather than a normal human user. |
+| `--no-create-home`                      | Don't create a home directory such as `/home/nexus`.                                        |
+| `--shell /usr/sbin/nologin`             | Set the user's login shell to `nologin`, preventing interactive shell logins.               |
+| `--comment "Nexus acquisition service"` | Add descriptive information to the account's comment field.                                 |
+| `nexus`                                 | The username being created.                                                                 |
+
 
 ## 2. Installation
 

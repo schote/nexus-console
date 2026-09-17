@@ -11,7 +11,7 @@ StateDirectory=nexus
 # Importing the console package writes $HOME/nexus-console/acquisition-parameter.state, the account has no home
 Environment=HOME=/var/lib/nexus
 # Adapt the paths of the virtual environment and of the device configuration
-ExecStart=/opt/nexus/venv/bin/nexus --no-verify --device_config /etc/nexus/device_config.yaml --sessions_folder /var/lib/nexus
+ExecStart=/opt/nexus/venv/bin/nexus --no-verify --device_config /etc/nexus/device_config.yaml --sessions_folder /srv/nexus
 KillSignal=SIGTERM
 Restart=on-failure
 

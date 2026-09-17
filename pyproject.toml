@@ -13,7 +13,7 @@ tag_filter = '^v'
 
 [tool.setuptools]
 packages = ["console", "nexus_service"]
-package-dir = {"" = "src", "nexus_service" = "nexus_service"}
+package-dir = {"" = "src"}
 
 [project]
 name = "nexus-console"
