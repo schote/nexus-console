@@ -61,19 +61,11 @@ sudo useradd --system --no-create-home --shell /usr/sbin/nologin --comment "Nexu
 ## 2. Installation
 
 It is suggested to use the `/opt` directory reserved for add-on application software packages and to install the console application in a virtual environment. 
-Create a virtual environment and copy the code.
+Create a virtual environment, copy the code and install the nexus-console package. Installation is done as root, since permissions for read and execute are granted by default. We use editable mode (`-e`), which is optional, to simplify maintenance/updates.
 ```bash
 sudo python3.13 -m venv /opt/nexus/venv
-sudo cp -a code/nexus-console /opt/nexus/
-```
-Set the service account (`nexus`) as owner and group recursively (`-R`) for virtual environment and repository.
-```bash
-sudo chown -R nexus:nexus /opt/nexus/nexus-console
-sudo chown -R nexus:nexus /opt/nexus/venv
-```
-Install the nexus-console package using the service account (`nexus`). The installation is done in editable mode (`-e`), to simplify maintenance/updates.
-```bash
-sudo -u nexus /opt/nexus/venv/bin/pip install --no-cache-dir -e /opt/nexus/nexus-console
+sudo cp -r code/nexus-console /opt/nexus/
+sudo /opt/nexus/venv/bin/pip install --no-cache-dir -e /opt/nexus/nexus-console
 ```
 
 ## 3. Device Configuration
