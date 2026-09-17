@@ -36,17 +36,23 @@ flowchart LR
     /srv/nexus
     contains session folders
     *nexus*`")
+    logs("`**log directory**
+    /var/log/nexus
+    contains one log file per day
+    *nexus*`")
 
-    systemd -- "creates /run/nexus, starts" --> service
+    systemd -- "creates /run/nexus and /var/log/nexus, starts" --> service
     service -- writes --> run
     service -- writes --> sessions
+    service -- writes --> logs
     user -- connects --> run
     user -. reads .-> sessions
+    user -. reads .-> logs
 
     classDef actor fill:#e6fbf6,stroke:#2ec4a5,stroke-width:1.5px,color:#1e293b
     classDef location fill:#fff1e6,stroke:#f5a05a,stroke-width:1.5px,color:#1e293b
     class systemd,service,user actor
-    class run,sessions location
+    class run,sessions,logs location
 ```
 
 *Figure: deployment overview. Teal boxes are actors, orange boxes are locations on disk; solid
@@ -117,6 +123,8 @@ sudo systemctl enable --now nexus
 
 On start, systemd creates `/run/nexus` (configured via `RuntimeDirectory=`) with owner `nexus` and mode `755` (owner: rwx, group: r-x, others: r-x). The service publishes `nexus.sock` and `authkey` in `/run/nexus`, where clients find them automatically. On stop, and after a crash, systemd removes `/run/nexus` again, so no stale socket or key survives. `/run` itself is owned by root, so only root can delete `/run/nexus`, and no other account can place files next to it.
 
+Likewise, systemd creates `/var/log/nexus` (configured via `LogsDirectory=`) with owner `nexus` and mode `755`, and the service writes one log file per day (`<date>_nexus.log`) into it, as passed with `--log_dir`. Unlike `/run/nexus`, this directory is kept on stop. Without `--log_dir`, the log file is written to the session folder instead.
+
 ## 6. Usage and inspection
 
 Any account connects without arguments; the examples from the user guide are unchanged:
@@ -138,7 +146,8 @@ state of the unit requires root, inspecting it does not:
 | Status, PID and last log lines         | `systemctl status nexus`                   |
 | Is it running / enabled?               | `systemctl is-active nexus`, `systemctl is-enabled nexus` |
 | Effective settings of the unit         | `systemctl show nexus -p User,ExecStart,RuntimeDirectory,StateDirectory` |
-| Full log                               | `journalctl -u nexus`                      |
+| Full log (terminal output)             | `journalctl -u nexus`                      |
+| Log files                              | `ls -l /var/log/nexus`                     |
 | Follow the log live                    | `journalctl -u nexus -f`                   |
 | Log since last boot                    | `journalctl -u nexus -b`                   |
 | Check socket and key are published     | `ls -l /run/nexus`                         |
