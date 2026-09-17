@@ -46,18 +46,11 @@ def main():
         help="Path to device configuration yaml file.",
     )
     parser.add_argument(
-        "-f",
-        "--sessions_folder",
-        type=Path,
-        default=None,
-        help="Directory to store all the acquisition data acquired during the session. Defaults to ~/nexus-console.",
-    )
-    parser.add_argument(
         "-l",
         "--log_dir",
         type=Path,
         default=None,
-        help="Directory of the log file. Defaults to the session folder.",
+        help="Directory of the log file. Defaults to ~/nexus-console.",
     )
     # Note, XIO lines have a pull-up -> XIO output is temporarily high when opening the cards:
     # https://github.com/schote/nexus-console/issues/54#issuecomment-2823593549
@@ -84,7 +77,6 @@ def main():
     # Setup global acquisition control with argparse arguments
     acquisition_control = AcquisitionControl(
         configuration_file=args.device_config,
-        nexus_data_dir=args.sessions_folder,
         log_dir=args.log_dir,
         console_log_level=logging.INFO,
         file_log_level=logging.INFO

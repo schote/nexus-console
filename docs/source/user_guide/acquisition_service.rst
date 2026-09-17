@@ -27,10 +27,19 @@ The available arguments are:
      - Description
    * - ``-d``, ``--device_config``
      - Path to the device configuration yaml file (required).
-   * - ``-f``, ``--sessions_folder``
-     - Directory for logs, states and acquisition data of a session.
+   * - ``-l``, ``--log_dir``
+     - Directory of the log file ``<date>_nexus.log``, defaults to ``~/nexus-console``.
    * - ``-n``, ``--no-verify``
      - Start without asking for confirmation that the amplifiers are turned off.
+
+Acquisition Data
+----------------
+
+The service does not store acquisition data. ``manager.acquisition.run()`` returns the
+``AcquisitionData`` object to the client, and ``save()`` / ``save_ismrmrd()`` run in the
+client process, i.e. under the account which called them. Without a ``user_path``, the data
+is written to ``~/nexus-console/<date>-session`` of that account; with ``user_path``, to the
+given directory.
 
 .. note::
    The arguments ``--address`` and ``--port`` no longer exist. The service is not reachable

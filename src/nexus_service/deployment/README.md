@@ -32,10 +32,6 @@ flowchart LR
     /run/nexus
     contains nexus.sock & authkey
     *owned by nexus*`")
-    sessions("`**session directory**
-    /srv/nexus
-    contains session folders
-    *owned by nexus*`")
     logs("`**log directory**
     /var/log/nexus
     contains one log file per day
@@ -43,23 +39,23 @@ flowchart LR
 
     systemd -- "creates /run/nexus and /var/log/nexus, starts" --> service
     service -- "publishes socket and key" --> run
-    service -- "writes session data" --> sessions
     service -- "writes log files" --> logs
     run <-- "connects via socket, authenticates with key" --> user
 
     classDef actor fill:#e6fbf6,stroke:#2ec4a5,stroke-width:2px,color:#1e293b,rx:10px,ry:10px
     classDef location fill:#fff1e6,stroke:#f5a05a,stroke-width:2px,color:#1e293b,rx:10px,ry:10px
     class systemd,service,user actor
-    class run,sessions,logs location
+    class run,logs location
 ```
 
 *Figure: deployment overview. Teal boxes are actors, orange boxes are locations on disk. The
-session and log directories are not accessed by `AcquisitionControlManager`; users inspect them
-manually. The permission modes used in the steps below mean the following:
+log directory is not accessed by `AcquisitionControlManager`; users inspect it manually.
+The service stores no acquisition data, see [Acquisition data](#acquisition-data) below.
+The permission modes used in the steps below mean the following:
 `755`: the owner (`nexus`) may create and delete entries, everyone else may only list and enter
 the directory. `666`: everyone may read and write; for a socket, "write" is what a `connect()`
 requires, so any account can reach the service. `644`: everyone may read, only the owner (`nexus`)
-may write, so clients can fetch the key and the session files but not alter them.*
+may write, so clients can fetch the key and the log files but not alter them.*
 
 ## 1. Create a service account
 
@@ -99,17 +95,7 @@ sudo install -D -m 644 device_config.yaml /etc/nexus/device_config.yaml
 
 The `-D` flag creates any missing parent directories in the destination, and permissions are set using `-m 644` (owner: rw-, group: r--, others: r--).
 
-## 4. Set up the session directory
-
-To store the acquisition data, we create a subdirectory in `/srv`, which is reserved for data produced by services:
-
-```bash
-sudo install -d -m 755 -o nexus -g nexus /srv/nexus
-```
-
-This creates the directory (`-d`) with permissions `755` (owner: rwx, group: r-x, others: r-x). Owner (`-o`) and group (`-g`) are the service account (`nexus`).
-
-## 5. Start the service
+## 4. Start the service
 
 To activate the service, we need to copy the unit file, reload systemd and enable the service. Make sure to confirm the paths in `nexus.service` before enabling it.
 
@@ -121,9 +107,9 @@ sudo systemctl enable --now nexus
 
 On start, systemd creates `/run/nexus` (configured via `RuntimeDirectory=`) with owner `nexus` and mode `755` (owner: rwx, group: r-x, others: r-x). The service publishes `nexus.sock` and `authkey` in `/run/nexus`, where clients find them automatically. On stop, and after a crash, systemd removes `/run/nexus` again, so no stale socket or key survives. `/run` itself is owned by root, so only root can delete `/run/nexus`, and no other account can place files next to it.
 
-Likewise, systemd creates `/var/log/nexus` (configured via `LogsDirectory=`) with owner `nexus` and mode `755`, and the service writes one log file per day (`<date>_nexus.log`) into it, as passed with `--log_dir`. Unlike `/run/nexus`, this directory is kept on stop. Without `--log_dir`, the log file is written to the session folder instead.
+Likewise, systemd creates `/var/log/nexus` (configured via `LogsDirectory=`) with owner `nexus` and mode `755`, and the service writes one log file per day (`<date>_nexus.log`) into it, as passed with `--log_dir`. Unlike `/run/nexus`, this directory is kept on stop. Without `--log_dir`, the log file is written to `~/nexus-console` of the account running the service, which the system account created above does not have, so the unit always passes `--log_dir`.
 
-## 6. Usage and inspection
+## 5. Usage and inspection
 
 Any account connects without arguments; the examples from the user guide are unchanged:
 
@@ -131,6 +117,15 @@ Any account connects without arguments; the examples from the user guide are unc
 with AcquisitionControlManager() as manager:
     ...
 ```
+
+### Acquisition data
+
+The service does not store acquisition data. `manager.acquisition.run()` returns the
+`AcquisitionData` object to the client, and `save()` / `save_ismrmrd()` run in the client
+process, i.e. under the account which called them. Without a `user_path`, the data is written
+to `~/nexus-console/<date>-session` of that account; with `user_path`, to the given directory.
+No shared data directory has to be set up, and the service account needs no write access to
+user directories.
 
 The service is maintained and inspected with `systemctl` and `journalctl`. Changing the
 state of the unit requires root, inspecting it does not:

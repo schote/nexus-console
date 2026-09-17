@@ -46,7 +46,6 @@ class AcquisitionControl:
     def __init__(
         self,
         configuration_file: str,
-        nexus_data_dir: str | Path | None = None,
         log_dir: str | Path | None = None,
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
@@ -56,29 +55,24 @@ class AcquisitionControl:
         Create instances of sequence provider, tx and rx card.
         Setup the measurement cards and get parameters required for a measurement.
 
+        Acquisition data is not stored by the acquisition control: ``run()`` returns it and the caller
+        decides where to save it, see ``AcquisitionData.save()``.
+
         Parameters
         ----------
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
-        nexus_data_dir
-            Nexus console directory to store states and acquisition data.
-            If None, ``~/nexus-console`` is used, default is None.
         log_dir
-            Directory of the log file ``<date>_nexus.log``. If None, the log file is written to the session
-            folder in ``nexus_data_dir``, default is None.
+            Directory of the log file ``<date>_nexus.log``. If None, ``~/nexus-console`` is used,
+            default is None.
         file_log_level
             Set the logging level for log file.
         console_log_level
             Set the logging level for the terminal/console output.
         """
-        # Create session path (contains all acquisitions of one day)
         date = datetime.now().strftime("%Y-%m-%d")
-        nexus_data_dir = Path(nexus_data_dir) if nexus_data_dir is not None else Path.home() / "nexus-console"
-        self.session_path = nexus_data_dir / f"{date}-session"
-        self.session_path.mkdir(parents=True, exist_ok=True)
-
-        log_dir = Path(log_dir) if log_dir is not None else self.session_path
+        log_dir = Path(log_dir) if log_dir is not None else Path.home() / "nexus-console"
         log_dir.mkdir(parents=True, exist_ok=True)
         self._setup_logging(
             log_file=log_dir / f"{date}_nexus.log",
@@ -379,7 +373,6 @@ class AcquisitionControl:
         return AcquisitionData(
             receive_data=self.receive_data,
             sequence=self.seq_provider.to_pypulseq(),
-            session_path=str(self.session_path),
             meta={"device_configuration": self.config.model_dump()},
             acquisition_parameters=self.sequence.parameter,
         )
