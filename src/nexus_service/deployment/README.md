@@ -6,43 +6,60 @@ is performed by the package itself. Without them, `nexus -d <config>` started by
 working as described in the user guide (runtime directory `<tempdir>/nexus`).
 
 ```mermaid
+%%{init: {
+  "themeVariables": {
+    "fontFamily": "Inter, Segoe UI, Helvetica Neue, Arial, sans-serif",
+    "fontSize": "14px"
+  },
+  "flowchart": {
+    "curve": "basis",
+    "nodeSpacing": 40,
+    "rankSpacing": 60,
+    "padding": 12
+  }
+}}%%
 flowchart LR
-    systemd["`**systemd**
+    systemd("`**systemd**
     /etc/systemd/system/nexus.service
-    *root*`"]
-    service["`**nexus service**
+    *runs as root*`")
+    service("`**nexus service**
     /opt/nexus/venv/bin/nexus
-    *runs as nexus*`"]
-    user["`**User**
+    *runs as nexus*`")
+    user("`**user**
     AcquisitionControlManager()
-    *any account*`"]
-    run["`**runtime directory**
-    /run/nexus (755), nexus.sock (666), authkey (644)
-    *nexus:nexus*`"]
-    sessions["`**sessions folder**
-    /srv/nexus (755), session files (644)
-    *nexus:nexus*`"]
+    *any account*`")
+    run("`**runtime directory**
+    /run/nexus
+    contains nexus.sock & authkey
+    *nexus*`")
+    sessions("`**session directory**
+    /srv/nexus
+    contains session folders
+    *nexus*`")
 
     systemd -- "creates /run/nexus, starts" --> service
     service -- writes --> run
     service -- writes --> sessions
-    user -- "reads key, connects" --> run
-    user -- reads --> sessions
+    user -- connects --> run
+    user -. reads .-> sessions
 
-    classDef actor fill:#dbe9ff,stroke:#3b6fd6,color:#000
-    classDef location fill:#fff3d1,stroke:#c48f1a,color:#000
+    classDef actor fill:#e6fbf6,stroke:#2ec4a5,stroke-width:1.5px,color:#1e293b
+    classDef location fill:#fff1e6,stroke:#f5a05a,stroke-width:1.5px,color:#1e293b
     class systemd,service,user actor
     class run,sessions location
 ```
 
-*Figure: deployment overview. Blue boxes are actors, yellow boxes are locations on disk. The following setup is suggested for deployment:
+*Figure: deployment overview. Teal boxes are actors, orange boxes are locations on disk; solid
+arrows change something, dotted arrows only read. The permission modes used in the steps below
+mean the following:
 `755`: the owner (`nexus`) may create and delete entries, everyone else may only list and enter
 the directory. `666`: everyone may read and write; for a socket, "write" is what a `connect()`
-requires, so any account can reach the service. `644`: everyone may read, only the owner (`nexus`) may write, so clients can fetch the key and the session files but not alter them.*
+requires, so any account can reach the service. `644`: everyone may read, only the owner (`nexus`)
+may write, so clients can fetch the key and the session files but not alter them.*
 
-## 1. Create a Service Account
+## 1. Create a service account
 
-To run the daemon we use an unprivileged system account which can be created by:
+To run the daemon, we use an unprivileged system account, which can be created with:
 
 ```bash
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin --comment "Nexus acquisition service" nexus
@@ -57,46 +74,52 @@ sudo useradd --system --no-create-home --shell /usr/sbin/nologin --comment "Nexu
 | `--comment "Nexus acquisition service"` | Add descriptive information to the account's comment field.                                 |
 | `nexus`                                 | The username being created.                                                                 |
 
-
 ## 2. Installation
 
-It is suggested to use the `/opt` directory reserved for add-on application software packages and to install the console application in a virtual environment. 
-Create a virtual environment, copy the code and install the nexus-console package. Installation is done as root, since permissions for read and execute are granted by default. We use editable mode (`-e`), which is optional, to simplify maintenance/updates.
+It is suggested to use the `/opt` directory, which is reserved for add-on application software packages, and to install the console application in a virtual environment.
+Create a virtual environment, copy the code and install the nexus-console package. Installation is done as root, since files created by root are readable and executable by everyone by default. Editable mode (`-e`) is optional; we use it to simplify maintenance and updates.
+
 ```bash
 sudo python3.13 -m venv /opt/nexus/venv
 sudo cp -r code/nexus-console /opt/nexus/
 sudo /opt/nexus/venv/bin/pip install --no-cache-dir -e /opt/nexus/nexus-console
 ```
 
-## 3. Device Configuration
+## 3. Device configuration
 
-The device configuration is stored in `/etc` which is reserved for configuration files and can be installed as follows.
+The device configuration is stored in `/etc`, which is reserved for configuration files, and can be installed as follows:
+
 ```bash
 sudo install -D -m 644 device_config.yaml /etc/nexus/device_config.yaml
 ```
-The `-D` flag creates any missing parent directories in the destination and permissions are set using `-m 644` (owner: rwx, group: r--, others: r--).
 
-## 4. Setup the session folder
+The `-D` flag creates any missing parent directories in the destination, and permissions are set using `-m 644` (owner: rw-, group: r--, others: r--).
 
-We create a subdirectory in `/srv` which is reserved for data produced by services to store the acquisition data.
+## 4. Set up the session directory
+
+To store the acquisition data, we create a subdirectory in `/srv`, which is reserved for data produced by services:
+
 ```bash
 sudo install -d -m 755 -o nexus -g nexus /srv/nexus
 ```
-Creates directory (`-d`) with permissions `-m 755` (owner: rwx, group: r-x, others: r-x) using install. Owner (`-o`) and group (`-g`) is the service account (`nexus`).
+
+This creates the directory (`-d`) with permissions `755` (owner: rwx, group: r-x, others: r-x). Owner (`-o`) and group (`-g`) are the service account (`nexus`).
 
 ## 5. Start the service
 
-To active the service we need to copy the service file, reload the system daemons and enable the service. Make sure to confirm the path configurations in `nexus.service` before enabling it.
+To activate the service, we need to copy the unit file, reload systemd and enable the service. Make sure to confirm the paths in `nexus.service` before enabling it.
+
 ```bash
 sudo cp src/nexus_service/deployment/nexus.service /etc/systemd/system/nexus.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now nexus
 ```
-On start systemd creates `/run/nexus` by setting `RuntimeDirectory=` with owner `nexus` and mode `755` (owner: rwx, group: r-x, others: r-x). The service publishes `nexus.sock` and `authkey` in `/run/nexus`, which a client finds automatically. On stop, and after a crash, systemd removes `/run/nexus` again, so no stale socket or key survives. `/run` is owned by root, therefore only root can delete the directory and no other account can place files in it.
 
-## 6. Usage & Inspection
+On start, systemd creates `/run/nexus` (configured via `RuntimeDirectory=`) with owner `nexus` and mode `755` (owner: rwx, group: r-x, others: r-x). The service publishes `nexus.sock` and `authkey` in `/run/nexus`, where clients find them automatically. On stop, and after a crash, systemd removes `/run/nexus` again, so no stale socket or key survives. `/run` itself is owned by root, so only root can delete `/run/nexus`, and no other account can place files next to it.
 
-Any account connects without arguments, the examples are unchanged:
+## 6. Usage and inspection
+
+Any account connects without arguments; the examples from the user guide are unchanged:
 
 ```python
 with AcquisitionControlManager() as manager:
