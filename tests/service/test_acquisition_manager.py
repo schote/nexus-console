@@ -1,13 +1,24 @@
 """Tests for the unix domain socket transport and authentication of the acquisition manager."""
-import socket
+import os
 import stat
+import subprocess
+import sys
+from multiprocessing.connection import Listener
 from pathlib import Path
 
 import pytest
 
 from nexus_service import acquisition_manager
-from nexus_service.acquisition_manager import AcquisitionControlManager, NexusNotRunningError, runtime_dir
+from nexus_service.acquisition_manager import (
+    AcquisitionControlManager,
+    NexusNotRunningError,
+    runtime_dir,
+    service_address,
+)
 from nexus_service.start_manager import ensure_socket_free
+
+# Unix domain sockets, POSIX permissions and systemd do not exist on Windows
+posix_only = pytest.mark.skipif(sys.platform == "win32", reason="POSIX only")
 
 
 class DummyAcquisitionControl:
@@ -33,12 +44,14 @@ def test_client_connects_without_arguments(dummy_service) -> None:
         assert manager.acquisition.echo("nexus") == "nexus"
 
 
+@posix_only
 def test_service_uses_unix_socket(dummy_service, nexus_runtime_dir: Path) -> None:
     """The service listens on a unix domain socket in the runtime directory, not on a TCP port."""
     assert dummy_service.address == str(nexus_runtime_dir / "nexus.sock")
     assert (nexus_runtime_dir / "nexus.sock").is_socket()
 
 
+@posix_only
 def test_runtime_files_permissions(dummy_service, nexus_runtime_dir: Path) -> None:
     """Every account can read the key and use the sticky runtime directory."""
     assert stat.S_IMODE((nexus_runtime_dir / "authkey").stat().st_mode) == 0o644
@@ -72,6 +85,7 @@ def test_runtime_dir_of_a_foreign_owner(nexus_runtime_dir: Path, monkeypatch: py
     assert runtime_dir() == nexus_runtime_dir
 
 
+@posix_only
 def test_runtime_dir_with_wrong_permissions(nexus_runtime_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A pre-created directory which cannot be given the right permissions is refused."""
     nexus_runtime_dir.mkdir(parents=True)
@@ -86,6 +100,7 @@ def test_runtime_dir_with_wrong_permissions(nexus_runtime_dir: Path, monkeypatch
         runtime_dir()
 
 
+@posix_only
 def test_system_runtime_dir_is_used_as_is(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A directory provided by systemd is used without changing its permissions."""
     system_dir = tmp_path / "run" / "nexus"
@@ -109,6 +124,7 @@ def test_environment_overrides_system_runtime_dir(
     assert runtime_dir() == nexus_runtime_dir
 
 
+@posix_only
 def test_missing_system_runtime_dir_falls_back(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Without the systemd directory the temporary directory is used as before."""
     fallback = tmp_path / "tmp"
@@ -123,36 +139,32 @@ def test_missing_system_runtime_dir_falls_back(tmp_path: Path, monkeypatch: pyte
 
 def test_stale_socket_is_removed(nexus_runtime_dir: Path) -> None:
     """A socket file without a listener behind it is a leftover and gets removed."""
-    address = runtime_dir() / "nexus.sock"
-    stale = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    stale.bind(str(address))
-    stale.close()
-    assert address.exists()
+    address = service_address()
+    # A killed service cannot clean up: its socket file survives, a named pipe on Windows vanishes with it
+    killed = f"import os, multiprocessing.connection as c; listener = c.Listener({address!r}); os._exit(0)"
+    subprocess.run([sys.executable, "-c", killed], check=True)  # noqa: S603
+    assert os.path.exists(address) or sys.platform == "win32"
 
     ensure_socket_free(address)
 
-    assert not address.exists()
+    assert not os.path.exists(address)
 
 
 def test_live_socket_aborts_startup(nexus_runtime_dir: Path) -> None:
     """A socket with a live service behind it must not be removed."""
-    address = runtime_dir() / "nexus.sock"
-    listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    listener.bind(str(address))
-    listener.listen(1)
+    address = service_address()
 
-    try:
+    with Listener(address):
         with pytest.raises(RuntimeError, match="already running"):
             ensure_socket_free(address)
-        assert address.exists()
-    finally:
-        listener.close()
+        with pytest.raises(OSError):  # the address is still taken by the live service
+            Listener(address)
 
 
 def test_missing_socket_is_accepted(nexus_runtime_dir: Path) -> None:
     """Without a socket file there is nothing to clean up."""
-    address = runtime_dir() / "nexus.sock"
+    address = service_address()
 
     ensure_socket_free(address)
 
-    assert not address.exists()
+    assert not os.path.exists(address)
