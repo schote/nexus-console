@@ -131,6 +131,8 @@ class AcquisitionControl:
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
         self.sequence: UnrolledSequence | None = None
+        # Progress of the running acquisition in percent, readable via get_progress()
+        self.progress: int = 0
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -214,8 +216,9 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Reset unrolled sequence
+        # Reset unrolled sequence and progress
         self.sequence = None
+        self.progress = 0
         seq_name = str(self.seq_provider.get_definition("Name"))
         if not seq_name:
             seq_name = str(self.seq_provider.get_definition("name"))
@@ -262,6 +265,7 @@ class AcquisitionControl:
         timeout = 5 + self.sequence.duration
 
         self.store_unprocessed = store_unprocessed
+        self.progress = 0
 
         self.num_adc_events = len(self.sequence.rx_data)
 
@@ -300,11 +304,10 @@ class AcquisitionControl:
             last_progress_step = -1
 
             while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                if callable(progress_callback):
-                    progress = int(100 * num_gates / self.sequence.adc_count)
-                    if progress > last_progress_step + 2:
-                        last_progress_step = progress
-                        progress_callback(progress)
+                self.progress = min(100, int(100 * (time.time() - time_start) / self.sequence.duration))
+                if callable(progress_callback) and self.progress > last_progress_step + 2:
+                    last_progress_step = self.progress
+                    progress_callback(self.progress)
 
                 # Delay poll by 100 ms
                 time.sleep(0.1)
@@ -376,6 +379,10 @@ class AcquisitionControl:
             meta={"device_configuration": self.config.model_dump()},
             acquisition_parameters=self.sequence.parameter,
         )
+
+    def get_progress(self) -> int:
+        """Get progress of the running acquisition in percent."""
+        return self.progress
 
     def get_device_configuration(self) -> NexusConfiguration:
         """Get nexus device configuration."""
