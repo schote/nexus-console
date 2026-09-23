@@ -359,13 +359,16 @@ class AcquisitionControl:
             self.receive_data = [rx for _, rx in sorted(inprocess_items, key=lambda x: x[0])]
 
         if len(self.receive_data) == 0:
-            raise RuntimeError("No ADC events present")
+            # Sequences without ADC events (e.g. for testing) do not return any receive data
+            if self.num_adc_events > 0:
+                raise RuntimeError("No ADC events received")
+            self.log.warning("No ADC events present")
 
         self.log.debug("Total number of ADC events: %d", len(self.receive_data))
 
         try:
             averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
+            if self.receive_data and not (np.unique(averages).size == self.sequence.parameter.num_averages):
                 averages_idc = np.arange(self.sequence.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
                 raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
