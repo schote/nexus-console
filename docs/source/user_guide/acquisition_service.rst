@@ -97,6 +97,13 @@ The next service start detects that nothing is listening behind it and removes i
 A second service instance started while the first one is still running aborts with an error
 instead of interfering with the running acquisition.
 
+.. note::
+   Windows has neither unix domain sockets nor POSIX permissions. There the service listens on
+   a named pipe named after the socket path, ``\\.\pipe\<runtime directory>/nexus.sock``, which
+   vanishes with the service, and the runtime directory is ``<tempdir>\nexus``, which is private
+   to the account. Windows only grants the account which started the service write access to the
+   pipe, so only this account can connect to it.
+
 Connecting to the Service
 -------------------------
 

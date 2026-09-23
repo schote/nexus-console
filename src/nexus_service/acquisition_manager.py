@@ -2,6 +2,7 @@
 import os
 import secrets
 import stat
+import sys
 import tempfile
 import traceback
 from collections.abc import Callable
@@ -11,7 +12,7 @@ from pathlib import Path
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 
-NOT_RUNNING_MSG = "Nexus service is not running. Start it with: systemctl start nexus"
+NOT_RUNNING_MSG = "Nexus service is not running. Start it with: systemctl start nexus, or by hand: nexus -d <config>"
 # Created and removed by systemd (RuntimeDirectory= in deployment/nexus.service), owned by the service account
 SYSTEM_RUNTIME_DIR = Path("/run/nexus")
 
@@ -30,7 +31,7 @@ def runtime_dir() -> Path:
     every account may use the console, so every account must be able to read the key and open the
     socket, while the sticky bit keeps one account from removing the files of another. A symbolic
     link or a directory with different permissions, which could have been pre-created by another
-    user, is refused.
+    user, is refused. Windows has no such permissions, there ``<tempdir>`` is private to the account.
 
     Returns
     -------
@@ -47,11 +48,24 @@ def runtime_dir() -> Path:
     if path.is_symlink():
         raise RuntimeError(f"Runtime directory {path} is a symbolic link, refusing to use it.")
     path.mkdir(parents=True, exist_ok=True)
-    with suppress(PermissionError):  # directory may belong to the account which started the service
-        path.chmod(0o1777)
-    if stat.S_IMODE(path.stat().st_mode) != 0o1777:
-        raise RuntimeError(f"Runtime directory {path} has wrong permissions, remove it or set NEXUS_RUNTIME_DIR.")
+    if sys.platform != "win32":
+        with suppress(PermissionError):  # directory may belong to the account which started the service
+            path.chmod(0o1777)
+        if stat.S_IMODE(path.stat().st_mode) != 0o1777:
+            raise RuntimeError(f"Runtime directory {path} has wrong permissions, remove it or set NEXUS_RUNTIME_DIR.")
     return path
+
+
+def service_address() -> str:
+    """Return the address of the service, the unix domain socket in the runtime directory.
+
+    Windows has no unix domain sockets, a named pipe named after the socket path serves instead.
+    """
+    address = runtime_dir() / "nexus.sock"
+    if sys.platform == "win32":
+        return rf"\\.\pipe\{address.as_posix()}"
+    else:
+        return str(address)
 
 
 class AcquisitionControlManager(BaseManager):
@@ -92,7 +106,7 @@ class AcquisitionControlManager(BaseManager):
             except FileNotFoundError as exc:
                 raise NexusNotRunningError(NOT_RUNNING_MSG) from exc
 
-        super().__init__(address=str(address or runtime_dir() / "nexus.sock"), authkey=authkey, **kwargs)
+        super().__init__(address=str(address or service_address()), authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
             self.register('AcquisitionControl', callable=callable_acq_control)

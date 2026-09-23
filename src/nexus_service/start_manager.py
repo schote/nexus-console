@@ -2,37 +2,38 @@
 import argparse
 import atexit
 import logging
+import os
 import signal
-import socket
 import sys
+from contextlib import suppress
+from multiprocessing.connection import Client
 from pathlib import Path
 
 from console.spcm_control.acquisition_control import AcquisitionControl
-from nexus_service.acquisition_manager import AcquisitionControlManager, runtime_dir
+from nexus_service.acquisition_manager import AcquisitionControlManager, runtime_dir, service_address
 
 
-def ensure_socket_free(path: Path) -> None:
+def ensure_socket_free(address: str | Path) -> None:
     """Remove a socket file left behind by a crashed service, abort if a service is listening on it.
 
     Parameters
     ----------
-    path
-        Path of the unix domain socket of the acquisition service.
+    address
+        Path of the unix domain socket (name of the named pipe on Windows) of the acquisition service.
 
     Raises
     ------
     RuntimeError
         If another acquisition service is already listening on the socket.
     """
-    if not path.exists():
+    try:
+        Client(str(address)).close()
+    except (ConnectionRefusedError, FileNotFoundError):
+        # Nobody is listening, a named pipe vanishes with its server but a socket file is left behind
+        with suppress(FileNotFoundError):
+            os.unlink(address)
         return
-    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as probe:
-        try:
-            probe.connect(str(path))
-        except ConnectionRefusedError:
-            path.unlink()
-            return
-    raise RuntimeError(f"A nexus service is already running on {path}.")
+    raise RuntimeError(f"A nexus service is already running on {address}.")
 
 
 def main():
@@ -66,7 +67,7 @@ def main():
     args = parser.parse_args()
 
     # Validate the runtime directory and free the socket before any hardware is touched
-    address = runtime_dir() / "nexus.sock"
+    address = service_address()
     ensure_socket_free(address)
 
     if not args.no_verify:
@@ -87,9 +88,13 @@ def main():
         address=address,
     )
 
-    server = manager.get_server()
-    # Every account may use the console, so every account must be able to connect
-    address.chmod(0o666)
+    # Every account may use the console, so every account must be able to connect: create the socket
+    # with mode 666 (named pipes on Windows ignore the umask)
+    umask = os.umask(0o111)
+    try:
+        server = manager.get_server()
+    finally:
+        os.umask(umask)
 
     def shutdown_handler():
         try:
