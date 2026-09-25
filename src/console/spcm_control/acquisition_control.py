@@ -4,7 +4,6 @@ import copy
 import functools
 import logging
 import logging.config
-import os
 import time
 from collections.abc import Callable
 from datetime import datetime
@@ -47,7 +46,7 @@ class AcquisitionControl:
     def __init__(
         self,
         configuration_file: str,
-        nexus_data_dir: str = os.path.join(Path.home(), "nexus-console"),
+        log_dir: str | Path | None = None,
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
     ):
@@ -56,25 +55,30 @@ class AcquisitionControl:
         Create instances of sequence provider, tx and rx card.
         Setup the measurement cards and get parameters required for a measurement.
 
+        Acquisition data is not stored by the acquisition control: ``run()`` returns it and the caller
+        decides where to save it, see ``AcquisitionData.save()``.
+
         Parameters
         ----------
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
-        nexus_data_dir:
-            Nexus console default directory to store logs, states and acquisition data.
-            If none, the default directory is create in the home directory, default is None.
+        log_dir
+            Directory of the log file ``<date>_nexus.log``. If None, ``~/nexus-console`` is used,
+            default is None.
         file_log_level
-            Set the logging level for log file. Logfile is written to the session folder.
+            Set the logging level for log file.
         console_log_level
             Set the logging level for the terminal/console output.
         """
-        # Create session path (contains all acquisitions of one day)
-        session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
-        self.session_path = os.path.join(nexus_data_dir, session_folder_name)
-        os.makedirs(self.session_path, exist_ok=True)
-
-        self._setup_logging(console_level=console_log_level, file_level=file_log_level)
+        date = datetime.now().strftime("%Y-%m-%d")
+        log_dir = Path(log_dir) if log_dir is not None else Path.home() / "nexus-console"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        self._setup_logging(
+            log_file=log_dir / f"{date}_nexus.log",
+            console_level=console_log_level,
+            file_level=file_log_level,
+        )
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
@@ -127,6 +131,8 @@ class AcquisitionControl:
         self.seq_provider.max_amp_per_channel = self.tx_card.max_amplitude
 
         self.sequence: UnrolledSequence | None = None
+        # Progress of the running acquisition in percent, readable via get_progress()
+        self.progress: int = 0
 
         # Attributes for data and dwell time of downsampled signal
         self._raw: list[np.ndarray] = []
@@ -153,7 +159,8 @@ class AcquisitionControl:
         self.log.info("Measurement cards disconnected")
         self.log.info("Acquisition control terminated\n---------------------------------------------------\n")
 
-    def _setup_logging(self, console_level: int, file_level: int) -> None:
+    @staticmethod
+    def _setup_logging(log_file: Path, console_level: int, file_level: int) -> None:
         # Check if log levels are valid
         if console_level not in LOG_LEVELS:
             raise ValueError("Invalid console log level")
@@ -168,7 +175,7 @@ class AcquisitionControl:
             level=file_level,
             format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
             datefmt="%d-%m-%Y, %H:%M",
-            filename=f"{self.session_path}console.log",
+            filename=log_file,
             filemode="a",
         )
 
@@ -209,8 +216,9 @@ class AcquisitionControl:
             self.log.exception(err, exc_info=True)
             raise err
 
-        # Reset unrolled sequence
+        # Reset unrolled sequence and progress
         self.sequence = None
+        self.progress = 0
         seq_name = str(self.seq_provider.get_definition("Name"))
         if not seq_name:
             seq_name = str(self.seq_provider.get_definition("name"))
@@ -257,6 +265,7 @@ class AcquisitionControl:
         timeout = 5 + self.sequence.duration
 
         self.store_unprocessed = store_unprocessed
+        self.progress = 0
 
         self.num_adc_events = len(self.sequence.rx_data)
 
@@ -295,11 +304,10 @@ class AcquisitionControl:
             last_progress_step = -1
 
             while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                if callable(progress_callback):
-                    progress = int(100 * num_gates / self.sequence.adc_count)
-                    if progress > last_progress_step + 2:
-                        last_progress_step = progress
-                        progress_callback(progress)
+                self.progress = min(100, int(100 * (time.time() - time_start) / self.sequence.duration))
+                if callable(progress_callback) and self.progress > last_progress_step + 2:
+                    last_progress_step = self.progress
+                    progress_callback(self.progress)
 
                 # Delay poll by 100 ms
                 time.sleep(0.1)
@@ -351,13 +359,16 @@ class AcquisitionControl:
             self.receive_data = [rx for _, rx in sorted(inprocess_items, key=lambda x: x[0])]
 
         if len(self.receive_data) == 0:
-            raise RuntimeError("No ADC events present")
+            # Sequences without ADC events (e.g. for testing) do not return any receive data
+            if self.num_adc_events > 0:
+                raise RuntimeError("No ADC events received")
+            self.log.warning("No ADC events present")
 
         self.log.debug("Total number of ADC events: %d", len(self.receive_data))
 
         try:
             averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
+            if self.receive_data and not (np.unique(averages).size == self.sequence.parameter.num_averages):
                 averages_idc = np.arange(self.sequence.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
                 raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")
@@ -368,10 +379,13 @@ class AcquisitionControl:
         return AcquisitionData(
             receive_data=self.receive_data,
             sequence=self.seq_provider.to_pypulseq(),
-            session_path=self.session_path,
             meta={"device_configuration": self.config.model_dump()},
             acquisition_parameters=self.sequence.parameter,
         )
+
+    def get_progress(self) -> int:
+        """Get progress of the running acquisition in percent."""
+        return self.progress
 
     def get_device_configuration(self) -> NexusConfiguration:
         """Get nexus device configuration."""

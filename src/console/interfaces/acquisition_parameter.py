@@ -1,6 +1,7 @@
 """Interface class for acquisition parameters."""
 import json
 import logging
+import os
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -35,13 +36,11 @@ class AcquisitionParameter:
     The acquisition parameters are defined in a dataclass which is hashable but still mutable.
     This allows to easily change parameters and detect updates by comparing the hash.
 
-    New instances of acquisition parameters are not saved automatically.
-    Once the autosave flag is set by calling `activate_autosave`, the parameter state is
-    written to a pickle file acquisition-parameter.state in the default_state_file_path on any
-    mutation of the acquisition parameter instance.
-    The autosave option can be deactivated calling `deactivate_autosave`.
-    Manually storing the acquisition parameters to a specific directory can be achieved
-    using the `save` method and providing the desired path.
+    Every mutation of an instance is written to the JSON state file `state_filepath`.
+    The default location is <home>/nexus-console/acquisition-parameter.state, it can be
+    overridden with the environment variable `NEXUS_PARAMETER_FILE`.
+    `load` returns an instance bound to the file it was loaded from, `save` writes a
+    copy to an arbitrary path.
     """
 
     larmor_frequency: float = 2.e6
@@ -68,8 +67,10 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    state_filepath: str = str(Path.home() / "nexus-console/acquisition-parameter.state")
-    """Default file path for acquisition parameter state.
+    state_filepath: str = os.environ.get(
+        "NEXUS_PARAMETER_FILE", str(Path.home() / "nexus-console/acquisition-parameter.state")
+    )
+    """File path for acquisition parameter state, defaults to `NEXUS_PARAMETER_FILE` if set.
 
     Don't enforce a Path object here to prevent conflicts when sending acquisition parameter
     instances between different OS.
@@ -99,7 +100,6 @@ class AcquisitionParameter:
         self.state_filepath = str(_path)
 
         self._initialized = True
-        self.save()
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Overwrite __setattr__ function to save object on each mutation."""
@@ -187,20 +187,14 @@ class AcquisitionParameter:
         Parameters
         ----------
         file_path, optional
-            Path to acquisition parameter state file.
-            If file_path is not a pickle file, i.e. ends with .json,
-            the default state file designation acquisition-parameter.state is added.
+            Path to acquisition parameter state file, by default None.
+            If None, the default state file path `state_filepath` is taken.
+            If the path does not end with .state, acquisition-parameter.state is added.
 
         Returns
         -------
-            Instance of acquisition parameters with state loaded from provided file_path.
-
-        Raises
-        ------
-        FileNotFoundError
-            Provided file_path is not a pickle file or does not exist.
-        EOFError
-            Provided state file is corrupted
+            Instance of acquisition parameters bound to the provided file_path.
+            Default parameters if the file does not exist, None if it is corrupted.
         """
         log = logging.getLogger("AcqParam")
 
@@ -214,7 +208,12 @@ class AcquisitionParameter:
 
         try:
             data = json.loads(_path.read_text())
+            # Bind the instance to the file it was loaded from, not to the path stored in it
+            data["state_filepath"] = str(_path)
             return cls(**data)
+        except FileNotFoundError:
+            log.info("No AcquisitionParameter state file '%s', using default parameters.", str(_path))
+            return cls(state_filepath=str(_path))
         except Exception:
             log.exception(
                 "Error loading AcquisitionParameter state file '%s'.",

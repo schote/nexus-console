@@ -42,10 +42,9 @@ def test_write_acquisition_to_mrd(trajectory_type, dim, random_complex_data, acq
         receive_data=receive_data,
         acquisition_parameters=acquisition_parameter,
         sequence=seq_provider.to_pypulseq(),
-        session_path=tmp_dir,
     )
 
-    acq_data.save_ismrmrd(header=header)
+    acq_data.save_ismrmrd(header=header, user_path=tmp_dir)
 
     acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]

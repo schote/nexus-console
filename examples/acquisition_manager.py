@@ -5,8 +5,8 @@ import numpy as np
 
 import console
 from console.interfaces.dimensions import Dimensions
-from console.service.acquisition_manager import AcquisitionControlManager
 from console.utilities.sequences import tse_3d
+from nexus_service.acquisition_manager import AcquisitionControlManager
 
 # %%
 

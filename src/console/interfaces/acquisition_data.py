@@ -34,10 +34,6 @@ class AcquisitionData:
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
 
-    session_path: str
-    """Directory the acquisition data will be stored in.
-    Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
-
     meta: dict[str, Any] = field(default_factory=dict)
     """Meta data dictionary for additional acquisition info.
     Dictionary is updated (extended) by post-init method with some general information."""
@@ -72,22 +68,30 @@ class AcquisitionData:
             }
         )
 
+    def _base_path(self, user_path: str | None) -> Path:
+        """Resolve the directory the acquisition folder is created in.
+
+        The default is resolved in the saving process, i.e. the account calling ``save()`` owns the
+        data: ``~/nexus-console/<date>-session`` with the date of the call.
+        """
+        session_folder = self.meta["date"] + "-session"
+        if user_path is not None:
+            return Path(user_path) / session_folder
+        return Path.home() / "nexus-console" / session_folder
+
     def save(self, user_path: str | None = None, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
 
         Parameters
         ----------
         user_path
-            Optional user path, default is None.
-            If provided, it is taken to store the acquisition data.
-            Other wise a datetime-based folder is created.
+            Directory to create the acquisition folder in, default is None.
+            If None, the caller's ``~/nexus-console/<date>-session`` is used.
         overwrite
             Flag which indicates whether the acquisition data should be overwritten
             in case it already exists from a previous call to this function, default is False.
         """
-        # Add trailing slash and make dir
-        base_path = Path(user_path) if user_path is not None else Path(self.session_path)
-        base_path.mkdir(parents=True, exist_ok=True)
+        base_path = self._base_path(user_path)
         acq_folder_path = base_path / self.meta["folder_name"]
         acq_folder_path.mkdir(parents=True, exist_ok=True)
 
@@ -152,15 +156,23 @@ class AcquisitionData:
         header: ismrmrd.xsd.ismrmrdHeader | str | Path | None = None,
         user_path: str | None = None,
     ) -> Path | None:
-        """Store acquisition data in ISMRMRD format."""
+        """Store acquisition data in ISMRMRD format.
+
+        Parameters
+        ----------
+        header
+            ISMRMRD header object or path to an ISMRMRD file to take the header from, default is None.
+        user_path
+            Directory to create the acquisition folder in, default is None.
+            If None, the caller's ``~/nexus-console/<date>-session`` is used.
+        """
         # Ensure that receive data is available
         if not self.receive_data or self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."
             raise AttributeError(detail)
 
         # Get MRD data path
-        base_path = Path(user_path) if user_path else Path(self.session_path)
-        base_path = base_path / self.meta["folder_name"]
+        base_path = self._base_path(user_path) / self.meta["folder_name"]
         base_path.mkdir(parents=True, exist_ok=True)
         dataset_path = base_path / "data.mrd"
 
