@@ -46,7 +46,6 @@ class AcquisitionData:
     def __post_init__(self) -> None:
         """Post init method to update meta data object."""
         datetime_now = datetime.now()
-        self.session_folder = f"{datetime_now:%Y-%m-%d}-session"
         seq_name = self.sequence.definitions["Name"].replace(" ", "_")
         acquisition_id = datetime_now.strftime("%Y-%m-%d-%H%M%S-") + seq_name
         self.meta.update(
@@ -75,9 +74,10 @@ class AcquisitionData:
         The default is resolved in the saving process, i.e. the account calling ``save()`` owns the
         data: ``~/nexus-console/<date>-session`` with the date of the call.
         """
+        session_folder = self.meta["date"] + "-session"
         if user_path is not None:
-            return Path(user_path) / self.session_folder
-        return Path.home() / "nexus-console" / self.session_folder
+            return Path(user_path) / session_folder
+        return Path.home() / "nexus-console" / session_folder
 
     def save(self, user_path: str | None = None, overwrite: bool = False) -> None:
         """Save all the acquisition data to a given data path.
