@@ -101,7 +101,7 @@ class AcquisitionParameter:
         self._initialized = True
         self.save()
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """Overwrite __setattr__ function to save object on each mutation."""
         # Get type hints for the class
         hints = self.__class__.__annotations__

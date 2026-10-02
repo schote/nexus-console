@@ -71,7 +71,7 @@ class SequenceProvider(Sequence):
         spcm_dwell_time: float,
         system: Opts,
         rf_gain_lut_path: Path | None = None,
-    ):
+    ) -> None:
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
         Parameters

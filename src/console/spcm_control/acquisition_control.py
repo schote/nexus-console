@@ -50,7 +50,7 @@ class AcquisitionControl:
         nexus_data_dir: str = os.path.join(Path.home(), "nexus-console"),
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
-    ):
+    ) -> None:
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -142,7 +142,7 @@ class AcquisitionControl:
             self._processor = None
             self.log.info("RxProcessor disabled — using in-process fallback")
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()

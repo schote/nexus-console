@@ -95,7 +95,7 @@ class RxCard(SpectrumDevice):
         """Helper function to return the number of gates that have been collected by the Rx Card."""
         return self._total_gates
 
-    def setup_card(self):
+    def setup_card(self) -> None:
         """Set up spectrum card in transmit (Rx) mode.
 
         At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
@@ -258,7 +258,7 @@ class RxCard(SpectrumDevice):
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
 
-    def stop_operation(self):
+    def stop_operation(self) -> None:
         """Stop card thread."""
         if self.worker is not None:
             self.is_running.set()
@@ -281,7 +281,7 @@ class RxCard(SpectrumDevice):
             # No thread is running
             self.log.error("No active process found")
 
-    def _gated_timestamps_stream(self):
+    def _gated_timestamps_stream(self) -> None:
         # Rx buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
 

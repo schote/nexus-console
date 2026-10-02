@@ -11,7 +11,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # acquisition_control: AcquisitionControl | None = None
 
 
-def main():
+def main() -> None:
     """Start the acquisition control and setup the manager."""
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
     parser.add_argument(
@@ -83,7 +83,7 @@ def main():
 
     server = manager.get_server()
 
-    def shutdown_handler():
+    def shutdown_handler() -> None:
         try:
             print("\n[neXus] Shutting down nexus server...\n")
             if acquisition_control:
