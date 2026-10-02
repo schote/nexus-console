@@ -120,7 +120,7 @@ class AcquisitionParameter:
         else:
             super().__setattr__(name, value)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare acquisition parameter to other instance."""
         if not isinstance(other, AcquisitionParameter):
             return False

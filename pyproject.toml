@@ -63,38 +63,39 @@ pythonpath = [".", "src"]
 
 
 [tool.mypy]
-files = ["src/console"]
+files = ["src"]
+exclude = ["docs"]
 warn_return_any = false
+disallow_incomplete_defs = true
 check_untyped_defs = true
 warn_no_return = true
 warn_unreachable = true
 python_version = "3.13"
 ignore_missing_imports = true
-exclude = ["docs"]
-
 
 [tool.ruff]
 # Use "ruff check --preview" to also show check for rules which are in preview (e.g. whitespaces)
 src = ["src"]
+extend-exclude = ["src/console/spcm_control/spcm", "docs", "__init__.py"]
 line-length = 120
 indent-width = 4
 target-version = "py313"
-extend-exclude = ["src/console/spcm_control/spcm", "docs", "__init__.py"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["S101", "ANN"]
 
 [tool.ruff.lint]
-# Enable linters
-# E = pycodestyle (error)
-# W = pycodestyle (warning)
-# F = Pyflakes
-# S = flake8-bandit
-# I = isort
-# N = pep8-naming
-# D = pydocstyle
-# NPY = numpy specific rules
-select = ["E", "W", "F", "S", "I", "N", "D", "NPY"]
+select = [
+    "E", # E = pycodestyle (error)
+    "W", # W = pycodestyle (warning)
+    "F", # F = Pyflakes
+    "S", # S = flake8-bandit
+    "I", # I = isort
+    "N", # N = pep8-naming
+    "D", # D = pydocstyle
+    "NPY", # NPY = numpy specific rules
+    "ANN", # ANN = flake8 annotations
+]
 
 
 [tool.ruff.lint.flake8-type-checking]

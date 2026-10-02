@@ -152,7 +152,7 @@ class RxData:
             if not key.startswith("_")
         }
 
-    def decimate_data(self, data) -> np.ndarray:
+    def decimate_data(self, data: np.ndarray) -> np.ndarray:
         """Decimate the data using the defined `DDCMethod` method."""
         if self.decimation_factor <= 1 or not isinstance(self.decimation_factor, int):
             raise ValueError(f"Invalid decimation factor {self.decimation_factor}")
@@ -171,7 +171,7 @@ class RxData:
                 # Default case is FIR decimation
                 return scaling * signal.decimate(data, q=self.decimation_factor, ftype="fir", axis=-1)
 
-    def demod_and_phase_data(self, data) -> np.ndarray:
+    def demod_and_phase_data(self, data: np.ndarray) -> np.ndarray:
         """Demodulate and phase the data contained in raw_data.
 
         This step first demodulates the acquired data using the demodulation frequency,
@@ -199,7 +199,7 @@ class RxData:
         # Apply receive phase offset to data and return data
         return data_demod * np.exp(1j * self.phase_offset)
 
-    def scale_data(self, data) -> np.ndarray:
+    def scale_data(self, data: np.ndarray) -> np.ndarray:
         """Scale the receive data to go from ADC units to mV."""
         if self.scaling_factor is not None:
             return data * np.expand_dims(self.scaling_factor, axis=-1)
