@@ -13,23 +13,23 @@ class AcquisitionControlManager(BaseManager):
 
     def __init__(
         self,
-        address: tuple[str, int] = ('localhost', 50000),
-        authkey: bytes = b'secretkey',
+        address: tuple[str, int] = ("localhost", 50000),
+        authkey: bytes = b"secretkey",
         callable_acq_control: Callable[[], AcquisitionControl] | None = None,
         **kwargs: Any
     ) -> None:
         super().__init__(address=address, authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
-            self.register('AcquisitionControl', callable=callable_acq_control)
+            self.register("AcquisitionControl", callable=callable_acq_control)
         else:
-            self.register('AcquisitionControl')
+            self.register("AcquisitionControl")
 
     def __enter__(self) -> "AcquisitionControlManager":
         """Enter with context."""
         try:
             self.connect()
-            self.acquisition: AcquisitionControl = getattr(self, "AcquisitionControl")()
+            self.acquisition: AcquisitionControl = self.AcquisitionControl()
             return self
         except Exception as e:
             print(f"Error connecting to AcquisitionControlManager: {e}")

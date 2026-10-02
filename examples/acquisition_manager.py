@@ -44,7 +44,7 @@ for coil in range(num_coils):
     ax[coil].set_xlabel("Sample")
     ax[coil].set_ylabel("Signal [mV]")
     ax[coil].set_title(f"Rx channel: {coil}")
-fig.set_layout_engine('tight')
+fig.set_layout_engine("tight")
 
 
 # %%

@@ -218,10 +218,7 @@ def constructor(
             if center_point - (idx + 1) / 2 >= 0 and idx % 2:
                 k_idx = center_point - odd_indices
                 odd_indices += 1
-            elif center_point + idx / 2 < num_points and idx % 2 == 0:
-                k_idx = center_point + even_indices
-                even_indices += 1
-            elif center_point - (idx + 1) / 2 < 0 and idx % 2:
+            elif (center_point + idx / 2 < num_points and idx % 2 == 0) or (center_point - (idx + 1) / 2 < 0 and idx % 2):
                 k_idx = center_point + even_indices
                 even_indices += 1
             elif center_point + idx / 2 >= num_points and idx % 2 == 0:
@@ -550,9 +547,9 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
 
     # Get k-space sorting from sequence labels
     for rx_data in receive_data:
-        if rx_data.labels is not None and 'IMA' in rx_data.labels:
-            if rx_data.labels['IMA']:  # check that it is imaging data, not navigator or noise
-                ksp[rx_data.average_index, :, rx_data.labels['PAR'], rx_data.labels['LIN'], :] = rx_data.processed_data
+        if rx_data.labels is not None and "IMA" in rx_data.labels:
+            if rx_data.labels["IMA"]:  # check that it is imaging data, not navigator or noise
+                ksp[rx_data.average_index, :, rx_data.labels["PAR"], rx_data.labels["LIN"], :] = rx_data.processed_data
 
     return ksp
 
