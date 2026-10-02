@@ -83,7 +83,7 @@ class RxCard(SpectrumDevice):
 
         # Pre trigger is set to minimum, post trigger depends on active channel count and is defined later.
         self.pre_trigger: int = 8
-        self.post_trigger: None | int = None
+        self.post_trigger: int | None = None
 
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 

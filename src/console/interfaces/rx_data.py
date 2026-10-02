@@ -42,10 +42,10 @@ class RxData:
     decimation_factor: int = field(init=False)
 
     # Set the larmor frequency in Hz for each object
-    larmor_frequency: None | float = None
+    larmor_frequency: float | None = None
 
     # Frequency in Hz with which the data are demodulated
-    demod_frequency: None | float = None
+    demod_frequency: float | None = None
 
     # Frequency in Hz with which the reference signal is demodulated
     phase_ref_frequency: float | None = None
@@ -54,20 +54,20 @@ class RxData:
     ddc_method: DDCMethod = DDCMethod.FIR
 
     # Scaling factor for each receive channel
-    scaling_factor: None | np.ndarray | list[float] = None
+    scaling_factor: np.ndarray | list[float] | None = None
 
     # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
     # Shape of Raw data is (num_channels_enabled, raw number of samples)
-    raw_data: None | np.ndarray = None
+    raw_data: np.ndarray | None = None
 
     # Phase reference signal
-    phase_reference: None | np.ndarray = None
+    phase_reference: np.ndarray | None = None
 
     # Timestamp in s of start of data acquisition relative to sequence execution start
-    time_stamp: None | float = None
+    time_stamp: float | None = None
 
     # Processed data is the demodulated, phased and decimated data
-    processed_data: None | np.ndarray = None
+    processed_data: np.ndarray | None = None
 
     # Shared memory handle and (name, shape) needed to reattach after pickling.
     # track=False on both sides: the worker unlinks explicitly, avoiding a

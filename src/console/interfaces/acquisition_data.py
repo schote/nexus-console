@@ -95,7 +95,7 @@ class AcquisitionData:
             self._write_acquisition_data(acq_folder_path / "rx_data.h5")
         except TypeError as exc:
             log.warning("Type error when saving acquisition data to h5 format.", exc_info=exc)
-        except Exception as exc:  # noqa: BLE001 - best effort, saving must continue with remaining files
+        except Exception as exc:
             log.warning("Unexpected error when saving acquisition data to h5 format.", exc_info=exc)
 
         # Save meta data
