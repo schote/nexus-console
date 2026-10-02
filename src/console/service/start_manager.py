@@ -2,7 +2,6 @@
 import argparse
 import atexit
 import logging
-import os
 from pathlib import Path
 
 from console.service.acquisition_manager import AcquisitionControlManager
@@ -25,7 +24,7 @@ def main() -> None:
         "-f",
         "--sessions_folder",
         type=str,
-        default=os.path.join(Path.home(), "nexus-console"),
+        default=str(Path.home() / "nexus-console"),
         help="Directory to store all the acquisition data acquired during the session.",
     )
     parser.add_argument(
@@ -89,7 +88,7 @@ def main() -> None:
             if acquisition_control:
                 acquisition_control.__del__()
                 print("[neXus] Acquisition control shutdown successfully.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
             print(f"[neXus] Error during shutdown: {e}")
         finally:
             print("[neXus] Shutdown complete.")

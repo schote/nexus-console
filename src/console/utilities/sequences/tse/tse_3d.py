@@ -7,7 +7,7 @@ TODO: move trajectory calculation to separate file to shared with other imaging 
 
 """
 # %%
-from enum import Enum
+from enum import StrEnum
 from math import pi
 
 import ismrmrd
@@ -19,7 +19,7 @@ from console.utilities.sequences.system_settings import raster
 from console.utilities.sequences.system_settings import system as default_system
 
 
-class Trajectory(str, Enum):
+class Trajectory(StrEnum):
     """Trajectory type enum."""
 
     INOUT = "in-out"
@@ -85,6 +85,9 @@ def constructor(
     n_enc, optional
         Number of encoding steps per dimension
         If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
+    echo_shift, optional
+        Time shift of the readout (ADC) relative to the echo center in s.
+        Added to the delay before and subtracted from the delay after each readout.
     trajectory, optional
         The k-space trajectory, options are in-out, out-in and linear
     excitation_angle, excitation_phase, optional
@@ -119,13 +122,13 @@ def constructor(
     channel_valid = True
     if len(channel_ro) > 1 or len(channel_ro) == 0:
         channel_valid = False
-        print("Invalid readout channel: %s" % (channel_ro))
+        print(f"Invalid readout channel: {channel_ro}")
     if len(channel_pe1) > 1 or len(channel_pe1) == 0:
         channel_valid = False
-        print("Invalid pe1 channel: %s" % (channel_pe1))
+        print(f"Invalid pe1 channel: {channel_pe1}")
     if len(channel_pe2) > 1 or len(channel_pe2) == 0:
         channel_valid = False
-        print("Invalid pe2 channel: %s" % (channel_pe2))
+        print(f"Invalid pe2 channel: {channel_pe2}")
 
     channel_ro = channel_ro.lower()
     channel_pe1 = channel_pe1.lower()
@@ -134,10 +137,10 @@ def constructor(
     if channel_ro not in ("x", "y", "z") or channel_pe1 not in ("x", "y", "z") or channel_pe2 not in ("x", "y", "z"):
         channel_valid = False
         print("Invalid axis orientation")
-    if channel_ro == channel_pe1 or channel_ro == channel_pe2 or channel_pe1 == channel_pe2:
+    if channel_ro in (channel_pe1, channel_pe2) or channel_pe1 == channel_pe2:
         channel_valid = False
         print("Error, multiple channels have the same gradient")
-        print("Readout channel: %s, pe1 channel: %s, pe2 channel: %s" % (channel_ro, channel_pe1, channel_pe2))
+        print(f"Readout channel: {channel_ro}, pe1 channel: {channel_pe1}, pe2 channel: {channel_pe2}")
     if not channel_valid:
         print("Defaulting to readout in y, pe1 in z, pe2 in x")
         channel_ro = "y"
@@ -218,7 +221,10 @@ def constructor(
             if center_point - (idx + 1) / 2 >= 0 and idx % 2:
                 k_idx = center_point - odd_indices
                 odd_indices += 1
-            elif (center_point + idx / 2 < num_points and idx % 2 == 0) or (center_point - (idx + 1) / 2 < 0 and idx % 2):
+            elif (
+                (center_point + idx / 2 < num_points and idx % 2 == 0)
+                or (center_point - (idx + 1) / 2 < 0 and idx % 2)
+            ):
                 k_idx = center_point + even_indices
                 even_indices += 1
             elif center_point + idx / 2 >= num_points and idx % 2 == 0:
@@ -330,7 +336,7 @@ def constructor(
             seq.add_block(pp.make_delay(raster(val=inversion_time - rf_duration, precision=system.grad_raster_time)))
         seq.add_block(rf_90)
         seq.add_block(pp.make_delay(raster(val=echo_time / 2 - rf_duration, precision=system.grad_raster_time)))
-        for idx in range(etl):
+        for _ in range(etl):
             seq.add_block(rf_180)
             seq.add_block(pp.make_delay(raster(
                 val=echo_time - rf_duration,
@@ -347,7 +353,7 @@ def constructor(
                 precision=system.grad_raster_time
             )))
 
-    for train_num, (train, position) in enumerate(zip(trains, trains_pos)):
+    for train_num, (train, position) in enumerate(zip(trains, trains_pos, strict=True)):
         if inversion_pulse:
             seq.add_block(rf_inversion)
             seq.add_block(pp.make_delay(raster(
@@ -358,7 +364,7 @@ def constructor(
         seq.add_block(grad_ro_pre)
         seq.add_block(pp.make_delay(raster(val=tau_1, precision=system.grad_raster_time)))
 
-        for echo_num, (echo, pe_indices) in enumerate(zip(train, position)):
+        for echo_num, (echo, pe_indices) in enumerate(zip(train, position, strict=True)):
             pe_1, pe_2 = echo
 
             seq.add_block(rf_180)
@@ -533,12 +539,14 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
 
     Parameters
     ----------
-    kspace
-        Acquired k-space data in the format (averages, coils, pe, ro)
-    trajectory
-        k-Space trajectory returned by TSE constructor with dimension (pe, 2)
-    dim
-        dimensions of kspace
+    receive_data
+        List of acquired RxData objects, sorted into k-space by their LIN and PAR labels.
+    seq
+        Sequence returned by the TSE constructor, used to read the encoding dimensions.
+
+    Returns
+    -------
+        K-space array with dimensions (averages, coils, pe2, pe1, ro)
     """
     n_avg = receive_data[0].total_averages
     n_coil = np.size(receive_data[0].processed_data, 0)
@@ -547,9 +555,9 @@ def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
 
     # Get k-space sorting from sequence labels
     for rx_data in receive_data:
-        if rx_data.labels is not None and "IMA" in rx_data.labels:
-            if rx_data.labels["IMA"]:  # check that it is imaging data, not navigator or noise
-                ksp[rx_data.average_index, :, rx_data.labels["PAR"], rx_data.labels["LIN"], :] = rx_data.processed_data
+        # Check that it is imaging data, not navigator or noise
+        if rx_data.labels is not None and rx_data.labels.get("IMA"):
+            ksp[rx_data.average_index, :, rx_data.labels["PAR"], rx_data.labels["LIN"], :] = rx_data.processed_data
 
     return ksp
 

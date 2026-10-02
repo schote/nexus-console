@@ -34,7 +34,7 @@ class AcquisitionData:
     sequence: SequenceProvider | Sequence
     """Sequence object used for the acquisition acquisition."""
 
-    session_path: str
+    session_path: str | Path
     """Directory the acquisition data will be stored in.
     Within the given `storage_path` a new directory with time stamp and sequence name will be created."""
 
@@ -95,19 +95,19 @@ class AcquisitionData:
             self._write_acquisition_data(acq_folder_path / "rx_data.h5")
         except TypeError as exc:
             log.warning("Type error when saving acquisition data to h5 format.", exc_info=exc)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - best effort, saving must continue with remaining files
             log.warning("Unexpected error when saving acquisition data to h5 format.", exc_info=exc)
 
         # Save meta data
         if not (meta_file := acq_folder_path / "meta.json").exists() or overwrite:
-            with open(meta_file, "w", encoding="utf-8") as outfile:
+            with meta_file.open("w", encoding="utf-8") as outfile:
                 json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
 
         if not (sequence_file := acq_folder_path / "sequence.seq").exists() or overwrite:
             try:
                 # Write sequence .seq file
                 self.sequence.write(sequence_file)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - best effort, saving must continue with remaining files
                 log.warning("Could not save sequence: %s", exc)
 
         if len(self._additional_numpy_data) > 0:

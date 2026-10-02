@@ -39,7 +39,7 @@ def filter_moving_average(signal: np.ndarray, decimation: int = 100, overlap: in
 
     # Calculate size of down-sampled signal
     num_ddc_samples = int(np.ceil(signal.shape[-1] / decimation))
-    signal_filtered = np.zeros(signal.shape[:-1] + (num_ddc_samples,), dtype=complex)
+    signal_filtered = np.zeros((*signal.shape[:-1], num_ddc_samples), dtype=complex)
 
     # Zero-padding of signal to center down-sampled signal
 

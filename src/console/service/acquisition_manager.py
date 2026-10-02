@@ -18,6 +18,20 @@ class AcquisitionControlManager(BaseManager):
         callable_acq_control: Callable[[], AcquisitionControl] | None = None,
         **kwargs: Any
     ) -> None:
+        """Initialize the acquisition control manager.
+
+        Parameters
+        ----------
+        address, optional
+            Address (host, port) of the manager process, by default ("localhost", 50000).
+        authkey, optional
+            Authentication key of the manager process, by default b"secretkey".
+        callable_acq_control, optional
+            Callable which returns the acquisition control instance served by the manager, by default None.
+            If None, the acquisition control is registered without callable (client side).
+        **kwargs
+            Additional keyword arguments passed to ``BaseManager``.
+        """
         super().__init__(address=address, authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:

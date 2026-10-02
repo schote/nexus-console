@@ -115,11 +115,11 @@ select = [
     "UP",  # pyupgrade
     "PIE", # flake8-pie
     "PTH", # flake8-use-pathlib
-    "T20", # flake8-print
+    # "T20", # flake8-print -> TODO: enable in the future (replace print calls by logging)
     "Q",   # flake8-quotes
     "W",   # pycodestyle warnings
     "YTT", # flake8-2020
-    "ERA", # flake8-eradicate
+    # "ERA", # flake8-eradicate -> TODO: enable in the future (remove commented-out code)
 ]
 extend-select = [
     "ANN001", #  type annotation for function argument

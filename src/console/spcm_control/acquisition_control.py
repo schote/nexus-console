@@ -4,7 +4,6 @@ import copy
 import functools
 import logging
 import logging.config
-import os
 import time
 from collections.abc import Callable
 from datetime import datetime
@@ -36,6 +35,8 @@ LOG_LEVELS = [
     logging.CRITICAL,
 ]
 
+DEFAULT_NEXUS_DATA_DIR = Path.home() / "nexus-console"
+
 
 class AcquisitionControl:
     """Acquisition control class.
@@ -47,7 +48,7 @@ class AcquisitionControl:
     def __init__(
         self,
         configuration_file: str,
-        nexus_data_dir: str = os.path.join(Path.home(), "nexus-console"),
+        nexus_data_dir: str | Path = DEFAULT_NEXUS_DATA_DIR,
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
     ) -> None:
@@ -70,9 +71,9 @@ class AcquisitionControl:
             Set the logging level for the terminal/console output.
         """
         # Create session path (contains all acquisitions of one day)
-        session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session/"
-        self.session_path = os.path.join(nexus_data_dir, session_folder_name)
-        os.makedirs(self.session_path, exist_ok=True)
+        session_folder_name = datetime.now().strftime("%Y-%m-%d") + "-session"
+        self.session_path = Path(nexus_data_dir) / session_folder_name
+        self.session_path.mkdir(parents=True, exist_ok=True)
 
         self._setup_logging(console_level=console_log_level, file_level=file_log_level)
         self.log = logging.getLogger("AcqCtrl")
@@ -168,7 +169,7 @@ class AcquisitionControl:
             level=file_level,
             format="%(asctime)s %(name)-7s: %(levelname)-8s >> %(message)s",
             datefmt="%d-%m-%Y, %H:%M",
-            filename=f"{self.session_path}console.log",
+            filename=self.session_path / "console.log",
             filemode="a",
         )
 
@@ -232,9 +233,8 @@ class AcquisitionControl:
         ----------
         store_unprocessed
             Flag for whether to keep the raw, undecimated data after decimation
-        realtime_proccessing
-            flag for processing the data in real time using the multiprocessing or
-            using threading to process the data after it has all been acquired.
+        progress_callback
+            Optional callback which is called with the acquisition progress in percent, by default None.
 
         Raises
         ------
@@ -357,7 +357,7 @@ class AcquisitionControl:
 
         try:
             averages = [data.average_index for data in self.receive_data]
-            if not (np.unique(averages).size == self.sequence.parameter.num_averages):
+            if np.unique(averages).size != self.sequence.parameter.num_averages:
                 averages_idc = np.arange(self.sequence.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
                 raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")

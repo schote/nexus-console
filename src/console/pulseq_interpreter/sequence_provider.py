@@ -94,9 +94,12 @@ class SequenceProvider(Sequence):
             Translation of RF waveform from pulseq (Hz) to mV.
         spcm_dwell_time
             Sampling time raster of the output waveform (depends on spectrum card).
-        system_limits
+        system
             Absolute maximum system limits defined in the device configuration.
             Used to instantiate the pypulseq `Opts()` class.
+        rf_gain_lut_path, optional
+            Path to the RF power amplifier gain lookup table (.npy file), by default None.
+            If None or the file does not exist, no LUT is applied.
         """
         if not isinstance(system, Opts):
             raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")
@@ -262,7 +265,7 @@ class SequenceProvider(Sequence):
         adc_count: int = 0
         labels = {}
 
-        for event_idx, (event_key, event) in enumerate(events_list.items()):
+        for event_idx, event_key in enumerate(events_list.keys()):
             block = self.get_block(event_key)
             # Calculate gradient waveform start and end positions according to block position
             waveform_start = block_pos[event_idx] * 4
@@ -532,11 +535,13 @@ class SequenceProvider(Sequence):
         ----------
         block
             Gradient block from pypulseq sequence, type must be grad or trap
-        unroll_arr
-            Section of numpy array which will contain the unrolled gradient event
         fov_scaling
             Scaling factor to adjust the FoV.
             Factor is applied to the whole gradient waveform, exception the amplitude offset.
+        offset
+            Gradient amplitude offset of the target output channel.
+        output_channel
+            Index of the gradient output channel (0-based, i.e. excluding the RF channel).
 
         Returns
         -------
