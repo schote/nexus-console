@@ -51,8 +51,8 @@ def test_tse_3d(etl, dim, te):
     # acquisition positions must be different, check sequence labels
     labels_io = seq_io.evaluate_labels(evolution="adc")
     labels_lin = seq_lin.evaluate_labels(evolution="adc")
-    test_lin_equal = [x != y for x, y in zip(labels_io["LIN"], labels_lin["LIN"])]
-    test_par_equal = [x != y for x, y in zip(labels_io["PAR"], labels_lin["PAR"])]
+    test_lin_equal = [x != y for x, y in zip(labels_io["LIN"], labels_lin["LIN"], strict=True)]
+    test_par_equal = [x != y for x, y in zip(labels_io["PAR"], labels_lin["PAR"], strict=True)]
 
     assert any(test_lin_equal[1:])  # starting point might be equal
     if 1 not in seq_io.get_definition("encoding_dim"):

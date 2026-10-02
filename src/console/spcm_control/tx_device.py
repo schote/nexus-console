@@ -40,6 +40,19 @@ class TxCard(SpectrumDevice):
         filter_type: tuple[int, int, int, int],
         sample_rate: int,
     ) -> None:
+        """Initialize the transmit card.
+
+        Parameters
+        ----------
+        path
+            Path of the spectrum card device, e.g. /dev/spcm0
+        max_amplitude
+            Maximum output amplitude per channel in mV.
+        filter_type
+            Output filter setting per channel.
+        sample_rate
+            Card sampling rate in MHz.
+        """
         self.log = logging.getLogger(self.__name__)
         super().__init__(path=path, log=self.log)
         self.max_amplitude = max_amplitude
@@ -78,9 +91,7 @@ class TxCard(SpectrumDevice):
 
         try:
             if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
-                raise ConnectionError(
-                    "Device with path %s is of type %s, no transmit card..." % (self.path, device_type)
-                )
+                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no transmit card...")
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err

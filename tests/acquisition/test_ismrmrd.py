@@ -51,8 +51,8 @@ def test_write_acquisition_to_mrd(trajectory_type, dim, random_complex_data, acq
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
     assert "data.mrd" in acq_data_files
 
-    with ismrmrd.File(acq_folder / "data.mrd", 'r') as fh:
-        dataset = fh['dataset']
+    with ismrmrd.File(acq_folder / "data.mrd", "r") as fh:
+        dataset = fh["dataset"]
         acquisitions = dataset.acquisitions[:]
 
     assert len(acquisitions) == len(receive_data)
@@ -86,8 +86,8 @@ def test_write_single_acquisition_to_mrd(random_acquisition_data, num_coils: int
         channel_assignment = channel_assignment,
     )
 
-    with ismrmrd.File(mrd_path, 'r') as fh:
-        dataset = fh['dataset']
+    with ismrmrd.File(mrd_path, "r") as fh:
+        dataset = fh["dataset"]
         acquisitions = dataset.acquisitions[:]
 
     assert len(acquisitions) == len(receive_data)

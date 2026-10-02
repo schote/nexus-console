@@ -24,6 +24,8 @@ class SpectrumDevice(ABC):
         ----------
         path
             Path of the spectrum card device, e.g. /dev/spcm1
+        log
+            Logger instance of the spectrum device.
         """
         super().__init__()
         self.card = None

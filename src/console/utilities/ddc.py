@@ -3,7 +3,7 @@ import numpy as np
 from scipy.signal import decimate
 
 
-def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
+def filter_moving_average(signal: np.ndarray, decimation: int = 100, overlap: int = 8) -> np.ndarray:
     r"""Decimate data using a moving average filter.
 
     $kernel = e^{\frac{-1}{1 - x^2}} * \sin{2.073 * \pi \ x} / x, \; x = -1, ..., 1$
@@ -39,7 +39,7 @@ def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
 
     # Calculate size of down-sampled signal
     num_ddc_samples = int(np.ceil(signal.shape[-1] / decimation))
-    signal_filtered = np.zeros(signal.shape[:-1] + (num_ddc_samples,), dtype=complex)
+    signal_filtered = np.zeros((*signal.shape[:-1], num_ddc_samples), dtype=complex)
 
     # Zero-padding of signal to center down-sampled signal
 
@@ -55,7 +55,7 @@ def filter_moving_average(signal, decimation: int = 100, overlap: int = 8):
     return signal_filtered
 
 
-def filter_cic_fir_comp(signal, decimation, number_of_stages):
+def filter_cic_fir_comp(signal: np.ndarray, decimation: int, number_of_stages: int) -> np.ndarray:
     """Decimate data using CIC filter and FIR compensation.
 
     Two stage decimation:
