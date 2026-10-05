@@ -7,15 +7,21 @@ from typing import Any
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 
+# Alias required within the manager class body, where `AcquisitionControl` is shadowed by the proxy factory
+_AcquisitionControl = AcquisitionControl
+
 
 class AcquisitionControlManager(BaseManager):
     """Acquisition control manager."""
+
+    # Proxy factory, added dynamically by BaseManager.register("AcquisitionControl") in __init__
+    AcquisitionControl: Callable[[], _AcquisitionControl]
 
     def __init__(
         self,
         address: tuple[str, int] = ("localhost", 50000),
         authkey: bytes = b"secretkey",
-        callable_acq_control: Callable[[], AcquisitionControl] | None = None,
+        callable_acq_control: Callable[[], _AcquisitionControl] | None = None,
         **kwargs: Any
     ) -> None:
         """Initialize the acquisition control manager.

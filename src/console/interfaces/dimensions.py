@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -59,7 +59,7 @@ class Dimensions:
         """Convert to a list."""
         return [self.x, self.y, self.z]
 
-    def __setattr__(self, name: Literal["x", "y", "z"], value: float) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """Overwrite setter to trigger private on_change method if set."""
         if name in ("x", "y", "z") and not isinstance(value, (int, float)):
             msg = f"Invalid value: {value}, only (int, float) is allowed."
