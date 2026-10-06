@@ -10,7 +10,6 @@ A test sequence covering all event configurations interpreted by the sequence pr
 and recorded on RX channels 0-3. Within each ADC gate, the recorded signals are compared to the unrolled sequence.
 """
 import argparse
-import copy
 import logging
 import subprocess
 import tempfile
@@ -20,7 +19,6 @@ from math import ceil, floor, pi
 from pathlib import Path
 from types import SimpleNamespace
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pypulseq as pp
 
@@ -32,12 +30,10 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.load_configuration import load_nexus_config
 
-EXAMPLE_CONFIG = Path(__file__).parents[1] / "examples" / "example_device_config.yaml"
-CHANNELS = ("RF", "Gx", "Gy", "Gz")
-RAMP = 200e-6  # Gradient ramp time and base timing unit, cf. tse_3d
-SEPARATION = 1e-3  # Delay block between test cases
-NUM_AVERAGES = 2
-
+EXAMPLE_CONFIG = Path(__file__).parents[2] / "examples" / "example_device_config.yaml"
+RAMP = 200e-6   # with flip_angle = 2 pi, pypulseq RF magnitude is 5 kHz
+RF_DURATION = 200e-6
+GAMMA = 42.58e6 # Hz/T
 WIRING = """
 [Loopback] Required wiring (RF and gradient amplifiers off/disconnected):
     TX ch0 (RF)              -> RX ch0
@@ -78,40 +74,25 @@ def git_revision() -> str:
 def check_config(config: NexusConfiguration) -> None:
     """Abort if the device configuration does not allow a loopback measurement."""
     rx, tx = config.rx, config.tx
+    prefix = "Error in device configuration:"
     if not all(rx.channel_enable[:4]):
-        raise SystemExit("[Loopback] RX channels 0-3 must be enabled in the device configuration.")
-    tx_terminations = (tx.rf_terminated_50ohm, *3 * (tx.gradients_terminated_50ohm,))
-    if tuple(map(bool, rx.channel_terminated_50ohm[:4])) != tx_terminations:
-        raise SystemExit("[Loopback] RX termination of channels 0-3 must match the TX termination of RF/gradients.")
+        raise SystemExit(f"{prefix} RX channels 0-3 must be enabled in the device configuration.")
+    if not all((*rx.channel_terminated_50ohm[:4], tx.rf_terminated_50ohm, tx.gradients_terminated_50ohm)):
+        raise SystemExit(f"{prefix} 50 ohm termination must be enabled for RX channels 0-3 and all TX channels.")
 
 
-def design_amplitudes(
-    config: NexusConfiguration, system: pp.Opts, parameter: AcquisitionParameter,
-) -> tuple[np.ndarray, float, np.ndarray]:
-    """Return test amplitudes in mV per channel, RF amplitude in Hz and gradient amplitudes in Hz/m."""
-    tx = config.tx
-    # TX output doubles if terminated into high impedance, as considered by the sequence provider
-    high_impedance = np.logical_not([tx.rf_terminated_50ohm, *3 * [tx.gradients_terminated_50ohm]])
-    tx_limits = np.array(tx.channel_max_amplitude) * (1 + high_impedance)
-    amplitudes = 0.5 * np.minimum(config.rx.channel_max_amplitude[:4], tx_limits)
-    rf_amplitude = amplitudes[0] / (parameter.b1_scaling * tx.rf_to_mvolt)
-    hz_per_mv = system.gamma * 1e-3 * np.array(tx.gpa_gain) * np.array(tx.gradient_efficiency)
-    grad_amplitudes = amplitudes[1:] * hz_per_mv / np.array(parameter.fov_scaling.to_list())
-    return amplitudes, rf_amplitude, grad_amplitudes
-
-
-def build_sequence(system: pp.Opts, rf_amp: float, grad_amp: np.ndarray) -> pp.Sequence:
+def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Sequence:
     """Construct test sequence, each test case is a block with an ADC event."""
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "loopback")
-    gx, gy, gz = grad_amp
+    gx_amp, gy_amp, gz_amp = gradient_amplitudes
     dead_time = system.rf_dead_time
 
     def add(*events: SimpleNamespace, bw: float = 20e3, adc_delay: float = 0., fit: bool = False,
             separate: bool = True, **adc_kwargs: float) -> None:
         """Add events with an ADC covering them (or fitting into them if `fit` is set), preceded by a delay block."""
         if separate:
-            seq.add_block(pp.make_delay(SEPARATION))
+            seq.add_block(pp.make_delay(1e-3))
         delay = system.adc_dead_time + adc_delay
         span = pp.calc_duration(*events) - delay
         num_samples = floor((span - system.adc_dead_time) * bw) if fit else ceil(span * bw)
@@ -124,34 +105,34 @@ def build_sequence(system: pp.Opts, rf_amp: float, grad_amp: np.ndarray) -> pp.S
     for d in (0., RAMP):
         # Trapezoid, triangle (zero flat time), asymmetric trapezoid
         add(
-            pp.make_trapezoid("x", amplitude=gx, rise_time=RAMP, flat_time=2 * RAMP, delay=d, system=system),
-            pp.make_trapezoid("y", amplitude=-gy / 2, rise_time=RAMP, flat_time=0., delay=d / 2, system=system),
+            pp.make_trapezoid("x", amplitude=gx_amp, rise_time=RAMP, flat_time=2 * RAMP, delay=d, system=system),
+            pp.make_trapezoid("y", amplitude=-gy_amp / 2, rise_time=RAMP, flat_time=0., delay=d / 2, system=system),
             pp.make_trapezoid(
-                "z", amplitude=gz, rise_time=RAMP, flat_time=2 * RAMP, fall_time=2 * RAMP, delay=2 * d, system=system,
+                "z", amplitude=gz_amp, rise_time=RAMP, flat_time=2 * RAMP, fall_time=2 * RAMP, delay=2 * d, system=system,
             ),
         )
         # Arbitrary gradients
         add(
-            pp.make_arbitrary_grad("x", gx * np.sin(pi * t_arb), first=0., last=0., delay=d, system=system),
-            pp.make_arbitrary_grad("y", -gy * np.sin(pi * t_arb) ** 2, first=0., last=0., delay=d / 2, system=system),
-            pp.make_arbitrary_grad("z", gz * np.sin(2 * pi * t_arb), first=0., last=0., delay=2 * d, system=system),
+            pp.make_arbitrary_grad("x", gx_amp * np.sin(pi * t_arb), first=0., last=0., delay=d, system=system),
+            pp.make_arbitrary_grad("y", -gy_amp * np.sin(pi * t_arb) ** 2, first=0., last=0., delay=d / 2, system=system),
+            pp.make_arbitrary_grad("z", gz_amp * np.sin(2 * pi * t_arb), first=0., last=0., delay=2 * d, system=system),
         )
         # Extended trapezoids on non-uniform time raster (first time point defines the delay), conversion to arbitrary
         add(
             pp.make_extended_trapezoid(
-                "x", times=t_ext + d, amplitudes=gx * np.array([0, 1, .5, .5, 0]), system=system,
+                "x", times=t_ext + d, amplitudes=gx_amp * np.array([0, 1, .5, .5, 0]), system=system,
             ),
             pp.make_extended_trapezoid(
-                "y", times=t_ext + d / 2, amplitudes=gy * np.array([0, -1, 0, 1, 0]), convert_to_arbitrary=True,
+                "y", times=t_ext + d / 2, amplitudes=gy_amp * np.array([0, -1, 0, 1, 0]), convert_to_arbitrary=True,
                 system=system,
             ),
             pp.make_extended_trapezoid(
-                "z", times=t_ext + 2 * d, amplitudes=gz * np.array([0, .5, 1, -.5, 0]), system=system,
+                "z", times=t_ext + 2 * d, amplitudes=gz_amp * np.array([0, .5, 1, -.5, 0]), system=system,
             ),
         )
     # Gradients spanning two consecutive blocks (non-zero amplitude at block boundary)
     t_split = np.array([0., RAMP, 2 * RAMP])
-    split = tuple(zip("xyz", (gx, -gy, gz), strict=True))
+    split = tuple(zip("xyz", (gx_amp, -gy_amp, gz_amp), strict=True))
     add(*(pp.make_extended_trapezoid(c, times=t_split, amplitudes=np.array([0, a, a]), system=system)
           for c, a in split), fit=True)
     add(*(pp.make_extended_trapezoid(c, times=t_split, amplitudes=np.array([a, a, 0]), system=system)
@@ -159,28 +140,33 @@ def build_sequence(system: pp.Opts, rf_amp: float, grad_amp: np.ndarray) -> pp.S
 
     # RF block pulse (2-point shape) with delay equal to and larger than the dead time
     for d in (dead_time, dead_time + RAMP / 2):
-        add(pp.make_block_pulse(2 * pi * rf_amp * RAMP, duration=RAMP, delay=d, system=system), bw=100e3)
+        add(pp.make_block_pulse(2*pi, duration=RF_DURATION, delay=d, system=system), bw=100e3)
     # RF sinc pulse with frequency and phase offset
-    sinc = pp.make_sinc_pulse(pi / 2, duration=2 * RAMP, delay=dead_time, freq_offset=5e3, phase_offset=pi / 2,
-                              system=system)
-    sinc.signal *= rf_amp / np.abs(sinc.signal).max()
-    add(sinc, bw=100e3)
+    add(pp.make_sinc_pulse(
+        2*pi, duration=RF_DURATION, delay=dead_time, freq_offset=5e3, phase_offset=pi/2, system=system
+    ), bw=100e3)
     # Complex arbitrary RF pulse (chirp) with custom dwell time, frequency and phase offset
+    n_rf_samples = 200
     add(
         pp.make_arbitrary_rf(
-            rf_amp * np.exp(10j * pi * np.linspace(-1, 1, 200) ** 2), pi / 2, no_signal_scaling=True, dwell=2e-6,
-            delay=dead_time + RAMP / 4, freq_offset=-3e3, phase_offset=-pi / 4, system=system,
+            signal=np.exp(1j*np.linspace(-1, 1, n_rf_samples) ** 2),
+            flip_angle=2*pi,
+            no_signal_scaling=True,
+            dwell=RF_DURATION/n_rf_samples,
+            delay=dead_time + RAMP / 4,
+            freq_offset=-3e3,
+            phase_offset=-pi / 4,
+            system=system,
         ),
         bw=100e3,
     )
     # RF overlapping with a gradient (RF unblanking is encoded on the Gz channel)
-    sinc = pp.make_sinc_pulse(pi / 2, duration=2 * RAMP, delay=max(dead_time, RAMP), system=system)
-    sinc.signal *= rf_amp / np.abs(sinc.signal).max()
-    add(sinc, pp.make_trapezoid("z", amplitude=gz, rise_time=RAMP, flat_time=2 * RAMP, system=system), bw=100e3)
+    sinc = pp.make_sinc_pulse(2*pi, duration=RF_DURATION, delay=max(dead_time, RAMP), system=system)
+    add(sinc, pp.make_trapezoid("z", amplitude=gz_amp, rise_time=RAMP, flat_time=2 * RAMP, system=system), bw=100e3)
 
     # ADC with delay, frequency and phase offset (dwell time and dead time are covered by all test cases)
     add(
-        pp.make_trapezoid("x", amplitude=gx, rise_time=RAMP, flat_time=2 * RAMP, system=system),
+        pp.make_trapezoid("x", amplitude=gx_amp, rise_time=RAMP, flat_time=2 * RAMP, system=system),
         adc_delay=RAMP / 2, freq_offset=1e3, phase_offset=pi / 3,
     )
     return seq
@@ -217,7 +203,7 @@ def report(results: list[Result], num_expected: int, tolerance: float, device_co
     errors = np.array([r.error for r in results]) if results else np.full((1, 4), np.nan)
     failed = [r for r in results if r.issues or np.any(r.error > tolerance)]
     passed = not failed and len(results) == num_expected
-    print("\n[Loopback] ---------- Test report ----------")
+    print("\n---------- Test report ----------")
     print(f"Date: {datetime.now().astimezone():%Y-%m-%d %H:%M UTC%z}")
     print(f"Revision: {git_revision()}")
     print(f"Device configuration: {device_config}")
@@ -225,7 +211,7 @@ def report(results: list[Result], num_expected: int, tolerance: float, device_co
     print(f"Peak difference (relative to test amplitude): mean {100 * np.nanmean(errors):.2f} %, "
           f"max {100 * np.nanmax(errors):.2f} %, tolerance {100 * tolerance:.1f} %")
     for r in failed:
-        errs = ", ".join(f"{ch} {100 * e:.1f} %" for ch, e in zip(CHANNELS, r.error, strict=True))
+        errs = ", ".join(f"{ch} {100 * e:.1f} %" for ch, e in zip(range(4), r.error, strict=True))
         print(f"  Mismatch {r.run}, block {r.block}, average {r.average}: {errs}"
               + "".join(f"; {issue}" for issue in r.issues))
     print(f"Result: {'PASSED' if passed else 'FAILED'}")
@@ -240,31 +226,46 @@ def main() -> None:
         help="Path to device configuration. If omitted, the test sequence is displayed (example configuration).",
     )
     parser.add_argument("-t", "--tolerance", type=float, default=0.05, help="Max. relative peak difference.")
+    parser.add_argument("-p", "--plot", action="store_true", help="If set, the loopback test sequence is plotted but not executed.")
     args = parser.parse_args()
 
     config = load_nexus_config(args.device_config or str(EXAMPLE_CONFIG))
-    if args.device_config:
-        check_config(config)
+    check_config(config)
     print(WIRING)
+
+    # Calculate b1_scaling to set channel 0 output to 25% of maximum
+    desired_output_mvolts = 0.25 * np.minimum(
+        config.rx.channel_max_amplitude[0], config.tx.channel_max_amplitude[0],
+    )
+    rf_reference_amp = 1 / RF_DURATION
+    b1_scaling = desired_output_mvolts / (rf_reference_amp * config.tx.rf_to_mvolt)
+    print(f"Channel 0 amplitude: {desired_output_mvolts} mV (RF amplitude in pypulseq: {round(rf_reference_amp)} Hz)")
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         # Non-unity scalings to cover the scaling of RF and gradient waveforms
         parameter = AcquisitionParameter(
             larmor_frequency=config.tx.sampling_rate * 1e6 / 10,
-            b1_scaling=0.8,
+            b1_scaling=b1_scaling,
             fov_scaling=Dimensions(x=0.9, y=0.8, z=0.7),
-            num_averages=NUM_AVERAGES,
+            num_averages=10,
             state_filepath=tmp_dir,
         )
         opts = config.system.get_opts()
-        amplitudes, rf_amp, grad_amp = design_amplitudes(config, opts, parameter)
+
+        # Calculate gradient amplitudes (20% of maximum)
+        grad_tx_limits = np.array(config.tx.channel_max_amplitude[1:4])
+        grad_amp_mvolts = 0.2 * np.minimum(config.rx.channel_max_amplitude[1:4], grad_tx_limits)
+        grad_efficiency = np.array(config.tx.gradient_efficiency)
+        grad_amp_hz = grad_amp_mvolts * GAMMA * 1e-3 * np.array(config.tx.gpa_gain) * grad_efficiency
+        for k in range(3):
+            print(f"Channel {k+1} amplitude: {grad_amp_mvolts[k]} mV ({round(grad_amp_hz[k])} Hz)")
+
         opts.rf_dead_time = 20e-6
         opts.rf_ringdown_time = 30e-6
         opts.adc_dead_time = 75e-6
-        sequence = build_sequence(opts, rf_amp, grad_amp)
+        sequence = build_sequence(opts, grad_amp_hz)
 
-
-        if not args.device_config:
+        if args.plot:
             # No hardware available: only display the test sequences
             _ = sequence.plot(show_blocks=True, time_disp="ms")
             return
