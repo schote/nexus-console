@@ -85,17 +85,6 @@ target-version = "py313"
 "tests/*" = ["S101", "ANN"]
 
 [tool.ruff.lint]
-# select = [
-#     "E", # E = pycodestyle (error)
-#     "W", # W = pycodestyle (warning)
-#     "F", # F = Pyflakes
-#     "S", # S = flake8-bandit
-#     "I", # I = isort
-#     "N", # N = pep8-naming
-#     "D", # D = pydocstyle
-#     "NPY", # NPY = numpy specific rules
-#     "ANN", # ANN = flake8 annotations
-# ]
 select = [
     "A",   # flake8-builtins
     "ARG", # flake8-unused-arguments
