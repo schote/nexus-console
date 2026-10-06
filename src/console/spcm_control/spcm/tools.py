@@ -93,7 +93,7 @@ def type_to_name(card_type: int) -> str:
             return "unknown type"
 
 
-def create_dma_buffer(buffer_size: int):
+def create_dma_buffer(buffer_size: int) -> Array[c_char]:
     """Allocate memory for page-aligned DMA buffer.
 
     Parameters

@@ -278,9 +278,11 @@ try:
             spcm_dwGetContBuf_i64.restype = uint32
 
 except Exception as e:
+    # The exception variable is deleted when the except block ends, keep the message
+    _driver_error = str(e)
 
     def _driver_not_loaded(*args, **kwargs):
-        raise ConnectionError(f"SPCM driver not loaded: {e}")
+        raise ConnectionError(f"SPCM driver not loaded: {_driver_error}")
 
     spcm_hOpen = _driver_not_loaded
     spcm_vClose = _driver_not_loaded

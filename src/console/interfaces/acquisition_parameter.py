@@ -101,7 +101,7 @@ class AcquisitionParameter:
         self._initialized = True
         self.save()
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """Overwrite __setattr__ function to save object on each mutation."""
         # Get type hints for the class
         hints = self.__class__.__annotations__
@@ -120,10 +120,10 @@ class AcquisitionParameter:
         else:
             super().__setattr__(name, value)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Compare acquisition parameter to other instance."""
         if not isinstance(other, AcquisitionParameter):
-            return False
+            return NotImplemented
         # deep dict comparison, including nested dataclasses
         return self.to_dict() == other.to_dict()
 
@@ -152,7 +152,7 @@ class AcquisitionParameter:
 
         Parameters
         ----------
-        use_strings, optional
+        use_strings
             boolean flag indicating if values of dictionary should be represented as strings, by default False
 
         Returns
@@ -168,7 +168,7 @@ class AcquisitionParameter:
 
         Parameters
         ----------
-        file_path, optional
+        filepath
             Path to the pickle state file, by default None.
             If None, the default state file path is taken which is <home>/nexus-console/acquisition-parameter.state
             Default state file path can be changed using the set_default_path method.
@@ -186,7 +186,7 @@ class AcquisitionParameter:
 
         Parameters
         ----------
-        file_path, optional
+        filepath
             Path to acquisition parameter state file.
             If file_path is not a pickle file, i.e. ends with .json,
             the default state file designation acquisition-parameter.state is added.

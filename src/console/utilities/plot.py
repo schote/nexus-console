@@ -84,8 +84,8 @@ def plot_slices(
     fig, ax = plt.subplots(num_rows, num_cols, figsize=(10, 10))
     ax = ax.ravel()
 
-    total_max = np.amax(np.abs(img)) if not vmax else vmax
-    total_min = 0 if not vmin else vmin
+    total_max = vmax or np.amax(np.abs(img))
+    total_min = vmin or 0
 
     for k, x in enumerate(img[:, ...]):
         ax[k].imshow(np.abs(x), vmin=total_min, vmax=total_max, cmap="gray")

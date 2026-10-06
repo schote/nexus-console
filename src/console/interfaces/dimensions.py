@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
-
-    from typing_extensions import Self
-
+    from typing import Self
 
 def _dict_factory(items: Iterable[tuple[str, Any]]) -> dict[str, Any]:
     """Return a dictionary containing only fields whose names do not start with '_'."""
@@ -61,7 +59,7 @@ class Dimensions:
         """Convert to a list."""
         return [self.x, self.y, self.z]
 
-    def __setattr__(self, name: str, value: Any) -> None:
+    def __setattr__(self, name: str, value: object) -> None:
         """Overwrite setter to trigger private on_change method if set."""
         if name in ("x", "y", "z") and not isinstance(value, (int, float)):
             msg = f"Invalid value: {value}, only (int, float) is allowed."

@@ -2,7 +2,6 @@
 import argparse
 import atexit
 import logging
-import os
 from pathlib import Path
 
 from console.service.acquisition_manager import AcquisitionControlManager
@@ -11,7 +10,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # acquisition_control: AcquisitionControl | None = None
 
 
-def main():
+def main() -> None:
     """Start the acquisition control and setup the manager."""
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
     parser.add_argument(
@@ -25,7 +24,7 @@ def main():
         "-f",
         "--sessions_folder",
         type=str,
-        default=os.path.join(Path.home(), "nexus-console"),
+        default=str(Path.home() / "nexus-console"),
         help="Directory to store all the acquisition data acquired during the session.",
     )
     parser.add_argument(
@@ -83,13 +82,13 @@ def main():
 
     server = manager.get_server()
 
-    def shutdown_handler():
+    def shutdown_handler() -> None:
         try:
             print("\n[neXus] Shutting down nexus server...\n")
             if acquisition_control:
                 acquisition_control.__del__()
                 print("[neXus] Acquisition control shutdown successfully.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
             print(f"[neXus] Error during shutdown: {e}")
         finally:
             print("[neXus] Shutdown complete.")
@@ -100,5 +99,5 @@ def main():
     server.serve_forever()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

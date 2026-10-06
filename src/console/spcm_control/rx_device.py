@@ -83,7 +83,7 @@ class RxCard(SpectrumDevice):
 
         # Pre trigger is set to minimum, post trigger depends on active channel count and is defined later.
         self.pre_trigger: int = 8
-        self.post_trigger: None | int = None
+        self.post_trigger: int | None = None
 
         self.rx_scaling = [amp / (2**15) for amp in self.max_amplitude]
 
@@ -95,7 +95,7 @@ class RxCard(SpectrumDevice):
         """Helper function to return the number of gates that have been collected by the Rx Card."""
         return self._total_gates
 
-    def setup_card(self):
+    def setup_card(self) -> None:
         """Set up spectrum card in transmit (Rx) mode.
 
         At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
@@ -114,7 +114,7 @@ class RxCard(SpectrumDevice):
 
         try:
             if "M2p.59" not in (device_type := type_to_name(self.card_type.value)):
-                raise ConnectionError("Device with path %s is of type %s, no receive card" % (self.path, device_type))
+                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no receive card")
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -147,12 +147,12 @@ class RxCard(SpectrumDevice):
             # Check that the length of the channel enable list is 8
             # this has to be true for cards with fewer channels too
             if (num_enable := len(self.channel_enable)) != 8:
-                raise ValueError("Channel enable list is incomplete: %s/8" % num_enable)
+                raise ValueError(f"Channel enable list is incomplete: {num_enable}/8")
             # Impedance and amplitude configuration lists must also be of length 8
             if (num_imp := len(self.impedance_50_ohms)) != 8:
-                raise ValueError("Channel impedance list is incomplete: %s/8" % num_imp)
+                raise ValueError(f"Channel impedance list is incomplete: {num_imp}/8")
             if (num_amp := len(self.max_amplitude)) != 8:
-                raise ValueError("channel max. amplitude list is incomplete: %s/8" % num_amp)
+                raise ValueError(f"channel max. amplitude list is incomplete: {num_amp}/8")
             # Number of enabled channels must be either 1, 2, 4 or 8
             if not np.log2(sum(self.channel_enable)).is_integer():
                 raise ValueError("Invalid number of enabled channels, must be power of 2.")
@@ -225,7 +225,7 @@ class RxCard(SpectrumDevice):
         gate_alignment = sp.int64(0)
         sp.spcm_dwGetParam_i64(self.card, sp.SPC_GATE_LEN_ALIGNMENT, byref(gate_alignment))
         self.gate_alignment = gate_alignment.value
-        self.log.debug("Alignment samples: %d samples" % (self.gate_alignment))
+        self.log.debug("Alignment samples: %d samples", self.gate_alignment)
 
         # Set timeout used for DMA wait to 10 ms
         sp.spcm_dwSetParam_i32(self.card, sp.SPC_TIMEOUT, 10)
@@ -258,7 +258,7 @@ class RxCard(SpectrumDevice):
         self.worker = threading.Thread(target=self._gated_timestamps_stream)
         self.worker.start()
 
-    def stop_operation(self):
+    def stop_operation(self) -> None:
         """Stop card thread."""
         if self.worker is not None:
             self.is_running.set()
@@ -281,7 +281,7 @@ class RxCard(SpectrumDevice):
             # No thread is running
             self.log.error("No active process found")
 
-    def _gated_timestamps_stream(self):
+    def _gated_timestamps_stream(self) -> None:
         # Rx buffer size must be a multiple of notify size. Min. notify size is 4096 bytes/4 kBytes.
         rx_notify = sp.int32(sp.KILO_B(4))
 
@@ -383,10 +383,7 @@ class RxCard(SpectrumDevice):
                 )
 
                 # Tell buffer 32 bytes were read from timestamp buffer
-                try:
-                    self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32))
-                except RuntimeError:  # Reraise error for traceability
-                    raise RuntimeError
+                self.handle_error(sp.spcm_dwSetParam_i32(self.card, sp.SPC_TS_AVAIL_CARD_LEN, 32))
 
                 # Calculate size of relevant data (pre_trigger needed to get position of start of gate)
                 # This is the minimum amount of data  must be available to get full gate data
@@ -421,8 +418,9 @@ class RxCard(SpectrumDevice):
 
                 # # Debug log statements
                 self.log.debug(
-                    "ADC event size: %d bytes, Available data length: %s bytes"
-                    % (total_bytes_gate, available_data_bytes.value)
+                    "ADC event size: %d bytes, Available data length: %s bytes",
+                    total_bytes_gate,
+                    available_data_bytes.value,
                 )
 
                 # If insufficient data is in buffer wait for more to arrive.
@@ -517,17 +515,15 @@ class RxCard(SpectrumDevice):
 
                     # Tell the card that data has been read and the buffer can be reused.
                     # Using the size of available data bytes prevents invalid values.
-                    try:
-                        self.handle_error(
-                            sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_data_bytes)
-                        )
-                    except RuntimeError:  # Reraise error for traceability
-                        raise RuntimeError
+                    self.handle_error(
+                        sp.spcm_dwSetParam_i32(self.card, sp.SPC_DATA_AVAIL_CARD_LEN, available_data_bytes)
+                    )
 
                 else:
                     self.log.error(
-                        "Needed at least %d bytes but only %d bytes available"
-                        % (total_bytes_gate, available_data_bytes.value)
+                        "Needed at least %d bytes but only %d bytes available",
+                        total_bytes_gate,
+                        available_data_bytes.value,
                     )
 
         self.log.debug("Card operation stopped")
