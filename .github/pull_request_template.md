@@ -8,11 +8,17 @@
 Closes #
 
 ## Hardware setup
-<!-- Describe the hardware this PR was developed and tested with. Delete lines that are not relevant. -->
+<!-- Run the following command from the repository root on the system this PR was tested with,
+     and paste its complete output between the ``` lines below:
 
-- **Spectrum cards:** <!-- TX (AWG) and RX (digitizer) models, e.g. M2p.6546-x4 / M2p.5933-x4 -->
-- **Driver / firmware:** <!-- Spectrum driver and firmware versions -->
-- **Operating system:** <!-- OS and version, e.g. Ubuntu 24.04, Windows 11 23H2 -->
+         python tests/hardware/system_info.py
+
+     It prints OS, Python, nexus-console version and git revision, spcm driver versions and the Spectrum card models.
+     NOTE: Stop the console service first, cards that are in use cannot be read. -->
+
+```
+
+```
 
 ## Migration
 <!-- What does someone have to do after pulling main once this PR is merged?
@@ -37,7 +43,7 @@ Closes #
 <!-- Changes to the stored acquisition data or MRD/ISMRMRD output that affect downstream reconstruction -->
 
 ## Checklist
-- [ ] Loopback hardware test passed (run `python /tests/hardware/loopback.py`)
+- [ ] Loopback hardware test passed (run `python tests/hardware/loopback.py -d <device_config.yaml>`)
 - [ ] Tests added or updated (if necessary)
 - [ ] Documentation updated (user guide, API docs, port tables, etc.)
 - [ ] Examples updated (if necessary)
