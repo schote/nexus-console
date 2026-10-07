@@ -20,6 +20,19 @@ Closes #
 
 ```
 
+## Loopback test
+<!-- Wire the cards as printed by the script, run the following command from the repository root
+     and paste the block printed under "Loopback test result (report in PR)" between the ``` lines below:
+
+         python tests/hardware/loopback.py -d <device_config.yaml>
+
+     All criteria must pass. Reviewers: compare the mean delay and gain per channel with earlier PRs from the same setup.
+     If a criterion fails, rerun with -v for the analysis per ADC gate and plots of the signals and residuals. -->
+
+```
+
+```
+
 ## Migration
 <!-- What does someone have to do after pulling main once this PR is merged?
      Write "None" if no action is needed and delete the subsections below.
