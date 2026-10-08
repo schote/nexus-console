@@ -13,20 +13,22 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v7
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.13'
-        enable-cache: true
+        cache: 'pip'
 
     - name: Install dependencies
-      run: uv sync --locked --no-default-groups --group lint
+      run: |
+        pip install --upgrade pip
+        pip install ".[lint]"
 
     - name: Run ruff check
-      run: uv run ruff check
+      run: ruff check
 
     - name: Run mypy
-      run: uv run mypy src
+      run: mypy src
 
 
     

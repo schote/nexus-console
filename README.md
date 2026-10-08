@@ -15,25 +15,35 @@ An interfaces to the open data MR raw data format [ISMRMRD](https://ismrmrd.gith
 
 ## Installation
 
-The project is managed with [uv](https://docs.astral.sh/uv/getting-started/installation/), which also installs the required Python version (>= 3.13).
-Clone the repository and run the following command in the repository directory, which is `*/nexus-console/`:
+It is recommended to install the package in a virtual environment (e.g. [conda](https://docs.conda.io/projects/conda/en/stable/)). 
+Further documentation on setting up miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html). 
+The package was developed under [Python 3.10](https://www.python.org/downloads/release/python-3100/) so it is recommended to use `python==3.10`.
 
-    `uv sync`
+To install the Nexus console application, clone the repository an ensure that you are in the repository directory, which is `*/nexus-console/`. 
+The package can be installed with different dependencies depending on the specific requirements:
 
-This creates a virtual environment in `.venv` and installs the package in editable mode, together with the `dev` dependency group (includes `test` and `lint`).
-The locked versions from `uv.lock` are used. Commands are executed in this environment with `uv run`, e.g. `uv run pytest` or `uv run nexus`.
+    `pip install -e .`
 
-Specific dependency groups can be selected as well:
+Installs all the necessary base dependencies to use the package (minimum required).
 
-    `uv sync --no-default-groups --group test`
+    `pip install -e ".[lint]"`
 
-Installs only the base dependencies and the dependencies required to run the tests. Available groups are `test`, `lint`, `docs` and `dev`.
+Installs additional (optional) dependencies that are required to run the linter.
 
-    `uv sync --group docs`
+    `pip install -e ".[test]"`
 
-Additionally installs the dependencies required to build the sphinx documentation locally.
+Installs additional (optional) dependencies that are required to run the linter.
 
-_Hint: The package can still be installed with pip, e.g. `pip install -e .`, which installs the base dependencies only._
+    `pip install -e ".[docs]"`
+
+Installs additional (optional) dependencies that are required to build the sphinx documentation locally.
+
+    `pip install -e ".[dev]"`
+
+Installs additional (optional) developer dependencies for profiling and developing in vs code.
+
+
+_Hint: Multiple dependency groups can be installed using `".[lint, test]"` for instance._
 
 ## Usage
 

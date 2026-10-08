@@ -17,31 +17,33 @@ Clone the `Spectrum-Console repository <https://github.com/schote/spectrum-conso
 
 Make sure, that you are in the directory where the code should be located.
 
-2. Install uv
-~~~~~~~~~~~~~
-The project is managed with `uv <https://docs.astral.sh/uv/>`_, which creates the virtual environment and installs the required Python version (>= 3.13).
-Follow the uv `installation guide <https://docs.astral.sh/uv/getting-started/installation/>`_, e.g.:
+2. Set Up a Virtual Python Environment (Optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+This step is optional, but you might want to create a virtual environment to install the package.
+Navigate to the cloned repository directory and create a virtual environment, e.g. using Conda:
 
 .. code-block:: bash
 
-   curl -LsSf https://astral.sh/uv/install.sh | sh
+   conda create --name console-env python=3.10
+   conda activate console-env
 
 3. Install the Repository Locally
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Navigate to the cloned repository directory and install the package with its locked dependencies:
+Install the cloned Spectrum-Console package locally using pip with the editable option, in case you want to modify the code.
+Make sure, that the environment was activated successfully. 
+Use the ``-e`` flag to install the package in editable mode.
 
 .. code-block:: bash
 
-   uv sync
+   pip install -e .
 
-This creates a virtual environment in ``.venv`` and installs the package in editable mode, together with the ``dev`` dependency group (includes ``test`` and ``lint``).
-Additional dependency groups can be added, e.g. to build the documentation locally:
+There are also optional dependencies which can be installed the following way.
 
 .. code-block:: bash
+   
+   pip install -e ".[test, lint, docs, dev]"
 
-   uv sync --group docs
-
-Commands are executed in the environment with ``uv run``, alternatively the environment can be activated with ``source .venv/bin/activate``.
+Using the same syntax the optional dependency groups can also be installed separately, e.g. if only the dependencies for testing are required.
 
 4. Execute an Example
 ~~~~~~~~~~~~~~~~~~~~~
@@ -50,7 +52,7 @@ Navigate to the ``/examples`` directory and run an example script:
 .. code-block:: bash
 
    cd examples
-   uv run se_spectrum.py
+   python se_spectrum.py
 
 Congratulations! You have successfully set up and executed an example with the Spectrum Console. For more detailed information, refer to the full documentation.
 

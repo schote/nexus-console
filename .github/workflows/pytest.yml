@@ -19,18 +19,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v7
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-          enable-cache: true
+          cache: 'pip'
       
       - name: Install dependencies
-        run: uv sync --locked --no-default-groups --group test
+        run: |
+          pip install --upgrade pip
+          pip install .[test]
+
+      - name: Install pytest-github-actions-annotate-failures plugin
+        run: pip install pytest-github-actions-annotate-failures
 
       - name: Run pytest
         run: |
-          uv run --with pytest-github-actions-annotate-failures pytest -n 4 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=console | tee pytest-coverage.txt
+          python -m pytest -n 4 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=console | tee pytest-coverage.txt
 
       - name: Pytest coverage comment
         id: coverageComment

@@ -45,20 +45,12 @@ dependencies = [
     "spcm_core>=1.0.9",
 ]
 
-# Development dependency groups, "uv sync" installs the dev group (includes test and lint)
-[dependency-groups]
+# Dependency groupds (optional)
+[project.optional-dependencies]
 test = ["pytest", "pytest-cov", "pytest-xdist", "coverage", "codecov"]
 lint = ["mypy", "ruff", "types-PyYAML"]
 docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
-dev = [
-    {include-group = "test"},
-    {include-group = "lint"},
-    "line_profiler[ipython]",
-    "nbformat>=4.2.0",
-    "ipykernel",
-    "ipython",
-    "ipywidgets",
-]
+dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [project.scripts]
 nexus = "console.service.start_manager:main"
