@@ -16,7 +16,7 @@ class SpectrumDriverError(ConnectionError):
     """Spectrum driver library is not installed or not supported."""
 
 
-def _type_to_name(card_type: int) -> str:
+def type_to_name(card_type: int) -> str:
     """Name translation for card type.
 
     Parameters
@@ -130,7 +130,7 @@ class SpectrumDevice(ABC):
         if self.card:
             # Read card information
             spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, byref(self.card_type))
-            self.name = _type_to_name(self.card_type.value)
+            self.name = type_to_name(self.card_type.value)
             self.log.debug(f"Connection to card {self.name} established!")
             self.setup_card()
         else:
