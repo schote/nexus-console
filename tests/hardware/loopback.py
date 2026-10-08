@@ -1,4 +1,4 @@
-"""Hardware loopback test of the transmit and receive path.
+"""Hardware loopback test.
 
 Requires measurement cards, therefore not collected by pytest. Run from the repository root:
 
