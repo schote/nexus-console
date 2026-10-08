@@ -62,6 +62,10 @@ nexus = "console.service.start_manager:main"
 testpaths = ["tests"]
 pythonpath = [".", "src"]
 
+[tool.coverage.run]
+# Hardware-bound, to be verified by the loopback test (tests/hardware/loopback.py)
+omit = ["src/console/spcm_control/rx_device.py", "src/console/spcm_control/tx_device.py"]
+
 
 [tool.mypy]
 files = ["src"]
