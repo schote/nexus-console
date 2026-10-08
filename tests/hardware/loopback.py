@@ -16,7 +16,7 @@ and recorded on RX channels 0-3. The recording of each ADC gate is compared to t
    consistency of the repetitions are checked against LIMITS. The test passes if all criteria pass.
 
 Copy the block printed under "Loopback test result (report in PR)" into the pull request.
-With -v, the analysis per ADC gate is printed and the signals and residuals are plotted.
+With -v, the analysis per ADC gate is printed and the signals are plotted.
 """
 import argparse
 import logging
@@ -91,6 +91,10 @@ class Limit:
         if self.unit == "samples":
             return f"{value:.2f} smp"
         return f"{value:.0f}"
+
+    def passed(self, value: float) -> bool:
+        """Return True if the value is within the limit (NaN fails, i.e. the criterion could not be evaluated)."""
+        return bool(value <= self.value)
 
 
 # All criteria must pass. A timing limit of 0.5 samples detects any shift by one or more samples, the typical result
@@ -233,7 +237,7 @@ class Gate:
     block: int  # Block number in the sequence
     start: int  # First sample of the gate in the unrolled sequence
     num_repetitions: int  # Expected number of repetitions (averages)
-    reference: np.ndarray  # Replayed waveform
+    reference: np.ndarray  # Replayed waveform, empty if the gate is missing in the unrolled sequence
     repetitions: dict[int, np.ndarray] = field(default_factory=dict)  # Recording per average index
     time_stamps: dict[int, float | None] = field(default_factory=dict)  # RX time stamp in s per average index
 
@@ -250,72 +254,61 @@ class Gate:
         return np.mean(list(self.repetitions.values()), axis=0) if self.valid else None
 
 
-@dataclass
-class Measurement:
-    """All ADC gates of the loopback measurement."""
-
-    gates: list[Gate]
-    num_expected: int  # Number of ADC events in the sequence
-    dwell_time: float  # Sample spacing of the unrolled sequence in s
-    output_limits: np.ndarray  # TX output range per channel in mV
+def output_limits(unrolled: UnrolledSequence) -> np.ndarray:
+    """TX output range per channel in mV."""
+    return np.array([unrolled.rf_output_limit, *unrolled.gradient_output_limits])
 
 
-def extract_gates(unrolled: UnrolledSequence, rx_data: list[RxData], adc_blocks: list[int]) -> Measurement:
-    """Extract the replayed waveforms and the recordings of each ADC gate and repetition in mV."""
+def extract_gates(unrolled: UnrolledSequence, rx_data: list[RxData], adc_blocks: list[int]) -> list[Gate]:
+    """Extract the replayed waveforms and the recordings of each ADC gate and repetition in mV.
+
+    Returns one gate per ADC event of the sequence, gates missing in the unrolled sequence are empty (invalid).
+    """
     seq = unrolled.seq.reshape(-1, 4).T
 
     # Channel 0 (RF) is a plain int16 value. Gradient channels 1-3 carry a digital signal in the 16th bit
     # (ADC gate, phase reference, RF unblanking), shifting left removes it and restores the int16 waveform.
-    limits = np.array([unrolled.rf_output_limit, *unrolled.gradient_output_limits])
     reference = np.vstack([seq[:1], (seq[1:].view(np.uint16) << 1).view(np.int16)]) / np.iinfo(np.int16).max
-    reference *= limits[:, None]
+    reference *= output_limits(unrolled)[:, None]
 
     # ADC gates are encoded in the 16th bit of channel 1
     edges = np.diff((seq[1].view(np.uint16) >> 15).astype(np.int8), prepend=0, append=0)
     bounds = list(zip(np.flatnonzero(edges == 1), np.flatnonzero(edges == -1), strict=True))
     if len(bounds) != len(adc_blocks):
         print(f"Found {len(bounds)} ADC gates in the unrolled sequence, expected {len(adc_blocks)}.")
+    bounds += [(0, 0)] * (len(adc_blocks) - len(bounds))
 
     gates = [
         Gate(k, block, int(start), unrolled.parameter.num_averages, reference[:, start:stop])
-        for k, ((start, stop), block) in enumerate(zip(bounds, adc_blocks, strict=False))
+        for k, (block, (start, stop)) in enumerate(zip(adc_blocks, bounds, strict=False))
     ]
     for rx in rx_data:
         if rx.index < len(gates):
             gate = gates[rx.index]
             gate.repetitions[rx.average_index] = rx.raw_data[:4] * np.asarray(rx.scaling_factor[:4])[:, None]
             gate.time_stamps[rx.average_index] = rx.time_stamp
-    return Measurement(gates, len(adc_blocks), unrolled.dwell_time, limits)
+    return gates
 
 
 # ---------------------------------------------------------------------------------------------------------------------
 # 2. Fit: recorded = gain * replayed(t - delay) + offset
 # ---------------------------------------------------------------------------------------------------------------------
 
-@dataclass
-class Fit:
-    """Fit result of one gate and channel."""
-
-    delay: float  # In samples
-    uncertainty: float  # Standard error of the delay in samples
-    gain: float
-    offset: float  # In mV
-    residual: np.ndarray  # Recorded minus fitted model in mV
-
-
-def fit_waveform(reference: np.ndarray, recorded: np.ndarray) -> Fit:
+def fit_waveform(reference: np.ndarray, recorded: np.ndarray) -> tuple[float, float, float, float, np.ndarray]:
     """Fit gain, delay and offset of a recording to its replayed waveform.
 
     For small delays, replayed(t - delay) ~ replayed(t) - delay * replayed'(t). The model is then linear in gain,
     gain * delay and offset and is solved by least squares, the standard error of the delay follows from the
     covariance of the coefficients. The estimate is accurate for delays up to about one sample (RF carrier at fs/10),
     larger delays still yield a large delay estimate, a wrong gain or a large residual.
+
+    Returns delay and its standard error in samples, gain, offset in mV and the residual (recorded - model) in mV.
     """
     design = np.column_stack([reference, np.gradient(reference), np.ones_like(reference)])
     (gain, slope, offset), *_ = np.linalg.lstsq(design, recorded)
     residual = recorded - design @ np.array([gain, slope, offset])
     variance = np.sum(residual ** 2) / max(recorded.size - 3, 1) * np.linalg.pinv(design.T @ design)[1, 1]
-    return Fit(-slope / gain, np.sqrt(variance) / abs(gain), gain, offset, residual)
+    return -slope / gain, np.sqrt(variance) / abs(gain), gain, offset, residual
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -323,59 +316,26 @@ def fit_waveform(reference: np.ndarray, recorded: np.ndarray) -> Fit:
 # ---------------------------------------------------------------------------------------------------------------------
 
 @dataclass
-class Check:
-    """Result of a test criterion, passed if the worst value does not exceed the limit (NaN fails)."""
-
-    name: str
-    worst: float
-
-    @property
-    def limit(self) -> Limit:
-        """Limit of the criterion."""
-        return LIMITS[self.name]
-
-    @property
-    def passed(self) -> bool:
-        """Return True if the worst value is within the limit."""
-        return bool(self.worst <= self.limit.value)
-
-
-@dataclass
 class Metrics:
     """Analysis results. Arrays have shape (num_gates, 4) per gate and channel, NaN if not applicable."""
 
     amplitude: np.ndarray  # Channel amplitude in mV: peak magnitude of the replayed waveform over all gates, (4,)
     active: np.ndarray  # Channel carries a waveform in this gate, delay and gain are fitted
+    precise: np.ndarray  # Fitted delay is precise enough to be evaluated
     delay: np.ndarray  # Fitted delay in samples
     uncertainty: np.ndarray  # Standard error of the fitted delay in samples
     gain: np.ndarray  # Fitted gain
     offset: np.ndarray  # Fitted DC offset in mV (mean value for inactive channels)
-    residuals: list[np.ndarray | None]  # Recorded minus fitted model per gate in mV, None for invalid gates
+    residual_rms: np.ndarray  # RMS of the residual relative to the channel amplitude
+    residual_peak: np.ndarray  # Peak of the residual relative to the channel amplitude
     gate_timing: np.ndarray  # Max. deviation of the gate start over all repetitions in samples, (num_gates,)
     repetition_deviation: np.ndarray  # Max. RMS deviation of a single repetition from the average, (num_gates,)
-    checks: list[Check]
-
-    @property
-    def precise(self) -> np.ndarray:
-        """Fitted delay is precise enough to be evaluated."""
-        return self.active & (self.uncertainty <= DELAY_PRECISION)
-
-    @property
-    def residual_rms(self) -> np.ndarray:
-        """RMS of the residual relative to the channel amplitude."""
-        return np.array([np.sqrt(np.mean(r ** 2, axis=-1)) if r is not None else np.full(4, np.nan)
-                         for r in self.residuals]).reshape(-1, 4) / self.amplitude
-
-    @property
-    def residual_peak(self) -> np.ndarray:
-        """Peak of the residual relative to the channel amplitude."""
-        return np.array([np.amax(np.abs(r), axis=-1) if r is not None else np.full(4, np.nan)
-                         for r in self.residuals]).reshape(-1, 4) / self.amplitude
+    checks: dict[str, float]  # Worst value per criterion in LIMITS
 
     @property
     def passed(self) -> bool:
         """Return True if all criteria passed."""
-        return all(check.passed for check in self.checks)
+        return all(LIMITS[name].passed(worst) for name, worst in self.checks.items())
 
 
 def nan_max(values: np.ndarray) -> float:
@@ -404,52 +364,50 @@ def gate_timing_error(gate: Gate, first: Gate, dwell_time: float) -> float:
     return max(deviations) if len(deviations) == gate.num_repetitions else np.nan
 
 
-def analyze(measurement: Measurement) -> Metrics:
+def analyze(gates: list[Gate], unrolled: UnrolledSequence) -> Metrics:
     """Fit each gate and channel and evaluate all test criteria."""
-    gates = measurement.gates
     valid = np.array([gate.valid for gate in gates], dtype=bool)
-    peaks = np.array([np.amax(np.abs(gate.reference), axis=-1) for gate in gates]).reshape(-1, 4)
+    peaks = np.array([np.amax(np.abs(gate.reference), axis=-1, initial=0) for gate in gates]).reshape(-1, 4)
     amplitude = np.amax(peaks, axis=0, initial=0)
     amplitude[amplitude == 0] = np.nan
     active = valid[:, None] & (peaks > ACTIVE_THRESHOLD * amplitude)
 
     # Fit active channels, inactive channels are expected to be constant (offset only)
-    delay, uncertainty, gain, offset = (np.full((len(gates), 4), np.nan) for _ in range(4))
-    residuals: list[np.ndarray | None] = [None] * len(gates)
+    delay, uncertainty, gain, offset, residual_rms, residual_peak = (np.full((len(gates), 4), np.nan) for _ in range(6))
     repetition_deviation = np.full(len(gates), np.nan)
     for k in np.flatnonzero(valid):
         recorded = gates[k].recorded
-        residuals[k] = np.empty_like(recorded)
+        residual = np.empty_like(recorded)
         for ch in range(4):
             if active[k, ch]:
-                fit = fit_waveform(gates[k].reference[ch], recorded[ch])
-                delay[k, ch], uncertainty[k, ch], gain[k, ch] = fit.delay, fit.uncertainty, fit.gain
-                offset[k, ch], residuals[k][ch] = fit.offset, fit.residual
+                delay[k, ch], uncertainty[k, ch], gain[k, ch], offset[k, ch], residual[ch] = fit_waveform(
+                    gates[k].reference[ch], recorded[ch],
+                )
             else:
                 offset[k, ch] = np.mean(recorded[ch])
-                residuals[k][ch] = recorded[ch] - offset[k, ch]
+                residual[ch] = recorded[ch] - offset[k, ch]
+        residual_rms[k] = np.sqrt(np.mean(residual ** 2, axis=-1)) / amplitude
+        residual_peak[k] = np.amax(np.abs(residual), axis=-1) / amplitude
         repetition_deviation[k] = max(
             np.amax(np.sqrt(np.mean((rep - recorded) ** 2, axis=-1)) / amplitude)
             for rep in gates[k].repetitions.values()
         )
 
-    gate_timing = np.array([gate_timing_error(gate, gates[0], measurement.dwell_time) for gate in gates])
-    metrics = Metrics(amplitude, active, delay, uncertainty, gain, offset, residuals, gate_timing,
-                      repetition_deviation, checks=[])
-
-    gain_spread = [nan_max(g) / np.nanmin(g) - 1 for g in gain.T if np.any(~np.isnan(g))]
-    metrics.checks = [
-        Check("Invalid ADC gates", max(measurement.num_expected, len(gates)) - int(np.sum(valid))),
-        Check("Gate timing", nan_max(gate_timing)),
-        Check("Waveform timing", nan_max(np.where(metrics.precise, np.abs(delay), np.nan))),
-        Check("Gain error", nan_max(np.abs(gain - 1))),
-        Check("Gain spread", nan_max(gain_spread)),
-        Check("DC offset", nan_max(np.abs(offset) / measurement.output_limits)),
-        Check("Residual RMS", nan_max(metrics.residual_rms)),
-        Check("Residual peak", nan_max(metrics.residual_peak)),
-        Check("Repetition deviation", nan_max(repetition_deviation)),
-    ]
-    return metrics
+    precise = active & (uncertainty <= DELAY_PRECISION)
+    gate_timing = np.array([gate_timing_error(gate, gates[0], unrolled.dwell_time) for gate in gates])
+    checks = {
+        "Invalid ADC gates": len(gates) - int(np.sum(valid)),
+        "Gate timing": nan_max(gate_timing),
+        "Waveform timing": nan_max(np.where(precise, np.abs(delay), np.nan)),
+        "Gain error": nan_max(np.abs(gain - 1)),
+        "Gain spread": nan_max([nan_max(g) / np.nanmin(g) - 1 for g in gain.T if np.any(~np.isnan(g))]),
+        "DC offset": nan_max(np.abs(offset) / output_limits(unrolled)),
+        "Residual RMS": nan_max(residual_rms),
+        "Residual peak": nan_max(residual_peak),
+        "Repetition deviation": nan_max(repetition_deviation),
+    }
+    return Metrics(amplitude, active, precise, delay, uncertainty, gain, offset, residual_rms, residual_peak,
+                   gate_timing, repetition_deviation, checks)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -477,9 +435,8 @@ def print_table(title: str, header: list[str], rows: list[list[str]]) -> None:
         print(line(row))
 
 
-def print_details(measurement: Measurement, metrics: Metrics) -> None:
+def print_details(gates: list[Gate], metrics: Metrics) -> None:
     """Print the results per ADC gate (rows) and channel (columns)."""
-    gates = measurement.gates
     print("\n---------- Details per ADC gate ----------")
     print(f"Channel amplitudes [mV]: {per_channel(metrics.amplitude, '.1f')}")
 
@@ -514,38 +471,42 @@ def print_details(measurement: Measurement, metrics: Metrics) -> None:
     channel_table("Residual RMS / peak [% of channel amplitude]", residual, only_active=False)
 
 
-def print_result(measurement: Measurement, metrics: Metrics, system: SystemInfo, device_config: str) -> None:
+def print_result(metrics: Metrics, dwell_time: float, system: SystemInfo, device_config: str) -> None:
     """Print the test result to be reported in the pull request."""
     print("\n---------- Loopback test result (report in PR) ----------")
     print(f"Date: {datetime.now().astimezone():%Y-%m-%d %H:%M UTC%z}")
     print(system)
     print(f"Device configuration: {device_config}")
     print_table("Criteria", ["Criterion", "Worst", "Limit", "Result"], [
-        [check.name, check.limit.format(check.worst), check.limit.format(check.limit.value),
-         "PASS" if check.passed else "FAIL"]
-        for check in metrics.checks
+        [name, LIMITS[name].format(worst), LIMITS[name].format(LIMITS[name].value),
+         "PASS" if LIMITS[name].passed(worst) else "FAIL"]
+        for name, worst in metrics.checks.items()
     ])
-    print(f"\nMean delay [ns]: {per_channel(channel_mean(metrics.delay) * measurement.dwell_time * 1e9, '.1f')}")
+    print(f"\nMean delay [ns]: {per_channel(channel_mean(metrics.delay) * dwell_time * 1e9, '.1f')}")
     print(f"Mean gain: {per_channel(channel_mean(metrics.gain), '.4f')}")
     print(f"Result: {'PASSED' if metrics.passed else 'FAILED'}\n")
 
 
-def gate_figure(measurement: Measurement, title: str) -> tuple[plt.Figure, np.ndarray, np.ndarray]:
-    """Create a figure with one row per channel and all ADC gates concatenated on a common time axis.
+def plot_signals(gates: list[Gate], dwell_time: float) -> plt.Figure:
+    """Plot replayed (solid) and recorded (dashed) signals of all channels, including channels expected to be zero.
 
-    Returns the figure, the axes and the start time of each gate in ms (and the end of the last gate).
+    One row per channel, all ADC gates are concatenated on a common time axis. The recorded signal is the measured
+    data averaged over all repetitions, no fit is applied.
     """
-    gates = measurement.gates
+    ms_per_sample = dwell_time * 1e3
+    bounds = np.cumsum([0] + [gate.reference.shape[1] for gate in gates]) * ms_per_sample
     fig, axes = plt.subplots(4, 1, sharex=True, figsize=(14, 8), layout="constrained")
-    fig.suptitle(title)
-    bounds = np.cumsum([0] + [gate.reference.shape[1] for gate in gates]) * measurement.dwell_time * 1e3
+    axes[-1].set_xlabel("Concatenated ADC gate time [ms]")
 
-    for ax, name in zip(axes, CHANNELS, strict=True):
+    for ch, (ax, name, color) in enumerate(zip(axes, CHANNELS, CHANNEL_COLORS, strict=True)):
         ax.set_ylabel(f"{name}\n[mV]")
         ax.grid(alpha=0.3, axis="y")
-        for bound in bounds:
-            ax.axvline(bound, color="gray", linewidth=0.8)
-    axes[-1].set_xlabel("Concatenated ADC gate time [ms]")
+        ax.vlines(bounds, 0, 1, transform=ax.get_xaxis_transform(), color="gray", linewidth=0.8)
+        for gate, start in zip(gates, bounds, strict=False):
+            time = start + np.arange(gate.reference.shape[1]) * ms_per_sample
+            ax.plot(time, gate.reference[ch], color=color, linewidth=2.5, alpha=0.4)
+            if gate.valid:
+                ax.plot(time, gate.recorded[ch], color=color, linewidth=1, linestyle="--")
 
     # Label each gate on top of the first row: "<ADC index> (block <block number>)", "!" marks invalid gates
     labels = axes[0].secondary_xaxis("top")
@@ -553,46 +514,13 @@ def gate_figure(measurement: Measurement, title: str) -> tuple[plt.Figure, np.nd
                       [f"{g.index} (block {g.block})" + ("" if g.valid else " !") for g in gates],
                       fontsize=8, rotation=90)
     labels.tick_params(length=0)
-    return fig, axes, bounds
 
-
-def plot_signals(measurement: Measurement) -> plt.Figure:
-    """Plot replayed (solid) and recorded (dashed) signals of all channels, including channels expected to be zero.
-
-    The recorded signal is the measured data averaged over all repetitions, no fit is applied.
-    """
-    fig, axes, bounds = gate_figure(measurement, "Replayed and recorded signals")
-    for gate, start in zip(measurement.gates, bounds, strict=False):
-        time = start + np.arange(gate.reference.shape[1]) * measurement.dwell_time * 1e3
-        recorded = gate.recorded
-        for ch, (ax, color) in enumerate(zip(axes, CHANNEL_COLORS, strict=True)):
-            ax.plot(time, gate.reference[ch], color=color, linewidth=2.5, alpha=0.4)
-            if recorded is not None:
-                ax.plot(time, recorded[ch], color=color, linewidth=1, linestyle="--")
-
-    num_repetitions = measurement.gates[0].num_repetitions if measurement.gates else 0
-    handles = [
+    num_repetitions = gates[0].num_repetitions if gates else 0
+    fig.legend(handles=[
         Line2D([], [], color="gray", linewidth=2.5, alpha=0.4, label="replayed (unrolled sequence)"),
         Line2D([], [], color="gray", linewidth=1, linestyle="--",
-               label=f"recorded (measured, average of {num_repetitions} repetitions, not fitted)"),
-    ]
-    fig.legend(handles=handles, loc="outside lower left", ncol=2, fontsize=8, frameon=False)
-    return fig
-
-
-def plot_residuals(measurement: Measurement, metrics: Metrics) -> plt.Figure:
-    """Plot the residual to the fitted model per channel, dotted lines mark the residual RMS limit."""
-    title = "Residual: recorded - (gain * replayed(t - delay) + offset), gain, delay and offset fitted per gate"
-    fig, axes, bounds = gate_figure(measurement, title)
-    for residual, start in zip(metrics.residuals, bounds, strict=False):
-        if residual is None:
-            continue
-        time = start + np.arange(residual.shape[1]) * measurement.dwell_time * 1e3
-        for ch, (ax, color) in enumerate(zip(axes, CHANNEL_COLORS, strict=True)):
-            ax.plot(time, residual[ch], color=color, linewidth=1)
-    for ax, amplitude in zip(axes, metrics.amplitude, strict=True):
-        for sign in (-1, 1):
-            ax.axhline(sign * LIMITS["Residual RMS"].value * amplitude, color="black", linestyle=":", linewidth=0.8)
+               label=f"recorded (average of {num_repetitions} measurements)"),
+    ], loc="outside lower left", ncol=2, fontsize=8, frameon=False)
     return fig
 
 
@@ -630,7 +558,7 @@ def main() -> None:
     )
     parser.add_argument(
         "-v", "--verbose", action="store_true",
-        help="Print the analysis per ADC gate and plot the signals and residuals.",
+        help="Print the analysis per ADC gate and plot the signals.",
     )
     args = parser.parse_args()
     run_test = args.device_config is not None and not args.seq_plot
@@ -671,20 +599,20 @@ def main() -> None:
             acq.set_sequence(sequence, parameter)
             adc_blocks = [k for k in sequence.block_events if sequence.get_block(k).adc is not None]
             data = acq.run(store_unprocessed=True)
-            measurement = extract_gates(acq.sequence, data.receive_data, adc_blocks)
+            unrolled = acq.sequence
+            gates = extract_gates(unrolled, data.receive_data, adc_blocks)
         finally:
             del acq
             print(RESTORE_NOTE)
 
-    metrics = analyze(measurement)
+    metrics = analyze(gates, unrolled)
     if args.verbose:
-        print_details(measurement, metrics)
-    print_result(measurement, metrics, system, args.device_config)
+        print_details(gates, metrics)
+    print_result(metrics, unrolled.dwell_time, system, args.device_config)
 
     if args.verbose:
         print("Preparing plots...")
-        plot_signals(measurement)
-        plot_residuals(measurement, metrics)
+        plot_signals(gates, unrolled.dwell_time)
         plt.show()
 
     raise SystemExit(0 if metrics.passed else 1)
