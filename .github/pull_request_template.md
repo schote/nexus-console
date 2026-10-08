@@ -7,18 +7,6 @@
      or "Relates to #123" for issues that should stay open. -->
 Closes #
 
-## Hardware setup
-<!-- Run the following command from the repository root on the system this PR was tested with,
-     and paste its complete output between the ``` lines below:
-
-         python tests/hardware/system_info.py
-
-     It prints OS, Python, nexus-console version and git revision, spcm driver versions and the Spectrum card models.
-     NOTE: Stop the console service first, cards that are in use cannot be read. -->
-
-```
-
-```
 
 ## Loopback test
 <!-- Wire the cards as printed by the script, run the following command from the repository root
