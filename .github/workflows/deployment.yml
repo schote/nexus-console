@@ -22,27 +22,23 @@ jobs:
         with:
           fetch-depth: 0  # Needed for full Git history and tags
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: '3.13'
-          cache: 'pip'
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade build setuptools-git-versioning
+          enable-cache: true
 
       - name: Get version
         id: get_version
         run: |
           # Assuming pyproject.toml is at the root of the repository.
-          VERSION=$(python -c "import setuptools_git_versioning; print(setuptools_git_versioning.get_version(root='.'))")
+          VERSION=$(uv run --no-project --with setuptools-git-versioning python -c "import setuptools_git_versioning; print(setuptools_git_versioning.get_version(root='.'))")
           echo "Calculated Version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build package
-        run: python -m build
+        run: uv build
 
       - name: Upload distribution artifact
         uses: actions/upload-artifact@v4

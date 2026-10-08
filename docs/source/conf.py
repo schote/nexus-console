@@ -50,7 +50,7 @@ extensions = [
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 source_suffix = {'.rst': 'restructuredtext', '.txt': 'restructuredtext', '.md': 'markdown'}
 
-autodoc_mock_imports = ["console.spcm_control.spcm", "spcm_core"]
+autodoc_mock_imports = ["spcm_core"]
 
 
 # -- Options for HTML output -------------------------------------------------
