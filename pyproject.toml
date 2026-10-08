@@ -42,6 +42,7 @@ dependencies = [
     "pandas",
     "ismrmrd<1.15.0",
     "h5py",
+    "spcm_core>=1.0.9",
 ]
 
 # Dependency groupds (optional)

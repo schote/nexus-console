@@ -4,8 +4,9 @@ from ctypes import *
 from typing import Any
 
 # load registers for easier access
-import console.spcm_control.spcm.registers as regs
-from console.spcm_control.spcm.errors import ERR_OK, error_reg
+import console.spcm_control.spcm._constants as regs
+from console.spcm_control.spcm._constants import ERR_OK
+from console.spcm_control.spcm.errors import error_reg
 from console.spcm_control.spcm.status import status_reg, status_reg_desc
 
 

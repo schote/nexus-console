@@ -1,16 +1,15 @@
-"""Spectrum card status registers, translations and descriptions from user manual."""
+"""Spectrum card status register translations and descriptions from user manual."""
 
-# Card status
-M2STAT_CARD_PRETRIGGER = 0x1
-M2STAT_CARD_TRIGGER = 0x2
-M2STAT_CARD_READY = 0x4
-M2STAT_CARD_SEGMENT_PRETRG = 0x8
-
-# Data status
-M2STAT_DATA_BLOCKREADY = 0x100
-M2STAT_DATA_END = 0x200
-M2STAT_DATA_OVERRUN = 0x400
-M2STAT_DATA_ERROR = 0x800
+from console.spcm_control.spcm._constants import (
+    M2STAT_CARD_PRETRIGGER,
+    M2STAT_CARD_READY,
+    M2STAT_CARD_SEGMENT_PRETRG,
+    M2STAT_CARD_TRIGGER,
+    M2STAT_DATA_BLOCKREADY,
+    M2STAT_DATA_END,
+    M2STAT_DATA_ERROR,
+    M2STAT_DATA_OVERRUN,
+)
 
 # Dictionary of status registers
 status_reg: dict[int, str] = {
