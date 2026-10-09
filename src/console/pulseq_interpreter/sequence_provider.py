@@ -20,7 +20,7 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 try:
     from line_profiler import profile
 except ImportError:
-    def profile(func: Callable[..., Any]) -> Callable[..., Any]:
+    def profile(func: Callable[..., Any]) -> Callable[..., Any]:  # type: ignore[misc]  # fallback if line_profiler is missing
         """Define placeholder for profile decorator."""
         return func
 

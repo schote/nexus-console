@@ -1,15 +1,17 @@
 """Implementation of transmit card."""
+import contextlib
 import ctypes
 import logging
 import threading
 
 import numpy as np
 
-import console.spcm_control.spcm.pyspcm as spcm
 from console.interfaces.acquisition_parameter import Dimensions
 from console.interfaces.unrolled_sequence import UnrolledSequence
 from console.spcm_control.abstract_device import SpectrumDevice
-from console.spcm_control.spcm.tools import create_dma_buffer, type_to_name
+
+with contextlib.suppress(Exception):  # missing driver is reported by SpectrumDevice.connect()
+    import spcm_core as spcm
 
 TX_NOTIFY_RATE = 16
 
@@ -65,7 +67,7 @@ class TxCard(SpectrumDevice):
         self.data_buffer_size: int = 0
 
         # Define maximum ring buffer size, 512 MSamples * 2 Bytes = 1024 MB
-        self.max_ring_buffer_size: spcm.uint64 = spcm.uint64(1024**3)
+        self.max_ring_buffer_size = ctypes.c_uint64(1024**3)
 
         # Threading class attributes
         self.worker: threading.Thread | None = None
@@ -90,8 +92,8 @@ class TxCard(SpectrumDevice):
         spcm.spcm_dwGetParam_i32(self.card, spcm.SPC_PCITYP, ctypes.byref(self.card_type))
 
         try:
-            if "M2p.65" not in (device_type := type_to_name(self.card_type.value)):
-                raise ConnectionError(f"Device with path {self.path} is of type {device_type}, no transmit card...")
+            if self.name is None or "M2p.65" not in self.name:
+                raise ConnectionError(f"Device with path {self.path} is of type {self.name}, no transmit card...")
         except ConnectionError as err:
             self.log.exception(err, exc_info=True)
             raise err
@@ -352,7 +354,7 @@ class TxCard(SpectrumDevice):
         # Allocate continuous ring buffer with minimum necessary amount of memory, ensure multiple of notify size
         min_ring_buffer_size = int(np.ceil(self.data_buffer_size / notify_size.value) * notify_size.value)
         # Create page-aligned ring buffer
-        ring_buffer = create_dma_buffer(min(self.max_ring_buffer_size.value, min_ring_buffer_size))
+        ring_buffer = spcm.pvAllocMemPageAligned(min(self.max_ring_buffer_size.value, min_ring_buffer_size))
         ring_buffer_size = spcm.uint64(len(ring_buffer))
 
         try:
