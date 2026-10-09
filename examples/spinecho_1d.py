@@ -8,8 +8,8 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities import sequences
 
-# Create acquisition control instance
-config_file = r"C:\Users\Tom\code\spectrum-console\examples\example_device_config.yaml"
+# Create acquisition control instance, adapt the path to the device configuration of your system
+config_file = "example_device_config.yaml"
 acq = AcquisitionControl(configuration_file=config_file)
 
 # Construct a spin echo based spectrum sequence
@@ -28,11 +28,12 @@ acq.set_sequence(sequence=seq, parameter=console.parameter)
 acq_data: AcquisitionData = acq.run(store_unprocessed=True)
 
 # Get decimated data from acquisition data object
-data = acq_data.receive_data[0].processed_data.squeeze()
+rx_data = acq_data.receive_data[0]
+data = rx_data.processed_data.squeeze()
 
-# Calculate FFT
+# Calculate FFT, the frequency axis is given by the dwell time of the decimated data
 data_fft = np.fft.fftshift(np.fft.fft(np.fft.fftshift(data)))
-fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, data.dwell_time))
+fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, rx_data.dwell_time))
 
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))

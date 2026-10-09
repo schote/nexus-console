@@ -15,20 +15,18 @@ TX_NOTIFY_RATE = 16
 
 
 class TxCard(SpectrumDevice):
-    """
-    Implementation of TX device.
+    """Transmit card (arbitrary waveform generator).
 
-    Implements abstract base class SpectrumDevice, which requires the abstract methods get_status(),
-    setup_card() and operate(). The TxCard is automatically instantiated by a yaml-loader when
-    loading the configuration file.
+    Implementation of the abstract `SpectrumDevice` for the Spectrum Instrumentation M2p.65xx series,
+    developed and tested with the M2p.6546-x4 (4 channels, 512 MSample on-board memory, 2 bytes/sample).
 
-    The implementation was done and tested with card M2p6546-x4, which has an onboard
-    memory size of 512 MSample, 2 Bytes/sample => 1024 MB.
+    The card replays the interleaved int16 waveform of an `UnrolledSequence` in FIFO single mode
+    (``SPC_REP_FIFO_SINGLE``). A host-side ring buffer of at most 1 GiB is streamed to the card in
+    chunks of ``notify_size`` bytes by a background thread. Channel 0 carries the RF waveform,
+    channels 1 to 3 carry the gradient waveforms. Bit 15 of channels 1, 2 and 3 is routed to the digital
+    outputs X1 (ADC gate), X2 (phase reference) and X3 (RF unblanking).
 
-    Overview:
-    ---------
-    The TX card operates with a ring buffer on the spectrum card, defined by ring_buffer_size.
-    The ring buffer is filled in fractions of notify_size.
+    The card runs on an external sampling clock, which is provided by the receive card.
     """
 
     __name__: str = "TxCard"
@@ -74,10 +72,12 @@ class TxCard(SpectrumDevice):
     def setup_card(self) -> None:
         """Set up spectrum card in transmit (TX) mode.
 
-        At the very beginning, a card reset is performed. The clock mode is set according to the sample rate,
-        defined by the class attribute.
-        All 4 channels are enables and configured by max. amplitude and filter values from class attributes.
-        Digital outputs X0, X1 and X2 are defined which are controlled by the 15th bit of analog outputs 1, 2 and 3.
+        The card is reset and its type is verified (M2p.65xx). The trigger is set to software, the clock
+        to external (50 Ohm, 1.5 V threshold), and the sampling rate is set from the class attribute.
+        All 4 channels are enabled and configured with the max. amplitude and filter values from the class
+        attributes. The digital outputs X1, X2 and X3 are driven by bit 15 of the analog channels 1, 2 and 3.
+        If an IO expansion module is present, the ADC gate and the unblanking signal are additionally
+        routed to X12 and X13.
 
         Raises
         ------
@@ -103,7 +103,7 @@ class TxCard(SpectrumDevice):
         # Set trigger
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
 
-        # Configure external clock, TX master clock
+        # Configure external clock, sampling clock is provided by the RX card (clock master)
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500))
@@ -138,17 +138,17 @@ class TxCard(SpectrumDevice):
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP0, self.max_amplitude[0]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER0, self.filter_type[0]))
 
-        # Channel 1: Gradient x, synchronous digital output: gate trigger
+        # Channel 1: Gradient, synchronous digital output (bit 15 -> X1): ADC gate
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT1, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP1, self.max_amplitude[1]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER1, self.filter_type[1]))
 
-        # Channel 2: Gradient y, synchronous digital output: un-blanking
+        # Channel 2: Gradient, synchronous digital output (bit 15 -> X2): phase reference
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT2, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP2, self.max_amplitude[2]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER2, self.filter_type[2]))
 
-        # Channel 3: Gradient z
+        # Channel 3: Gradient, synchronous digital output (bit 15 -> X3): RF unblanking
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_ENABLEOUT3, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_AMP3, self.max_amplitude[3]))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_FILTER3, self.filter_type[3]))

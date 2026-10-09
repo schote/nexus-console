@@ -29,19 +29,16 @@ def _dict_factory(items: Iterable[tuple[str, Any]]) -> dict[str, Any]:
 
 @dataclass
 class AcquisitionParameter:
-    """
-    Parameters to define an acquisition.
+    """Runtime parameters of an acquisition.
 
-    The acquisition parameters are defined in a dataclass which is hashable but still mutable.
-    This allows to easily change parameters and detect updates by comparing the hash.
+    In contrast to the static device configuration, acquisition parameters describe the state of a
+    measurement session (e.g. calibrated Larmor frequency and B1 scaling) and are passed to
+    `AcquisitionControl.set_sequence` for each acquisition.
 
-    New instances of acquisition parameters are not saved automatically.
-    Once the autosave flag is set by calling `activate_autosave`, the parameter state is
-    written to a pickle file acquisition-parameter.state in the default_state_file_path on any
-    mutation of the acquisition parameter instance.
-    The autosave option can be deactivated calling `deactivate_autosave`.
-    Manually storing the acquisition parameters to a specific directory can be achieved
-    using the `save` method and providing the desired path.
+    The parameter state is persisted as JSON: it is written to `state_filepath` on instantiation and on
+    every mutation of an attribute (including mutations of nested `Dimensions` attributes). Assignments are
+    type-checked against the field annotations. On import of the `console` package, the last saved state is
+    loaded and exposed as `console.parameter`.
     """
 
     larmor_frequency: float = 2.e6
@@ -51,13 +48,20 @@ class AcquisitionParameter:
     """Scaling of the B1 field (RF transmit power)."""
 
     gradient_offset: Dimensions = field(default_factory=_gradient_offset_factory)
-    """Gradient offset values in mV."""
+    """Static gradient offsets (e.g. for linear shimming) in mV.
+
+    Given per physical output channel (x: channel 1, y: channel 2, z: channel 3) and applied as hardware
+    DC offset of the transmit card for the duration of an acquisition.
+    """
 
     fov_scaling: Dimensions = field(default_factory=_fov_scaling_factory)
-    """Field of view scaling for Gx, Gy and Gz."""
+    """Scaling factor of the logical gradient waveforms gx, gy and gz."""
 
     channel_assignment: Dimensions = field(default_factory=_channel_factory)
-    """Assignment of console output channels to gradient channels x, y, z."""
+    """Assignment of the logical gradients x, y, z to the physical transmit channels 1, 2, 3.
+
+    Must be a permutation of {1, 2, 3}.
+    """
 
     ddc_method: DDCMethod = DDCMethod.FIR
     """Decimation filter method."""
@@ -169,9 +173,10 @@ class AcquisitionParameter:
         Parameters
         ----------
         filepath : str or Path or None, optional
-            Path to the pickle state file. If None, the default path
-            ``<home>/nexus-console/acquisition-parameter.state`` is used.
-            The default path can be changed with the ``set_default_path`` method.
+            Path to the JSON state file. If None, `state_filepath` is used
+            (default ``<home>/nexus-console/acquisition-parameter.state``).
+            If the path does not end with ``.state``, it is interpreted as directory and the
+            filename ``acquisition-parameter.state`` is appended.
         """
         _path = Path(filepath or self.state_filepath)
         if not _path.name.endswith(".state"):
@@ -192,14 +197,9 @@ class AcquisitionParameter:
 
         Returns
         -------
-            Instance of acquisition parameters with state loaded from the provided path.
-
-        Raises
-        ------
-        FileNotFoundError
-            Provided filepath does not exist or is not a valid state file.
-        EOFError
-            Provided state file is corrupted
+        AcquisitionParameter or None
+            Instance of acquisition parameters with state loaded from the provided path, or None if the
+            state file does not exist or cannot be parsed (the error is logged).
         """
         log = logging.getLogger("AcqParam")
 

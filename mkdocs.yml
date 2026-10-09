@@ -66,20 +66,21 @@ extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
   - assets/js/doc-badges.js
 
-hooks:
-  - docs/hooks.py
-
 plugins:
   - search
-  # - gen-files:
-  #     scripts:
-  #       - docs/scripts/gen_ref_pages.py
+  - gen-files:
+      scripts:
+        - docs/scripts/gen_ref_pages.py
   - literate-nav:
       nav_file: SUMMARY.md
   - mkdocstrings:
       handlers:
         python:
           paths: [src]
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
+            - https://docs.pydantic.dev/latest/objects.inv
           options:
             docstring_style: numpy
             docstring_options:
@@ -93,23 +94,36 @@ plugins:
             separate_signature: true
             merge_init_into_class: true
             show_signature_annotations: true
+            signature_crossrefs: true
             unwrap_annotated: true
             filters:
               - "!^_"
 
 nav:
   - Home: index.md
-  - Setup:
-    - Installation: setup/installation.md
-    - Usage: setup/usage.md
-    - System setup: setup/system_setup.md
-    - Measurement cards: setup/cards.md
+  - Getting started:
+    - Quickstart: getting-started/quickstart.md
+    - First acquisition: getting-started/first-acquisition.md
+  - System guide:
+    - Overview: system/overview.md
+    - Hardware: system/hardware.md
+    - Wiring: system/wiring.md
+    - Device configuration: system/configuration.md
+    - Sequence unrolling: system/sequence-unrolling.md
+    - Acquisition: system/acquisition.md
+    - Signal flow: system/signal-flow.md
   - Examples:
     - Overview: examples/index.md
     - Spin-echo spectrum: examples/spin_echo.md
     - T2 relaxation: examples/t2_measurement.md
     - 3D turbo spin-echo: examples/tse_3d.md
-  - Reference: reference/
+    - Remote acquisition: examples/remote_acquisition.md
+  - API reference: reference/
+  - References: references.md
 
 docs_dir: docs
 site_dir: site
+
+extra:
+  version:
+    provider: mike

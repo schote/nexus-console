@@ -1,42 +1,21 @@
-# Spin-Echo Spectrum
+# Spin-echo spectrum
 
-This example demonstrates how to acquire an NMR spectrum using a spin-echo sequence and display the magnitude spectrum via a Fast Fourier Transform (FFT). It serves as a minimal integration test for the complete signal chain: sequence generation → waveform replay → NMR signal acquisition → post-processing.
+A spin echo is acquired and its spectrum is calculated by a Fourier transform. The experiment tests the complete signal chain and is used to determine the Larmor frequency: a peak offset from 0 Hz in the spectrum corresponds to the deviation of `console.parameter.larmor_frequency` from the actual resonance frequency.
 
-## Experiment overview
+## Sequence
 
-A spin-echo sequence consists of a 90° excitation pulse followed, after half the echo time (TE/2), by a 180° refocusing pulse. The spin echo forms at time TE after excitation. Because the spin echo refocuses static field inhomogeneity dephasing, it yields narrower spectral lines than a free-induction decay (FID), making it preferable for spectroscopic measurements on inhomogeneous low-field magnets.
+The constructor [`se_spectrum.constructor`][console.utilities.sequences.spectrometry.se_spectrum.constructor] creates a 90° excitation pulse and a 180° refocussing pulse (phase π/2) at TE/2. The ADC is either centred on the echo or, with `use_fid=True`, acquires the decay after the refocussing pulse.
 
-The sequence constructor `console.utilities.sequences.spectrometry.se_spectrum.constructor` accepts:
+## Procedure
 
-| Parameter | Description |
-|---|---|
-| `echo_time` | Time between excitation pulse centre and echo centre (s) |
-| `rf_duration` | Duration of the rectangular RF pulses (s) |
-| `use_sinc` | If `True`, use a sinc-shaped excitation pulse instead of a rectangular block pulse |
-| `system` | PyPulseq `Opts` system limits (obtained from `AcquisitionControl.get_sequence_system()`) |
+1. Create an `AcquisitionControl` instance, which connects to the cards.
+2. Construct the sequence and set the Larmor frequency.
+3. Unroll the sequence with `set_sequence` and run the acquisition.
+4. Calculate the spectrum from `processed_data`; the frequency axis follows from the dwell time `RxData.dwell_time`.
+5. Store the data with `save()` and disconnect the cards by deleting the instance.
 
-## Step-by-step breakdown
-
-The experiment proceeds as follows:
-
-1. **Instantiate `AcquisitionControl`** — connects to the TX and RX cards and reads the device configuration.
-2. **Construct the spin-echo sequence** — creates a PyPulseq `Sequence` object with the specified echo time and RF pulse duration.
-3. **Set acquisition parameters** — specify the Larmor frequency; all other parameters are loaded from the persisted state.
-4. **Unroll and execute** — `set_sequence` unrolls the PyPulseq description into `int16` waveform arrays and arms the hardware; `run()` executes the acquisition loop.
-5. **Extract processed data** — `processed_data` contains the complex baseband signal after demodulation, phase correction, and decimation.
-6. **Compute the spectrum** — a double-sided FFT with fftshift yields the magnitude spectrum; the frequency axis is computed from the decimated dwell time.
-7. **Save results** — `add_info` appends metadata to the acquisition record; `save` writes `rx_data.h5`, `meta.json`, and the `.seq` file.
-8. **Disconnect** — `del acq` triggers the `AcquisitionControl` destructor, which disconnects from both cards.
-
-## Example script
+## Script
 
 ```python title="examples/spinecho_1d.py"
 --8<-- "examples/spinecho_1d.py"
 ```
-
-!!! note "Frequency axis"
-    The FFT frequency axis is computed from the decimated dwell time of the processed data, which is available as `acq_data.receive_data[0].dwell_time` (in seconds). The `processed_data` numpy array does not carry a `dwell_time` attribute.
-
-## Expected output
-
-The magnitude spectrum shows one or more peaks centred near the Larmor frequency offset. In a well-shimmed, homogeneous low-field magnet, the line width at half maximum reflects the inherent T2* of the sample. Broad or shifted peaks indicate a Larmor frequency calibration error or field inhomogeneity.

@@ -20,21 +20,21 @@ def constructor(
 
     Parameters
     ----------
-    rf_duration, optional
+    rf_duration : float, optional
         RF duration in s
-    dead_time, optional
+    dead_time : float, optional
         Additional time delay between RF pulse and ADC readout
-    num_samples, optional
+    num_samples : int, optional
         Number of ADC sample points
-    acq_bandwidth, optional
+    acq_bandwidth : float | int, optional
         Acquisition bandwidth in Hz
-    use_sinc, optional
+    use_sinc : bool, optional
         If set, sinc RF pulse is used, otherwise block pulse
-    time_bw_product, optional
+    time_bw_product : float, optional
         Time bandwidth product
-    flip_angle, optional
+    flip_angle : float, optional
         Flip angle of RF pulse
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

@@ -14,9 +14,9 @@ def filter_moving_average(signal: np.ndarray, decimation: int = 100, overlap: in
         Unprocessed raw signal to be decimated and filtered.
         Input signal shape is supposed to be [averages, coils, phase encoding, readout].
         Downsampling is applied to the readout dimension.
-    decimation, optional
+    decimation : int, optional
         Decimation factor, by default 100
-    overlap, optional
+    overlap : int, optional
         Overlap factor of the kernel.
         If 2, kernel is applied every kernel_size/2, if 4 every kerne_size/4 and so on.
         By default 4

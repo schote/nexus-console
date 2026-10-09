@@ -6,13 +6,9 @@ hide:
 
 # Nexus Console
 
-**An open-source Python framework for versatile low-field MRI acquisition**
+**An open-source Python console for versatile low-field MRI acquisition**
 
-Nexus Console is a hardware-agnostic, open-source software framework that enables direct replay of [PyPulseq](https://github.com/imr-framework/pypulseq) pulse sequences on Spectrum Instrumentation arbitrary-waveform generator (AWG) and digitizer cards, eliminating the need for vendor-specific sequence compilers. The framework directly interprets the pulseq open standard, streams RF and gradient waveforms to the transmit card in real time via FIFO mode, and acquires NMR signals in gated FIFO mode on the receive card. Acquired data are post-processed on the host (demodulation, phase correction, decimation) and exported in [ISMRMRD](https://ismrmrd.github.io/) format for seamless compatibility with Gadgetron and other reconstruction frameworks.
-
-The console has been validated on a 50 mT Halbach-configured low-field MRI scanner and is described in:
-
-> Schote D, Silemek B, Seifert F, et al. *Nexus Console: An Open-Source Python Console for a Versatile Low-Field MRI System.* Magn Reson Med. 2025.
+--8<-- "README.md:summary"
 
 <div class="grid cards" markdown>
 
@@ -20,34 +16,50 @@ The console has been validated on a 50 mT Halbach-configured low-field MRI scann
 
     ---
 
-    Install the package and run your first acquisition in minutes.
+    Install the software and run a first acquisition.
 
-    [:octicons-arrow-right-24: Installation](setup/installation.md)
+    [:octicons-arrow-right-24: Quickstart](getting-started/quickstart.md)
 
--   :material-developer-board:{ .lg .middle } **Hardware**
+-   :material-developer-board:{ .lg .middle } **System guide**
 
     ---
 
-    Understand the MRI system layout, card pinouts, and port assignments.
+    Hardware, wiring, configuration, and the path from sequence to data.
 
-    [:octicons-arrow-right-24: System setup](setup/system_setup.md)
+    [:octicons-arrow-right-24: System overview](system/overview.md)
 
 -   :material-flask-outline:{ .lg .middle } **Examples**
 
     ---
 
-    Step-by-step walkthroughs of NMR spectroscopy, T2 mapping, and 3D imaging.
+    Spectroscopy, relaxometry, 3D imaging and remote acquisition.
 
     [:octicons-arrow-right-24: Examples](examples/index.md)
 
--   :material-code-braces:{ .lg .middle } **Code reference**
+-   :material-code-braces:{ .lg .middle } **API reference**
 
     ---
 
-    Full API documentation with narrative explanations and architecture diagrams for every module.
+    Reference documentation generated from the source code.
 
-    [:octicons-arrow-right-24: Reference](reference/)
+    [:octicons-arrow-right-24: API reference](reference/index.md)
 
 </div>
 
-The project is listed on [opensourceimaging.org](https://www.opensourceimaging.org/project/nexus-console/) and the source code is available on [GitHub](https://github.com/schote/nexus-console).
+--8<-- "README.md:citation"
+
+## Related work
+
+| Resource | Description |
+|---|---|
+| [Pulseq](https://pulseq.github.io/) | Open, vendor-independent pulse sequence format [[2]](references.md#ref-2) |
+| [PyPulseq](https://github.com/imr-framework/pypulseq) | Python implementation of Pulseq, used for sequence construction [[3]](references.md#ref-3) |
+| [ISMRMRD](https://ismrmrd.github.io/) | Raw data format of the exported acquisitions [[4]](references.md#ref-4) |
+| A4IM reference data | Reference data acquired with Nexus consoles <!-- TODO: add link --> |
+| [Open Source Imaging Initiative](https://www.opensourceimaging.org/project/nexus-console/) | Project page on opensourceimaging.org |
+
+<!-- TODO: add further publications using Nexus -->
+
+The source code is available on [GitHub](https://github.com/schote/nexus-console).
+
+--8<-- "README.md:acknowledgments"
