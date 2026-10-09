@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
     <script src="../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -52,6 +52,7 @@
     <link rel="next" title="Acquisition" href="acquisition_control.html" />
     <link rel="prev" title="Pulseq Sequence Interpreter" href="pulseq_interpreter.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.0" />
   
@@ -467,7 +468,7 @@
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="console.spcm_control.abstract_device.SpectrumDevice.card_type">
-<span class="sig-name descname"><span class="pre">card_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">console.spcm_control.spcm.pyspcm.int32</span></span><a class="headerlink" href="#console.spcm_control.abstract_device.SpectrumDevice.card_type" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">card_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">c_int</span></span><a class="headerlink" href="#console.spcm_control.abstract_device.SpectrumDevice.card_type" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -499,13 +500,10 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="console.spcm_control.abstract_device.SpectrumDevice.get_status">
 <span class="sig-name descname"><span class="pre">get_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/abstract_device.html#SpectrumDevice.get_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.abstract_device.SpectrumDevice.get_status" title="Link to this definition">#</a></dt>
-<dd><p>Get and log current card status.</p>
-<p>The status is represented by a list. Each entry represents a possible card status in form
-of a (sub-)list. It contains the status code, name and (optional) description of the spectrum
-instrumentation manual.</p>
+<dd><p>Get current card status and log the names of all set status flags.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>String with status description.</p>
+<dd class="field-odd"><p>Status register value, see M2STAT_* constants of spcm_core.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -557,6 +555,27 @@ instrumentation manual.</p>
 <dd><p>Abstract method to stop card operation.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="console.spcm_control.abstract_device.SpectrumDriverError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">console.spcm_control.abstract_device.</span></span><span class="sig-name descname"><span class="pre">SpectrumDriverError</span></span><a class="reference internal" href="../_modules/console/spcm_control/abstract_device.html#SpectrumDriverError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.abstract_device.SpectrumDriverError" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ConnectionError</span></code></p>
+<p>Spectrum driver library is not installed or not supported.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="console.spcm_control.abstract_device.type_to_name">
+<span class="sig-prename descclassname"><span class="pre">console.spcm_control.abstract_device.</span></span><span class="sig-name descname"><span class="pre">type_to_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">card_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/console/spcm_control/abstract_device.html#type_to_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#console.spcm_control.abstract_device.type_to_name" title="Link to this definition">#</a></dt>
+<dd><p>Name translation for card type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>card_type</strong> – Card type code, read from register SPC_PCITYP</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>Card name as string</p>
+</dd>
+</dl>
 </dd></dl>
 
 <p id="module-console.spcm_control.rx_device">Implementation of receive card.</p>
@@ -757,6 +776,8 @@ This value is None per default</p>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.abstract_device.SpectrumDevice.stop_operation"><code class="docutils literal notranslate"><span class="pre">SpectrumDevice.stop_operation()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.abstract_device.SpectrumDriverError"><code class="docutils literal notranslate"><span class="pre">SpectrumDriverError</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.abstract_device.type_to_name"><code class="docutils literal notranslate"><span class="pre">type_to_name()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard"><code class="docutils literal notranslate"><span class="pre">RxCard</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.setup_card"><code class="docutils literal notranslate"><span class="pre">RxCard.setup_card()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#console.spcm_control.rx_device.RxCard.start_operation"><code class="docutils literal notranslate"><span class="pre">RxCard.start_operation()</span></code></a></li>
@@ -798,8 +819,8 @@ This value is None per default</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -825,7 +846,7 @@ This value is None per default</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>

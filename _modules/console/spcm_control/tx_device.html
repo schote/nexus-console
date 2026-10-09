@@ -25,8 +25,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
@@ -34,10 +34,10 @@
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
     <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,6 +49,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.0" />
   
@@ -429,17 +430,19 @@
                   
   <h1>Source code for console.spcm_control.tx_device</h1><div class="highlight"><pre>
 <span></span><span class="sd">"""Implementation of transmit card."""</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.pyspcm</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">spcm</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.acquisition_parameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dimensions</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.interfaces.unrolled_sequence</span><span class="w"> </span><span class="kn">import</span> <span class="n">UnrolledSequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.abstract_device</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpectrumDevice</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">console.spcm_control.spcm.tools</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dma_buffer</span><span class="p">,</span> <span class="n">type_to_name</span>
+
+<span class="k">with</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">suppress</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>  <span class="c1"># missing driver is reported by SpectrumDevice.connect()</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">spcm_core</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">spcm</span>
 
 <span class="n">TX_NOTIFY_RATE</span> <span class="o">=</span> <span class="mi">16</span>
 
@@ -497,7 +500,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="c1"># Define maximum ring buffer size, 512 MSamples * 2 Bytes = 1024 MB</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span><span class="p">:</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">c_uint64</span><span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="c1"># Threading class attributes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">worker</span><span class="p">:</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
@@ -524,8 +527,8 @@
         <span class="n">spcm</span><span class="o">.</span><span class="n">spcm_dwGetParam_i32</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card</span><span class="p">,</span> <span class="n">spcm</span><span class="o">.</span><span class="n">SPC_PCITYP</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">"M2p.65"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">device_type</span> <span class="o">:=</span> <span class="n">type_to_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">card_type</span><span class="o">.</span><span class="n">value</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Device with path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> is of type </span><span class="si">{</span><span class="n">device_type</span><span class="si">}</span><span class="s2">, no transmit card..."</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s2">"M2p.65"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ConnectionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Device with path </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> is of type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">, no transmit card..."</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ConnectionError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="k">raise</span> <span class="n">err</span>
@@ -796,7 +799,7 @@
         <span class="c1"># Allocate continuous ring buffer with minimum necessary amount of memory, ensure multiple of notify size</span>
         <span class="n">min_ring_buffer_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_buffer_size</span> <span class="o">/</span> <span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">*</span> <span class="n">notify_size</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="c1"># Create page-aligned ring buffer</span>
-        <span class="n">ring_buffer</span> <span class="o">=</span> <span class="n">create_dma_buffer</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">min_ring_buffer_size</span><span class="p">))</span>
+        <span class="n">ring_buffer</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">pvAllocMemPageAligned</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_ring_buffer_size</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">min_ring_buffer_size</span><span class="p">))</span>
         <span class="n">ring_buffer_size</span> <span class="o">=</span> <span class="n">spcm</span><span class="o">.</span><span class="n">uint64</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ring_buffer</span><span class="p">))</span>
 
         <span class="k">try</span><span class="p">:</span>
@@ -948,8 +951,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -975,7 +978,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
 </p></div>
       
     </div>
