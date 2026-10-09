@@ -20,8 +20,7 @@ from console.interfaces.unrolled_sequence import UnrolledSequence
 try:
     from line_profiler import profile
 except ImportError:
-    def profile(func: Callable[..., Any]) -> Callable[..., Any]:
-        """Define placeholder for profile decorator."""
+    def profile(func):  # type: ignore[misc]
         return func
 
 
@@ -94,10 +93,9 @@ class SequenceProvider(Sequence):
             Translation of RF waveform from pulseq (Hz) to mV.
         spcm_dwell_time
             Sampling time raster of the output waveform (depends on spectrum card).
-        system
-            Absolute maximum system limits defined in the device configuration.
-            Used to instantiate the pypulseq `Opts()` class.
-        rf_gain_lut_path, optional
+        system : Opts
+            Pypulseq system limits object used for sequence construction.
+        rf_gain_lut_path : Path or None, optional
             Path to the RF power amplifier gain lookup table (.npy file), by default None.
             If None or the file does not exist, no LUT is applied.
         """

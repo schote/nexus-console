@@ -12,8 +12,8 @@ class JSONEncoder(json.JSONEncoder):
 
         Parameters
         ----------
-        obj
-            Object to encode
+        obj : object
+            Object to encode.
 
         Returns
         -------

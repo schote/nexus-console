@@ -1,0 +1,54 @@
+name: MkDocs Docs
+
+on:
+  push:
+    branches:
+      - main
+      - docu
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build and deploy MkDocs documentation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for mike versioning
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[docs-mkdocs]"
+
+      - name: Check API surface (griffe)
+        run: griffe check console --search src
+
+      - name: Build docs (strict)
+        run: mkdocs build --strict
+
+      - name: Deploy with mike (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Deploy to the 'latest' alias; tag-based versioning can be added later
+          mike deploy --push --update-aliases latest
+          mike set-default --push latest
+
+      - name: Save built docs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MkDocs-site
+          path: site/

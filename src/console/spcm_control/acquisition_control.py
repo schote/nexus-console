@@ -232,8 +232,8 @@ class AcquisitionControl:
         Parameters
         ----------
         store_unprocessed
-            Flag for whether to keep the raw, undecimated data after decimation
-        progress_callback
+            Flag for whether to keep the raw, undecimated data after decimation.
+        progress_callback : Callable[[int], None] or None, optional
             Optional callback which is called with the acquisition progress in percent, by default None.
 
         Raises
