@@ -1,3 +1,8 @@
+---
+hide:
+  - toc
+---
+
 # Examples
 
 The examples below are complete acquisition scripts from the [`examples/`](https://github.com/schote/nexus-console/tree/main/examples) directory of the repository. Each script constructs a sequence with one of the built-in constructors in `console.utilities.sequences`, runs the acquisition and processes the result.
@@ -13,7 +18,3 @@ The examples below are complete acquisition scripts from the [`examples/`](https
 | [Remote acquisition](remote_acquisition.md) | 3D TSE | Acquisition via the `nexus` service |
 
 The parameters of all sequence constructors are documented in the API reference under [`utilities.sequences`](../reference/utilities/sequences/tse/tse_3d.md).
-
-## Custom experiments
-
-Any PyPulseq sequence can be passed to `AcquisitionControl.set_sequence`, provided it was constructed with the system limits of the console (`AcquisitionControl.get_sequence_system()`). It is recommended to keep system-specific experiment scripts and calibration data in a separate repository and to use the console as an installed package.

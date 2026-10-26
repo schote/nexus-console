@@ -256,6 +256,24 @@
   color: var(--nx-accent);
 }
 
+/* Four cards in one row on wide screens, 2x2 on tablets, stacked on phones.
+   Fixed steps instead of auto-fit to avoid an orphaned 3+1 layout. */
+.md-typeset .grid.cards-4 {
+  grid-template-columns: 1fr;
+}
+
+@media screen and (min-width: 30em) {
+  .md-typeset .grid.cards-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (min-width: 60em) {
+  .md-typeset .grid.cards-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 
 .md-typeset .md-button {

@@ -16,7 +16,7 @@ sequenceDiagram
         M->>R: start_operation (RxData templates)
         R-->>M: is_receiving (card armed)
         M->>T: start_operation (replay buffer)
-        Note over T: FIFO streaming;<br/>bit 15 of ch1 generates the ADC gates
+        Note over T: FIFO streaming,<br/>bit 15 of ch1 generates the ADC gates
         loop For each gate
             R->>R: Read timestamps and gate data
             R->>P: submit(RxData)

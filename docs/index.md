@@ -10,7 +10,7 @@ hide:
 
 --8<-- "README.md:summary"
 
-<div class="grid cards" markdown>
+<div class="grid cards cards-4" markdown>
 
 -   :material-rocket-launch:{ .lg .middle } **Getting started**
 
@@ -47,19 +47,5 @@ hide:
 </div>
 
 --8<-- "README.md:citation"
-
-## Related work
-
-| Resource | Description |
-|---|---|
-| [Pulseq](https://pulseq.github.io/) | Open, vendor-independent pulse sequence format [[2]](references.md#ref-2) |
-| [PyPulseq](https://github.com/imr-framework/pypulseq) | Python implementation of Pulseq, used for sequence construction [[3]](references.md#ref-3) |
-| [ISMRMRD](https://ismrmrd.github.io/) | Raw data format of the exported acquisitions [[4]](references.md#ref-4) |
-| A4IM reference data | Reference data acquired with Nexus consoles <!-- TODO: add link --> |
-| [Open Source Imaging Initiative](https://www.opensourceimaging.org/project/nexus-console/) | Project page on opensourceimaging.org |
-
-<!-- TODO: add further publications using Nexus -->
-
-The source code is available on [GitHub](https://github.com/schote/nexus-console).
 
 --8<-- "README.md:acknowledgments"
