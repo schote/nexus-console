@@ -4,7 +4,7 @@ Requires measurement cards, therefore not collected by pytest. Run from the repo
 
     python tests/hardware/loopback.py -d <device_config.yaml> [-v]
 
-Without a device configuration, only the test sequence is displayed.
+Without a device configuration, the test doesn't run but the script plots the test sequence.
 
 A test sequence covering all event configurations interpreted by the sequence provider is played on TX channels 0-3
 and recorded on RX channels 0-3. The recording of each ADC gate is compared to the unrolled sequence:
