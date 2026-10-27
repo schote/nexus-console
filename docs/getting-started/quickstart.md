@@ -5,7 +5,7 @@ This page describes the installation of the console software. It assumes that th
 ## Requirements
 
 - Python ≥ 3.13
-- Spectrum Instrumentation driver for the measurement cards ([download area](https://spectrum-instrumentation.com/support/downloads.php))
+- [Spectrum Instrumentation driver](https://spectrum-instrumentation.com/support/downloads.php) for the measurement cards
 
 ## Installation
 
@@ -48,12 +48,3 @@ On import, the package loads the last saved [acquisition parameter](../system/co
 Copy [`examples/example_device_config.yaml`](https://github.com/schote/nexus-console/blob/main/examples/example_device_config.yaml) and adapt it to the hardware: device paths, sampling rate, output and input ranges, termination, amplifier gains, coil efficiencies and system limits. The keys are explained in [Device configuration](../system/configuration.md).
 
 Continue with the [first acquisition](first-acquisition.md).
-
-## Documentation
-
-To build the documentation locally, install the `docs-mkdocs` extra and start the development server:
-
-```bash
-pip install -e ".[docs-mkdocs]"
-mkdocs serve --watch src
-```

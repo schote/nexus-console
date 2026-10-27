@@ -1,4 +1,4 @@
-# Signal flow
+# Postprocessing
 
 Each gate recorded by the receive card is converted from raw ADC values to a complex baseband signal at the dwell time of the PyPulseq ADC event. The processing runs in parallel to the acquisition: the RX thread submits each gate to the [`RxProcessor`][console.spcm_control.rx_processor.RxProcessor], a pool of `num_processing_workers` processes. Raw samples are passed to the workers via shared memory. With `num_processing_workers: 0`, processing is performed in the main process after the acquisition.
 

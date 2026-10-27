@@ -6,8 +6,6 @@ hide:
 
 # Nexus Console
 
-**An open-source Python console for versatile low-field MRI acquisition**
-
 --8<-- "README.md:summary"
 
 <div class="grid cards cards-4" markdown>

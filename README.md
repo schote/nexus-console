@@ -17,7 +17,14 @@ The console was developed and validated on a 50 mT low-field MRI system. It is n
 
 ## Documentation
 
-The [documentation](https://schote.github.io/nexus-console/) describes the hardware setup and wiring, the device configuration, the sequence unrolling, acquisition and signal processing, and contains worked examples and the API reference.
+The [documentation](https://schote.github.io/nexus-console/) includes a quick start guide, system guide, examples, API reference and a list of related references.
+
+To build the documentation locally, install the `docs-mkdocs` extra and start the development server:
+
+```bash
+pip install -e ".[docs-mkdocs]"
+mkdocs serve --watch src
+```
 
 ## Installation
 

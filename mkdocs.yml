@@ -107,6 +107,7 @@ nav:
   - Getting started:
     - Quickstart: getting-started/quickstart.md
     - First acquisition: getting-started/first-acquisition.md
+    - Acquisition service: getting-started/nexus-service.md
   - System guide:
     - Overview: system/overview.md
     - Hardware: system/hardware.md
