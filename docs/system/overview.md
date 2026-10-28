@@ -59,4 +59,4 @@ flowchart LR
 | 3 | The buffer is streamed to the transmit card; the receive card records one gate per ADC event | [Acquisition](acquisition.md) |
 | 4 | Each gate is demodulated, phase-corrected and decimated to the ADC dwell time | [Signal flow](signal-flow.md) |
 
-The physical setup required for these steps is described in [Hardware](hardware.md) and [Wiring](wiring.md).
+The physical setup required for these steps is described in [Hardware](hardware.md) and [Wiring](wiring.md); the step-by-step procedure is given in [Hardware setup](../setup/hardware-setup.md).

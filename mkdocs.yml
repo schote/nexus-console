@@ -105,6 +105,7 @@ plugins:
 nav:
   - Home: index.md
   - Setup:
+    - Hardware setup: setup/hardware-setup.md
     - Installation: setup/installation.md
     - First acquisition: setup/first-acquisition.md
     - Acquisition service: setup/nexus-service.md

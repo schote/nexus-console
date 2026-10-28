@@ -1,6 +1,6 @@
 # Installation
 
-This page describes the installation of the console software. It assumes that the measurement cards are installed and wired, and that the Spectrum driver is installed (see [Hardware](../system/hardware.md) and [Wiring](../system/wiring.md)).
+This page describes the installation of the console software. It assumes that the hardware is set up as described in [Hardware setup](hardware-setup.md).
 
 ## Requirements
 
@@ -42,4 +42,4 @@ If the installation was successful, you should see the help context of the comma
 
 ## Device configuration
 
-Before you can start executing sequences, you need to create a device configuration file. Copy the example [`examples/example_device_config.yaml`](https://github.com/schote/nexus-console/blob/main/examples/example_device_config.yaml) which serves as a template and adapt it to your hardware. The keys are explained in [Device configuration](../system/configuration.md). Continue with the [first acquisition](first-acquisition.md).
+Before you can start executing sequences, you need to create a device configuration file. Copy the example [`examples/example_device_config.yaml`](https://github.com/schote/nexus-console/blob/main/examples/example_device_config.yaml) which serves as a template and adapt it to your hardware, including the device paths and the termination noted during the [hardware setup](hardware-setup.md). The keys are explained in [Device configuration](../system/configuration.md). Continue with the [first acquisition](first-acquisition.md).

@@ -10,9 +10,7 @@ hide:
 
 !!! note "Who this documentation is for"
 
-    This documentation is aimed at developers and researchers who want to build on the console software itself, e.g. to develop new sequences, acquisition workflows or hardware integrations.
-
-    Using the nexus-console repository alone requires a custom set of experiments or a runner script that handles all tasks around the acquisition, such as loading a sequence, setting the acquisition parameter and saving the data.
+    This documentation is aimed at developers and researchers who want to build on the console software itself, e.g. to develop new sequences, acquisition workflows or hardware integrations. Using the nexus-console repository alone requires a custom set of experiments or a runner script that handles all tasks around the acquisition, such as loading a sequence, setting the acquisition parameter and saving the data.
 
     If you only want to execute sequences and experiments, use the [Nexus CLI](https://github.com/schote/nexus-cli) instead. It runs Pulseq `.seq` files and protocols, exports the data as ISMRMRD, manages the acquisition parameter and provides basic calibrations, without writing Python.
 
@@ -22,9 +20,9 @@ hide:
 
     ---
 
-    Install the software and run a first acquisition.
+    Set up the hardware, install the software and run a first acquisition.
 
-    [:octicons-arrow-right-24: Installation](setup/installation.md)
+    [:octicons-arrow-right-24: Hardware setup](setup/hardware-setup.md)
 
 -   :material-developer-board:{ .lg .middle } **System guide**
 
