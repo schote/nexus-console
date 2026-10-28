@@ -17,20 +17,56 @@ flowchart TD
 
 ## Replay buffer
 
-The output is a single int16 array with the four channels interleaved sample by sample, as required by the FIFO mode of the transmit card:
+The output `UnrolledSequence.seq` is a single int16 array of length $4N$ ($N$ = `sample_count`) with the four channels interleaved sample by sample, as required by the FIFO mode of the transmit card. Each sample period $\Delta t$ occupies four consecutive 16-bit words (Fortran order), one per channel:
 
-```text
-[ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ch1_1, ch2_1, ch3_1, ..., ch3_N]
+```mermaid
+---
+config:
+  packet:
+    bitsPerRow: 64
+    bitWidth: 12
+    showBits: false
+---
+packet-beta
+title Replay buffer (one row per sample period)
+0-15: "ch0₀ RF"
+16-31: "ch1₀ grad + gate"
+32-47: "ch2₀ grad + ref"
+48-63: "ch3₀ grad + unblank"
+64-79: "ch0₁ RF"
+80-95: "ch1₁ grad + gate"
+96-111: "ch2₁ grad + ref"
+112-127: "ch3₁ grad + unblank"
+128-191: "…"
+192-207: "ch0ₙ₋₁ RF"
+208-223: "ch1ₙ₋₁ grad + gate"
+224-239: "ch2ₙ₋₁ grad + ref"
+240-255: "ch3ₙ₋₁ grad + unblank"
 ```
 
-| Channel | Bits 0–14 | Bit 15 |
-|---|---|---|
-| 0 | RF waveform (bits 0–15, full 16-bit resolution) | – |
-| 1 | Gradient waveform (15 bit) | ADC gate |
-| 2 | Gradient waveform (15 bit) | Phase reference |
-| 3 | Gradient waveform (15 bit) | RF unblanking |
+Channel 0 carries the modulated RF waveform with the full 16-bit resolution (two's complement). The gradient waveforms also carries a digital signal.
+Each gradient sample $g$ is first computed as int16. It is then reinterpreted as uint16 and shifted right by one bit: the least significant bit $g_0$ is dropped and the sign bit $g_{15}$ moves to bit 14. Bits 0–14 thus hold the gradient as a 15-bit two's complement value. Bit 15 ($D$) is free and holds the digital control signal, which is combined with the gradient by a bitwise OR:
 
-The gradient waveforms are computed as int16 and shifted right by one bit (as uint16), which frees bit 15 for the digital signal. The transmit card outputs bit 15 of channels 1–3 on its digital lines X1–X3 (see [Wiring](wiring.md)). Embedding the control signals in the waveform guarantees sample-exact synchronisation of RF, gradients, ADC gate and unblanking.
+```mermaid
+---
+config:
+  packet:
+    bitsPerRow: 16
+---
+packet-beta
+title Channel 1–3 sample
+0-13: "14 bit gradient amplitude value"
+14: "+/-"
+15: "D"
+```
+
+| Channel | Bit 15 ($D$) | Digital output | High during |
+|---|---|---|---|
+| 1 | ADC gate | X1 | Gate duration of each ADC event (see [ADC events](#adc-events)) |
+| 2 | Phase reference | X2 | 1.095 MHz square wave at the start of each gate (see [ADC events](#adc-events)) |
+| 3 | RF unblanking | X3 | From $t_\text{dead}$ before each RF pulse until its end (see [RF events](#rf-events)) |
+
+The transmit card converts bits 0–14 of channels 1–3 to the analog gradient output and routes bit 15 to its digital lines X1–X3 (see [Wiring](wiring.md)). Embedding the control signals in the waveform guarantees sample-exact synchronisation of RF, gradients, ADC gate and unblanking.
 
 ## Timing
 
