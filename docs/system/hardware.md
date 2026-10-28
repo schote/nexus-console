@@ -47,7 +47,7 @@ The host computer runs the waveform calculation, the data streaming of both card
 3. Verify that both cards are detected, e.g. with the Spectrum Control Center, and note their device paths (`/dev/spcm0`, `/dev/spcm1`, ...).
 4. Connect the cards as described in [Wiring](wiring.md).
 5. Enter the device paths and the hardware parameters in the [device configuration](configuration.md).
-6. Install the Python package as described in the [Quickstart](../getting-started/quickstart.md).
+6. Install the Python package as described in the [Installation](../setup/installation.md).
 
 !!! warning "Amplifiers during start-up"
     The multi-purpose lines of the cards are pulled high while the cards are opened. Switch off the RF and gradient power amplifiers before connecting to the cards. The `nexus` service asks for confirmation before it opens the cards.

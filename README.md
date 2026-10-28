@@ -34,7 +34,7 @@ Requires Python ≥ 3.13 and the [Spectrum Instrumentation driver](https://spect
 pip install nexus-console
 ```
 
-See the [Quickstart](https://schote.github.io/nexus-console/getting-started/quickstart/) for the development installation and the device configuration.
+See the [Installation](https://schote.github.io/nexus-console/setup/installation/) for the development installation and the device configuration.
 
 ## Repository structure
 

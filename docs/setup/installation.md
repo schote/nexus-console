@@ -1,4 +1,4 @@
-# Quickstart
+# Installation
 
 This page describes the installation of the console software. It assumes that the measurement cards are installed and wired, and that the Spectrum driver is installed (see [Hardware](../system/hardware.md) and [Wiring](../system/wiring.md)).
 
@@ -7,7 +7,7 @@ This page describes the installation of the console software. It assumes that th
 - Python ≥ 3.13
 - [Spectrum Instrumentation driver](https://spectrum-instrumentation.com/support/downloads.php) for the measurement cards
 
-## Installation
+## Python package
 
 Install the package into a virtual environment (`venv` or `conda`):
 
@@ -32,19 +32,14 @@ pip install -e ".[test,lint,dev]"
 
 ## Verification
 
+Verify the installation by running the following command.
+
 ```bash
 nexus --help
 ```
 
-```python
-import console
-print(console.parameter)
-```
-
-On import, the package loads the last saved [acquisition parameter](../system/configuration.md#acquisition-parameter) state from `<home>/nexus-console/acquisition-parameter.state` or creates a default state.
+If the installation was successful, you should see the help context of the command you can start the nexus-service with.
 
 ## Device configuration
 
-Copy [`examples/example_device_config.yaml`](https://github.com/schote/nexus-console/blob/main/examples/example_device_config.yaml) and adapt it to the hardware: device paths, sampling rate, output and input ranges, termination, amplifier gains, coil efficiencies and system limits. The keys are explained in [Device configuration](../system/configuration.md).
-
-Continue with the [first acquisition](first-acquisition.md).
+Before you can start executing sequences, you need to create a device configuration file. Copy the example [`examples/example_device_config.yaml`](https://github.com/schote/nexus-console/blob/main/examples/example_device_config.yaml) which serves as a template and adapt it to your hardware. The keys are explained in [Device configuration](../system/configuration.md). Continue with the [first acquisition](first-acquisition.md).

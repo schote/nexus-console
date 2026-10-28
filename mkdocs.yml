@@ -104,10 +104,11 @@ plugins:
 
 nav:
   - Home: index.md
-  - Getting started:
-    - Quickstart: getting-started/quickstart.md
-    - First acquisition: getting-started/first-acquisition.md
-    - Acquisition service: getting-started/nexus-service.md
+  - Setup:
+    - Installation: setup/installation.md
+    - First acquisition: setup/first-acquisition.md
+    - Acquisition service: setup/nexus-service.md
+    - Service deployment: setup/deployment.md
   - System guide:
     - Overview: system/overview.md
     - Hardware: system/hardware.md
