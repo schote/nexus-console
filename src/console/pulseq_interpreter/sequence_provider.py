@@ -17,16 +17,12 @@ from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
 
-
-def _profile_placeholder(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Return the function unchanged, used if line_profiler is not installed."""
-    return func
-
-
 try:
     from line_profiler import profile
 except ImportError:
-    profile = _profile_placeholder
+    def profile(func: Callable[..., Any]) -> Callable[..., Any]:  # type: ignore[misc]  # fallback if line_profiler is missing
+        """Define placeholder for profile decorator."""
+        return func
 
 
 INT16_MAX = np.iinfo(np.int16).max

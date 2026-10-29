@@ -87,6 +87,8 @@ plugins:
             - https://numpy.org/doc/stable/objects.inv
             - https://docs.pydantic.dev/latest/objects.inv
           options:
+            # Lets griffe resolve the optional `profile` decorator import in sequence_provider.py
+            preload_modules: [line_profiler]
             docstring_style: numpy
             docstring_options:
               warn_unknown_params: false
