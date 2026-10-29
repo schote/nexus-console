@@ -34,7 +34,7 @@ console.parameter.num_averages = 1
 ## Set acquisition parameter
 
 Parameters that can be adjusted and changed at runtime are kept in an `AcquisitionParameter` instance.
-On import, the package loads the last saved [acquisition parameter](../system/configuration.md#acquisition-parameter) state or creates a default state. Any change to the parameters is automatically synchronized with a JSON file on disk. This instance is created in the global scope so that it can be used across different scripts.
+On import, the package loads the last saved [acquisition parameter][console.interfaces.acquisition_parameter.AcquisitionParameter] state or creates a default state. Any change to the parameters is automatically synchronized with a JSON file on disk. This instance is created in the global scope so that it can be used across different scripts.
 
 ```python
 import console

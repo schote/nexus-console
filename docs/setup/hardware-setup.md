@@ -75,7 +75,7 @@ Before starting with the installation of the nexus-console, you should collect a
 - The load impedance of each AWG output (50 Ω or high impedance).
 
     !!! note "Output voltage doubles into high-impedance loads"
-        The AWG outputs have a 50 Ω series termination and the programmed amplitude refers to a 50 Ω load. If an output drives a high-impedance load instead, the output voltage is double the programmed value. Usually, the RF line (AWG channel 0) is connected to the 50 Ω input of the RFPA, while the gradient lines (AWG channels 1–3) are connected to high-impedance GPA inputs. The console compensates for the doubling based on the [device configuration](../system/configuration.md#configuration-file).
+        The AWG outputs have a 50 Ω series termination and the programmed amplitude refers to a 50 Ω load. If an output drives a high-impedance load instead, the output voltage is double the programmed value. Usually, the RF line (AWG channel 0) is connected to the 50 Ω input of the RFPA, while the gradient lines (AWG channels 1–3) are connected to high-impedance GPA inputs. The console compensates for the doubling based on the [device configuration](../system/configuration.md#txconfiguration).
 
 - If you use more than one receive channel, enable the corresponding channels and set the termination per channel.
 - The GPA gain in A/V.
