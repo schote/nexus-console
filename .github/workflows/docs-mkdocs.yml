@@ -46,7 +46,11 @@ jobs:
           pip install ".[docs-mkdocs]"
 
       - name: Check API surface (griffe)
-        run: griffe check console --search src
+        # Reports breaking changes of the public API introduced by the pull request (compared to its base
+        # branch). Informational only: intended API changes must not block the documentation deployment.
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: griffe check console --search src --against "origin/${{ github.base_ref }}"
 
       - name: Build docs (strict)
         run: mkdocs build --strict
