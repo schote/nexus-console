@@ -145,7 +145,7 @@ The table gives and overview of the most important software modules implemented 
 
 The hardware components mentioned in the diagram above are briefly explained below and summarize a minimal set needed to do MRI. The table lists example components where most of them are open source, which could be used to build a working MRI system.
 
-!!! note "Composition of the Hardware"
+!!! info "Composition of the Hardware"
     This documentation focusses on the Nexus console. It does not address the composition of an MRI system. For additional information or documentation about how to build the hardware components listed below visit the [OSI² GitLab](https://gitlab.com/osii).
 
 | Component | Description | Example |

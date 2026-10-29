@@ -1,0 +1,61 @@
+cff-version: 1.2.0
+message: "If Nexus contributes to your research, please cite our paper as below."
+title: "Nexus Console"
+abstract: "An open-source Python console for versatile low-field MRI acquisition."
+type: software
+authors:
+  - family-names: Schote
+    given-names: David
+    orcid: "https://orcid.org/0000-0003-3468-0676"
+  - family-names: Silemek
+    given-names: Berk
+    orcid: "https://orcid.org/0000-0001-8227-3632"
+  - family-names: "O'Reilly"
+    given-names: Thomas
+    orcid: "https://orcid.org/0000-0002-4547-2955"
+repository-code: "https://github.com/schote/nexus-console"
+url: "https://schote.github.io/nexus-console/"
+license: GPL-3.0-or-later
+keywords:
+  - MRI
+  - low-field MRI
+  - console
+  - Pulseq
+  - Spectrum Instrumentation
+preferred-citation:
+  type: article
+  title: "Nexus: A versatile console for advanced low-field MRI"
+  authors:
+    - family-names: Schote
+      given-names: David
+      orcid: "https://orcid.org/0000-0003-3468-0676"
+    - family-names: Silemek
+      given-names: Berk
+      orcid: "https://orcid.org/0000-0001-8227-3632"
+    - family-names: "O'Reilly"
+      given-names: Thomas
+      orcid: "https://orcid.org/0000-0002-4547-2955"
+    - family-names: Seifert
+      given-names: Frank
+      orcid: "https://orcid.org/0000-0002-7065-2528"
+    - family-names: Assmy
+      given-names: Jan-Lukas
+    - family-names: Kolbitsch
+      given-names: Christoph
+      orcid: "https://orcid.org/0000-0002-4355-8368"
+    - family-names: Webb
+      given-names: Andrew G.
+      orcid: "https://orcid.org/0000-0003-4045-9732"
+    - family-names: Winter
+      given-names: Lukas
+      orcid: "https://orcid.org/0000-0002-4381-275X"
+  journal: "Magnetic Resonance in Medicine"
+  volume: 93
+  issue: 5
+  start: 2224
+  end: 2238
+  year: 2025
+  month: 5
+  doi: "10.1002/mrm.30406"
+  publisher:
+    name: Wiley

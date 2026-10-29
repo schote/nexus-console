@@ -40,6 +40,8 @@ extra_css:
 
 markdown_extensions:
   - admonition
+  # Renders GitHub alerts (> [!TIP]) from the README snippets as admonitions
+  - github-callouts
   - attr_list
   - md_in_html
   - tables

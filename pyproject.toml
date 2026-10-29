@@ -55,6 +55,7 @@ docs-mkdocs = [
     "mkdocs-literate-nav>=0.6.1",
     "mike>=2.1.0",
     "pymdown-extensions>=10.7.0",
+    "markdown-callouts>=0.4.0",  # renders GitHub alerts in README snippets
     "griffe>=0.47.0",
     "line_profiler",  # lets griffe resolve the optional `profile` decorator import
 ]

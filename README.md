@@ -2,6 +2,7 @@
 
 **An open-source Python console for versatile low-field MRI acquisition.**
 
+[![DOI](https://img.shields.io/badge/DOI-10.1002%2Fmrm.30406-blue)](https://doi.org/10.1002/mrm.30406)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
 [![License](https://img.shields.io/github/license/schote/nexus-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
 [![Docs](https://github.com/schote/nexus-console/actions/workflows/docs-mkdocs.yml/badge.svg)](https://schote.github.io/nexus-console/)
@@ -48,9 +49,29 @@ See the [Installation](https://schote.github.io/nexus-console/setup/installation
 <!-- --8<-- [start:citation] -->
 ## Citation
 
-If you use Nexus in your work, please cite:
+> [!TIP]
+> If Nexus contributes to your research, please cite our paper:
+>
+> Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. *Magn Reson Med.* 2025;93(5):2224–2238. [doi:10.1002/mrm.30406](https://doi.org/10.1002/mrm.30406)
 
-> Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. *Magn Reson Med.* 2025. [doi:10.1002/mrm.30406](https://doi.org/10.1002/mrm.30406)
+<details markdown>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{schote2025nexus,
+  title   = {Nexus: A versatile console for advanced low-field {MRI}},
+  author  = {Schote, David and Silemek, Berk and O'Reilly, Thomas and Seifert, Frank and
+             Assmy, Jan-Lukas and Kolbitsch, Christoph and Webb, Andrew G. and Winter, Lukas},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {93},
+  number  = {5},
+  pages   = {2224--2238},
+  year    = {2025},
+  doi     = {10.1002/mrm.30406}
+}
+```
+
+</details>
 <!-- --8<-- [end:citation] -->
 
 <!-- --8<-- [start:acknowledgments] -->
