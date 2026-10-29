@@ -367,3 +367,9 @@
 .md-typeset .nx-legend__line--dotted {
   border-top-style: dotted;
 }
+
+/* Centres a mermaid diagram that is narrower than the content column */
+.md-typeset .nx-center .mermaid {
+  display: flex;
+  justify-content: center;
+}

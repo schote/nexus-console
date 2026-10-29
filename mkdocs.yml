@@ -114,7 +114,7 @@ nav:
     - Overview: system/overview.md
     - Console hardware: system/hardware.md
     - Device configuration: system/configuration.md
-    - Sequence unrolling: system/sequence-unrolling.md
+    - Sequence calculation: system/sequence-calculation.md
     - Acquisition: system/acquisition.md
     - Signal flow: system/signal-flow.md
   - Examples:

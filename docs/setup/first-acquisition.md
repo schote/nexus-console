@@ -45,7 +45,7 @@ console.parameter.num_averages = 1
 
 ## Run acquisition
 
-`set_sequence` uses the sequence and the acquisition parameter instance to calculate the waveforms that are replayed by the console (see [sequence unrolling](../system/sequence-unrolling.md) for further details).
+`set_sequence` uses the sequence and the acquisition parameter instance to calculate the waveforms that are replayed by the console (see [sequence calculation](../system/sequence-calculation.md) for further details).
 Instead of the sequence instance, the path to a Pulseq sequence file can be used as well.
 After calculating the sequence waveforms, the sequence is executed using `run()`.
 The acquisition data is processed automatically and returned as an `AcquisitionData` instance.
