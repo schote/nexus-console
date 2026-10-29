@@ -130,6 +130,8 @@ nav:
 
 docs_dir: docs
 site_dir: site
+# Branch served by GitHub Pages; also used by mike for all versions and pull request previews
+remote_branch: github-pages
 
 extra:
   version:
