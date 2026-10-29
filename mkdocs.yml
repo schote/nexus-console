@@ -116,7 +116,7 @@ nav:
     - Device configuration: system/configuration.md
     - Sequence calculation: system/sequence-calculation.md
     - Acquisition: system/acquisition.md
-    - Signal flow: system/signal-flow.md
+    - Postprocessing: system/postprocessing.md
   - Examples:
     - Overview: examples/index.md
     - Spin-echo spectrum: examples/spin_echo.md
