@@ -21,13 +21,20 @@ This open dataset (CC BY 4.0) was recorded with a Nexus console on the OSI²ONE 
 
 ## Hardware Documentation
 
-Spectrum Instrumentation GmbH. Hardware manual and software driver manual, M2p.65xx series (arbitrary waveform generators) and M2p.59xx series (digitizers). Available from the [Spectrum Instrumentation download area](https://spectrum-instrumentation.com/support/downloads.php).
+Hardware manuals for the measurement card families provided by Spectrum Instrumentation:
+
+- Arbitrary waveform generator family [M2p.65xx manual](https://spectrum-instrumentation.com/dl/m2p_65xx_manual_english.pdf)
+- Digitizer family [M2p.59xx manual](https://spectrum-instrumentation.com/dl/m2p_59xx_manual_english.pdf)
+
+### Open Source Imaging Initiative (OSI²)
+
+The [Open Source Imaging Initiative (OSI²)](https://www.opensourceimaging.org/) is a non-profit association that develops open-source hardware and software for MRI, with the aim of making modern imaging accessible to many more people around the world. Its [GitLab group](https://gitlab.com/osii) collects the hardware projects for building a low-field MRI system, from the magnet, gradient and RF components to complete scanners such as the OSI² ONE, as well as phantoms, tools and the Nexus console.
 
 ## Related Software Projects
 
 | Project | Use in Nexus |
 |---|---|
 | [Pulseq](https://pulseq.github.io/) | Open, vendor-independent sequence format |
-| [PyPulseq](https://github.com/imr-framework/pypulseq) | Sequence construction; base class of the sequence provider |
+| [PyPulseq](https://github.com/imr-framework/pypulseq) | Sequence construction and base class of the sequence provider |
 | [ISMRMRD](https://ismrmrd.github.io/) | Raw data format of the exported acquisitions |
 | [MRpro](https://mrpro.rocks/) | Example reconstruction framework for the exported data |
