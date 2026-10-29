@@ -49,7 +49,7 @@ The method is selected by `AcquisitionParameter.ddc_method` ([`DDCMethod`][conso
 | [`RxData`][console.interfaces.rx_data.RxData] | One ADC event of one average: metadata, labels, `processed_data` (complex, shape `(channels, N + 2 N_d)`), optionally `raw_data` |
 | [`AcquisitionData`][console.interfaces.acquisition_data.AcquisitionData] | Flat list of all `RxData` (ordered by average and ADC index), the sequence, the acquisition parameters and meta data including the device configuration |
 
-The processed data contain $N_\text{d}$ additional samples on each side of the ADC window (ADC dead time, see [Sequence unrolling](sequence-unrolling.md#adc-events)). They are kept in the data and flagged as `discard_pre`/`discard_post` in the ISMRMRD export.
+The processed data contain $N_\text{d}$ additional samples on each side of the ADC window (ADC dead time, see [Sequence calculation](sequence-calculation.md#adc-events)). They are kept in the data and flagged as `discard_pre`/`discard_post` in the ISMRMRD export.
 
 ## Storage
 
