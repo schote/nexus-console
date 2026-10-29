@@ -6,47 +6,46 @@ hide:
 
 # System overview
 
-Nexus replaces the proprietary spectrometer of an MRI system by two commercial PCIe measurement cards and an open-source Python control software [[1]](../references.md#ref-1). Pulse sequences are defined in the open Pulseq format [[2]](../references.md#ref-2) using PyPulseq [[3]](../references.md#ref-3), converted directly into sampled waveforms on the host computer and streamed to the transmit card. Receive data are recorded in a gated mode, processed on the host and exported in the ISMRMRD format [[4]](../references.md#ref-4).
-
-## System architecture
-
-The figure follows the path from the user through the software on the host computer down to the hardware. Software and hardware meet at the Spectrum driver, which transfers the waveforms to the transmit card and the receive data from the digitizer by DMA over PCIe.
+The Nexus console is an open source software framework to operate PCIe measurement cards from Spectrum Instrumentation in a high performance computer system. Pulse sequences are defined in the open Pulseq format [[2]](../references.md#ref-2), converted directly into sampled waveforms on the host computer and streamed to the transmit card. Receive data are recorded in a gated mode, processed on the host and exported in the ISMRMRD format [[4]](../references.md#ref-4). The figure follows the path from the user through the software on the host computer down to the hardware.
 
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 25, "rankSpacing": 35, "padding": 8, "subGraphTitleMargin": {"top": 4, "bottom": 12}}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 25, "rankSpacing": 35, "padding": 14, "subGraphTitleMargin": {"top": 4, "bottom": 12}}}}%%
 flowchart TB
     %% Structure: nodes (user, software, hardware), then edges, then styling.
     %% Classes: user = neutral, sw = nexus-console, vendor = Spectrum software, hw = hardware, iface = interface or file format.
     %% The init line above only tightens the spacing between nodes and rows.
     %% Keep the colours in sync with the legend below the diagram (.nx-legend in extra.css).
+    %% Mermaid always centres subgraph titles. The empty span after the SVC title widens the label so the
+    %% visible text moves to the left and clears the MGR <--> ACQ edge (Material renders the diagram in a
+    %% shadow DOM, so extra.css cannot reach it).
 
     USER(["User"])
 
     %% Software: nexus-console
-    PARAM["<b>AcquisitionParameter</b><br/><small>runtime parameters</small>"]
+    PARAM["<b>AcquisitionParameter</b>"]
     PULSEQ(["Pulseq"])
-    MGR["<b>AcquisitionControlManager</b><br/><small>nexus service: socket, authentication key</small>"]
-    subgraph SVC["<b>NEXUS SERVICE PROCESS</b>"]
-        ACQ["<b>AcquisitionControl</b><br/><small>runs the acquisition</small>"]
-        CFG["<b>NexusConfiguration</b><br/><small>device configuration (YAML)</small>"]
-        SEQ["<b>SequenceProvider</b><br/><small>unrolls the sequence</small>"]
-        TXC["<b>TxCard</b><br/><small>waveform streaming</small>"]
-        RXC["<b>RxCard</b><br/><small>gated recording</small>"]
-        UNR["<b>UnrolledSequence</b><br/><small>sampled waveforms</small>"]
-        RXD["<b>RxData</b><br/><small>one per ADC event</small>"]
-        PROC["<b>RxProcessor</b><br/><small>demodulation, decimation</small>"]
-        DATA["<b>AcquisitionData</b><br/><small>result container</small>"]
+    MGR["<b>AcquisitionControlManager</b>"]
+    subgraph SVC["<b>NEXUS SERVICE PROCESS</b><span style='display:inline-block;width:400px'></span>"]
+        ACQ["<b>AcquisitionControl</b>"]
+        CFG["<b>NexusConfiguration</b>"]
+        SEQ["<b>SequenceProvider</b>"]
+        TXC["<b>TxCard</b>"]
+        RXC["<b>RxCard</b>"]
+        UNR["<b>UnrolledSequence</b>"]
+        RXD["<b>RxData</b>"]
+        PROC["<b>RxProcessor</b>"]
+        DATA["<b>AcquisitionData</b>"]
     end
     %% Software: Spectrum
-    CORE["<b>spcm_core</b><br/><small>Python bindings</small>"]
-    DRV["<b>Spectrum driver</b><br/><small>library and kernel module</small>"]
+    CORE["<b>spcm_core</b>"]
+    DRV["<b>Spectrum driver</b>"]
     %% Interfaces
     MRD(["ISMRMRD"])
 
     %% Hardware
-    AWG["<b>AWG</b><br/><small>Spectrum M2p.65xx</small>"]
-    DIG["<b>Digitizer</b><br/><small>Spectrum M2p.59xx</small>"]
-    subgraph MRI["<b>MRI SYSTEM</b>"]
+    AWG["<b>AWG</b>"]
+    DIG["<b>Digitizer</b>"]
+    subgraph MRI["<span style='display:inline-block;width:360px'></span><b>MRI SYSTEM</b>"]
         GPA["GPA"]
         RFPA["RFPA"]
         GC["Gradient coils"]
@@ -110,50 +109,53 @@ flowchart TB
   <span><span class="nx-legend__box nx-legend__box--vendor"></span>Spectrum software</span>
   <span><span class="nx-legend__box nx-legend__box--hw"></span>Hardware</span>
   <span><span class="nx-legend__box nx-legend__box--iface"></span>Interface, file format</span>
-  <span><span class="nx-legend__line"></span>Data, signal</span>
-  <span><span class="nx-legend__line nx-legend__line--dotted"></span>Synchronisation</span>
 </p>
 
-The two cards share a common sampling clock and are synchronised exclusively through digital signals that are generated as part of the transmit waveform. No further timing hardware is required. Details are given in [Wiring](wiring.md).
 
 ### Interfaces
 
+The nexus console builds on the following interfaces which can be understood as the input and output of the system.
+
 | Interface | Description | Reference |
 |---|---|---|
-| Pulseq | Open, vendor-independent sequence format. Sequences are created with PyPulseq and passed to the console as a PyPulseq `Sequence` object or a `.seq` file. Example sequences are provided in `console.utilities.sequences`. | [[2]](../references.md#ref-2), [[3]](../references.md#ref-3), [Examples](../examples/index.md) |
-| ISMRMRD | Open raw data format. `AcquisitionData.save_ismrmrd` exports the acquired data, e.g. for the reconstruction with external frameworks. | [[4]](../references.md#ref-4) |
+| Pulseq | Open, vendor-independent sequence format. Sequences are created with (Py-)Pulseq and passed to the console as a PyPulseq `Sequence` object or a `.seq` file. | [Pulseq](https://pulseq.github.io/), [PyPulseq](https://github.com/pulseq/pypulseq), [Examples](../examples/index.md) |
+| ISMRMRD | Open data format for raw MRI data which allows to streamline the image reconstruction with external frameworks like MRpro. | [ISMRMRD](https://ismrmrd.readthedocs.io/en/latest/), [MRpro](https://www.mrpro.rocks/) |
 
 ### Software
 
+The table gives and overview of the most important software modules implemented within the Nexus console.
+
 | Component | Description | Reference |
 |---|---|---|
-| User | Defines the sequence and the acquisition parameters in a script or notebook, connects to the acquisition service, calls `set_sequence` and `run` and receives the `AcquisitionData`. Alternatively, `AcquisitionControl` can be instantiated directly in the script without the service. | [First acquisition](../setup/first-acquisition.md), [Remote acquisition](../examples/remote_acquisition.md) |
-| [`AcquisitionParameter`][console.interfaces.acquisition_parameter.AcquisitionParameter] | Runtime parameters of an acquisition, e.g. Larmor frequency, gradient offsets, FOV scaling, gradient channel assignment, DDC method and number of averages. Passed together with the sequence. | [Acquisition](acquisition.md) |
-| `AcquisitionControlManager` | `nexus_service.acquisition_manager`, a Python `multiprocessing` manager. The service is started with the `nexus` command (`nexus_service.start_manager`), optionally as a systemd unit, and serves a single `AcquisitionControl` instance. It listens on a Unix domain socket (named pipe on Windows) in the runtime directory, which also holds an authentication key generated for each run. Clients receive a proxy that behaves like a local `AcquisitionControl`. | [Acquisition service](../setup/nexus-service.md), [Service deployment](../setup/deployment.md) |
-| [`AcquisitionControl`][console.spcm_control.acquisition_control.AcquisitionControl] | Loads the device configuration, creates the sequence provider, both cards and the processing pool. `set_sequence` unrolls the sequence; `run` streams the waveforms, records the receive data for each average and returns the `AcquisitionData`. | [Acquisition](acquisition.md) |
-| [`NexusConfiguration`][console.interfaces.device_configuration.NexusConfiguration] | Static description of the setup, loaded from a YAML file: cards, amplifiers, gradient efficiency and system limits. Passed to the `SequenceProvider` for the waveform scaling and to `TxCard` and `RxCard` for the card setup. | [Device configuration](configuration.md) |
-| [`SequenceProvider`][console.pulseq_interpreter.sequence_provider.SequenceProvider] | Subclass of the PyPulseq `Sequence`. Unrolls the sequence into the sampled transmit waveforms including the digital control signals (`UnrolledSequence`) and creates one `RxData` template per ADC event. | [Sequence unrolling](sequence-unrolling.md) |
-| [`UnrolledSequence`][console.interfaces.unrolled_sequence.UnrolledSequence] | Result of the sequence unrolling: the interleaved int16 replay buffer for the AWG with RF, gradients and digital control signals, the `RxData` templates and the scaling parameters used for the unrolling. | [Sequence unrolling](sequence-unrolling.md#replay-buffer) |
-| [`TxCard`][console.spcm_control.tx_device.TxCard] | Sets up the AWG and streams the unrolled sequence to the card during the acquisition. | [Acquisition](acquisition.md) |
-| [`RxCard`][console.spcm_control.rx_device.RxCard] | Sets up the digitizer and records one gate per ADC event. Each gate is written to its `RxData` object and passed on for processing. | [Acquisition](acquisition.md) |
-| [`RxData`][console.interfaces.rx_data.RxData] | Data of one ADC event: timing and processing parameters from the sequence, the raw samples of the gate and, after processing, the demodulated and decimated signal. | [Signal flow](signal-flow.md) |
-| [`RxProcessor`][console.spcm_control.rx_processor.RxProcessor] | Pool of worker processes that demodulates, phase-corrects and decimates the `RxData` objects while the acquisition is still running. | [Signal flow](signal-flow.md), [[5]](../references.md#ref-5) |
-| [`AcquisitionData`][console.interfaces.acquisition_data.AcquisitionData] | Result container with the receive data, the sequence, the device configuration and the acquisition parameters. `save` stores it as HDF5 and JSON in a session folder under `~/nexus-console`, `save_ismrmrd` exports the raw data to ISMRMRD. | [Acquisition](acquisition.md), [[4]](../references.md#ref-4) |
-| `spcm_core` | Low-level Python bindings of the Spectrum driver, provided by Spectrum Instrumentation as a separate package. Used by `TxCard` and `RxCard` for all card access. | [spcm-core on PyPI](https://pypi.org/project/spcm-core/), [[6]](../references.md#ref-6) |
-| Spectrum driver | Vendor driver library and kernel module. Transfers the data between host memory and the cards by DMA over PCIe. | [Hardware](hardware.md#driver), [Hardware setup](../setup/hardware-setup.md#measurement-cards-and-driver), [[6]](../references.md#ref-6) |
+| `AcquisitionControlManager` | A Python `multiprocessing` manager which provides a service that can be started with the `nexus` command. It serves a single `AcquisitionControl` instance such that clients receive a proxy that behaves like a local `AcquisitionControl`. | [Acquisition service](../setup/nexus-service.md), [Service deployment](../setup/deployment.md) |
+| [`AcquisitionControl`][console.spcm_control.acquisition_control.AcquisitionControl] | Loads the device configuration, creates the sequence provider, both cards and the processing pool. It controls the sequence calculation and execution. | [Acquisition](acquisition.md) |
+| [`NexusConfiguration`][console.interfaces.device_configuration.NexusConfiguration] | Static description of all the relevant parameters of the setup which are needed to calculate and execute a sequence correctly. | [Device configuration](configuration.md) |
+| [`AcquisitionParameter`][console.interfaces.acquisition_parameter.AcquisitionParameter] | Runtime parameters of an acquisition, e.g. Larmor frequency, gradient offsets, etc. | [Acquisition](acquisition.md) |
+| [`SequenceProvider`][console.pulseq_interpreter.sequence_provider.SequenceProvider] | Subclass of the PyPulseq `Sequence` that calculates the sequence into the sampled transmit waveforms. | [Sequence unrolling](sequence-unrolling.md) |
+| [`UnrolledSequence`][console.interfaces.unrolled_sequence.UnrolledSequence] | The resulting calculated sequence composed of the RF and gradients waveforms and digital control signals. It also includes the `RxData` templates and the parameters used for the scaling the waveforms. | [Sequence unrolling](sequence-unrolling.md#replay-buffer) |
+| [`TxCard`][console.spcm_control.tx_device.TxCard] | Sets up the AWG module and streams the sequence waveform to the AWG module. | [Acquisition](acquisition.md) |
+| [`RxCard`][console.spcm_control.rx_device.RxCard] | Sets up the digitizer and performs the gated recording. | [Acquisition](acquisition.md) |
+| [`RxData`][console.interfaces.rx_data.RxData] | Data of one ADC event containing meta information, processing parameters, the raw samples and the processed data. | [Signal flow](signal-flow.md) |
+| [`RxProcessor`][console.spcm_control.rx_processor.RxProcessor] | Pool of worker processes that performs the postprocessing during the acquisition. | [Signal flow](signal-flow.md), [[5]](../references.md#ref-5) |
+| [`AcquisitionData`][console.interfaces.acquisition_data.AcquisitionData] | Result container with the receive data, the sequence, the device configuration and the acquisition parameters. | [Acquisition](acquisition.md), [[4]](../references.md#ref-4) |
+| `spcm_core` | Low-level Python bindings of the Spectrum driver, provided by Spectrum Instrumentation as a python package.  | [spcm-core](https://pypi.org/project/spcm-core/) |
+| Spectrum driver | Vendor driver library and kernel module to configure the measurement card operations and transfer the data between host memory and the cards. |  [Spectrum Instrumentation download area](https://spectrum-instrumentation.com/support/downloads.php) |
 
 ### Hardware
 
-| Component | Description | Reference |
-|---|---|---|
-| AWG (transmit card) | Spectrum M2p.65xx. Outputs the RF and gradient waveforms together with the digital control signals for synchronisation and RF unblanking. | [Hardware](hardware.md), [Wiring](wiring.md), [[6]](../references.md#ref-6) |
-| Digitizer (receive card) | Spectrum M2p.59xx. Records the MR signal in gates triggered by the AWG and provides the common sampling clock. | [Hardware](hardware.md), [Wiring](wiring.md), [[6]](../references.md#ref-6) |
-| Gradient power amplifier (GPA) | Converts the gradient waveforms into coil currents. Its gain is part of the device configuration. | [Hardware](hardware.md#mri-system) |
-| Gradient coils | Generate the gradient fields for spatial encoding. Their efficiency is part of the device configuration. | [Hardware](hardware.md#mri-system) |
-| RF power amplifier (RFPA) | Amplifies the RF waveform; enabled by the unblanking signal around each RF pulse. | [Hardware](hardware.md#mri-system) |
-| T/R switch | Routes the RFPA output to the RF coil during transmission and the coil signal to the preamplifier during reception, protecting the receive chain. | [Hardware](hardware.md#mri-system) |
-| RF coil | Excites the spins and detects the MR signal. | [Hardware](hardware.md#mri-system) |
-| Preamplifier | Low-noise amplification of the MR signal before digitisation. | [Hardware](hardware.md#mri-system) |
-| Magnet | Generates the static field B<sub>0</sub>, which determines the Larmor frequency set in the acquisition parameters. Not shown in the figure. | [[1]](../references.md#ref-1) |
+The hardware components mentioned in the diagram above are briefly explained below and summarize a minimal set needed to do MRI. The table lists example components where most of them are open source, which could be used to build a working MRI system.
 
-The physical setup is described in [Hardware](hardware.md) and [Wiring](wiring.md); the step-by-step procedure is given in [Hardware setup](../setup/hardware-setup.md).
+!!! note "Composition of the Hardware"
+    This documentation focusses on the Nexus console. It does not address the composition of an MRI system. For additional information or documentation about how to build the hardware components listed below visit the [OSI² GitLab](https://gitlab.com/osii).
+
+| Component | Description | Example |
+|---|---|---|
+| AWG | Arbitrary waveform generator. Outputs the RF and gradient waveforms together with the digital control signals for synchronisation and RF unblanking. | [M2p.5933-x4](https://spectrum-instrumentation.com/products/details/M2p5933-x4.php) |
+| Digitizer | Records the MR signal in gates triggered by the AWG. | [M2p.6546-x4](https://spectrum-instrumentation.com/products/details/M2p6546-x4.php) |
+| Gradient power amplifier (GPA) | Converts the gradient waveforms into coil currents. | [TU Delft GA2](https://gitlab.com/osii/gradient-system/gradient-power-amplifier/tu-delft-ga2) |
+| Gradient coils | Generate the gradient fields for spatial encoding. | [32cm Gradient Insert](https://gitlab.com/osii/gradient-system/gradient-coils/32cm-gradient-insert-conventional) |
+| RF power amplifier (RFPA) | Amplifies the RF waveform; enabled by the unblanking signal around each RF pulse. | [RFPA-Shoebox](https://barthel-hf.com/doku.php?id=start:prod:spectro#folded_dfb26054d0356f89c15e74dc40304787_4) |
+| T/R switch | Routes the RFPA output to the RF coil during transmission and the coil signal to the preamplifier during reception, protecting the receive chain. | [Passive TR Switch](https://gitlab.com/osii/rf-system/tr-switches/eurocard-passive-tr-switch) |
+| RF coil | Antenna handling the transmission of RF energy and the reception of the MR signal (usually we use the same coil for transmit and receive). | [RF Head Coil](https://gitlab.com/osii/rf-system/rf-coils/a4im-rf-head-coil) |
+| Preamplifier | Low-noise amplification of the MR signal before digitisation. | [Double Channel Preamp](https://gitlab.com/osii/rf-system/pre-amps/double-channel-preamp) |
+| Magnet | Generates the static field B<sub>0</sub>, which determines the Larmor frequency (not shown in the figure). | [30cm Halbach Magnet](https://gitlab.com/osii/magnet/30cm-halbach-magnet) |

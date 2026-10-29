@@ -112,8 +112,7 @@ nav:
     - Service deployment: setup/deployment.md
   - System guide:
     - Overview: system/overview.md
-    - Hardware: system/hardware.md
-    - Wiring: system/wiring.md
+    - Console hardware: system/hardware.md
     - Device configuration: system/configuration.md
     - Sequence unrolling: system/sequence-unrolling.md
     - Acquisition: system/acquisition.md

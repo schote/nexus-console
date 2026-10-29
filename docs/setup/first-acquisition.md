@@ -10,7 +10,7 @@ In principle, every acquisition can be structured into the following procedure: 
 In a first step, we import the `AcquisitionControl` and create an instance of it using the path to our [device configuration](../system/configuration.md). This loads and validates the device configuration and connects and configures both measurement cards.
 
 !!! warning
-    When using an `AcquisitionControl` instance directly, you may want to create the instance before turning on your amplifiers (see [Wiring](../system/wiring.md#safety)).
+    When using an `AcquisitionControl` instance directly, you may want to create the instance before turning on your amplifiers (see [Console hardware](../system/hardware.md#safety)).
 
 ```python
 from console.spcm_control.acquisition_control import AcquisitionControl

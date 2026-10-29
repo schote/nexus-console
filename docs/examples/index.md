@@ -8,7 +8,7 @@ hide:
 The examples below are complete acquisition scripts from the [`examples/`](https://github.com/schote/nexus-console/tree/main/examples) directory of the repository. Each script constructs a sequence with one of the built-in constructors in `console.utilities.sequences`, runs the acquisition and processes the result.
 
 !!! warning "Hardware required"
-    The examples require a fully assembled and connected system (see [Hardware](../system/hardware.md)). Before running an imaging or relaxometry experiment, the Larmor frequency and the B1 scaling (`console.parameter.larmor_frequency`, `console.parameter.b1_scaling`) must be calibrated for the system.
+    The examples require a fully assembled and connected system (see [Console hardware](../system/hardware.md)). Before running an imaging or relaxometry experiment, the Larmor frequency and the B1 scaling (`console.parameter.larmor_frequency`, `console.parameter.b1_scaling`) must be calibrated for the system.
 
 | Example | Sequence | Result |
 |---|---|---|

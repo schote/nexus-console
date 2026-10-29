@@ -10,7 +10,7 @@ Start the service on the host computer with the device configuration of the syst
 nexus -d path/to/device_config.yaml
 ```
 
-The service asks for confirmation that the amplifiers are switched off before the cards are opened (see [Wiring](../system/wiring.md#safety)). The available options are documented in [`start_manager.main`][console.service.start_manager.main].
+The service asks for confirmation that the amplifiers are switched off before the cards are opened (see [Console hardware](../system/hardware.md#safety)). The available options are documented in [`start_manager.main`][console.service.start_manager.main].
 
 ## Client
 

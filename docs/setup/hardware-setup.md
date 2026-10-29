@@ -22,9 +22,11 @@ This page describes how to set up the console hardware with one arbitrary wavefo
 
 ## Connection plan
 
-The connector names below are those printed on the card brackets. Analog channels, clock input and trigger input use SMB connectors, the multi-purpose lines X0–X3 use MMCX connectors, so some connections require adapter cables (e.g. MMCX to SMB).
+The connector names below are those printed on the card brackets. Analog channels, clock input and trigger input use SMB connectors, the multi-purpose lines X0–X3 use MMCX connectors, so some connections require adapter cables (e.g. MMCX to SMB). The complete port assignment of both cards, including the unused ports, is listed in [Console hardware](../system/hardware.md#inputs-and-outputs).
 
 ### Card synchronization
+
+For the card synchronization shorter adapter cables are required (10-20 cm, depending on the PCIe slot positions). This includes MMCX to SMB for the clock synchronization and two MMCX to MMCX cables.
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "linear"}}}%%

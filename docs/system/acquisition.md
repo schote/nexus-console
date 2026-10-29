@@ -53,7 +53,7 @@ The transmit card is operated in FIFO single mode. A background thread transfers
 | Procedure | Pre-fill the ring buffer, start DMA and card, then refill in chunks of the notify size whenever the card has consumed them |
 | End of sequence | The last chunk is zero-padded, so all outputs return to 0 V |
 
-Sequences longer than the on-board memory are therefore replayed without interruption, provided that the host transfers data faster than the card consumes them (8 bytes per sample, e.g. 160 MB/s at 20 MHz).
+Sequences longer than the on-board memory are therefore replayed without interruption, provided that the host transfers data faster than the card consumes them (4 channels × 2 bytes per sample, e.g. 160 MB/s at 20 MHz).
 
 ## Receive card: gated recording
 

@@ -66,7 +66,7 @@ title Channel 1–3 sample
 | 2 | Phase reference | X2 | 1.095 MHz square wave at the start of each gate (see [ADC events](#adc-events)) |
 | 3 | RF unblanking | X3 | From $t_\text{dead}$ before each RF pulse until its end (see [RF events](#rf-events)) |
 
-The transmit card converts bits 0–14 of channels 1–3 to the analog gradient output and routes bit 15 to its digital lines X1–X3 (see [Wiring](wiring.md)). Embedding the control signals in the waveform guarantees sample-exact synchronisation of RF, gradients, ADC gate and unblanking.
+The transmit card converts bits 0–14 of channels 1–3 to the analog gradient output and routes bit 15 to its digital lines X1–X3 (see [Inputs and outputs](hardware.md#inputs-and-outputs)). Embedding the control signals in the waveform guarantees sample-exact synchronisation of RF, gradients, ADC gate and unblanking.
 
 ## Timing
 
