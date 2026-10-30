@@ -1,6 +1,9 @@
-# Nexus Console
-
-**An open-source Python console for versatile low-field MRI acquisition.**
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/nexus_full_dark_transparent.svg">
+    <img alt="Nexus Console" src="docs/assets/logo/nexus_full_light_transparent.svg" width="360">
+  </picture>
+</h1>
 
 [![DOI](https://img.shields.io/badge/DOI-10.1002%2Fmrm.30406-blue)](https://doi.org/10.1002/mrm.30406)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
@@ -10,10 +13,10 @@
 [![Pytest](https://github.com/schote/nexus-console/actions/workflows/pytest.yml/badge.svg)](https://github.com/schote/nexus-console/actions/workflows/pytest.yml)
 ![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fschote%2F4d47c22492a23337a79400f4859a4c25%2Fraw%2Fcd5263422b929b375047c5b78e145f5cec6197ad%2Fcoverage.json)
 
-<!-- --8<-- [start:summary] -->
-Nexus replaces the proprietary spectrometer of an MRI system by two commercial PCIe measurement cards from Spectrum Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive), operated by an open-source Python software. Pulse sequences are defined in the open [Pulseq](https://pulseq.github.io/) format using [PyPulseq](https://github.com/imr-framework/pypulseq) and unrolled directly into RF and gradient waveforms, which are streamed to the transmit card without a vendor-specific sequence compiler. Received signals are demodulated, phase-corrected and decimated on the host and exported in the [ISMRMRD](https://ismrmrd.github.io/) format for reconstruction with any compatible framework.
+### An open-source Python console for versatile low-field MRI acquisition
 
-The console was developed and validated on a 50 mT low-field MRI system. It is not tied to a specific field strength or hardware setup: amplifiers, coils and system limits are described in a configuration file.
+<!-- --8<-- [start:summary] -->
+Nexus replaces the proprietary spectrometer of an MRI system by two commercial PCIe measurement cards from Spectrum Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive), operated by an open-source Python software. Pulse sequences are defined in the open [Pulseq](https://pulseq.github.io/) format using [PyPulseq](https://github.com/imr-framework/pypulseq) and unrolled directly into RF and gradient waveforms, which are streamed to the transmit card without a vendor-specific sequence compiler. Received signals are demodulated, phase-corrected and decimated on the host and exported in the [ISMRMRD](https://ismrmrd.github.io/) format for reconstruction with any compatible framework. The console was developed and validated on a 50 mT low-field MRI system. It is not tied to a specific field strength or hardware setup: amplifiers, coils and system limits are described in a configuration file.
 <!-- --8<-- [end:summary] -->
 
 ## Documentation
