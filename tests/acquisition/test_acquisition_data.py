@@ -43,7 +43,7 @@ def test_acquisition_data(acquisition_parameter, test_sequence, random_acquisiti
 
     # Check if meta and sequence is saved
     acq_data.save(user_path=tmp_dir)
-    acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
+    acq_folder = Path(tmp_dir) / f"{acq_data.meta['date']}-session" / acq_data.meta["folder_name"]
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
 
     assert "meta.json" in acq_data_files

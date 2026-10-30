@@ -5,7 +5,7 @@ _MOVED = {
     "AcquisitionControlManager": "nexus_service.acquisition_manager",
 }
 
-def __getattr__(name):
+def __getattr__(name: str) -> object:
     if name in _MOVED:
         new_module = _MOVED[name]
         warnings.warn(

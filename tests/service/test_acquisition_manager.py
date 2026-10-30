@@ -1,5 +1,4 @@
 """Tests for the unix domain socket transport and authentication of the acquisition manager."""
-import os
 import stat
 import subprocess
 import sys
@@ -30,7 +29,7 @@ class DummyAcquisitionControl:
 
 
 @pytest.fixture()
-def dummy_service(nexus_runtime_dir: Path):
+def dummy_service(nexus_runtime_dir: Path):  # noqa: ARG001, fixture isolates the runtime directory
     """Run a manager server with a dummy acquisition control on the runtime socket."""
     server = AcquisitionControlManager(callable_acq_control=DummyAcquisitionControl)
     server.start()
@@ -38,7 +37,8 @@ def dummy_service(nexus_runtime_dir: Path):
     server.shutdown()
 
 
-def test_client_connects_without_arguments(dummy_service) -> None:
+@pytest.mark.usefixtures("dummy_service")
+def test_client_connects_without_arguments() -> None:
     """A client constructed with no arguments connects to the running service."""
     with AcquisitionControlManager() as manager:
         assert manager.acquisition.echo("nexus") == "nexus"
@@ -52,19 +52,22 @@ def test_service_uses_unix_socket(dummy_service, nexus_runtime_dir: Path) -> Non
 
 
 @posix_only
-def test_runtime_files_permissions(dummy_service, nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("dummy_service")
+def test_runtime_files_permissions(nexus_runtime_dir: Path) -> None:
     """Every account can read the key and use the sticky runtime directory."""
     assert stat.S_IMODE((nexus_runtime_dir / "authkey").stat().st_mode) == 0o644
     assert stat.S_IMODE(nexus_runtime_dir.stat().st_mode) == 0o1777
 
 
-def test_client_without_authkey(nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_client_without_authkey() -> None:
     """Constructing a client without a running service reports the service state."""
     with pytest.raises(NexusNotRunningError, match="systemctl start nexus"):
         AcquisitionControlManager()
 
 
-def test_client_without_service(nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_client_without_service() -> None:
     """Entering the context without a listening service reports the service state."""
     manager = AcquisitionControlManager(authkey=b"key")
 
@@ -77,7 +80,7 @@ def test_runtime_dir_of_a_foreign_owner(nexus_runtime_dir: Path, monkeypatch: py
     nexus_runtime_dir.mkdir(parents=True)
     nexus_runtime_dir.chmod(0o1777)
 
-    def _deny(*args: object, **kwargs: object) -> None:
+    def _deny(*_args: object, **_kwargs: object) -> None:
         raise PermissionError("Operation not permitted")
 
     monkeypatch.setattr(Path, "chmod", _deny)
@@ -91,7 +94,7 @@ def test_runtime_dir_with_wrong_permissions(nexus_runtime_dir: Path, monkeypatch
     nexus_runtime_dir.mkdir(parents=True)
     nexus_runtime_dir.chmod(0o755)
 
-    def _deny(*args: object, **kwargs: object) -> None:
+    def _deny(*_args: object, **_kwargs: object) -> None:
         raise PermissionError("Operation not permitted")
 
     monkeypatch.setattr(Path, "chmod", _deny)
@@ -137,20 +140,22 @@ def test_missing_system_runtime_dir_falls_back(tmp_path: Path, monkeypatch: pyte
     assert stat.S_IMODE((fallback / "nexus").stat().st_mode) == 0o1777
 
 
-def test_stale_socket_is_removed(nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_stale_socket_is_removed() -> None:
     """A socket file without a listener behind it is a leftover and gets removed."""
     address = service_address()
     # A killed service cannot clean up: its socket file survives, a named pipe on Windows vanishes with it
     killed = f"import os, multiprocessing.connection as c; listener = c.Listener({address!r}); os._exit(0)"
     subprocess.run([sys.executable, "-c", killed], check=True)  # noqa: S603
-    assert os.path.exists(address) or sys.platform == "win32"
+    assert Path(address).exists() or sys.platform == "win32"
 
     ensure_socket_free(address)
 
-    assert not os.path.exists(address)
+    assert not Path(address).exists()
 
 
-def test_live_socket_aborts_startup(nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_live_socket_aborts_startup() -> None:
     """A socket with a live service behind it must not be removed."""
     address = service_address()
 
@@ -161,10 +166,11 @@ def test_live_socket_aborts_startup(nexus_runtime_dir: Path) -> None:
             Listener(address)
 
 
-def test_missing_socket_is_accepted(nexus_runtime_dir: Path) -> None:
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_missing_socket_is_accepted() -> None:
     """Without a socket file there is nothing to clean up."""
     address = service_address()
 
     ensure_socket_free(address)
 
-    assert not os.path.exists(address)
+    assert not Path(address).exists()

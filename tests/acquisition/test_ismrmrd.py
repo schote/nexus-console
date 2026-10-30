@@ -46,7 +46,7 @@ def test_write_acquisition_to_mrd(trajectory_type, dim, random_complex_data, acq
 
     acq_data.save_ismrmrd(header=header, user_path=tmp_dir)
 
-    acq_folder = Path(tmp_dir) / acq_data.meta["folder_name"]
+    acq_folder = Path(tmp_dir) / f"{acq_data.meta['date']}-session" / acq_data.meta["folder_name"]
     acq_data_files = [f.name for f in acq_folder.iterdir() if f.is_file()]
     assert "data.mrd" in acq_data_files
 

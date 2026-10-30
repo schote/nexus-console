@@ -5,7 +5,6 @@ import logging
 import os
 import signal
 import sys
-from contextlib import suppress
 from multiprocessing.connection import Client
 from pathlib import Path
 
@@ -30,8 +29,7 @@ def ensure_socket_free(address: str | Path) -> None:
         Client(str(address)).close()
     except (ConnectionRefusedError, FileNotFoundError):
         # Nobody is listening, a named pipe vanishes with its server but a socket file is left behind
-        with suppress(FileNotFoundError):
-            os.unlink(address)
+        Path(address).unlink(missing_ok=True)
         return
     raise RuntimeError(f"A nexus service is already running on {address}.")
 
