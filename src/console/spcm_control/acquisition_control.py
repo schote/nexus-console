@@ -35,6 +35,8 @@ LOG_LEVELS = [
     logging.CRITICAL,
 ]
 
+DEFAULT_NEXUS_DATA_DIR = Path.home() / "nexus-console"
+
 
 class AcquisitionControl:
     """Acquisition control class.
@@ -49,7 +51,7 @@ class AcquisitionControl:
         log_dir: str | Path | None = None,
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
-    ):
+    ) -> None:
         """Construct acquisition control class.
 
         Create instances of sequence provider, tx and rx card.
@@ -72,7 +74,7 @@ class AcquisitionControl:
             Set the logging level for the terminal/console output.
         """
         date = datetime.now().strftime("%Y-%m-%d")
-        log_dir = Path(log_dir) if log_dir is not None else Path.home() / "nexus-console"
+        log_dir = Path(log_dir) if log_dir is not None else DEFAULT_NEXUS_DATA_DIR
         log_dir.mkdir(parents=True, exist_ok=True)
         self._setup_logging(
             log_file=log_dir / f"{date}_nexus.log",
@@ -148,7 +150,7 @@ class AcquisitionControl:
             self._processor = None
             self.log.info("RxProcessor disabled — using in-process fallback")
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Class destructor disconnecting measurement cards."""
         if self.tx_card:
             self.tx_card.disconnect()
@@ -240,9 +242,8 @@ class AcquisitionControl:
         ----------
         store_unprocessed
             Flag for whether to keep the raw, undecimated data after decimation
-        realtime_proccessing
-            flag for processing the data in real time using the multiprocessing or
-            using threading to process the data after it has all been acquired.
+        progress_callback
+            Optional callback which is called with the acquisition progress in percent, by default None.
 
         Raises
         ------
@@ -368,7 +369,7 @@ class AcquisitionControl:
 
         try:
             averages = [data.average_index for data in self.receive_data]
-            if self.receive_data and not (np.unique(averages).size == self.sequence.parameter.num_averages):
+            if self.receive_data and np.unique(averages).size != self.sequence.parameter.num_averages:
                 averages_idc = np.arange(self.sequence.parameter.num_averages)
                 missing_averages = [avg + 1 for avg in averages_idc if avg not in averages]
                 raise ValueError(f"Missing averages: {missing_averages} out of {self.sequence.parameter.num_averages}")

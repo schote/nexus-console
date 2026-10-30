@@ -49,6 +49,13 @@ class RxProcessor:
     """
 
     def __init__(self, num_workers: int = 1) -> None:
+        """Initialize the rx processor.
+
+        Parameters
+        ----------
+        num_workers, optional
+            Number of worker processes in the process pool, by default 1.
+        """
         self._num_workers = num_workers
         self._executor: ProcessPoolExecutor | None = None
         self._futures: dict[int, Future] = {}

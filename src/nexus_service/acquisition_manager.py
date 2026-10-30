@@ -9,8 +9,13 @@ from collections.abc import Callable
 from contextlib import suppress
 from multiprocessing.managers import BaseManager
 from pathlib import Path
+from types import TracebackType
+from typing import Any
 
 from console.spcm_control.acquisition_control import AcquisitionControl
+
+# Alias required within the manager class body, where `AcquisitionControl` is shadowed by the proxy factory
+_AcquisitionControl = AcquisitionControl
 
 NOT_RUNNING_MSG = "Nexus service is not running. Start it with: systemctl start nexus, or by hand: nexus -d <config>"
 # Created and removed by systemd (RuntimeDirectory= in deployment/nexus.service), owned by the service account
@@ -88,13 +93,33 @@ class AcquisitionControlManager(BaseManager):
         If no authentication key is found, i.e. the acquisition service is not running.
     """
 
+    # Proxy factory, added dynamically by BaseManager.register("AcquisitionControl") in __init__
+    AcquisitionControl: Callable[[], _AcquisitionControl]
+
     def __init__(
         self,
         address: str | Path | None = None,
         authkey: bytes | None = None,
-        callable_acq_control: Callable | None = None,
-        **kwargs,
-    ):
+        callable_acq_control: Callable[[], _AcquisitionControl] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the acquisition control manager.
+
+        Parameters
+        ----------
+        address, optional
+            Address of the manager process, by default None.
+            If None, the unix domain socket in the runtime directory is used.
+        authkey, optional
+            Authentication key of the manager process, by default None.
+            If None, a fresh key is generated on the service side
+            and read from the runtime directory on the client side.
+        callable_acq_control, optional
+            Callable which returns the acquisition control instance served by the manager, by default None.
+            If None, the acquisition control is registered without callable (client side).
+        **kwargs
+            Additional keyword arguments passed to ``BaseManager``.
+        """
         key_file = runtime_dir() / "authkey"
         if authkey is None and callable_acq_control:
             authkey = secrets.token_bytes(32)
@@ -109,9 +134,9 @@ class AcquisitionControlManager(BaseManager):
         super().__init__(address=str(address or service_address()), authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
-            self.register('AcquisitionControl', callable=callable_acq_control)
+            self.register("AcquisitionControl", callable=callable_acq_control)
         else:
-            self.register('AcquisitionControl')
+            self.register("AcquisitionControl")
 
     def __enter__(self) -> "AcquisitionControlManager":
         """Enter with context.
@@ -125,10 +150,15 @@ class AcquisitionControlManager(BaseManager):
             self.connect()
         except (ConnectionRefusedError, FileNotFoundError) as exc:
             raise NexusNotRunningError(NOT_RUNNING_MSG) from exc
-        self.acquisition: AcquisitionControl = getattr(self, "AcquisitionControl")()
+        self.acquisition: AcquisitionControl = self.AcquisitionControl()
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         """Exit with context."""
         # Explicitly remove the proxy references
         if hasattr(self, "acquisition"):
@@ -137,5 +167,4 @@ class AcquisitionControlManager(BaseManager):
         if exc_type is not None:
             print(f"An error occurred: {exc_value}")
             traceback.print_tb(exc_tb)
-
-        return False  # Propagate exceptions if they occur
+        # Returning None propagates exceptions if they occur

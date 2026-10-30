@@ -104,14 +104,14 @@ class AcquisitionData:
 
         # Save meta data
         if not (meta_file := acq_folder_path / "meta.json").exists() or overwrite:
-            with open(meta_file, "w", encoding="utf-8") as outfile:
+            with meta_file.open("w", encoding="utf-8") as outfile:
                 json.dump(self.meta, outfile, indent=4, cls=JSONEncoder)
 
         if not (sequence_file := acq_folder_path / "sequence.seq").exists() or overwrite:
             try:
                 # Write sequence .seq file
                 self.sequence.write(sequence_file)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 - best effort, saving must continue with remaining files
                 log.warning("Could not save sequence: %s", exc)
 
         if len(self._additional_numpy_data) > 0:

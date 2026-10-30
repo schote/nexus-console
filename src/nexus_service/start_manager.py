@@ -36,7 +36,7 @@ def ensure_socket_free(address: str | Path) -> None:
     raise RuntimeError(f"A nexus service is already running on {address}.")
 
 
-def main():
+def main() -> None:
     """Start the acquisition control and setup the manager."""
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
     parser.add_argument(
@@ -96,13 +96,13 @@ def main():
     finally:
         os.umask(umask)
 
-    def shutdown_handler():
+    def shutdown_handler() -> None:
         try:
             print("\n[nexus] Shutting down nexus server...\n")
             if acquisition_control:
                 acquisition_control.__del__()
                 print("[nexus] Acquisition control shutdown successfully.")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
             print(f"[nexus] Error during shutdown: {e}")
         finally:
             # The socket file itself is removed by the finalizer of the multiprocessing listener
@@ -117,5 +117,5 @@ def main():
     server.serve_forever()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

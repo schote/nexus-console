@@ -250,7 +250,7 @@ def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter:
     """Labels in blocks must be propagated into RxData.labels for each ADC event."""
     n_samples = 1000
     bw = 20e3
-    labels = ['SLC', 'SEG', 'REP', 'AVG', 'SET', 'ECO', 'LIN', 'PAR', 'NAV', 'REV', 'NOISE', 'IMA', 'REF']
+    labels = ["SLC", "SEG", "REP", "AVG", "SET", "ECO", "LIN", "PAR", "NAV", "REV", "NOISE", "IMA", "REF"]
     for k, label in enumerate(labels):
         seq_provider.add_block(pp.make_delay(1e-6), pp.make_label(label, "SET", k))
     seq_provider.add_block(pp.make_adc(num_samples=n_samples, dwell=1/bw))

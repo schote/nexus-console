@@ -7,19 +7,19 @@ from pathlib import Path
 class JSONEncoder(json.JSONEncoder):
     """JSON Encoder class."""
 
-    def default(self, obj) -> object:
+    def default(self, obj: object) -> object:
         """Encode object default method.
 
         Parameters
         ----------
-        o
+        obj
             Object to encode
 
         Returns
         -------
             JSON encoded object
         """
-        if bool(dataclasses.is_dataclass(obj)) and not isinstance(obj, type):
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
         if isinstance(obj, Path):
             return str(obj)

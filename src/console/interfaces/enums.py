@@ -1,8 +1,8 @@
 """Definition of enums."""
-from enum import Enum
+from enum import StrEnum
 
 
-class DDCMethod(str, Enum):
+class DDCMethod(StrEnum):
     """Enum for DDC methods."""
 
     FIR = "finite-impulse-response-filter"

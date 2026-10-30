@@ -10,7 +10,7 @@ from console.utilities.sequences.system_settings import system as default_system
 
 def constructor(
     n_steps: int = 10,
-    flip_angle_range=(pi / 4, 3 * pi / 2),
+    flip_angle_range: tuple[float, float] = (pi / 4, pi * 3 / 2),
     repetition_time: float = 1,
     echo_time: float = 20e-3,
     rf_duration: float = 400e-6,
@@ -59,7 +59,7 @@ def constructor(
     adc_duration = pp.calc_duration(adc)
 
     # Define flip angles
-    flip_angles = np.linspace(flip_angle_range[0], flip_angle_range[1], n_steps, endpoint=True)
+    flip_angles = np.linspace(*flip_angle_range, num=n_steps, endpoint=True)
 
     for angle in flip_angles:
         if use_sinc:

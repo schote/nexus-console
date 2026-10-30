@@ -43,7 +43,7 @@ peaks = np.max(data, axis=-1)
 
 
 # T2 model to fit the acquired data
-def t2_model(te_values, a, b, c) -> np.ndarray:
+def t2_model(te_values: np.ndarray, a: float, b: float, c: float) -> np.ndarray:
     """Model for T2 relaxation."""
     return a + b * np.exp(-te_values / c)
 
