@@ -1,64 +1,87 @@
-# Nexus-Console for Advanced Low-Field MRI
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/logo/nexus_full_dark_transparent.svg">
+    <img alt="Nexus Console" src="docs/assets/logo/nexus_full_light_transparent.svg" width="360">
+  </picture>
+</h1>
 
-![Python](https://img.shields.io/badge/python-3.10-blue)
-[![License](https://img.shields.io/github/license/schote/spectrum-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
-[![Sphinx Docs](https://github.com/schote/spectrum-console/actions/workflows/docs.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/docs.yml)
-[![Static Tests](https://github.com/schote/spectrum-console/actions/workflows/static-tests.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/static-tests.yml)
-[![Pytest](https://github.com/schote/spectrum-console/actions/workflows/pytest.yml/badge.svg)](https://github.com/schote/spectrum-console/actions/workflows/pytest.yml)
+[![DOI](https://img.shields.io/badge/DOI-10.1002%2Fmrm.30406-blue)](https://doi.org/10.1002/mrm.30406)
+![Python](https://img.shields.io/badge/python-3.13-blue)
+[![License](https://img.shields.io/github/license/schote/nexus-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
+[![Docs](https://github.com/schote/nexus-console/actions/workflows/docs-mkdocs.yml/badge.svg)](https://schote.github.io/nexus-console/)
+[![Static Tests](https://github.com/schote/nexus-console/actions/workflows/static-tests.yml/badge.svg)](https://github.com/schote/nexus-console/actions/workflows/static-tests.yml)
+[![Pytest](https://github.com/schote/nexus-console/actions/workflows/pytest.yml/badge.svg)](https://github.com/schote/nexus-console/actions/workflows/pytest.yml)
 ![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2Fschote%2F4d47c22492a23337a79400f4859a4c25%2Fraw%2Fcd5263422b929b375047c5b78e145f5cec6197ad%2Fcoverage.json)
 
-This project aims to implement a versatile console for low-field magnetic resonance imaging (MRI) acquisitions. The central hardware components are two spectrum cards from Spectrum Instrumentation. 
-They serve as arbitrary waveform generators (AWG) and analog to digital converter (digitizer). 
-Depending on the measurement card specification, the Nexus console can also be used for higher frequencies (first experiments at 7T were conducted).
-This application controls AWG and digitizer cards to perform MRI scans by directly interpreting sequences defined by the open-source pulseq framework, i.e. the python implementation [pypulseq](https://github.com/imr-framework/pypulseq). 
-An interfaces to the open data MR raw data format [ISMRMRD](https://ismrmrd.github.io/apidocs/1.5.0/) is implemented to directly enable Nexus with the latest reconstruction algorithms, e.g. from the [Gadgetron](https://gadgetron.github.io/) toolbox.
+### An open-source Python console for versatile low-field MRI acquisition
+
+<!-- --8<-- [start:summary] -->
+Nexus replaces the proprietary spectrometer of an MRI system by two commercial PCIe measurement cards from Spectrum Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive), operated by an open-source Python software. Pulse sequences are defined in the open [Pulseq](https://pulseq.github.io/) format using [PyPulseq](https://github.com/imr-framework/pypulseq) and unrolled directly into RF and gradient waveforms, which are streamed to the transmit card without a vendor-specific sequence compiler. Received signals are demodulated, phase-corrected and decimated on the host and exported in the [ISMRMRD](https://ismrmrd.github.io/) format for reconstruction with any compatible framework. The console was developed and validated on a 50 mT low-field MRI system. It is not tied to a specific field strength or hardware setup: amplifiers, coils and system limits are described in a configuration file.
+<!-- --8<-- [end:summary] -->
+
+## Documentation
+
+The [documentation](https://schote.github.io/nexus-console/) includes a quick start guide, system guide, examples, API reference and a list of related references.
+
+To build the documentation locally, install the `docs-mkdocs` extra and start the development server:
+
+```bash
+pip install -e ".[docs-mkdocs]"
+mkdocs serve --watch src
+```
 
 ## Installation
 
-It is recommended to install the package in a virtual environment (e.g. [conda](https://docs.conda.io/projects/conda/en/stable/)). 
-Further documentation on setting up miniconda can be found [here](https://conda.io/projects/conda/en/stable/user-guide/install/index.html). 
-The package was developed under [Python 3.10](https://www.python.org/downloads/release/python-3100/) so it is recommended to use `python==3.10`.
+Requires Python ≥ 3.13 and the [Spectrum Instrumentation driver](https://spectrum-instrumentation.com/support/downloads.php) for the measurement cards.
 
-To install the Nexus console application, clone the repository an ensure that you are in the repository directory, which is `*/nexus-console/`. 
-The package can be installed with different dependencies depending on the specific requirements:
+```bash
+pip install nexus-console
+```
 
-    `pip install -e .`
+See the [Installation](https://schote.github.io/nexus-console/setup/installation/) for the development installation and the device configuration.
 
-Installs all the necessary base dependencies to use the package (minimum required).
+## Repository structure
 
-    `pip install -e ".[lint]"`
+| Path | Contents |
+|---|---|
+| [`src/console/`](src/console/) | Python package: card control, sequence unrolling, data interfaces, processing, built-in sequences |
+| [`examples/`](examples/) | Acquisition scripts and a reference device configuration |
+| [`tests/`](tests/) | Test suite |
+| [`docs/`](docs/) | Documentation sources (MkDocs) |
 
-Installs additional (optional) dependencies that are required to run the linter.
+<!-- --8<-- [start:citation] -->
+## Citation
 
-    `pip install -e ".[test]"`
+> [!TIP]
+> If Nexus contributes to your research, please cite our paper:
+>
+> Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. *Magn Reson Med.* 2025;93(5):2224–2238. [doi:10.1002/mrm.30406](https://doi.org/10.1002/mrm.30406)
 
-Installs additional (optional) dependencies that are required to run the linter.
+<details markdown>
+<summary>BibTeX</summary>
 
-    `pip install -e ".[docs]"`
+```bibtex
+@article{schote2025nexus,
+  title   = {Nexus: A versatile console for advanced low-field {MRI}},
+  author  = {Schote, David and Silemek, Berk and O'Reilly, Thomas and Seifert, Frank and
+             Assmy, Jan-Lukas and Kolbitsch, Christoph and Webb, Andrew G. and Winter, Lukas},
+  journal = {Magnetic Resonance in Medicine},
+  volume  = {93},
+  number  = {5},
+  pages   = {2224--2238},
+  year    = {2025},
+  doi     = {10.1002/mrm.30406}
+}
+```
 
-Installs additional (optional) dependencies that are required to build the sphinx documentation locally.
+</details>
+<!-- --8<-- [end:citation] -->
 
-    `pip install -e ".[dev]"`
-
-Installs additional (optional) developer dependencies for profiling and developing in vs code.
-
-
-_Hint: Multiple dependency groups can be installed using `".[lint, test]"` for instance._
-
-## Usage
-
-Please follow the project [documentation](https://schote.github.io/nexus-console/) which contains a quick-start guide, some examples and a user guide.
-
-## Publications
-If you find this useful in your work, please [cite](https://doi.org/10.1002/mrm.30406):
-
-Schote D, Silemek B, O'Reilly T, Seifert F, Assmy JL, Kolbitsch C, Webb AG, Winter L. Nexus: A versatile console for advanced low-field MRI. Magn Reson Med. 2025. doi: 10.1002/mrm.30406.
-
+<!-- --8<-- [start:acknowledgments] -->
 ## Acknowledgments
 
-This work is part of the Metrology for Artificial Intelligence for Medicine (M4AIM) project, which is funded by the Federal Ministry of Economic Affairs and Climate Action (BMWK) as part of the QI-Digital initiative. 
-The projects 21NRM05 STASIS and 22HLT02 A4IM have received funding from the European Partnership on Metrology, cofinanced by the European Union's Horizon Europe Research and Innovation Program and by the Participating States. 
-Partial support for this project is provided by a European Research Council Advanced Grant (PASMAR 101021218).
-This work is supported by the Open Source Imaging Initiative (OSI²)
-
----
+This work is part of the Metrology for Artificial Intelligence for Medicine (M4AIM) project, funded by the Federal Ministry of Economic Affairs and Climate Action (BMWK) as part of the QI-Digital initiative.
+The projects 21NRM05 STASIS and 22HLT02 A4IM have received funding from the European Partnership on Metrology, cofinanced by the European Union's Horizon Europe Research and Innovation Program and by the Participating States.
+Partial support is provided by a European Research Council Advanced Grant (PASMAR 101021218).
+This work is supported by the Open Source Imaging Initiative (OSI²).
+<!-- --8<-- [end:acknowledgments] -->

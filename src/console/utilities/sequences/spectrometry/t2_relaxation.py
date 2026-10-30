@@ -21,19 +21,19 @@ def constructor(
 
     Parameters
     ----------
-    echo_time_range, optional
+    echo_time_range : tuple[float, float], optional
         Range of echo times in s
-    num_steps, optional
+    num_steps : int, optional
         Number of echo times to sample
-    repetition_time, optional
+    repetition_time : float, optional
         Time between two subsequent 90 degree pulses in s
-    rf_duration, optional
+    rf_duration : float, optional
         Duration of the RF pulses in s
-    num_samples, optional
+    num_samples : int, optional
         Number of data points to acquire
-    acq_bandwidth, optional
+    acq_bandwidth : float | int, optional
         Bandwidth of the acquisition in Hz
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

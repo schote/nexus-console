@@ -24,23 +24,23 @@ def constructor(
 
     Parameters
     ----------
-    fov, optional
+    fov : float, optional
         Field of view in m
-    readout_bandwidth, optional
+    readout_bandwidth : float, optional
         Readout bandwidth in Hz
-    echo_time, optional
+    echo_time : float, optional
         Time between center of 90 degree pulse and center of ADC in s
-    gradient_correction, optional
+    gradient_correction : float, optional
         Additional delay to account for gradient system delays in s
-    num_samples, optional
+    num_samples : int, optional
         Number of data points to acquire
-    rf_duration, optional
+    rf_duration : float, optional
         Duration of the RF pulses in s
-    channel, optional
+    channel : str, optional
         Gradient channel to use for projection
-    use_sinc, optional
+    use_sinc : bool, optional
         RF pulse type, if true: sinc pulse is used, rect otherwise
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

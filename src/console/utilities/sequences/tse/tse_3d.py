@@ -1,10 +1,10 @@
-"""Constructor for 3D TSE Imaging sequence.
+"""Turbo spin-echo (TSE) imaging sequence for 1D, 2D and 3D Cartesian encoding.
 
-TODO: add sampling patterns (elliptical masks, partial fourier, CS)
-TODO: add optional inversion pulse
-TODO: add optional variable refocussing pulses (pass list rather than float)
-TODO: move trajectory calculation to separate file to shared with other imaging experiments (needed?)
-
+The constructor returns a PyPulseq sequence together with a matching ISMRMRD header.
+Each ADC event carries the PyPulseq labels ``LIN`` (phase encoding 1), ``PAR``
+(phase encoding 2), ``ECO`` (echo index) and ``REP``; noise scans are flagged with ``NAV``.
+These labels are propagated to the acquired data and used by `sort_kspace` and by the
+ISMRMRD export.
 """
 # %%
 from enum import StrEnum
@@ -61,56 +61,62 @@ def constructor(
 
     Parameters
     ----------
-    echo_time, optional
-        Time constant between center of 90 degree pulse and center of ADC
-    repetition_time, optional
-        Time constant between two subsequent 90 degree pulses (echo trains)
-    etl, optional
-        Echo train length
-    dummies, optional
-        Number of dummy shots to acquire
-    rf_duration, optional
-        Duration of the RF pulses (90 and 180 degree)
-    ramp_duration, optional
-        Duration of the gradient ramps
-    gradient_correction, optional
-        Time constant to center ADC event
-    adc_correction, optional
-        Time constant which is added at the end of the ADC and readout gradient.
-        This value is not taken into account for the prephaser calculation.
-    ro_bandwidth, optional
-        Readout bandwidth in Hz
-    fov, optional
-        Field of view per dimension
-    n_enc, optional
-        Number of encoding steps per dimension
-        If an encoding dimension is set to 1, the TSE sequence becomes a 2D sequence.
-    echo_shift, optional
-        Time shift of the readout (ADC) relative to the echo center in s.
+    echo_time : float, optional
+        Echo spacing in s, i.e. time between the centre of the excitation pulse and the centre of the first ADC.
+    repetition_time : float, optional
+        Time between two subsequent excitation pulses (echo trains) in s.
+    etl : int, optional
+        Echo train length. For ``etl=1`` the sequence is a conventional spin echo.
+    dummies : int, optional
+        Number of dummy echo trains played out before the acquisition.
+    rf_duration : float, optional
+        Duration of the excitation and refocussing pulses in s.
+    ramp_duration : float, optional
+        Duration of the gradient ramps in s.
+    gradient_correction : float, optional
+        Time correction in s to centre the ADC event on the readout gradient.
+    ro_bandwidth : float, optional
+        Readout bandwidth in Hz.
+    fov : Dimensions, optional
+        Field of view per dimension in m.
+    n_enc : Dimensions, optional
+        Number of encoding steps per dimension.
+        Setting a phase-encoding dimension to 1 reduces the sequence to 2D (or 1D).
+    echo_shift : float, optional
+        Time shift of the readout (ADC) relative to the echo centre in s.
         Added to the delay before and subtracted from the delay after each readout.
-    trajectory, optional
-        The k-space trajectory, options are in-out, out-in and linear
-    excitation_angle, excitation_phase, optional
-        set the flip angle and phase of the excitation pulse in radians
-    refocussing_angle, refocussing_phase, optional
-        Set the flip angle and phase of the refocussing pulse in radians
-        TODO: allow this to be a list/array to vary flip angle along echo train.
-    inversion_pulse, optional
-        If true, an inversion pulse is added at the beginning of each TR, with inversion time defined by inversion_time
-    inversion_time, optional
-        Time between inversion pulse and excitation pulse in s, only used if inversion_pulse is true
-    inversion_angle, optional
-        Flip angle of the inversion pulse in radians, only used if inversion_pulse is true
-    channel_ro, channel_pe1, channel_pe2, optional
-        set the readout, phase1 and phase2 encoding directions
-    noise_scan, optional
-        If true, a noise scan is acquired after each echo train, with the same duration as the echo train
-    system, optional
-        Sequence system to be used for sequence construction
+    trajectory : Trajectory, optional
+        Phase-encoding order within an echo train: in-out, out-in or linear.
+    excitation_angle : float, optional
+        Flip angle of the excitation pulse in rad.
+    excitation_phase : float, optional
+        Phase of the excitation pulse in rad.
+    refocussing_angle : float, optional
+        Flip angle of the refocussing pulses in rad.
+    refocussing_phase : float, optional
+        Phase of the refocussing pulses in rad.
+    inversion_pulse : bool, optional
+        If True, an inversion pulse is played out at the beginning of each TR.
+    inversion_time : float, optional
+        Time between inversion and excitation pulse in s; only used if `inversion_pulse` is True.
+    inversion_angle : float, optional
+        Flip angle of the inversion pulse in rad; only used if `inversion_pulse` is True.
+    channel_ro : str, optional
+        Logical gradient channel (``"x"``, ``"y"`` or ``"z"``) used for readout.
+    channel_pe1 : str, optional
+        Logical gradient channel used for the first phase-encoding direction.
+    channel_pe2 : str, optional
+        Logical gradient channel used for the second phase-encoding direction.
+    noise_scan : bool, optional
+        If True, a noise scan (ADC without RF, flagged by the ``NAV`` label) is acquired in the TR delay
+        after each echo train; its duration is ``min(tr_delay - 50 ms, 100 ms)``.
+    system : pp.Opts, optional
+        PyPulseq system limits used for sequence construction.
 
     Returns
     -------
-        Pulseq sequence and a list which describes the trajectory
+    tuple[pp.Sequence, ismrmrd.xsd.ismrmrdHeader]
+        PyPulseq sequence and the corresponding ISMRMRD header (encoding and trajectory description).
     """
     seq = pp.Sequence(system=system)
     # Get the dimension and type of the sequence and set the name accordingly
@@ -534,19 +540,19 @@ def constructor(
 
 
 def sort_kspace(receive_data: list, seq: pp.Sequence) -> np.ndarray:
-    """
-    Sort acquired k-space lines.
+    """Sort acquired k-space lines.
 
     Parameters
     ----------
-    receive_data
-        List of acquired RxData objects, sorted into k-space by their LIN and PAR labels.
-    seq
-        Sequence returned by the TSE constructor, used to read the encoding dimensions.
+    receive_data : list
+        List of received data objects containing processed k-space lines and labels.
+    seq : pp.Sequence
+        Pypulseq sequence used to retrieve encoding dimension definitions.
 
     Returns
     -------
-        K-space array with dimensions (averages, coils, pe2, pe1, ro)
+    np.ndarray
+        Sorted k-space array with shape (averages, coils, enc_z, enc_y, enc_x).
     """
     n_avg = receive_data[0].total_averages
     n_coil = np.size(receive_data[0].processed_data, 0)

@@ -1,4 +1,4 @@
-"""Spin-echo spectrum."""
+"""T2 relaxation measurement with a series of spin echoes."""
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +9,7 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities import sequences
 
-# Create acquisition control instance
+# Create acquisition control instance, adapt the path to the device configuration of your system
 acq = AcquisitionControl(configuration_file="example_device_config.yaml")
 
 # Construct and plot sequence

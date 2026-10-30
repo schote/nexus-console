@@ -28,11 +28,11 @@ class AcquisitionControlManager(BaseManager):
 
         Parameters
         ----------
-        address, optional
+        address : tuple[str, int], optional
             Address (host, port) of the manager process, by default ("localhost", 50000).
-        authkey, optional
+        authkey : bytes, optional
             Authentication key of the manager process, by default b"secretkey".
-        callable_acq_control, optional
+        callable_acq_control : Callable[[], _AcquisitionControl] | None, optional
             Callable which returns the acquisition control instance served by the manager, by default None.
             If None, the acquisition control is registered without callable (client side).
         **kwargs

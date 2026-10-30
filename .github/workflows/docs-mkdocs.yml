@@ -1,0 +1,112 @@
+name: MkDocs Docs
+
+on:
+  push:
+    branches:
+      - main
+      - docu
+  pull_request:
+    # closed: remove the preview version of the pull request
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+
+# All deployments push to the gh-pages branch, run them one after another
+concurrency:
+  group: docs-gh-pages
+  cancel-in-progress: false
+
+env:
+  PREVIEW_VERSION: pr-${{ github.event.pull_request.number }}
+  # Pull requests from forks get a read-only token and cannot deploy a preview
+  IS_INTERNAL_PR: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
+
+jobs:
+  build:
+    name: Build and deploy MkDocs documentation
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # needed for mike versioning
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[docs-mkdocs]"
+
+      - name: Check API surface (griffe)
+        # Reports breaking changes of the public API introduced by the pull request (compared to its base
+        # branch). Informational only: intended API changes must not block the documentation deployment.
+        if: github.event_name == 'pull_request'
+        continue-on-error: true
+        run: griffe check console --search src --against "origin/${{ github.base_ref }}"
+
+      - name: Build docs (strict)
+        run: mkdocs build --strict
+
+      - name: Configure git
+        if: (github.ref == 'refs/heads/main' && github.event_name != 'pull_request') || env.IS_INTERNAL_PR == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Deploy with mike (main branch only)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          # Deploy to the 'latest' alias; tag-based versioning can be added later
+          mike deploy --push --update-aliases latest
+          mike set-default --push latest
+
+      - name: Deploy pull request preview with mike
+        if: env.IS_INTERNAL_PR == 'true'
+        run: |
+          # Separate version per pull request; 'latest' and the default version remain unchanged
+          mike deploy --push --title "PR #${{ github.event.pull_request.number }} (preview)" "$PREVIEW_VERSION"
+          echo "Documentation preview: https://schote.github.io/nexus-console/$PREVIEW_VERSION/" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save built docs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MkDocs-site
+          path: site/
+
+  remove-preview:
+    name: Remove pull request preview
+    if: github.event.action == 'closed' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The merge ref of a closed pull request may no longer exist
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ".[docs-mkdocs]"
+
+      - name: Delete preview version
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          mike delete --push "$PREVIEW_VERSION" || echo "No preview version $PREVIEW_VERSION to delete"

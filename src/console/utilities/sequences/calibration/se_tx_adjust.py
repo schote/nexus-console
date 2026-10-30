@@ -22,21 +22,21 @@ def constructor(
 
     Parameters
     ----------
-    n_steps, optional
+    n_steps : int, optional
         Number of flip angles
-    flip_angle_range, optional
+    flip_angle_range : tuple[float, float], optional
         Range of flip angles in rad
-    repetition_time, optional
+    repetition_time : float, optional
         Repetition time in s
-    echo_time, optional
+    echo_time : float, optional
         Echo time in s
-    rf_duration, optional
+    rf_duration : float, optional
         RF duration in s
-    acq_bandwidth, optional
+    acq_bandwidth : float | int, optional
         Acquisition bandwidth in Hz
-    use_sinc, optional
+    use_sinc : bool, optional
         Use sinc pulse if True, block pulse otherwise
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

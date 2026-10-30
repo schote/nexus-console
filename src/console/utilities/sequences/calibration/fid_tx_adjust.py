@@ -24,23 +24,23 @@ def constructor(
 
     Parameters
     ----------
-    n_steps, optional
+    n_steps : int, optional
         Number of flip angles
-    flip_angle_range, optional
+    flip_angle_range : tuple[float, float], optional
         Range of flip angles in rad
-    repetition_time, optional
+    repetition_time : float, optional
         Repetition time in s
-    rf_duration, optional
+    rf_duration : float, optional
         RF pulse duration in s
-    use_sinc, optional
+    use_sinc : bool, optional
         RF pulse type, if true sinc pulse is used, rect otherwise
-    num_adc_samples, optional
+    num_adc_samples : int, optional
         Number of ADC samples
-    acq_bandwidth, optional
+    acq_bandwidth : float | int, optional
         Acquisition bandwidth in Hz
-    ring_down_time, optional
+    ring_down_time : float, optional
         RF ring down time in s
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

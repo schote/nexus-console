@@ -62,9 +62,9 @@ class AcquisitionControl:
         configuration_file
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
-        nexus_data_dir:
-            Nexus console default directory to store logs, states and acquisition data.
-            If none, the default directory is create in the home directory, default is None.
+        nexus_data_dir
+            Directory to store logs and acquisition data, by default ``<home>/nexus-console``.
+            A session subdirectory ``<YYYY-MM-DD>-session`` is created inside.
         file_log_level
             Set the logging level for log file. Logfile is written to the session folder.
         console_log_level
@@ -232,8 +232,8 @@ class AcquisitionControl:
         Parameters
         ----------
         store_unprocessed
-            Flag for whether to keep the raw, undecimated data after decimation
-        progress_callback
+            Flag for whether to keep the raw, undecimated data after decimation.
+        progress_callback : Callable[[int], None] or None, optional
             Optional callback which is called with the acquisition progress in percent, by default None.
 
         Raises
@@ -385,7 +385,18 @@ class AcquisitionControl:
         self,
         time_range: tuple[float, float],
     ) -> tuple[mpl.figure.Figure, np.ndarray] | None:
-        """Plot internally stored waveforms."""
+        """Plot the unrolled sequence waveforms.
+
+        Parameters
+        ----------
+        time_range
+            Start and end time of the plotted interval in s.
+
+        Returns
+        -------
+        tuple[mpl.figure.Figure, np.ndarray] or None
+            Figure and axes of the RF, gradient and digital signal plots, or None if no sequence is set.
+        """
         if self.sequence is not None:
             return plot_unrolled_sequence(self.sequence, time_range=time_range)
         self.log.warning("No sequence to plot. Set sequence first.")
