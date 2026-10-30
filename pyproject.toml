@@ -12,8 +12,10 @@ dirty_template = "{tag}+dirty" # Simple dirty indicator, if you have untracked c
 tag_filter = '^v'
 
 [tool.setuptools]
-packages = ["console"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [project]
 name = "nexus-console"
@@ -53,7 +55,7 @@ docs = ["sphinx", "pydata-sphinx-theme", "sphinx-pyproject", "sphinx-design"]
 dev = ["line_profiler[ipython]", "nbformat>=4.2.0", "ipykernel", "ipython", "ipywidgets"]
 
 [project.scripts]
-nexus = "console.service.start_manager:main"
+nexus = "nexus_service.start_manager:main"
 
 [tool.setuptools.package-data]
 "console" = ["py.typed"]

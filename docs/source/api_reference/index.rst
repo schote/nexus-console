@@ -10,4 +10,5 @@ API Documentation
    pulseq_interpreter
    spcm_control
    acquisition_control
+   service
    utilities
