@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="assets/logo/nexus_logo_light_transparent.svg">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.1">
     
     
       
@@ -2735,7 +2735,7 @@
 
 
 <h1 id="nexus-console">Nexus Console</h1>
-<p>Nexus replaces the proprietary spectrometer of an MRI system by two commercial PCIe measurement cards from Spectrum Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive), operated by an open-source Python software. Pulse sequences are defined in the open <a href="https://pulseq.github.io/">Pulseq</a> format using <a href="https://github.com/imr-framework/pypulseq">PyPulseq</a> and unrolled directly into RF and gradient waveforms, which are streamed to the transmit card without a vendor-specific sequence compiler. Received signals are demodulated, phase-corrected and decimated on the host and exported in the <a href="https://ismrmrd.github.io/">ISMRMRD</a> format for reconstruction with any compatible framework. The console was developed and validated on a 50 mT low-field MRI system. It is not tied to a specific field strength or hardware setup: amplifiers, coils and system limits are described in a configuration file.</p>
+<p>Nexus replaces the proprietary spectrometer of an MRI system with two commercial PCIe measurement cards from Spectrum Instrumentation, an arbitrary waveform generator (transmit) and a digitizer (receive), operated by open-source Python software. The console is designed for pulse sequences that are defined in the open <a href="https://pulseq.github.io/">Pulseq</a> format. Using <a href="https://github.com/imr-framework/pypulseq">PyPulseq</a>, they can be built directly within the Nexus framework or loaded from a valid <code>.seq</code> file. From the Pulseq sequence, the corresponding RF and gradient waveforms are calculated and streamed to the transmit card without the need for a vendor-specific sequence compiler. Received signals are demodulated, phase-corrected and decimated on the host and exported in the <a href="https://ismrmrd.github.io/">ISMRMRD</a> format for reconstruction with any compatible framework. The console was developed and validated on a ~50 mT low-field MRI system presented <a href="https://arxiv.org/abs/2608.19062">here</a>. It is not tied to a specific field strength or hardware setup: amplifiers, coils and system limits are described in a configuration file.</p>
 <div class="admonition info">
 <p class="admonition-title">Nexus Console or Nexus CLI?</p>
 <p>This documentation is aimed at developers and researchers who want to build on the console software itself, e.g. to develop new sequences, acquisition workflows or hardware integrations. Using the nexus-console repository alone requires a custom set of experiments or a runner script that handles all tasks around the acquisition, such as loading a sequence, setting the acquisition parameter and saving the data.</p>
@@ -2870,7 +2870,7 @@ This work is supported by the Open Source Imaging Initiative (OSI²).</p>
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest", "search.highlight"], "search": "assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

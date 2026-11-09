@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/logo/nexus_logo_light_transparent.svg">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.1">
     
     
       
@@ -873,6 +873,28 @@
     <span class="md-ellipsis">
       
         ADC events
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delays
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-and-soft-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trigger and soft delay
       
     </span>
   </a>
@@ -2791,6 +2813,28 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#delays" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Delays
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trigger-and-soft-delay" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trigger and soft delay
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -3052,6 +3096,10 @@ block-beta
   
       dataclass
   " href="../../reference/interfaces/rx_data/#console.interfaces.rx_data.RxData"><code>RxData</code></a> template is created. It contains the sample counts, dwell times, frequency and phase offsets of the event, and the PyPulseq labels set since the previous ADC event. The templates are filled with data during the acquisition (see <a href="../postprocessing/">Postprocessing</a>).</p>
+<h3 id="delays">Delays</h3>
+<p>A block without gradient, RF or ADC events, e.g. created by <code>pp.make_delay</code>, only contributes its <code>block_duration</code>. The replay buffer is initialized with zeros, so all channels output zero during a delay block and the digital lines X1–X3 stay low. The same applies to the parts of a block that are not covered by an event, e.g. the <code>delay</code> before an event or the time after its end.</p>
+<h3 id="trigger-and-soft-delay">Trigger and soft delay</h3>
+<p>Trigger events (<code>pp.make_trigger</code>, <code>pp.make_digital_output_pulse</code>) and soft delays (<code>pp.make_soft_delay</code>) are not supported yet and will be added in the future. They are currently ignored: no trigger signal is output, and a block with a soft delay keeps the <code>block_duration</code> treated as a delay.</p>
 
 
 
@@ -3110,7 +3158,7 @@ block-beta
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/logo/nexus_logo_light_transparent.svg">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.1">
     
     
       
@@ -3074,7 +3074,7 @@ flowchart LR
 </table>
 <p>An existing <code>meta.json</code> or <code>sequence.seq</code> is only overwritten with <code>save(overwrite=True)</code>.</p>
 <h2 id="ismrmrd-export">ISMRMRD export</h2>
-<p><code>AcquisitionData.save_ismrmrd(header)</code> writes the processed data of all ADC events to <code>data.mrd</code>, so that they can be reconstructed with external frameworks such as MRpro. It requires processed data.</p>
+<p><code>AcquisitionData.save_ismrmrd(header)</code> writes the processed data of all ADC events to <code>data.mrd</code> which is the open source <a href="https://ismrmrd.readthedocs.io/en/latest/">ISMRMRD</a> format, so that they can be reconstructed with external frameworks such as <a href="https://www.mrpro.rocks/">MRpro</a>.</p>
 <h3 id="header">Header</h3>
 <p>The <code>header</code> argument provides the encoding information required for the reconstruction, e.g. matrix size, field of view and encoding limits:</p>
 <table>
@@ -3118,7 +3118,7 @@ flowchart LR
 </tr>
 <tr>
 <td><code>acquisitionSystemInformation</code></td>
-<td>Number of receive channels, vendor <code>osi2</code>, model <code>Nexus_&lt;version&gt;</code>, field strength calculated from the Larmor frequency (42.58 MHz/T)</td>
+<td>Number of receive channels, vendor <code>osi2</code>, model <code>Nexus_&lt;version&gt;</code>, field strength that corresponds to the Larmor frequency</td>
 </tr>
 </tbody>
 </table>
@@ -3161,10 +3161,6 @@ flowchart LR
 <td>Start of the gate in µs, relative to the start of the digitizer</td>
 </tr>
 <tr>
-<td><code>idx.average</code></td>
-<td>Average index</td>
-</tr>
-<tr>
 <td><code>idx</code> counters and flags</td>
 <td>From the PyPulseq labels of the ADC event (see below)</td>
 </tr>
@@ -3178,11 +3174,11 @@ flowchart LR
 </tr>
 </tbody>
 </table>
-<p>The PyPulseq labels set since the previous ADC event are mapped to the counters and flags of the acquisition:</p>
+<p>The PyPulseq labels set since the previous ADC event are stored in the <code>RxData</code> object and mapped to the counters and flags of the acquisition. Since averaging can be configured via the acquisition parameter or via Pulseq, the <code>RxData</code> attribute is used, which already considers both options.</p>
 <table>
 <thead>
 <tr>
-<th>PyPulseq label</th>
+<th>Pulseq label stored in <code>RxData</code></th>
 <th>ISMRMRD field</th>
 </tr>
 </thead>
@@ -3198,6 +3194,10 @@ flowchart LR
 <tr>
 <td><code>SLC</code></td>
 <td><code>slice</code></td>
+</tr>
+<tr>
+<td><code>RxData.average_index</code> (<code>AVG</code>)</td>
+<td><code>average</code></td>
 </tr>
 <tr>
 <td><code>ECO</code></td>
@@ -3271,7 +3271,8 @@ flowchart LR
 </table>
 <p><code>read_dir</code>, <code>phase_dir</code> and <code>slice_dir</code> are the vectors of the physical channels assigned to the logical axes x, y and z by <code>channel_assignment</code>. They are identical for all acquisitions.</p>
 <h3 id="trajectory">Trajectory</h3>
-<p>The k-space trajectory of all ADC samples is calculated from the sequence with PyPulseq (<code>calculate_kspace</code>). Only the axes whose values are non-zero for all samples are exported. The acquisitions take consecutive sections of <code>num_samples</code> points of the trajectory; for the samples of the gate extension, the first and last trajectory points are repeated.</p>
+<p>The k-space trajectory of all ADC samples is calculated from the sequence with PyPulseq (<code>calculate_kspace</code>). The resulting array always has the shape <code>(3, num_ro_samples)</code>, where the first dimension accounts for the three spatial dimensions. The actual trajectory dimension is determined by the number of axes containing non-zero coordinates. If a trajectory exists, i.e. the number of non-zero axes is greater than zero, the relevant trajectory section is written to the corresponding ISMRMRD acquisition object. Based on the ADC (<code>RxData</code>) index, the trajectory segment relevant to the ADC event is extracted and inserted into the ISMRMRD acquisition.
+For the pre- and post-samples of the ADC gate, which are defined by the ADC dead time, the trajectory is padded with the first and last coordinate of the ADC trajectory, respectively.</p>
 
 
 
@@ -3330,7 +3331,7 @@ flowchart LR
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       

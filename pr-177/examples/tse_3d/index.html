@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/logo/nexus_logo_light_transparent.svg">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.1">
     
     
       
@@ -2769,7 +2769,7 @@
 <p>The constructor returns the sequence and an ISMRMRD header with the encoding description. Each ADC event is labelled with its phase-encoding indices (<code>LIN</code>, <code>PAR</code>), which are used for k-space sorting and in the ISMRMRD export.</p>
 <h2 id="procedure">Procedure</h2>
 <ol>
-<li>Construct the sequence and set the number of averages.</li>
+<li>Construct the sequence and set the number of averages (it is assumed, that Larmor frequency and B1 scaling are already set, e.g. from <a href="../spin_echo/">SE experiment</a>).</li>
 <li>Unroll the sequence and run the acquisition.</li>
 <li>Sort the acquired readouts into k-space with <a class="autorefs autorefs-internal" title="sort_kspace" href="../../reference/utilities/sequences/tse/tse_3d/#console.utilities.sequences.tse.tse_3d.sort_kspace"><code>sort_kspace</code></a>, which returns an array of shape <code>(averages, coils, enc_z, enc_y, enc_x)</code>.</li>
 <li>Reconstruct the image by a 3D FFT and display the slices.</li>
@@ -2921,7 +2921,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
       
