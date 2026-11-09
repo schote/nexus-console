@@ -10,7 +10,7 @@ The constructor returns the sequence and an ISMRMRD header with the encoding des
 
 ## Procedure
 
-1. Construct the sequence and set the number of averages.
+1. Construct the sequence and set the number of averages (it is assumed, that Larmor frequency and B1 scaling are already set, e.g. from [SE experiment](spin_echo.md)).
 2. Unroll the sequence and run the acquisition.
 3. Sort the acquired readouts into k-space with [`sort_kspace`][console.utilities.sequences.tse.tse_3d.sort_kspace], which returns an array of shape `(averages, coils, enc_z, enc_y, enc_x)`.
 4. Reconstruct the image by a 3D FFT and display the slices.

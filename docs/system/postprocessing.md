@@ -71,7 +71,7 @@ An existing `meta.json` or `sequence.seq` is only overwritten with `save(overwri
 
 ## ISMRMRD export
 
-`AcquisitionData.save_ismrmrd(header)` writes the processed data of all ADC events to `data.mrd`, so that they can be reconstructed with external frameworks such as MRpro. It requires processed data.
+`AcquisitionData.save_ismrmrd(header)` writes the processed data of all ADC events to `data.mrd` which is the open source [ISMRMRD](https://ismrmrd.readthedocs.io/en/latest/) format, so that they can be reconstructed with external frameworks such as [MRpro](https://www.mrpro.rocks/).
 
 ### Header
 
@@ -89,7 +89,7 @@ The following entries of the header are set by the console and overwrite existin
 |---|---|
 | `measurementInformation` | Acquisition id as measurement id, series date and time |
 | `experimentalConditions` | Larmor frequency in Hz |
-| `acquisitionSystemInformation` | Number of receive channels, vendor `osi2`, model `Nexus_<version>`, field strength calculated from the Larmor frequency (42.58 MHz/T) |
+| `acquisitionSystemInformation` | Number of receive channels, vendor `osi2`, model `Nexus_<version>`, field strength that corresponds to the Larmor frequency |
 
 ### Acquisitions
 
@@ -141,4 +141,5 @@ The directions are given in the patient coordinate system (LPS), assuming a pati
 
 ### Trajectory
 
-The k-space trajectory of all ADC samples is calculated from the sequence with PyPulseq (`calculate_kspace`). Only the axes whose values are non-zero for all samples are exported. The acquisitions take consecutive sections of `num_samples` points of the trajectory; for the samples of the gate extension, the first and last trajectory points are repeated.
+The k-space trajectory of all ADC samples is calculated from the sequence with PyPulseq (`calculate_kspace`). The resulting array always has the shape `(3, num_ro_samples)`, where the first dimension accounts for the three spatial dimensions. The actual trajectory dimension is determined by the number of axes containing non-zero coordinates. If a trajectory exists, i.e. the number of non-zero axes is greater than zero, the relevant trajectory section is written to the corresponding ISMRMRD acquisition object. Based on the ADC (`RxData`) index, the trajectory segment relevant to the ADC event is extracted and inserted into the ISMRMRD acquisition.
+For the pre- and post-samples of the ADC gate, which are defined by the ADC dead time, the trajectory is padded with the first and last coordinate of the ADC trajectory, respectively.

@@ -4,7 +4,7 @@ hide:
 ---
 
 
-# System overview
+# Overview
 
 The Nexus console is an open source software framework to operate PCIe measurement cards from Spectrum Instrumentation in a high performance computer system. Pulse sequences are defined in the open Pulseq format [[2]](../references.md#ref-2), converted directly into sampled waveforms on the host computer and streamed to the transmit card. Receive data are recorded in a gated mode, processed on the host and exported in the ISMRMRD format [[4]](../references.md#ref-4). The figure follows the path from the user through the software on the host computer down to the hardware.
 

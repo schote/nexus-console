@@ -23,12 +23,9 @@ acq = AcquisitionControl(configuration_file="device_config.yaml")
 Construct a PyPulseq sequence with the system limits of the console using one of the provided sequence constructors.
 
 ```python
-import console
 from console.utilities.sequences import se_spectrum
 
 seq = se_spectrum.constructor(echo_time=20e-3, rf_duration=200e-6, system=acq.get_sequence_system())
-console.parameter.larmor_frequency = 2.0e6
-console.parameter.num_averages = 1
 ```
 
 ## Set acquisition parameter

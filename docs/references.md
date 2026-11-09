@@ -17,7 +17,7 @@ hide:
 
 Herthum H, Schote D. OSI²ONE Low-field MRI Reference System Data. *Zenodo.* 2026. [doi:10.5281/zenodo.21807140](https://doi.org/10.5281/zenodo.21807140)
 
-This open dataset (CC BY 4.0) was recorded with a Nexus console on the OSI²ONE low-field reference system, a 48.5 mT Halbach magnet. It contains phantom measurements for quality assurance, T₁, T₂ and B₀ mapping, and PD- and T₂-weighted imaging. Each acquisition includes the raw data in ISMRMRD format, the Pulseq sequence file and the console configuration metadata, together with DICOM images and, where applicable, quantitative maps. The reconstructions can be reproduced with the accompanying Jupyter notebooks.
+This open dataset (CC BY 4.0) was recorded with a Nexus console on the OSI²ONE low-field reference system, a 48.5 mT Halbach magnet. It contains phantom measurements for quality assurance, T₁, T₂ and B₀ mapping, and PD- and T₁-weighted imaging. Each acquisition includes the raw data in ISMRMRD format, the Pulseq sequence file and the console configuration metadata, together with DICOM images and, where applicable, quantitative maps. The reconstructions can be reproduced with the accompanying Jupyter notebooks.
 
 ## Hardware Documentation
 

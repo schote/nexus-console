@@ -188,3 +188,11 @@ The diagram shows the attribute names of the PyPulseq ADC event; the widths are 
 - **Phase reference:** 1.095 MHz square wave during the first 1000 frames of the gate (50 µs at 20 MHz), or the whole gate if it is shorter.
 
 For each ADC event, an [`RxData`][console.interfaces.rx_data.RxData] template is created. It contains the sample counts, dwell times, frequency and phase offsets of the event, and the PyPulseq labels set since the previous ADC event. The templates are filled with data during the acquisition (see [Postprocessing](postprocessing.md)).
+
+### Delays
+
+A block without gradient, RF or ADC events, e.g. created by `pp.make_delay`, only contributes its `block_duration`. The replay buffer is initialized with zeros, so all channels output zero during a delay block and the digital lines X1–X3 stay low. The same applies to the parts of a block that are not covered by an event, e.g. the `delay` before an event or the time after its end.
+
+### Trigger and soft delay
+
+Trigger events (`pp.make_trigger`, `pp.make_digital_output_pulse`) and soft delays (`pp.make_soft_delay`) are not supported yet and will be added in the future. They are currently ignored: no trigger signal is output, and a block with a soft delay keeps the `block_duration` treated as a delay.

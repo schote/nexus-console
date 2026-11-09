@@ -14,9 +14,9 @@ The constructor [`t2_relaxation.constructor`][console.utilities.sequences.spectr
 
 ## Procedure
 
-1. Construct the sequence and set the calibrated Larmor frequency and B1 scaling.
+1. Construct the sequence, set the calibrated Larmor frequency and $B_1$ scaling.
 2. Run the acquisition and arrange the data as `(averages, coils, echo times, samples)` using `RxData.average_index`.
-3. Average, determine the peak amplitude of each echo and fit the model with `scipy.optimize.curve_fit`.
+3. Average (if acquisition parameter `num_averages` > 1), determine the peak amplitude of each echo and fit the model with `scipy.optimize.curve_fit`.
 4. Store the fitted T2 and the echo times with the acquisition data.
 
 ## Script

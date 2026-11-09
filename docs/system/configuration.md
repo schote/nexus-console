@@ -38,7 +38,7 @@ Transmit card (AWG), validated by [`TxConfiguration`][console.interfaces.device_
 
 ## RxConfiguration
 
-Receive card (digitizer), validated by [`RxConfiguration`][console.interfaces.device_configuration.RxConfiguration]. All channel lists must have `max_available_channels` entries. As the receive card setup expects 8 entries per list, `max_available_channels` must currently be 8, also for cards with fewer channels.
+Receive card (digitizer), validated by [`RxConfiguration`][console.interfaces.device_configuration.RxConfiguration]. The parameters `channel_enable`, `channel_max_amplitude` and `channel_terminated_50ohm` are defined by a list containing one entry per physical channel (i.e. the length of the list should correspond to `max_available_channels`).
 
 | Attribute | Unit | Description |
 |---|---|---|
@@ -53,6 +53,9 @@ Receive card (digitizer), validated by [`RxConfiguration`][console.interfaces.de
 ## SystemLimits
 
 Limits of the MR system, validated by [`SystemLimits`][console.interfaces.device_configuration.SystemLimits] and passed to PyPulseq as `Opts` (`AcquisitionControl.get_sequence_system()`). `max_grad`, `max_slew`, `block_duration_raster`, `grad_raster_time` and `adc_raster_time` must be positive, all other values must not be negative. Numbers in exponent notation need a decimal point, e.g. `20.e-6`: YAML reads `20e-6` as a string, which the model rejects.
+
+!!! warning "Limitations of the system limits"
+    When a Pulseq sequence is read from a file, it is loaded with this configuration. When a `Sequence` object is passed, its `Opts` object is likewise overwritten by this configuration. This may cause the sequence timing check to fail if the block durations stored in the sequence are incompatible with the raster times defined here. Note also that `max_grad` and `max_slew` are only used when building a sequence. A sequence passed as an existing `Sequence` object or read from a file is not checked for its maximum gradient amplitude or slew rate. An error is only raised during the calculation of the sequence waveforms if the maximum amplitude of a channel is exceeded.
 
 | Attribute | Unit | Description |
 |---|---|---|

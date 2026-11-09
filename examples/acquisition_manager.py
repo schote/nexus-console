@@ -45,8 +45,8 @@ fig, ax = plt.subplots(1, num_coils, figsize=(5 * num_coils, 5), squeeze=False)
 for coil in range(num_coils):
     ax[0, coil].plot(np.abs(scan_data[:, coil, :]).T)
     ax[0, coil].set_xlabel("Sample")
-    ax[0, coil].set_ylabel("Signal [mV]")
-    ax[0, coil].set_title(f"Rx channel: {coil}")
+    ax[0, coil].set_ylabel("Signal (mV)")
+    ax[0, coil].set_title(f"RX channel: {coil}")
 fig.set_layout_engine("tight")
 
 

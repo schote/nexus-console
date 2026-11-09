@@ -1,6 +1,6 @@
 # Hardware setup
 
-This page describes how to set up the console hardware with one arbitrary waveform generator (AWG) module and one digitizer module. The interaction of the console workstation with the other components of the MRI system is explained in the [System overview](../system/overview.md#system-architecture).
+This page describes how to set up the console hardware with one arbitrary waveform generator (AWG) module and one digitizer module. The interaction of the console workstation with the other components of the MRI system is explained in the [overview](../system/overview.md).
 
 !!! note "Supported cards"
     The software was developed with and for measurement cards from Spectrum Instrumentation. Specifically for the arbitrary waveform generator module M2p.6546-x4 and the digitizer module M2p.5933-x4. We expect other modules from the M2p family to work with the framework as well, but we haven't tested this yet.

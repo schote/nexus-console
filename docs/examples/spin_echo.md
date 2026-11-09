@@ -4,12 +4,12 @@ A spin echo is acquired and its spectrum is calculated by a Fourier transform. T
 
 ## Sequence
 
-The constructor [`se_spectrum.constructor`][console.utilities.sequences.spectrometry.se_spectrum.constructor] creates a 90° excitation pulse and a 180° refocussing pulse (phase π/2) at TE/2. The ADC is either centred on the echo or, with `use_fid=True`, acquires the decay after the refocussing pulse.
+The constructor [`se_spectrum.constructor`][console.utilities.sequences.spectrometry.se_spectrum.constructor] creates a 90° excitation pulse and a 180° refocussing pulse (phase π/2) at TE/2. The ADC is either centered on the echo or, with `use_fid=True`, acquires the signal decay after the spin echo formation at TE.
 
 ## Procedure
 
 1. Create an `AcquisitionControl` instance, which connects to the cards.
-2. Construct the sequence and set the Larmor frequency.
+2. Construct the sequence, set the calibrated Larmor frequency and $B_1$ scaling.
 3. Unroll the sequence with `set_sequence` and run the acquisition.
 4. Calculate the spectrum from `processed_data`; the frequency axis follows from the dwell time `RxData.dwell_time`.
 5. Store the data with `save()` and disconnect the cards by deleting the instance.

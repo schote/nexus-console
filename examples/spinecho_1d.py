@@ -22,6 +22,7 @@ seq = sequences.se_spectrum.constructor(**params)
 
 # Update global acquisition parameters
 console.parameter.larmor_frequency = 2.0e6
+console.parameter.b1_scaling = 2.43
 
 # Run the acquisition
 acq.set_sequence(sequence=seq, parameter=console.parameter)
@@ -38,8 +39,8 @@ fft_freq = np.fft.fftshift(np.fft.fftfreq(data.size, rx_data.dwell_time))
 # Plot spectrum
 fig, ax = plt.subplots(1, 1, figsize=(10, 5))
 ax.plot(fft_freq, np.abs(data_fft))
-ax.set_ylabel("Abs. FFT Spectrum [a.u.]")
-ax.set_xlabel("Frequency [Hz]")
+ax.set_ylabel("Abs. FFT Spectrum (a.u.)")
+ax.set_xlabel("Frequency (Hz)")
 
 # Add information to the acquisition data
 acq_data.add_info({

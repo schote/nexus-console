@@ -2,10 +2,9 @@
 # Configuration file for the Nexus-console
 # ========================================
 
-# NOTE: This is just an example, parameters need to be adjusted for individual system
+# NOTE: Parameters need to be adjusted for individual system
 
-# >> TX DEVICE: M2p.6546-x4 -> /dev/spcm1 (AWG)
-# Total number of (analog) transmit channels: 4
+# >> TX DEVICE (AWG) M2p.6546-x4
 TxConfiguration:
   # Could be extended to a list
   device_path: "/dev/spcm1"
@@ -13,25 +12,23 @@ TxConfiguration:
   max_available_channels: 4
   # Device sampling rate in MHz
   sampling_rate: 20
-  # Max. output amplitude per channel in mV
+  # Max. output amplitude per channel (RF, Gx, Gy, Gz) in mV
   channel_max_amplitude: [200, 6000, 6000, 6000]
-  # Filter configuration of each transmit channel
+  # Filter configuration per channel (RF, Gx, Gy, Gz)
   channel_filter_type: [0, 2, 2, 2]
   # Configure if RF/gradients are terminated into 50 ohm impedance (true == 50 ohm)
   rf_terminated_50ohm: True
   gradients_terminated_50ohm: False
-  # Calculate grad_to_volt per gradient channel:
-  # Gradient efficiency in T/m/A
+  # Gradient efficiency per gradient channel (Gx, Gy, Gz) in T/m/A 
   gradient_efficiency: [0.37e-3, 0.451e-3, 0.4e-3]
-  # Gradient power amplifier in A/V
-  gpa_gain: [7.10, 7.10, 7.10]
+  # Gradient power amplifier gain per gradient channel (Gx, Gy, Gz) in A/V
+  gpa_gain: [1.5, 1.5, 1.5]
   # Scales RF in Hz (pulseq) to mV
   rf_to_mvolt: 5.e-3
   # rf_gain_lut_path: "/path/to/lut.npy"
 
 
-# >> RX DEVICE: M2p.5933-x4 -> /dev/spcm0 (Digitizer)
-# Total number of receive channels: 8
+# >> RX DEVICE (Digitizer) M2p.5933-x4
 RxConfiguration:
   # Could be extended to a list
   device_path: "/dev/spcm0"
@@ -39,11 +36,11 @@ RxConfiguration:
   max_available_channels: 8
   # Device sampling rate in MHz
   sampling_rate: 20
-  # Enable the receive channels
+  # Enable the receive channels, length must be equal to max_available_channels
   channel_enable: [1, 0, 0, 0, 0, 0, 0, 0]
-  # Set the max. amplitude per channel in mV, list length must at least match the number of enabled channels
+  # Set the max. amplitude per channel in mV, length must be equal to max_available_channels
   channel_max_amplitude: [200, 200, 200, 200, 1000, 1000, 1000, 1000]
-  # Configure which channels are terminated into 50 ohm impedance (true == 50 ohm), list length must at least match the number of enabled channels
+  # Configure which channels are terminated into 50 ohm impedance (true == 50 ohm), length must be equal to max_available_channels
   channel_terminated_50ohm: [True, True, True, True, False, False, False, False]
 
 SystemLimits:
