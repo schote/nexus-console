@@ -104,18 +104,18 @@ Each `RxData` with processed data becomes one ISMRMRD acquisition, in the order 
 | `center_sample` | `num_samples` / 2, rounded down |
 | `sample_time_us` | Dwell time of the ADC event in µs |
 | `acquisition_time_stamp` | Start of the gate in µs, relative to the start of the digitizer |
-| `idx.average` | Average index |
 | `idx` counters and flags | From the PyPulseq labels of the ADC event (see below) |
 | `read_dir`, `phase_dir`, `slice_dir` | From the channel assignment (see below) |
 | `traj` | k-space trajectory from the sequence (see below) |
 
-The PyPulseq labels set since the previous ADC event are mapped to the counters and flags of the acquisition:
+The PyPulseq labels set since the previous ADC event are stored in the `RxData` object and mapped to the counters and flags of the acquisition. Since averaging can be configured via the acquisition parameter or via Pulseq, the `RxData` attribute is used, which already considers both options.
 
-| PyPulseq label | ISMRMRD field |
+| Pulseq label stored in `RxData` | ISMRMRD field |
 |---|---|
 | `LIN` | `kspace_encode_step_1` |
 | `PAR` | `kspace_encode_step_2` |
 | `SLC` | `slice` |
+| `RxData.average_index` (`AVG`) | `average` |
 | `ECO` | `contrast` |
 | `PHS` | `phase` |
 | `REP` | `repetition` |
