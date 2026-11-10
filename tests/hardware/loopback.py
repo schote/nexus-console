@@ -4,8 +4,6 @@ Requires measurement cards, therefore not collected by pytest. Run from the repo
 
     python tests/hardware/loopback.py -d <device_config.yaml> [-v]
 
-Without a device configuration, the test doesn't run but the script plots the test sequence.
-
 A test sequence covering all event configurations interpreted by the sequence provider is played on TX channels 0-3
 and recorded on RX channels 0-3. The recording of each ADC gate is compared to the unrolled sequence:
 
@@ -566,11 +564,6 @@ def main() -> None:
     opts.rf_ringdown_time = 30e-6
     opts.adc_dead_time = 75e-6
     sequence = build_sequence(opts, grad_amp_hz)
-
-    if not run_test:
-        print("Preparing sequence plot...")
-        sequence.plot(show_blocks=True, time_disp="ms")
-        return
 
     input("(!) Confirm the wiring and press Enter to start the test...")
     # Cards are opened briefly to read their models, this is only possible before the acquisition control uses them
