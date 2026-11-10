@@ -3099,7 +3099,7 @@ block-beta
 <h3 id="delays">Delays</h3>
 <p>A block without gradient, RF or ADC events, e.g. created by <code>pp.make_delay</code>, only contributes its <code>block_duration</code>. The replay buffer is initialized with zeros, so all channels output zero during a delay block and the digital lines X1–X3 stay low. The same applies to the parts of a block that are not covered by an event, e.g. the <code>delay</code> before an event or the time after its end.</p>
 <h3 id="trigger-and-soft-delay">Trigger and soft delay</h3>
-<p>Trigger events (<code>pp.make_trigger</code>, <code>pp.make_digital_output_pulse</code>) and soft delays (<code>pp.make_soft_delay</code>) are not supported yet and will be added in the future. They are currently ignored: no trigger signal is output, and a block with a soft delay keeps the <code>block_duration</code> treated as a delay.</p>
+<p>Trigger events (<code>pp.make_trigger</code>, <code>pp.make_digital_output_pulse</code>) and soft delays (<code>pp.make_soft_delay</code>) are not supported yet and will be added in the future. They are currently ignored: the sequence does not wait for a trigger signal, and a block with a soft delay keeps the <code>block_duration</code> treated as a delay.</p>
 
 
 
