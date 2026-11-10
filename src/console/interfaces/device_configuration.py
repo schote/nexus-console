@@ -23,7 +23,8 @@ class TxConfiguration(BaseModel):
     """Device path of the transmit card, e.g. ``/dev/spcm1``."""
 
     sampling_rate: int = Field(..., strict=True)
-    """Sampling rate in MHz. Must equal the receive card sampling rate, which provides the clock."""
+    """Sampling rate in MHz. The card runs on the clock of the receive card but sets its own sampling rate.
+    Currently, it must equal the receive card sampling rate (see `NexusConfiguration`)."""
 
     channel_max_amplitude: tuple[TxAmplitudeType, TxAmplitudeType, TxAmplitudeType, TxAmplitudeType] = Field(...)
     """Output range per channel [RF, gradient 1, gradient 2, gradient 3] in mV (1 to 6000 mV, into 50 Ohm)."""
@@ -59,7 +60,9 @@ class RxConfiguration(BaseModel):
     """Device path of the receive card, e.g. ``/dev/spcm0``."""
 
     sampling_rate: int = Field(..., strict=True)
-    """Sampling rate in MHz. The receive card is the clock master and provides this clock to the transmit card."""
+    """Sampling rate in MHz. The receive card is the clock master and provides its clock to the transmit card,
+    which sets its own sampling rate. Currently, it must equal the transmit card sampling rate
+    (see `NexusConfiguration`)."""
 
     max_available_channels: int = Field(..., strict=True)
     """Number of input channels of the card; length of all channel lists (8 for the M2p.5933-x4)."""
@@ -179,3 +182,19 @@ class NexusConfiguration(BaseModel):
 
     system: SystemLimits = Field(..., alias="SystemLimits")
     """MR system limits (YAML section ``SystemLimits``)."""
+
+    @model_validator(mode="after")
+    def validate_sampling_rates(self) -> "NexusConfiguration":
+        """Validate that the transmit and receive card use the same sampling rate.
+
+        Both cards share the clock of the receive card, but each card sets its own sampling rate, so the
+        hardware supports different sampling rates. The sequence calculation and the processing of the
+        receive data currently assume a common sampling rate. Support for different sampling rates will be
+        added in a future update.
+        """
+        if self.tx.sampling_rate != self.rx.sampling_rate:
+            raise ValueError(
+                f"Transmit card sampling rate ({self.tx.sampling_rate} MHz) must equal receive card "
+                f"sampling rate ({self.rx.sampling_rate} MHz); different sampling rates are not supported yet"
+            )
+        return self

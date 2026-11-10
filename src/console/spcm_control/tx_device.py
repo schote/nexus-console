@@ -28,7 +28,7 @@ class TxCard(SpectrumDevice):
     channels 1 to 3 carry the gradient waveforms. Bit 15 of channels 1, 2 and 3 is routed to the digital
     outputs X1 (ADC gate), X2 (phase reference) and X3 (RF unblanking).
 
-    The card runs on an external sampling clock, which is provided by the receive card.
+    The card runs on an external clock, which is provided by the receive card, and sets its own sampling rate.
     """
 
     __name__: str = "TxCard"
@@ -105,7 +105,7 @@ class TxCard(SpectrumDevice):
         # Set trigger
         spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_TRIG_ORMASK, spcm.SPC_TMASK_SOFTWARE)
 
-        # Configure external clock, sampling clock is provided by the RX card (clock master)
+        # Configure external clock, the clock is provided by the RX card (clock master)
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCKMODE, spcm.SPC_CM_EXTERNAL))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK50OHM, 1))
         self.handle_error(spcm.spcm_dwSetParam_i32(self.card, spcm.SPC_CLOCK_THRESHOLD, 1500))

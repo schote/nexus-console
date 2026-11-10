@@ -1,6 +1,9 @@
 """Tests for loading nexus device configuration."""
 from pathlib import Path
 
+import pytest
+import yaml
+from pydantic import ValidationError
 from pypulseq import Opts
 
 from console.interfaces.device_configuration import NexusConfiguration, RxConfiguration, SystemLimits, TxConfiguration
@@ -21,3 +24,12 @@ def test_nexus_configuration() -> None:
 
     sys_limits: SystemLimits = load_system_limits(config_file)
     assert sys_limits == config.system
+
+
+def test_nexus_configuration_sampling_rate_mismatch() -> None:
+    """Different transmit and receive sampling rates are not supported yet and must be rejected."""
+    data = yaml.safe_load(Path("examples/example_device_config.yaml").read_text())
+    data["TxConfiguration"]["sampling_rate"] = data["RxConfiguration"]["sampling_rate"] // 2
+
+    with pytest.raises(ValidationError, match="sampling rate"):
+        NexusConfiguration.model_validate(data)
