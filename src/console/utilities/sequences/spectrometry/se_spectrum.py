@@ -21,21 +21,21 @@ def constructor(
 
     Parameters
     ----------
-    echo_time, optional
+    echo_time : float, optional
         Time between center of 90 degree pulse and center of ADC in s
-    rf_duration, optional
+    rf_duration : float, optional
         Duration of the RF pulses in s
-    num_samples, optional
+    num_samples : int, optional
         Number of data points to acquire
-    acq_bandwidth, optional
+    acq_bandwidth : float | int, optional
         Bandwidth of the acquisition in Hz
-    use_sinc, optional
+    use_sinc : bool, optional
         RF pulse type, if true sinc pulse is used, rect otherwise
-    time_bw_product, optional
+    time_bw_product : float, optional
         Time-bandwidth product for the sinc pulse
-    use_fid, optional
+    use_fid : bool, optional
         If true, only acquire FID part of the spin-echo
-    system, optional
+    system : pp.Opts, optional
         Sequence system to be used for sequence construction
 
     Returns

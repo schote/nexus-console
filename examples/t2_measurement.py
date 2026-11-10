@@ -1,4 +1,4 @@
-"""Spin-echo spectrum."""
+"""T2 relaxation measurement with a series of spin echoes."""
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +9,7 @@ from console.interfaces.acquisition_data import AcquisitionData
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities import sequences
 
-# Create acquisition control instance
+# Create acquisition control instance, adapt the path to the device configuration of your system
 acq = AcquisitionControl(configuration_file="example_device_config.yaml")
 
 # Construct and plot sequence
@@ -60,8 +60,8 @@ t2_fit = t2_model(te_values_fit, *params)
 # Plot measurement and fit
 fig, ax = plt.subplots(1, 1, figsize=(10, 6))
 ax.scatter(te_values * 1e3, np.abs(peaks), marker="x", c="b", label="Measurement")
-ax.set_xlabel("TE [ms]")
-ax.set_ylabel("Abs. signal ampliude [mV]")
+ax.set_xlabel("TE (ms)")
+ax.set_ylabel("Abs. signal amplitude (mV)")
 ax.plot(te_values_fit * 1e3, t2_fit, linestyle="--", c="r", label=f"Fit, T2 = {round(t2 * 1e3, 4)} ms")
 ax.legend()
 

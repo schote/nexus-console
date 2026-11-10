@@ -43,16 +43,14 @@ class ADCGate:
 class SequenceProvider(Sequence):
     """Sequence provider class.
 
-    This object is inherited from pulseq sequence object, so that all methods of the
-    pypulseq ``Sequence`` object can be accessed.
+    Subclass of the PyPulseq ``Sequence``, so that all PyPulseq sequence methods remain accessible.
+    The main functionality is `unroll_sequence`, which translates the block-structured sequence into
+    the interleaved int16 replay buffer of the transmit card (RF, three gradients and three digital
+    control signals in bit 15 of the gradient channels).
 
-    The main functionality of the ``SequenceProvider`` is to unroll a given pulseq sequence.
-    Usually the first step is to read a sequence file. The unrolling step can be achieved using
-    the ``unroll_sequence()`` function.
-
-    Example
-    -------
-    >>> seq_provider = SequenceProvider()
+    Examples
+    --------
+    >>> seq_provider = SequenceProvider(..., system=opts)
     >>> seq_provider.read("./seq_file.seq")
     >>> unrolled = seq_provider.unroll_sequence(acquisition_parameter)
     """
@@ -77,9 +75,10 @@ class SequenceProvider(Sequence):
         Parameters
         ----------
         gradient_efficiency
-            Efficiency of the gradient coils in mT/m/A, e.g. [0.4e-3, 0.4e-3, 0.4e-3].
+            Efficiency of the gradient coils in T/m/A per physical gradient channel, e.g. [0.4e-3, 0.4e-3, 0.4e-3].
         gpa_gain
-            Gain factor of the GPA per gradient channel, e.g. [4.7, 4.7, 4.7].
+            Transconductance of the gradient power amplifier in A/V per physical gradient channel,
+            e.g. [4.7, 4.7, 4.7].
         gradient_output_limits
             Integer output limit per gradient channel in mV, e.g. [6000, 6000, 6000].
         gradients_50ohms
@@ -94,10 +93,9 @@ class SequenceProvider(Sequence):
             Translation of RF waveform from pulseq (Hz) to mV.
         spcm_dwell_time
             Sampling time raster of the output waveform (depends on spectrum card).
-        system
-            Absolute maximum system limits defined in the device configuration.
-            Used to instantiate the pypulseq `Opts()` class.
-        rf_gain_lut_path, optional
+        system : Opts
+            Pypulseq system limits object used for sequence construction.
+        rf_gain_lut_path : Path or None, optional
             Path to the RF power amplifier gain lookup table (.npy file), by default None.
             If None or the file does not exist, no LUT is applied.
         """
@@ -187,8 +185,6 @@ class SequenceProvider(Sequence):
     def unroll_sequence(self, parameter: AcquisitionParameter) -> UnrolledSequence:
         """Unroll the pypulseq sequence description.
 
-        TODO: Reduce complexity.
-
         Parameters
         ----------
         parameter
@@ -197,14 +193,17 @@ class SequenceProvider(Sequence):
 
         Returns
         -------
-            UnrolledSequence
-                Instance of an unrolled sequence object which contains a list of numpy arrays with
-                the block-wise calculated sample points in correct spectrum card order (Fortran).
+        UnrolledSequence
+            Interleaved int16 replay buffer of the transmit card (channel order RF, gradient 1, 2, 3),
+            in which bit 15 of the gradient channels carries the digital control signals, together with
+            one `RxData` template per ADC event.
 
-                The list of unrolled sequence arrays is returned as uint16 values which contain a digital
-                signal encoded by 15th bit. Only the RF channel does not contain a digital signal.
-                In addition, all receive events are described and returned in a list within the unrolled
-                sequence object.
+        Raises
+        ------
+        ValueError
+            Invalid acquisition parameter, or a waveform exceeds the output limit of its channel.
+        IndexError
+            Inconsistent block timing or an RF waveform exceeding its block.
 
         Examples
         --------
@@ -215,21 +214,17 @@ class SequenceProvider(Sequence):
         Per channel data can be extracted by the following code.
 
         >>> rf = seq[0::4]
-        >>> gx = (seq[1::4] << 1).astype(np.int16)
-        >>> gy = (seq[2::4] << 1).astype(np.int16)
-        >>> gz = (seq[3::4] << 1).astype(np.int16)
+        >>> g1 = (seq[1::4].view(np.uint16) << 1).view(np.int16)
+        >>> g2 = (seq[2::4].view(np.uint16) << 1).view(np.int16)
+        >>> g3 = (seq[3::4].view(np.uint16) << 1).view(np.int16)
 
-        All the gradient channels contain a digital signal encoded by the 15th bit.
-        - `gx`: ADC gate signal
-        - `gy`: Reference signal for phase correction
-        - `gz`: RF unblanking signal
-        The following example shows, how to extract the digital signals
+        Bit 15 of the gradient channels carries the digital signals: channel 1 the ADC gate,
+        channel 2 the phase reference and channel 3 the RF unblanking signal.
+        As bit 15 does not encode the sign, the values are viewed as uint16 before shifting.
 
-        >>> adc_gate = seq[1::4].astype(np.uint16) >> 15
-        >>> reference = seq[2::4].astype(np.uint16) >> 15
-        >>> unblanking = seq[3::4].astype(np.uint16) >> 15
-
-        As the 15th bit is not encoding the sign (as usual for int16), the values are casted to uint16 before shifting.
+        >>> adc_gate = seq[1::4].view(np.uint16) >> 15
+        >>> reference = seq[2::4].view(np.uint16) >> 15
+        >>> unblanking = seq[3::4].view(np.uint16) >> 15
         """
         try:
             self._check_parameter(parameter)

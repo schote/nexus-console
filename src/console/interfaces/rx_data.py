@@ -11,63 +11,77 @@ from console.utilities import ddc
 
 @dataclass
 class RxData:
-    """Receive data object containing both the data and metadata of each receive event."""
+    """Receive data object containing both the data and metadata of each receive (ADC) event.
 
-    # Rx data event number
+    Instances are created as templates by `SequenceProvider.unroll_sequence` (one per ADC event),
+    filled with raw samples by the receive card during acquisition and finally processed by
+    `process_data` (scaling, demodulation, phase correction, decimation).
+    """
+
     index: int
+    """Index of the ADC event within the sequence."""
 
-    # Number of samples after decimation
     num_samples: int
-    # Number of raw samples before decimation
+    """Number of samples after decimation, as defined by the PyPulseq ADC event."""
+
     num_samples_raw: int
-    # Number of samples to be discarded before and after ADC, defined by dead time
+    """Number of samples at the receive card sampling rate (including discard samples)."""
+
     num_samples_discard: int
-    # Dwell time of decimated data in s
+    """Number of (decimated) samples added before and after the ADC window, defined by the ADC dead time."""
+
     dwell_time: float
-    # Dwell time of undecimated data in s
+    """Dwell time of the decimated data in s."""
+
     dwell_time_raw: float
-    # Phase offset from sequence definition in rad
+    """Dwell time of the raw data (receive card sampling interval) in s."""
+
     phase_offset: float
-    # Frequency offset from sequence definition in Hz
+    """Phase offset of the ADC event from the sequence definition in rad."""
+
     freq_offset: float
+    """Frequency offset of the ADC event from the sequence definition in Hz."""
 
-    # Averages tracking
     total_averages: int
+    """Total number of averages of the acquisition."""
+
     average_index: int = 0
+    """Index of the average this event belongs to."""
 
-    # ADC labels
     labels: dict[str, int | None] | None = None
+    """PyPulseq labels (e.g. ``LIN``, ``PAR``, ``ECO``) set since the preceding ADC event."""
 
-    # Used for demodulation, value set in post init
     decimation_factor: int = field(init=False)
+    """Decimation factor ``round(dwell_time / dwell_time_raw)``, computed on initialization."""
 
-    # Set the larmor frequency in Hz for each object
     larmor_frequency: float | None = None
+    """Larmor frequency in Hz used for this acquisition."""
 
-    # Frequency in Hz with which the data are demodulated
     demod_frequency: float | None = None
+    """Demodulation frequency in Hz, i.e. Larmor frequency plus `freq_offset`; set by `process_data`."""
 
-    # Frequency in Hz with which the reference signal is demodulated
     phase_ref_frequency: float | None = None
+    """Frequency of the digital phase reference signal in Hz."""
 
-    # Set the default demodulation method to FIR
     ddc_method: DDCMethod = DDCMethod.FIR
+    """Decimation filter method."""
 
-    # Scaling factor for each receive channel
     scaling_factor: np.ndarray | list[float] | None = None
+    """Conversion factor from ADC values to mV per receive channel."""
 
-    # Raw data is the raw data coming from the Rx cards, prior to demodulation and decimation
-    # Shape of Raw data is (num_channels_enabled, raw number of samples)
     raw_data: np.ndarray | None = None
+    """Raw int16 samples of the receive card, shape ``(num_channels_enabled, num_samples_raw)``.
+    Removed after processing unless ``store_unprocessed`` is set."""
 
-    # Phase reference signal
     phase_reference: np.ndarray | None = None
+    """Digital phase reference sampled with channel 0 (0/1 values, at most 1000 samples)."""
 
-    # Timestamp in s of start of data acquisition relative to sequence execution start
     time_stamp: float | None = None
+    """Start time of the ADC gate in s relative to the start of the receive card."""
 
-    # Processed data is the demodulated, phased and decimated data
     processed_data: np.ndarray | None = None
+    """Demodulated, phase-corrected and decimated complex data,
+    shape ``(num_channels_enabled, num_samples + 2 * num_samples_discard)``."""
 
     # Shared memory handle and (name, shape) needed to reattach after pickling.
     # track=False on both sides: the worker unlinks explicitly, avoiding a

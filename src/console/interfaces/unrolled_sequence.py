@@ -19,26 +19,25 @@ class UnrolledSequence:
     """
 
     seq: np.ndarray
-    """Replay data as int16 values in a list of numpy arrays. The sequence data already
-    contains the digital adc and unblanking signals in the channels gx and gy."""
+    """Replay data as flat int16 array of length ``4 * sample_count`` with interleaved channels
+    ``[ch0_0, ch1_0, ch2_0, ch3_0, ch0_1, ...]``. Channel 0 is the RF waveform (16 bit), channels 1 to 3 are
+    the gradient waveforms (15 bit) whose bit 15 carries the ADC gate (ch1), the phase reference (ch2)
+    and the RF unblanking (ch3)."""
 
     sample_count: int
     """Total number of samples per channel."""
 
     rx_data: list[RxData]
-    """List containing the data and metadata of all receive events"""
+    """List containing the metadata of all receive (ADC) events, one `RxData` per event."""
 
     gpa_gain: tuple[float, float, float]
-    """The gradient waveforms in pulseq are defined in Hz/m.
-    The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
-    The gpa gain is given in V/A and accounts for the voltage required to generate an output of 1A.
-    The gyromagnetic ratio defined by 42.58e6 MHz/T."""
+    """Transconductance of the gradient power amplifier in A/V per gradient channel.
+
+    Together with `gradient_efficiency`, it translates PyPulseq gradient amplitudes in Hz/m to output
+    voltages: ``U[mV] = G[Hz/m] / (gamma[Hz/T] * 1e-3 * gpa_gain[A/V] * gradient_efficiency[T/m/A])``."""
 
     gradient_efficiency: tuple[float, float, float]
-    """The gradient waveforms in pulseq are defined in Hz/m.
-    The translation to mV is calculated by 1e3 / (gyro * gpa_gain * grad_efficiency).
-    The gradient efficiency is given in mT/m/A and accounts for the gradient field which is generated per 1A.
-    The gyromagnetic ratio defined by 42.58e6 MHz/T."""
+    """Efficiency of the gradient coils in T/m/A per gradient channel (see `gpa_gain`)."""
 
     gradient_output_limits: tuple[int, int, int]
     """Integer limits for each gradient output channel in mV. Gradient output limits already contain scaling
@@ -65,4 +64,4 @@ class UnrolledSequence:
     """Number of adc events in the sequence."""
 
     parameter: AcquisitionParameter
-    """Hash of acquisition parameters used to calculate the sequence."""
+    """Acquisition parameters used to calculate the sequence."""

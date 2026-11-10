@@ -22,11 +22,16 @@ log = logging.getLogger("AcqData")
 
 @dataclass(slots=True, frozen=True)
 class AcquisitionData:
-    """Parameters which define an acquisition."""
+    """Result of an acquisition: receive data, sequence, acquisition parameters and meta data.
+
+    Returned by `AcquisitionControl.run`. The data can be stored with `save` (HDF5, JSON, ``.seq``) and
+    exported to ISMRMRD with `save_ismrmrd`.
+    """
 
     receive_data: list[RxData]
-    """ A list containing a list of RxData objects which contain all of the receive data for the acquisition. The outer
-    list contains the list of RxData for each average."""
+    """Flat list of `RxData` objects, one per ADC event and average, ordered by average and then by
+    ADC index (``[avg0/adc0, ..., avg0/adcN, avg1/adc0, ...]``). The average index of each entry is
+    stored in `RxData.average_index`."""
 
     acquisition_parameters: AcquisitionParameter
     """Acquisition parameters."""
@@ -152,7 +157,30 @@ class AcquisitionData:
         header: ismrmrd.xsd.ismrmrdHeader | str | Path | None = None,
         user_path: str | None = None,
     ) -> Path | None:
-        """Store acquisition data in ISMRMRD format."""
+        """Store acquisition data in ISMRMRD format.
+
+        The file ``data.mrd`` is written to the acquisition folder. Measurement information,
+        experimental conditions (Larmor frequency) and acquisition system information are added to the header.
+        PyPulseq labels of the ADC events are mapped to the ISMRMRD acquisition counters and flags.
+
+        Parameters
+        ----------
+        header
+            ISMRMRD header, e.g. as returned by a sequence constructor, or path to an ISMRMRD file
+            whose XML header is used. If None, a header without encoding information is created.
+        user_path
+            Base directory of the output, by default the session path.
+
+        Returns
+        -------
+        Path or None
+            Path of the written MRD file, or None if the header is invalid.
+
+        Raises
+        ------
+        AttributeError
+            No processed receive data available.
+        """
         # Ensure that receive data is available
         if not self.receive_data or self.receive_data[0].processed_data is None:
             detail = "Processed data not found in receive data. Cannot export ISMRMRD."

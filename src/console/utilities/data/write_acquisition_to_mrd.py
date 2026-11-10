@@ -20,7 +20,31 @@ def write_acquisition_to_mrd(
     dataset_path: Path,
     channel_assignment: Dimensions,
 ) -> Path:
-    """Write imaging data to ISMRMRD."""
+    """Write imaging data to ISMRMRD.
+
+    The physical gradient channels are assumed to be oriented as follows (patient supine, head first):
+    channel 1: inferior to superior, channel 2: posterior to anterior, channel 3: right to left.
+    The read, phase and slice directions of each acquisition are derived from this assumption and the
+    channel assignment. The k-space trajectory is calculated from the sequence.
+
+    Parameters
+    ----------
+    data
+        Receive data of all ADC events, see `AcquisitionData.receive_data`.
+    header
+        ISMRMRD header written to the dataset.
+    sequence
+        Sequence of the acquisition, used for the k-space trajectory.
+    dataset_path
+        Path of the MRD file to be written.
+    channel_assignment
+        Assignment of the logical gradient axes to the physical channels.
+
+    Returns
+    -------
+    Path
+        Path of the written MRD file.
+    """
     with ismrmrd.Dataset(dataset_path) as dataset:
         dataset.write_xml_header(header.toXML("utf-8"))
 

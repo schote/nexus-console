@@ -1,4 +1,10 @@
-"""Processing worker for RxData objects using a persistent process pool."""
+"""Parallel processing of RxData objects using a persistent process pool.
+
+Each ADC gate is submitted to the pool directly from the receive card thread while the acquisition
+is still running. Raw samples are transferred to the workers via shared memory (see `RxData`);
+each worker runs `RxData.process_data` (scaling, demodulation, phase correction, decimation).
+After the last average, `RxProcessor.collect` returns the processed objects ordered by index.
+"""
 
 import logging
 import multiprocessing
@@ -53,7 +59,7 @@ class RxProcessor:
 
         Parameters
         ----------
-        num_workers, optional
+        num_workers : int, optional
             Number of worker processes in the process pool, by default 1.
         """
         self._num_workers = num_workers

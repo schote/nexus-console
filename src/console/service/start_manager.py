@@ -11,7 +11,22 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 
 
 def main() -> None:
-    """Start the acquisition control and setup the manager."""
+    """Start the acquisition service (command line entry point ``nexus``).
+
+    Connects the measurement cards via `AcquisitionControl` and serves this instance through an
+    `AcquisitionControlManager` (``multiprocessing.managers.BaseManager``), so that acquisitions
+    can be run from other processes or hosts.
+
+    Command line arguments:
+
+    - ``-d``, ``--device_config``: path to the device configuration YAML file (required).
+    - ``-f``, ``--sessions_folder``: directory for logs and acquisition data (default ``<home>/nexus-console``).
+    - ``-k``, ``--authkey``: authentication key of the manager process.
+    - ``-a``, ``--address``: address the manager binds to (default ``localhost``).
+    - ``-p``, ``--port``: port of the manager (default 50000).
+    - ``-n``, ``--no-verify``: skip the confirmation prompt that all amplifiers are switched off.
+      The XIO outputs of the cards are pulled high while the cards are opened.
+    """
     parser = argparse.ArgumentParser(description="Start Nexus acquisition service.")
     parser.add_argument(
         "-d",

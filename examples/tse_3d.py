@@ -11,8 +11,8 @@ from console.interfaces.acquisition_parameter import Dimensions
 from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities.sequences import tse_3d
 
-# Create acquisition control instance
-config_file = r"example_device_config.yaml"
+# Create acquisition control instance, adapt the path to the device configuration of your system
+config_file = "example_device_config.yaml"
 acq = AcquisitionControl(configuration_file=config_file,
                          file_log_level=logging.DEBUG,
                          console_log_level=logging.DEBUG)
@@ -77,6 +77,9 @@ acq_data.add_data({
 })
 
 acq_data.save()
+
+# Export to ISMRMRD, using the header returned by the sequence constructor
+acq_data.save_ismrmrd(header=header)
 
 del acq
 
