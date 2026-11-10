@@ -2976,7 +2976,7 @@ flowchart LR
 </tr>
 <tr>
 <td>Decimation</td>
-<td>The signal is low-pass filtered and down-sampled to the dwell time of the ADC event (see <a href="#decimation-filters">Decimation filters</a>). The decimation factor is the ratio of the ADC dwell time and the sampling interval of the digitizer. The result is multiplied by 2, which compensates the signal component at <span class="arithmatex">\(-2 f_\text{d}\)</span> that is removed by the low-pass filter.</td>
+<td>The signal is low-pass filtered and down-sampled to the dwell time of the ADC event (see <a href="#decimation-filters">Decimation filters</a>). The decimation factor is the ratio of the ADC dwell time and the sampling interval of the digitizer (<code>1/RxConfiguration.sampling_rate</code>). The result is multiplied by 2, which compensates the signal component at <span class="arithmatex">\(-2 f_\text{d}\)</span> that is removed by the low-pass filter.</td>
 </tr>
 </tbody>
 </table>

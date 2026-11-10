@@ -2820,7 +2820,7 @@
 <p>The components and the port assignment on this page describe the setup that was used for the development of the console <a href="../../references/#ref-1">[1]</a>. Other workstations and other cards of the same families might work as well, but have not been tested.</p>
 </div>
 <h2 id="workstation">Workstation</h2>
-<p>The workstation hosts both measurement cards. In the current implementation, the complete sequence is calculated and stored in host memory before execution. During the acquisition, the workstation streams the waveforms to the AWG, reads the gated receive data from the digitizer and processes them in parallel. The considerations below assume a sampling rate of 20 MHz, as used in the development setup.</p>
+<p>The workstation hosts both measurement cards. In the current implementation, the complete sequence is calculated and stored in host memory before execution. During the acquisition, the workstation streams the waveforms to the AWG, reads the gated receive data from the digitizer and processes them in parallel. The considerations below assume a sampling rate of 20 MHz for both cards, as used in the development setup.</p>
 <div class="admonition info">
 <p class="admonition-title">Planned improvements</p>
 <p>Several improvements are planned for future versions. One is to calculate the sequence at runtime, so that the memory requirement no longer scales with the sequence duration. In turn, sequence calculation, streaming and receive processing will run in parallel, which requires more CPU cores and a sequence calculation that is faster than real time. In addition, the measurement cards can transfer data directly to a GPU using <a href="https://spectrum-instrumentation.com/products/drivers_examples/scapp_cuda_interface.php">SCAPP</a>. Future versions of the Nexus console might therefore benefit from an on-board GPU.</p>
@@ -2852,7 +2852,7 @@
 <tr>
 <td>RAM</td>
 <td>256 GB</td>
-<td>The unrolled sequence requires 4 channels × 2 bytes (int16) per sampling clock, i.e. 160 MB per second or <strong>9.6 GB per minute</strong> of sequence. Averages replay the same buffer and need no additional memory. Allowing about 16 GB for the operating system, the Python processes and the two 1 GiB DMA buffers, 256 GB are sufficient for sequences of roughly 25 minutes. The processed receive data are small in comparison (16 bytes per complex sample and channel, e.g. 34 MB for 128 × 128 × 128 samples), unless the raw data are kept with <code>run(store_unprocessed=True)</code>.</td>
+<td>The unrolled sequence requires 4 channels × 2 bytes (int16) per sample of the transmit card, i.e. 160 MB per second or <strong>9.6 GB per minute</strong> of sequence. Averages replay the same buffer and need no additional memory. Allowing about 16 GB for the operating system, the Python processes and the two 1 GiB DMA buffers, 256 GB are sufficient for sequences of roughly 25 minutes. The processed receive data are small in comparison (16 bytes per complex sample and channel, e.g. 34 MB for 128 × 128 × 128 samples), unless the raw data are kept with <code>run(store_unprocessed=True)</code>.</td>
 </tr>
 <tr>
 <td>CPU</td>
@@ -2878,7 +2878,11 @@
 </table>
 <div class="admonition note">
 <p class="admonition-title">Card requirements of the software</p>
-<p>The current Nexus console implementation supports exactly one transmit and one receive card. On connection, the software checks that the transmit card belongs to the M2p.65xx family (AWG) and the receive card to the M2p.59xx family (digitizer). The cards are synchronized by cables, as described in <a href="../../setup/hardware-setup/">Hardware setup</a>, and share the clock provided by the digitizer module. Both cards must therefore run at the same sampling rate. Synchronization via a Star-Hub might be added in the future.</p>
+<p>The current Nexus console implementation supports exactly one transmit and one receive card. On connection, the software checks that the transmit card belongs to the M2p.65xx family (AWG) and the receive card to the M2p.59xx family (digitizer). The cards are synchronized by cables, as described in <a href="../../setup/hardware-setup/">Hardware setup</a>, and share the clock provided by the digitizer module. Each card sets its own sampling rate, so the sampling rates may differ. Synchronization via a Star-Hub might be added in the future.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Different sampling rates</p>
+<p>Different sampling rates of the transmit and receive card are not supported by the current software version and will be added in a future update. Until then, the device configuration requires equal sampling rates (see <a href="../configuration/#rxconfiguration">Device configuration</a>).</p>
 </div>
 <h2 id="inputs-and-outputs">Inputs and outputs</h2>
 <p>The tables list every port of both cards and its use in the development setup. The analog channels, clock input and trigger input use SMB connectors; the multi-purpose lines X0–X3 use MMCX connectors. How to connect the ports is described in the <a href="../../setup/hardware-setup/#connection-plan">Connection plan</a>.</p>
@@ -2926,7 +2930,7 @@
 <td>Clk In</td>
 <td>SMB</td>
 <td>In</td>
-<td>External sampling clock, 50 Ω termination, 1.5 V threshold</td>
+<td>External clock, 50 Ω termination, 1.5 V threshold</td>
 <td>Digitizer X0</td>
 </tr>
 <tr>
@@ -3010,7 +3014,7 @@
 <td>X0</td>
 <td>MMCX</td>
 <td>Clock out</td>
-<td>Sampling clock</td>
+<td>Clock of the digitizer</td>
 <td>AWG clock input</td>
 </tr>
 <tr>

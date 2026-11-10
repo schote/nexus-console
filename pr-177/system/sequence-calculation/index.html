@@ -2876,7 +2876,7 @@ flowchart TD
     ADC --&gt; OUT
     click OUT href "../../reference/interfaces/unrolled_sequence/#console.interfaces.unrolled_sequence.UnrolledSequence" "API reference of UnrolledSequence"</code></pre>
 <h2 id="replay-buffer">Replay buffer</h2>
-<p>The transmit card outputs one <strong>frame</strong> per sampling interval <span class="arithmatex">\(\Delta t = 1/f_\text{s}\)</span>, e.g. every 50 ns at a sampling rate of <span class="arithmatex">\(f_\text{s} = 20\)</span> MHz. A frame consists of one 16-bit sample per channel. The replay buffer <code>UnrolledSequence.seq</code> is an int16 array that contains all frames of the sequence one after the other, as required by the FIFO mode of the transmit card. Each frame occupies 4 × 16 bit = 8 bytes, so one second of sequence at 20 MHz requires 160 MB.</p>
+<p>The transmit card outputs one <strong>frame</strong> per sampling interval <span class="arithmatex">\(\Delta t = 1/f_\text{s}\)</span>, with the transmit card sampling rate <span class="arithmatex">\(f_\text{s}\)</span> (<code>TxConfiguration.sampling_rate</code>), e.g. every 50 ns at <span class="arithmatex">\(f_\text{s} = 20\)</span> MHz. A frame consists of one 16-bit sample per channel. The replay buffer <code>UnrolledSequence.seq</code> is an int16 array that contains all frames of the sequence one after the other, as required by the FIFO mode of the transmit card. Each frame occupies 4 × 16 bit = 8 bytes, so one second of sequence at 20 MHz requires 160 MB.</p>
 <pre class="mermaid"><code>---
 config:
   packet:

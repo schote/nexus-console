@@ -2818,7 +2818,7 @@
 <tr>
 <td><code>sampling_rate</code></td>
 <td>MHz</td>
-<td>Sampling rate as integer; must equal <code>RxConfiguration.sampling_rate</code>, as the transmit card runs on the clock of the receive card (not checked by the software)</td>
+<td>Sampling rate of the transmit card as integer; may differ from <code>RxConfiguration.sampling_rate</code> (see note below)</td>
 </tr>
 <tr>
 <td><code>channel_max_amplitude</code></td>
@@ -2881,7 +2881,7 @@
 <tr>
 <td><code>sampling_rate</code></td>
 <td>MHz</td>
-<td>Sampling rate as integer; the receive card is the clock master and provides this clock to the transmit card</td>
+<td>Sampling rate of the receive card as integer; may differ from <code>TxConfiguration.sampling_rate</code> (see note below)</td>
 </tr>
 <tr>
 <td><code>max_available_channels</code></td>
@@ -2910,6 +2910,10 @@
 </tr>
 </tbody>
 </table>
+<div class="admonition note">
+<p class="admonition-title">Sampling rates of transmit and receive card</p>
+<p>Both cards share the clock of the receive card, but each card sets its own sampling rate. The hardware therefore allows different sampling rates, e.g. 20 MHz for the receive card and 10 MHz for the transmit card. The current software version does not support this yet: the sequence calculation and the processing of the receive data assume a common sampling rate, so <a class="autorefs autorefs-internal" title="NexusConfiguration" href="../../reference/interfaces/device_configuration/#console.interfaces.device_configuration.NexusConfiguration"><code>NexusConfiguration</code></a> rejects a configuration in which <code>TxConfiguration.sampling_rate</code> and <code>RxConfiguration.sampling_rate</code> differ. Support for different sampling rates will be added in a future update.</p>
+</div>
 <h2 id="systemlimits">SystemLimits</h2>
 <p>Limits of the MR system, validated by <a class="autorefs autorefs-internal" title="SystemLimits" href="../../reference/interfaces/device_configuration/#console.interfaces.device_configuration.SystemLimits"><code>SystemLimits</code></a> and passed to PyPulseq as <code>Opts</code> (<code>AcquisitionControl.get_sequence_system()</code>). <code>max_grad</code>, <code>max_slew</code>, <code>block_duration_raster</code>, <code>grad_raster_time</code> and <code>adc_raster_time</code> must be positive, all other values must not be negative. Numbers in exponent notation need a decimal point, e.g. <code>20.e-6</code>: YAML reads <code>20e-6</code> as a string, which the model rejects.</p>
 <div class="admonition warning">

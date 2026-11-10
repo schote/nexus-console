@@ -2860,10 +2860,14 @@ flowchart LR
     TXX2 --&gt;|"Phase reference"| RXX2
     linkStyle 0 marker-end:none</code></pre>
 <ul>
-<li><strong>Clock</strong>: The transmit card is configured to run on an external clock which is provided by the receive card, whereby both cards sample synchronously. However, the sampling rates of both cards in the device configuration must not be identical.</li>
+<li><strong>Clock</strong>: The transmit card is configured to run on an external clock which is provided by the receive card, so both cards share a common time base. Each card sets its own sampling rate, so the sampling rates of both cards in the device configuration may differ (see note below).</li>
 <li><strong>ADC gate</strong>: The transmit card outputs a digital gate signal on X1 that is high during each ADC event of the sequence. The receive card uses X1 as logic trigger input and records exactly the gated samples.</li>
 <li><strong>Phase reference</strong>: The transmit card outputs a square wave on X2, which the receive card samples together with the MR signal. It is used to correct the phase of each acquisition (see <a href="../../system/postprocessing/#phase-reference">Phase reference</a>).</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Different sampling rates</p>
+<p>Different sampling rates of the transmit and receive card are not supported by the current software version and will be added in a future update. Until then, <code>TxConfiguration.sampling_rate</code> and <code>RxConfiguration.sampling_rate</code> must be equal (see <a href="../../system/configuration/#rxconfiguration">Device configuration</a>).</p>
+</div>
 <h3 id="mri-system">MRI system</h3>
 <table>
 <thead>
