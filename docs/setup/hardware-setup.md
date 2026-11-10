@@ -49,7 +49,7 @@ flowchart LR
     linkStyle 0 marker-end:none
 ```
 
-- **Clock**: The transmit card is configured to run on an external clock which is provided by the receive card, whereby both cards sample synchronously. The sampling rates of both cards in the device configuration must therefore be identical.
+- **Clock**: The transmit card is configured to run on an external clock which is provided by the receive card, whereby both cards sample synchronously. However, the sampling rates of both cards in the device configuration must not be identical.
 - **ADC gate**: The transmit card outputs a digital gate signal on X1 that is high during each ADC event of the sequence. The receive card uses X1 as logic trigger input and records exactly the gated samples.
 - **Phase reference**: The transmit card outputs a square wave on X2, which the receive card samples together with the MR signal. It is used to correct the phase of each acquisition (see [Phase reference](../system/postprocessing.md#phase-reference)).
 
