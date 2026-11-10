@@ -3,5 +3,10 @@
     "version": "pr-177",
     "title": "PR #177 (preview)",
     "aliases": []
+  },
+  {
+    "version": "latest",
+    "title": "latest",
+    "aliases": []
   }
 ]
