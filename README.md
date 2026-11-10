@@ -7,7 +7,7 @@
 
 [![DOI](https://img.shields.io/badge/DOI-10.1002%2Fmrm.30406-blue)](https://doi.org/10.1002/mrm.30406)
 ![Python](https://img.shields.io/badge/python-3.13-blue)
-[![License](https://img.shields.io/github/license/schote/nexus-console)](https://www.gnu.org/licenses/gpl-3.0.de.html)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Docs](https://github.com/schote/nexus-console/actions/workflows/docs-mkdocs.yml/badge.svg)](https://schote.github.io/nexus-console/)
 [![Static Tests](https://github.com/schote/nexus-console/actions/workflows/static-tests.yml/badge.svg)](https://github.com/schote/nexus-console/actions/workflows/static-tests.yml)
 [![Pytest](https://github.com/schote/nexus-console/actions/workflows/pytest.yml/badge.svg)](https://github.com/schote/nexus-console/actions/workflows/pytest.yml)
