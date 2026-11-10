@@ -24,7 +24,7 @@ The steps are implemented in [`RxData.process_data`][console.interfaces.rx_data.
 | Scaling | The int16 values are converted to mV with the input range of the channel: value × `channel_max_amplitude` / 32768. |
 | Demodulation | The signal is multiplied by $e^{-j 2\pi f_\text{d} t}$, with the demodulation frequency $f_\text{d}$ = Larmor frequency + frequency offset of the ADC event and the time $t$ from the start of the gate. |
 | Phase correction | The phase measured with the phase reference (see below) is removed, and the phase offset of the ADC event is applied, i.e. the signal is multiplied by $e^{j \varphi_\text{ADC}}$. |
-| Decimation | The signal is low-pass filtered and down-sampled to the dwell time of the ADC event (see [Decimation filters](#decimation-filters)). The decimation factor is the ratio of the ADC dwell time and the sampling interval of the digitizer. The result is multiplied by 2, which compensates the signal component at $-2 f_\text{d}$ that is removed by the low-pass filter. |
+| Decimation | The signal is low-pass filtered and down-sampled to the dwell time of the ADC event (see [Decimation filters](#decimation-filters)). The decimation factor is the ratio of the ADC dwell time and the sampling interval of the digitizer (`1/RxConfiguration.sampling_rate`). The result is multiplied by 2, which compensates the signal component at $-2 f_\text{d}$ that is removed by the low-pass filter. |
 
 The processed data of a gate contain `num_samples` + 2 × `num_samples_discard` complex samples per receive channel, i.e. the ADC samples plus the samples of the gate extension on both sides (see [ADC events](sequence-calculation.md#adc-events)).
 

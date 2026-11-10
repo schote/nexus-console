@@ -26,7 +26,7 @@ Transmit card (AWG), validated by [`TxConfiguration`][console.interfaces.device_
 | Attribute | Unit | Description |
 |---|---|---|
 | `device_path` | – | Device path of the transmit card, e.g. `/dev/spcm1` |
-| `sampling_rate` | MHz | Sampling rate as integer; must equal `RxConfiguration.sampling_rate`, as the transmit card runs on the clock of the receive card (not checked by the software) |
+| `sampling_rate` | MHz | Sampling rate of the transmit card as integer; may differ from `RxConfiguration.sampling_rate` (see note below) |
 | `channel_max_amplitude` | mV | Output range per channel, 1–6000 mV into 50 Ω |
 | `channel_filter_type` | – | Output filter setting per channel, 0–3 (see card manual) |
 | `rf_terminated_50ohm` | – | `true` if the RF output is terminated into 50 Ω, `false` for high impedance (the output voltage doubles) |
@@ -43,12 +43,15 @@ Receive card (digitizer), validated by [`RxConfiguration`][console.interfaces.de
 | Attribute | Unit | Description |
 |---|---|---|
 | `device_path` | – | Device path of the receive card, e.g. `/dev/spcm0` |
-| `sampling_rate` | MHz | Sampling rate as integer; the receive card is the clock master and provides this clock to the transmit card |
+| `sampling_rate` | MHz | Sampling rate of the receive card as integer; may differ from `TxConfiguration.sampling_rate` (see note below) |
 | `max_available_channels` | – | Number of input channels of the card and length of all channel lists (8 for the M2p.5933-x4) |
 | `channel_enable` | – | Enable flag per channel; 1, 2, 4 or 8 channels must be enabled |
 | `channel_max_amplitude` | mV | Input range per channel: 200, 500, 1000, 2000, 5000 or 10000 |
 | `channel_terminated_50ohm` | – | Input termination per channel, `true` for 50 Ω, `false` for high impedance |
 | `num_processing_workers` | – | Optional, default 1. Number of worker processes for the parallel processing of the receive data; 0 processes the data in the main process after the acquisition |
+
+!!! note "Sampling rates of transmit and receive card"
+    Both cards share the clock of the receive card, but each card sets its own sampling rate. The hardware therefore allows different sampling rates, e.g. 20 MHz for the receive card and 10 MHz for the transmit card. The current software version does not support this yet: the sequence calculation and the processing of the receive data assume a common sampling rate, so [`NexusConfiguration`][console.interfaces.device_configuration.NexusConfiguration] rejects a configuration in which `TxConfiguration.sampling_rate` and `RxConfiguration.sampling_rate` differ. Support for different sampling rates will be added in a future update.
 
 ## SystemLimits
 

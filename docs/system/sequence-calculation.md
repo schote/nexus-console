@@ -18,7 +18,7 @@ flowchart TD
 
 ## Replay buffer
 
-The transmit card outputs one **frame** per sampling interval $\Delta t = 1/f_\text{s}$, e.g. every 50 ns at a sampling rate of $f_\text{s} = 20$ MHz. A frame consists of one 16-bit sample per channel. The replay buffer `UnrolledSequence.seq` is an int16 array that contains all frames of the sequence one after the other, as required by the FIFO mode of the transmit card. Each frame occupies 4 × 16 bit = 8 bytes, so one second of sequence at 20 MHz requires 160 MB.
+The transmit card outputs one **frame** per sampling interval $\Delta t = 1/f_\text{s}$, with the transmit card sampling rate $f_\text{s}$ (`TxConfiguration.sampling_rate`), e.g. every 50 ns at $f_\text{s} = 20$ MHz. A frame consists of one 16-bit sample per channel. The replay buffer `UnrolledSequence.seq` is an int16 array that contains all frames of the sequence one after the other, as required by the FIFO mode of the transmit card. Each frame occupies 4 × 16 bit = 8 bytes, so one second of sequence at 20 MHz requires 160 MB.
 
 ```mermaid
 ---

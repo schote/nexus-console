@@ -49,9 +49,12 @@ flowchart LR
     linkStyle 0 marker-end:none
 ```
 
-- **Clock**: The transmit card is configured to run on an external clock which is provided by the receive card, whereby both cards sample synchronously. However, the sampling rates of both cards in the device configuration must not be identical.
+- **Clock**: The transmit card is configured to run on an external clock which is provided by the receive card, so both cards share a common time base. Each card sets its own sampling rate, so the sampling rates of both cards in the device configuration may differ (see note below).
 - **ADC gate**: The transmit card outputs a digital gate signal on X1 that is high during each ADC event of the sequence. The receive card uses X1 as logic trigger input and records exactly the gated samples.
 - **Phase reference**: The transmit card outputs a square wave on X2, which the receive card samples together with the MR signal. It is used to correct the phase of each acquisition (see [Phase reference](../system/postprocessing.md#phase-reference)).
+
+!!! note "Different sampling rates"
+    Different sampling rates of the transmit and receive card are not supported by the current software version and will be added in a future update. Until then, `TxConfiguration.sampling_rate` and `RxConfiguration.sampling_rate` must be equal (see [Device configuration](../system/configuration.md#rxconfiguration)).
 
 ### MRI system
 
