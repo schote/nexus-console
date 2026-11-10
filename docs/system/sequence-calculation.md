@@ -195,4 +195,4 @@ A block without gradient, RF or ADC events, e.g. created by `pp.make_delay`, onl
 
 ### Trigger and soft delay
 
-Trigger events (`pp.make_trigger`, `pp.make_digital_output_pulse`) and soft delays (`pp.make_soft_delay`) are not supported yet and will be added in the future. They are currently ignored: no trigger signal is output, and a block with a soft delay keeps the `block_duration` treated as a delay.
+Trigger events (`pp.make_trigger`, `pp.make_digital_output_pulse`) and soft delays (`pp.make_soft_delay`) are not supported yet and will be added in the future. They are currently ignored: the sequence does not wait for a trigger signal, and a block with a soft delay keeps the `block_duration` treated as a delay.
