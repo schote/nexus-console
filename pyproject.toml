@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel", "setuptools-git-versioning"]
+requires = ["setuptools>=77", "wheel", "setuptools-git-versioning"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools-git-versioning]
@@ -22,11 +22,13 @@ description = "MRI Nexus console application to run pulseq sequences on Spectrum
 authors = [
     {name="David Schote", email="david.schote@ptb.de"},
     {name="Berk Silemek"},
-    {name="Thomas O'Reilly"}
+    {name="Thomas O'Reilly"},
+    {name="Helge Herthum"}
 ]
 readme = "README.md"
 requires-python = ">=3.13"
-license = "GPL-3.0-or-later"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 keywords = ["MRI, console, spectrum-instrumentation, acquisition, pulseq"]
 classifiers = [
     "Programming Language :: Python",
