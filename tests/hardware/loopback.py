@@ -11,8 +11,8 @@ Procedure:
 1. The transmit and receive cards are detected, the test uses its own device configuration (DEVICE CONFIGURATION).
 2. A test sequence covering all event types interpreted by the sequence provider is replayed NUM_AVERAGES times.
 3. The replayed waveforms (unrolled sequence) and the recordings of all ADC gates are converted to mV.
-4. Per channel, gain, delay and offset of the DAC -> ADC chain are fitted over all ADC gates. The delay is also
-   fitted per ADC gate to verify the timing of each gate.
+4. Per channel, gain, delay, analog bandwidth and offset of the DAC -> ADC chain are fitted over all ADC gates. The
+   delay is also fitted per ADC gate to verify the timing of each gate.
 5. With these parameters, the error of the averaged recording and the spread of the repetitions are evaluated.
 The test passes if all values are within the TOLERANCES below.
 """
@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pypulseq as pp
 import yaml
+from scipy.optimize import least_squares
 from system_info import RX, TX, CardInfo, SystemInfo, system_info
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
@@ -44,27 +45,29 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # =====================================================================================================================
 # Each channel of the DAC (TX) -> ADC (RX) chain is modelled as
 #
-#     recorded(t) = gain * replayed(t - delay) + offset
+#     recorded(t) = gain * chain(replayed)(t) + offset
 #
 # with the replayed waveform from the unrolled sequence and the recording averaged over all repetitions, both in mV.
-# Gain, delay and offset are fitted per channel over all ADC gates. The error is the deviation of the recording from
-# this model, relative to the channel amplitude (peak of the replayed waveform). The tolerances assume precise cards
-# (output filters disabled) and short cables:
+# The chain consists of the sample-and-hold of the DAC, a 2nd-order low-pass for the analog bandwidth and a delay. The
+# bandwidth attenuates the RF carrier and rounds steps of the waveforms, e.g. the edges of block pulses. The low-pass
+# (corner frequency and quality factor) is fitted on the RF channel and applied to all channels, the slow gradient
+# waveforms carry no information on it. Gain, delay and offset are fitted per channel over all ADC gates.
+# The error is the deviation of the recording from the model, relative to the channel amplitude (peak of the replayed
+# waveform). The tolerances assume precise cards (output filters disabled) and short cables:
 #
-# Gain error                |gain - 1|: conversion between int16 values and mV on TX and RX, including the analog
-#                           frequency response, e.g. about -4 % at the RF carrier (fs/10) on a M2p.6546.
-# Offset                    |offset| relative to the output range of the channel.
-# Delay                     |delay| in samples: latency of the analog paths relative to the digital ADC gate signal,
-#                           about -0.66 samples at 20 MHz with 15 cm cables. Coarse bound, the latency is unknown.
-# Delay skew                Delay of a channel minus the mean delay of all channels: all channels pass identical
-#                           DAC/ADC paths, a skew indicates a shifted channel.
-# Gate delay deviation      Max. deviation of the delay fitted per ADC gate from the delay of the channel: a shifted
-#                           waveform or ADC gate. Evaluated for gates in which the channel carries a waveform.
-# RMS error                 RMS of the error: distorted or scaled waveforms in single gates.
-# Peak error                Max. absolute error: local glitches, e.g. single wrong samples.
-# Peak error at RF edges    Max. absolute error within EDGE_SAMPLES of the switch-on and switch-off of each RF pulse.
-#                           Steps of the RF waveform (e.g. block pulses) are rounded by the analog bandwidth, causing
-#                           errors of about 14 % next to the step. These samples are excluded from all other values.
+# Gain error                gain - 1 (at DC): conversion between int16 values and mV on TX and RX.
+# Bandwidth                 -3 dB bandwidth of the chain in MHz (at most the Nyquist frequency): a degrading analog
+#                           path, e.g. an enabled output filter, fails here instead of being absorbed by the fit.
+#                           Preliminary minimum, set it from a calibration run.
+# Offset                    Offset relative to the output range of the channel.
+# Latency                   Total delay of the chain at low frequencies in samples (`latency`), fitted on the RF
+#                           channel. It is relative to the digital ADC gate signal and negative if the analog path is
+#                           faster than the gate signal. A code change which shifts the replay or acquisition by whole
+#                           samples (e.g. the pre-trigger cut) is absorbed by the fit and only changes the latency,
+#                           therefore it is compared to EXPECTED_LATENCY. Recalibrate after changing cards, cables or
+#                           the sampling rate.
+# RMS error                 RMS of the error: distorted, scaled or shifted waveforms in single gates.
+# Peak error                Max. absolute error: local glitches, e.g. single wrong samples, or a shifted RF gate.
 # Repetition spread         Max. standard deviation of a sample over all repetitions: irreproducible replay or
 #                           recording, e.g. timing jitter or dropped samples.
 #
@@ -73,29 +76,48 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 
 @dataclass(frozen=True)
 class Tolerance:
-    """Tolerance of a test value, the absolute value must not exceed the limit."""
+    """Allowed range of a test value."""
 
-    limit: float
-    unit: str  # "%" (value is a fraction) or "samples"
+    low: float
+    high: float
+    unit: str  # "%" (value is a fraction), "samples" or "MHz"
 
     def format(self, value: float) -> str:
-        """Format a value in the unit of the tolerance."""
+        """Format a value in the unit of the tolerance, "-" if the value is not evaluated (NaN)."""
+        if np.isnan(value):
+            return "-"
         return f"{value:+.2%}" if self.unit == "%" else f"{value:+.2f}"
 
+    def __str__(self) -> str:
+        """Return the allowed range, e.g. "±0.50%", "-0.66 ±0.50 samples" or "≥ 4.00 MHz"."""
+        unit = "" if self.unit == "%" else f" {self.unit}"
+        if self.high == np.inf:
+            return f"≥ {self.format(self.low)[1:]}{unit}"
+        center, width = (self.high + self.low) / 2, (self.high - self.low) / 2
+        return f"{self.format(center) + ' ' if center else ''}±{self.format(width)[1:]}{unit}"
 
+    def passed(self, values: np.ndarray) -> bool:
+        """Return True if all evaluated values (not NaN) are within the range."""
+        values = values[~np.isnan(values)]
+        return bool(np.all((self.low <= values) & (values <= self.high)))
+
+
+def within(limit: float, unit: str) -> Tolerance:
+    """Return a tolerance for values between -limit and limit."""
+    return Tolerance(-limit, limit, unit)
+
+
+# Preliminary, measured at 20 MHz with 15 cm cables before the bandwidth was modelled. Confirm with a known-good commit.
+EXPECTED_LATENCY = -0.66
 TOLERANCES = {
-    "Gain error": Tolerance(0.05, "%"),
-    "Offset": Tolerance(0.005, "%"),
-    "Delay": Tolerance(1.0, "samples"),
-    "Delay skew": Tolerance(0.25, "samples"),
-    "Gate delay deviation": Tolerance(0.25, "samples"),
-    "RMS error": Tolerance(0.01, "%"),
-    "Peak error": Tolerance(0.05, "%"),
-    "Peak error at RF edges": Tolerance(0.20, "%"),
-    "Repetition spread": Tolerance(0.02, "%"),
+    "Gain error": within(0.03, "%"),
+    "Bandwidth": Tolerance(4.0, np.inf, "MHz"),
+    "Offset": within(0.005, "%"),
+    "Latency": Tolerance(EXPECTED_LATENCY - 0.5, EXPECTED_LATENCY + 0.5, "samples"),  # Any whole-sample shift fails
+    "RMS error": within(0.005, "%"),
+    "Peak error": within(0.02, "%"),
+    "Repetition spread": within(0.02, "%"),
 }
-EDGE_SAMPLES = 3  # Samples on both sides of an RF switch-on/off evaluated with the edge tolerance
-ACTIVE_THRESHOLD = 0.1  # A channel carries a waveform in an ADC gate if its peak exceeds this fraction of the amplitude
 
 # =====================================================================================================================
 # Device configuration
@@ -292,7 +314,6 @@ class Measurement:
     replayed: np.ndarray  # Unrolled sequence, shape (4, sequence samples)
     recorded: np.ndarray  # Recordings of all repetitions, shape (repetitions, 4, recorded samples)
     index: np.ndarray  # Position of each recorded sample in the unrolled sequence, shape (recorded samples,)
-    gate: np.ndarray  # ADC gate number of each recorded sample, shape (recorded samples,)
     gates: list[tuple[int, int]]  # Start and stop of each ADC gate in the unrolled sequence
     output_limits: np.ndarray  # TX output range per channel in mV, shape (4,)
 
@@ -339,81 +360,98 @@ def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gate
 
     recorded = np.array([np.hstack([recordings[avg, k][0] for k in range(len(gates))]) for avg in range(num_averages)])
     index = np.concatenate([np.arange(start, stop) for start, stop in gates])
-    gate = np.repeat(np.arange(len(gates)), [stop - start for start, stop in gates])
-    return Measurement(replayed, recorded, index, gate, gates, output_limits)
+    return Measurement(replayed, recorded, index, gates, output_limits)
 
 
 # =====================================================================================================================
 # Analysis
 # =====================================================================================================================
-FIT_ITERATIONS = 20  # Max. number of iterations of the delay fit
-FIT_CONVERGENCE = 1e-4  # The delay fit has converged if the delay update is below this value in samples
+MAX_DELAY = 32  # Max. delay in samples searched by the correlation which provides the start value of the fit
 
 
-def delayed(waveform: np.ndarray, delay: float) -> tuple[np.ndarray, np.ndarray]:
-    """Delay a waveform by a fractional number of samples (band-limited interpolation), return it and its slope."""
-    omega = 2 * pi * np.fft.rfftfreq(waveform.size)  # Angular frequency in rad per sample
-    spectrum = np.fft.rfft(waveform) * np.exp(-1j * omega * delay)
-    return np.fft.irfft(spectrum, waveform.size), np.fft.irfft(1j * omega * spectrum, waveform.size)
+def chain_response(freq: np.ndarray, delay: float, lowpass: tuple[float, float]) -> np.ndarray:
+    """Frequency response of the DAC -> ADC chain without gain.
 
-
-def fit_channel(replayed: np.ndarray, recorded: np.ndarray, index: np.ndarray, use: np.ndarray,
-                delay: float = 0.) -> tuple[float, float, float, np.ndarray]:
-    """Fit recorded = gain * replayed(t - delay) + offset, return gain, delay in samples, offset and the model.
-
-    The model is linearized around the current delay estimate (start value `delay`): gain * replayed(t - delay - d)
-    is approximately gain * replayed(t - delay) - gain * d * slope(t - delay). The linear least squares fit of gain,
-    -gain * d and offset is repeated until the delay update d is negligible (Gauss-Newton). Only the samples in `use`
-    are fitted.
+    The chain consists of the sample-and-hold of the DAC (sinc, half a sample delay), a 2nd-order low-pass with
+    corner frequency and quality factor (`lowpass`) for the analog bandwidth, and a delay. Frequencies are given in
+    cycles per sample (fraction of the sampling rate), the delay in samples.
     """
-    for _ in range(FIT_ITERATIONS):
-        waveform, slope = delayed(replayed, delay)
-        design = np.column_stack([waveform[index], slope[index], np.ones(index.size)])
-        coefficients, *_ = np.linalg.lstsq(design[use], recorded[use])
-        gain, update, offset = coefficients[0], -coefficients[1] / coefficients[0], coefficients[2]
-        delay += update
-        if abs(update) < FIT_CONVERGENCE:
-            break
-    return gain, delay, offset, design @ coefficients
+    corner, quality = lowpass
+    s = 1j * freq / corner
+    return np.sinc(freq) * np.exp(-2j * pi * freq * (delay + 0.5)) / (1 + s / quality + s ** 2)
 
 
-def rf_edges(measurement: Measurement) -> np.ndarray:
-    """Mark the recorded samples within EDGE_SAMPLES of the first and last non-zero RF sample of each ADC gate."""
-    mask = np.zeros(measurement.replayed.shape[1], dtype=bool)
-    for start, stop in measurement.gates:
-        if (rf := np.flatnonzero(measurement.replayed[0, start:stop])).size:
-            for edge in start + rf[[0, -1]]:
-                mask[edge - EDGE_SAMPLES:edge + EDGE_SAMPLES + 1] = True
-    return mask[measurement.index]
+def bandwidth(lowpass: tuple[float, float]) -> float:
+    """Return the -3 dB bandwidth of the chain in cycles per sample, at most the Nyquist frequency (0.5)."""
+    freq = np.linspace(0, 0.5, 5001)
+    below = np.flatnonzero(np.abs(chain_response(freq, 0, lowpass)) < np.sqrt(0.5))
+    return float(freq[below[0]]) if below.size else 0.5
 
 
-def analyze(measurement: Measurement) -> tuple[dict[str, np.ndarray], np.ndarray, np.ndarray]:
-    """Evaluate all TOLERANCES per channel, return the values, the fitted model and the RF edge mask."""
+def latency(delay: float, lowpass: tuple[float, float]) -> float:
+    """Return the total delay of the chain at low frequencies in samples.
+
+    Sum of the delay, half a sample of the sample-and-hold and the group delay of the low-pass at DC.
+    """
+    corner, quality = lowpass
+    return delay + 0.5 + 1 / (2 * pi * corner * quality)
+
+
+def fit_channel(
+    replayed: np.ndarray, recorded: np.ndarray, index: np.ndarray, lowpass: tuple[float, float] | None = None,
+) -> tuple[float, float, tuple[float, float], float, np.ndarray]:
+    """Fit recorded = gain * chain(replayed) + offset, return gain, delay, low-pass, offset and model.
+
+    The chain (`chain_response`) is applied to the replayed sequence in the frequency domain, the model is evaluated
+    at the recorded samples (`index`). For a given chain, gain and offset follow from linear least squares. Delay and
+    low-pass are fitted by nonlinear least squares, a given `lowpass` is kept fixed. The fit starts at the whole-sample
+    delay of max. correlation, otherwise a shift by several samples would end in a wrong period of the RF carrier.
+    """
+    spectrum, freq = np.fft.rfft(replayed), np.fft.rfftfreq(replayed.size)
+    lags = np.arange(-MAX_DELAY, MAX_DELAY + 1)
+    start = float(lags[np.argmax([recorded @ replayed[index - lag] for lag in lags])])
+
+    def model(delay: float, lowpass: tuple[float, float]) -> tuple[np.ndarray, np.ndarray]:
+        """Return gain and offset and the model for the given delay and low-pass."""
+        waveform = np.fft.irfft(spectrum * chain_response(freq, delay, lowpass), replayed.size)[index]
+        design = np.column_stack([waveform, np.ones(index.size)])
+        coefficients, *_ = np.linalg.lstsq(design, recorded)
+        return coefficients, design @ coefficients
+
+    def residual(delay: float, lowpass: tuple[float, float]) -> np.ndarray:
+        return model(delay, lowpass)[1] - recorded
+
+    if lowpass is None:  # Fit delay and low-pass, starting at a Butterworth low-pass at 0.3 times the sampling rate
+        delay, corner, quality = least_squares(lambda p: residual(p[0], (p[1], p[2])), [start, 0.3, 0.7],
+                                               bounds=([-np.inf, 0.02, 0.1], [np.inf, np.inf, 3])).x
+        lowpass = (corner, quality)
+    else:  # Fit the delay only
+        fixed = lowpass
+        delay = least_squares(lambda p: residual(p[0], fixed), [start]).x[0]
+    (gain, offset), fitted = model(delay, lowpass)
+    return gain, delay, lowpass, offset, fitted
+
+
+def analyze(measurement: Measurement) -> tuple[dict[str, np.ndarray], np.ndarray]:
+    """Evaluate all TOLERANCES per channel, return the values (NaN if not evaluated) and the fitted model."""
     m = measurement
     mean, spread = m.recorded.mean(axis=0), m.recorded.std(axis=0, ddof=1)
     amplitude = m.amplitude
-    edges = rf_edges(m)
     model = np.empty_like(mean)
-    values = {name: np.empty(4) for name in TOLERANCES}
+    values = {name: np.full(4, np.nan) for name in TOLERANCES}
+    lowpass = None  # Fitted on the RF channel (first channel) and applied to the gradient channels
     for ch in range(4):
-        gain, delay, offset, model[ch] = fit_channel(m.replayed[ch], mean[ch], m.index, ~edges)
-        # Delay per ADC gate in which the channel carries a waveform, relative to the delay of the channel
-        deviations = np.array([
-            fit_channel(m.replayed[ch], mean[ch], m.index, ~edges & (m.gate == k), delay)[1] - delay
-            for k, (start, stop) in enumerate(m.gates)
-            if np.amax(np.abs(m.replayed[ch, start:stop])) > ACTIVE_THRESHOLD * amplitude[ch]
-        ])
+        gain, delay, lowpass, offset, model[ch] = fit_channel(m.replayed[ch], mean[ch], m.index, lowpass)
+        if ch == 0:  # Bandwidth and latency are precise on the RF channel only (carrier and steps)
+            values["Bandwidth"][ch] = bandwidth(lowpass) * SAMPLING_RATE  # Cycles per sample -> MHz
+            values["Latency"][ch] = latency(delay, lowpass)
         error = np.abs(mean[ch] - model[ch]) / amplitude[ch]
         values["Gain error"][ch] = gain - 1
         values["Offset"][ch] = offset / m.output_limits[ch]
-        values["Delay"][ch] = delay
-        values["Gate delay deviation"][ch] = deviations[np.argmax(np.abs(deviations))]
-        values["RMS error"][ch] = np.sqrt(np.mean(error[~edges] ** 2))
-        values["Peak error"][ch] = np.amax(error[~edges])
-        values["Peak error at RF edges"][ch] = np.amax(error[edges], initial=0)
+        values["RMS error"][ch] = np.sqrt(np.mean(error ** 2))
+        values["Peak error"][ch] = np.amax(error)
         values["Repetition spread"][ch] = np.amax(spread[ch]) / amplitude[ch]
-    values["Delay skew"] = values["Delay"] - np.mean(values["Delay"])
-    return values, model, edges
+    return values, model
 
 
 # =====================================================================================================================
@@ -425,10 +463,9 @@ def print_report(values: dict[str, np.ndarray], measurement: Measurement, dwell_
     rows = [["Value", *CHANNELS, "Tolerance", "Result"]]
     passed = True
     for name, tolerance in TOLERANCES.items():
-        ok = bool(np.all(np.abs(values[name]) <= tolerance.limit))  # NaN fails
+        ok = tolerance.passed(values[name])
         passed &= ok
-        rows.append([name, *(tolerance.format(v) for v in values[name]), tolerance.format(tolerance.limit)[1:],
-                     "PASS" if ok else "FAIL"])
+        rows.append([name, *(tolerance.format(v) for v in values[name]), str(tolerance), "PASS" if ok else "FAIL"])
     widths = [max(len(row[col]) for row in rows) for col in range(len(rows[0]))]
     rows.insert(1, ["-" * w for w in widths])
 
@@ -445,8 +482,7 @@ def print_report(values: dict[str, np.ndarray], measurement: Measurement, dwell_
     return passed
 
 
-def plot_signals(measurement: Measurement, model: np.ndarray, edges: np.ndarray, adc_blocks: list[int],
-                 dwell_time: float) -> None:
+def plot_signals(measurement: Measurement, model: np.ndarray, adc_blocks: list[int], dwell_time: float) -> None:
     """Plot the replayed and recorded signals and the error of all channels on a common time axis of all ADC gates.
 
     Two rows per channel: signals in mV (replayed, mean recording +/- standard deviation of the repetitions) and the
@@ -456,7 +492,7 @@ def plot_signals(measurement: Measurement, model: np.ndarray, edges: np.ndarray,
     error, spread_rel = (100 * x / measurement.amplitude[:, None] for x in (mean - model, spread))
     time = np.arange(measurement.index.size) * dwell_time * 1e3
     bounds = time[np.cumsum([0, *(stop - start for start, stop in measurement.gates[:-1])])]
-    peak_limit = 100 * TOLERANCES["Peak error"].limit
+    peak_limit = 100 * TOLERANCES["Peak error"].high
 
     fig, axes = plt.subplots(8, 1, sharex=True, figsize=(14, 12), layout="constrained",
                              gridspec_kw={"height_ratios": [2, 1] * 4})
@@ -472,8 +508,6 @@ def plot_signals(measurement: Measurement, model: np.ndarray, edges: np.ndarray,
         ax_err.plot(time, error[ch], color=color, linewidth=1,
                     label="error (recorded - fitted model)" if label else None)
         ax_err.fill_between(time, error[ch] - spread_rel[ch], error[ch] + spread_rel[ch], color="black", alpha=0.3)
-        ax_err.plot(time[edges], error[ch, edges], "o", color="gray", markersize=3,
-                    label="error at RF edges" if label else None)
         ax_err.axhline(peak_limit, color="tab:red", linewidth=0.8, linestyle=":")
         ax_err.axhline(-peak_limit, color="tab:red", linewidth=0.8, linestyle=":",
                        label="peak error tolerance" if label else None)
@@ -539,11 +573,11 @@ def main() -> None:
         raise SystemExit(msg)
 
     measurement = load_measurement(unrolled, data.receive_data, len(adc_blocks))
-    values, model, edges = analyze(measurement)
+    values, model = analyze(measurement)
     passed = print_report(values, measurement, unrolled.dwell_time, str(system))
     if args.plot:
         print("Preparing plot...")
-        plot_signals(measurement, model, edges, adc_blocks, unrolled.dwell_time)
+        plot_signals(measurement, model, adc_blocks, unrolled.dwell_time)
         plt.show()
     raise SystemExit(0 if passed else 1)
 
