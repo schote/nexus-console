@@ -12,9 +12,9 @@ Closes #
 <!-- 
 Run the loopback test using the following command and copy the test result between the ``` lines below:
 
-     python tests/hardware/loopback.py -d <device_config.yaml>
+     python tests/hardware/loopback.py
 
-All criteria must pass. If a criterion fails, rerun with -v for the analysis per ADC gate and plots of the signals and residuals.
+The cards are detected automatically, no device configuration is needed. All values must pass. If a value fails, rerun with -p to plot the signals and errors.
 -->
 
 ```
@@ -43,7 +43,7 @@ Write "None" if no action is needed and delete the subsections below. Otherwise 
 <!-- Changes to the stored acquisition data or MRD/ISMRMRD output that affect downstream reconstruction -->
 
 ## Checklist
-- [ ] Loopback hardware test passed (run `python tests/hardware/loopback.py -d <device_config.yaml>`)
+- [ ] Loopback hardware test passed (run `python tests/hardware/loopback.py`)
 - [ ] Tests added or updated (if necessary)
 - [ ] Documentation updated (user guide, API docs, port tables, etc.)
 - [ ] Examples updated (if necessary)
