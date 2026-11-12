@@ -14,7 +14,7 @@ Run the loopback test using the following command and copy the test result betwe
 
      python tests/hardware/loopback.py
 
-The cards are detected automatically, no device configuration is needed. All values must pass. If a value fails, rerun with -p to plot the signals and errors.
+The cards are detected automatically, no device configuration is needed. All values must pass. If a value fails, rerun with -v to print the values of all channels and plot the signals and errors.
 -->
 
 ```
