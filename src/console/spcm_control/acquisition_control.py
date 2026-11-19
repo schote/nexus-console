@@ -47,7 +47,7 @@ class AcquisitionControl:
 
     def __init__(
         self,
-        configuration_file: str,
+        configuration: str | Path | NexusConfiguration,
         nexus_data_dir: str | Path = DEFAULT_NEXUS_DATA_DIR,
         file_log_level: int = logging.INFO,
         console_log_level: int = logging.INFO,
@@ -59,7 +59,7 @@ class AcquisitionControl:
 
         Parameters
         ----------
-        configuration_file
+        configuration
             Path to configuration yaml file which is used to create measurement card and sequence
             provider instances.
         nexus_data_dir
@@ -79,8 +79,12 @@ class AcquisitionControl:
         self.log = logging.getLogger("AcqCtrl")
         self.log.info("--- Acquisition control started\n")
 
-        self.config: NexusConfiguration = load_nexus_config(configuration_file)
-        # Create sequence provider instance
+        self.config: NexusConfiguration
+        if isinstance(configuration, NexusConfiguration):
+            self.config = configuration
+        else:
+            self.config = load_nexus_config(configuration)
+
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
             gpa_gain=self.config.tx.gpa_gain,
@@ -93,14 +97,14 @@ class AcquisitionControl:
             system=self.config.system.get_opts(),
             rf_gain_lut_path=self.config.tx.rf_gain_lut_path,
         )
-        # Create transmit card instance
+
         self.tx_card: TxCard = TxCard(
             path=self.config.tx.device_path,
             max_amplitude=self.config.tx.channel_max_amplitude,
             filter_type=self.config.tx.channel_filter_type,
             sample_rate=self.config.tx.sampling_rate,
         )
-        # Create receive card instance
+
         self.rx_card: RxCard = RxCard(
             path=self.config.rx.device_path,
             sample_rate=self.config.rx.sampling_rate,
