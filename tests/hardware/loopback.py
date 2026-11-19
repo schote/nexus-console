@@ -95,15 +95,15 @@ def within(name: str, limit: float, unit: str) -> Tolerance:
     return Tolerance(name, -limit, limit, unit)
 
 
-GAIN_ERROR = within("Gain error", 0.02, "%")
+GAIN_ERROR = within("Gain error", 0.01, "%")
 BANDWIDTH = Tolerance("Bandwidth", 4.0, np.inf, "MHz")
 OFFSET = within("Offset", 0.005, "%")
 LATENCY = Tolerance("Latency", -0.75, -0.25, "samples")
 CHANNEL_SKEW = within("Channel skew", 0.25, "samples")
-NOISE = within("Noise", 0.01, "%")
+NOISE = within("Noise", 0.005, "%")
 RMS_ERROR = within("RMS error", 0.005, "%")
 PEAK_ERROR = within("Peak error", 0.02, "%")
-REPETITION_SPREAD = within("Repetition spread", 0.01, "%")
+REPETITION_SPREAD = within("Repetition spread", 0.005, "%")
 TOLERANCES = (GAIN_ERROR, BANDWIDTH, OFFSET, LATENCY, CHANNEL_SKEW, NOISE, RMS_ERROR, PEAK_ERROR, REPETITION_SPREAD)
 
 # =====================================================================================================================
