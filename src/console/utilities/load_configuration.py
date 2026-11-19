@@ -5,7 +5,7 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
-from console.interfaces.device_configuration import NexusConfiguration, SystemLimits
+from console.interfaces.device_configuration import GradientPreemphasis, NexusConfiguration, SystemLimits
 
 log = logging.getLogger("Config")
 
@@ -27,4 +27,14 @@ def load_system_limits(path: str | Path) -> SystemLimits:
         return SystemLimits.model_validate(data["SystemLimits"], strict=True)
     except ValidationError as exc:
         log.exception("System limit configuration is invalid.", exc_info=exc)
+        raise
+
+
+def load_gradient_preemphasis(path: str | Path) -> GradientPreemphasis:
+    """Load gradient pre-emphasis from file."""
+    data = yaml.safe_load(Path(path).read_text())
+    try:
+        return GradientPreemphasis.model_validate(data)
+    except ValidationError as exc:
+        log.exception("Gradient pre-emphasis configuration is invalid.", exc_info=exc)
         raise

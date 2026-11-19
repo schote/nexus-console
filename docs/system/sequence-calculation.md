@@ -163,6 +163,16 @@ $U$ results in V; $U_\text{max}$ is converted to the same unit. The result is tr
 | $\eta$ | Gradient coil efficiency (T/m/A) of the physical channel | `TxConfiguration.gradient_efficiency` |
 | $U_\text{max}$ | Output limit of the physical channel, doubled for a high-impedance load | `TxConfiguration.channel_max_amplitude` |
 
+### Gradient pre-emphasis
+
+If a pre-emphasis file is configured (`gradient_preemphasis_path`, example in `examples/example_gradient_preemphasis.yaml`), the gradient channels are corrected after all blocks are unrolled, since eddy-current tails extend across block boundaries. The correction is defined per physical channel by compensation terms (amplitude $\beta_n$, time constant $\tau_n$) and a delay $d$:
+
+$$
+u(t) = g(t + d) + \sum_n \beta_n \left( \frac{\mathrm{d}g}{\mathrm{d}t} * e^{-t/\tau_n} \right)(t + d)
+$$
+
+Each term is a first-order recursive filter on the frame raster. The digital signals in bit 15 are preserved. A pre-emphasized waveform above the output limit raises an error, so the sequence must leave enough headroom below `max_grad`. The filters start at zero at the beginning of the replay buffer, i.e. of each average.
+
 ### ADC events
 
 ```mermaid

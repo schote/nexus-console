@@ -24,7 +24,7 @@ from console.pulseq_interpreter.sequence_provider import Sequence, SequenceProvi
 from console.spcm_control.rx_device import RxCard
 from console.spcm_control.rx_processor import RxProcessor
 from console.spcm_control.tx_device import TxCard
-from console.utilities.load_configuration import load_nexus_config
+from console.utilities.load_configuration import load_gradient_preemphasis, load_nexus_config
 from console.utilities.plot import plot_unrolled_sequence
 
 LOG_LEVELS = [
@@ -80,6 +80,7 @@ class AcquisitionControl:
         self.log.info("--- Acquisition control started\n")
 
         self.config: NexusConfiguration = load_nexus_config(configuration_file)
+        preemphasis_path = self.config.tx.gradient_preemphasis_path
         # Create sequence provider instance
         self.seq_provider: SequenceProvider = SequenceProvider(
             gradient_efficiency=self.config.tx.gradient_efficiency,
@@ -92,6 +93,7 @@ class AcquisitionControl:
             rf_to_mvolt=self.config.tx.rf_to_mvolt,
             system=self.config.system.get_opts(),
             rf_gain_lut_path=self.config.tx.rf_gain_lut_path,
+            gradient_preemphasis=load_gradient_preemphasis(preemphasis_path) if preemphasis_path else None,
         )
         # Create transmit card instance
         self.tx_card: TxCard = TxCard(

@@ -1,0 +1,26 @@
+# ==========================================
+# Gradient pre-emphasis for the Nexus-console
+# ==========================================
+
+# NOTE: Example values, coefficients must be calibrated for the individual system.
+# Each physical gradient channel outputs
+#   u(t) = g(t) + sum_n amplitude_n * (dg/dt * exp(-t / time_constant_n))
+# Channels without entry are not changed.
+
+enabled: True
+channels:
+  1:
+    # Delay of the gradient chain in s, the channel output is advanced by this time
+    delay: 0.
+    terms:
+      # amplitude: dimensionless, time_constant: s
+      - {amplitude: 0.01, time_constant: 100.e-6}
+      - {amplitude: 0.005, time_constant: 1.e-3}
+  2:
+    delay: 0.
+    terms:
+      - {amplitude: 0.01, time_constant: 100.e-6}
+  3:
+    delay: 0.
+    terms:
+      - {amplitude: 0.01, time_constant: 100.e-6}
