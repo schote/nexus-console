@@ -163,6 +163,32 @@ $U$ results in V; $U_\text{max}$ is converted to the same unit. The result is tr
 | $\eta$ | Gradient coil efficiency (T/m/A) of the physical channel | `TxConfiguration.gradient_efficiency` |
 | $U_\text{max}$ | Output limit of the physical channel, doubled for a high-impedance load | `TxConfiguration.channel_max_amplitude` |
 
+### Gradient pre-emphasis
+
+If a pre-emphasis file is configured (`gradient_preemphasis_path`, example in `examples/example_gradient_preemphasis.yaml`), the gradient channels are corrected by [`apply_gradient_preemphasis`][console.pulseq_interpreter.preemphasis.apply_gradient_preemphasis]. The correction is defined per physical channel by compensation terms (amplitude $\beta_n$, time constant $\tau_n$) and a delay $d$:
+
+$$
+u(t) = g(t + d) + \sum_n \beta_n \left( \frac{\mathrm{d}g}{\mathrm{d}t} * e^{-t/\tau_n} \right)(t + d)
+$$
+
+On the frame raster, each term is a first-order recursive filter of the waveform difference:
+
+$$
+e_n[k] = p_n\, e_n[k-1] + g[k] - g[k-1], \qquad p_n = e^{-\Delta t/\tau_n}, \qquad u[k] = g[k] + \sum_n \beta_n\, e_n[k]
+$$
+
+The terms are applied in parallel, which stays numerically stable for $p_n$ close to 1 (e.g. $1 - 5 \cdot 10^{-8}$ for $\tau_n = 1$ s at 20 MHz). The delay advances the whole channel by $\operatorname{round}(d/\Delta t)$ frames.
+
+**Block boundaries.** Eddy-current tails extend across block boundaries, so the correction cannot be calculated per gradient event. It is applied once, after all blocks are unrolled, when the replay buffer contains the complete nominal waveform of each channel, including zeros where no gradient event is defined. The filter state is carried from frame to frame through the whole sequence:
+
+- A gradient change at the end of one block produces a correction that decays over the following blocks, also in blocks without gradient events (e.g. an ADC or a delay block), where the channel output becomes non-zero.
+- Since the filter is linear, overlapping tails of successive events add up.
+- The output limit is checked on the complete corrected waveform, so a tail that adds to a following gradient is taken into account. A pre-emphasized waveform above the output limit raises an error; the sequence must leave enough headroom below `max_grad`.
+
+**Edges of the replay buffer.** The filters start at zero at the beginning of the replay buffer, i.e. of each average, as the system is at rest when the transmit card starts. A tail extending beyond the last frame is truncated, so the sequence should end with enough idle time. The delay shift drops the first frames of the channel and fills the end with zeros.
+
+**Digital signals.** Bit 15 (ADC gate, phase reference, RF unblanking) is masked before filtering and restored unchanged, so the pre-emphasis does not shift any synchronization signal.
+
 ### ADC events
 
 ```mermaid

@@ -35,6 +35,7 @@ Transmit card (AWG), validated by [`TxConfiguration`][console.interfaces.device_
 | `gpa_gain` | A/V | Transconductance of the gradient power amplifier per physical gradient channel |
 | `rf_to_mvolt` | mV/Hz | Conversion of the PyPulseq RF amplitude to the output voltage |
 | `rf_gain_lut_path` | – | Optional, default none. Path to a lookup table for the linearization of the RF power amplifier (`.npy`, 65536 int16 values) |
+| `gradient_preemphasis_path` | – | Optional, default none. Path to the gradient pre-emphasis file (`.yaml`, see [Gradient pre-emphasis](sequence-calculation.md#gradient-pre-emphasis)) |
 
 ## RxConfiguration
 

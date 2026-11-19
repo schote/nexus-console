@@ -50,6 +50,42 @@ class TxConfiguration(BaseModel):
     rf_gain_lut_path: Path | None = Field(default=None)
     """Optional path to an RF power amplifier linearisation lookup table (``.npy``, 65536 int16 values)."""
 
+    gradient_preemphasis_path: Path | None = Field(default=None)
+    """Optional path to the gradient pre-emphasis file (``.yaml``, see `GradientPreemphasis`)."""
+
+
+class PreemphasisTerm(BaseModel):
+    """One exponential compensation term of a gradient channel."""
+
+    amplitude: float
+    """Weight of the term (dimensionless, signed)."""
+
+    time_constant: float = Field(..., gt=0)
+    """Time constant in s."""
+
+
+class ChannelPreemphasis(BaseModel):
+    """Pre-emphasis of one physical gradient channel."""
+
+    delay: float = Field(default=0., ge=0)
+    """Delay of the gradient chain in s; the channel output is advanced by this time."""
+
+    terms: list[PreemphasisTerm] = Field(default_factory=list)
+    """Exponential compensation terms."""
+
+
+class GradientPreemphasis(BaseModel):
+    """Gradient pre-emphasis, loaded from the file given by `TxConfiguration.gradient_preemphasis_path`.
+
+    Each physical gradient channel outputs ``u = g + sum_n amplitude_n * (dg/dt * exp(-t/time_constant_n))``.
+    """
+
+    enabled: bool = True
+    """Apply the pre-emphasis if True."""
+
+    channels: dict[Literal[1, 2, 3], ChannelPreemphasis] = Field(default_factory=dict)
+    """Pre-emphasis per physical gradient channel (1 to 3). Channels without entry are unchanged."""
+
 
 class RxConfiguration(BaseModel):
     """Receive card (digitizer) configuration, section ``RxConfiguration`` of the device configuration file."""

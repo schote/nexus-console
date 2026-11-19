@@ -13,9 +13,11 @@ from pypulseq.Sequence.sequence import Sequence
 from scipy.signal import resample
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
+from console.interfaces.device_configuration import GradientPreemphasis
 from console.interfaces.dimensions import Dimensions
 from console.interfaces.rx_data import RxData
 from console.interfaces.unrolled_sequence import UnrolledSequence
+from console.pulseq_interpreter.preemphasis import apply_gradient_preemphasis
 
 try:
     from line_profiler import profile
@@ -69,6 +71,7 @@ class SequenceProvider(Sequence):
         spcm_dwell_time: float,
         system: Opts,
         rf_gain_lut_path: Path | None = None,
+        gradient_preemphasis: GradientPreemphasis | None = None,
     ) -> None:
         """Initialize sequence provider class which is used to unroll a pulseq sequence.
 
@@ -98,6 +101,8 @@ class SequenceProvider(Sequence):
         rf_gain_lut_path : Path or None, optional
             Path to the RF power amplifier gain lookup table (.npy file), by default None.
             If None or the file does not exist, no LUT is applied.
+        gradient_preemphasis : GradientPreemphasis or None, optional
+            Gradient pre-emphasis applied to the unrolled gradient channels, by default None.
         """
         if not isinstance(system, Opts):
             raise AttributeError("Invalid system: Pypulseq `Opts` definition required.")
@@ -131,6 +136,8 @@ class SequenceProvider(Sequence):
         # Load LUT for RF gain correction if path to LUT is provided
         self._rf_gain_lut: np.ndarray | None = None
         self._load_rfpa_lut(rf_gain_lut_path)
+
+        self.gradient_preemphasis = gradient_preemphasis
 
 
     # -------- PyPulseq interface -------- #
@@ -404,6 +411,10 @@ class SequenceProvider(Sequence):
                 )
                 adc_count += 1
                 labels = {}  # Reset labels dict
+
+        # Pre-emphasis acts on the full channel waveforms, since eddy-current tails extend across blocks
+        if self.gradient_preemphasis is not None and self.gradient_preemphasis.enabled:
+            apply_gradient_preemphasis(_seq, self.gradient_preemphasis, self.spcm_dwell_time)
 
         self.log.debug(
             "Unrolled sequence; Total sample points: %s; Total block events: %s",

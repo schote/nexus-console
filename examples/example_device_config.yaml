@@ -26,6 +26,8 @@ TxConfiguration:
   # Scales RF in Hz (pulseq) to mV
   rf_to_mvolt: 5.e-3
   # rf_gain_lut_path: "/path/to/lut.npy"
+  # Optional gradient pre-emphasis file, see example_gradient_preemphasis.yaml
+  # gradient_preemphasis_path: "/path/to/gradient_preemphasis.yaml"
 
 
 # >> RX DEVICE (Digitizer) M2p.5933-x4
