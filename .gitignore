@@ -131,6 +131,7 @@ dmypy.json
 .examples
 *.pyc
 *.npy
+*.npz
 *.lprof
 
 # Sequence files
