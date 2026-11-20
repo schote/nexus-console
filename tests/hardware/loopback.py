@@ -256,6 +256,7 @@ class Measurement:
     index: np.ndarray  # Position of each recorded sample in the unrolled sequence, shape (recorded samples,)
     gates: list[tuple[int, int]]  # Start and stop of each ADC gate in the unrolled sequence
     output_limits: np.ndarray  # TX output range per channel in mV, shape (4,)
+    num_recorded: int  # Number of recorded ADC gates over all repetitions
 
     @property
     def amplitude(self) -> np.ndarray:
@@ -302,7 +303,7 @@ def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gate
     data = [rx.raw_data[:4] * np.asarray(rx.scaling_factor[:4])[:, None] for rx in rx_data]
     recorded = np.array([np.hstack(data[avg * num_gates:(avg + 1) * num_gates]) for avg in range(num_averages)])
     index = np.concatenate([np.arange(start, stop) for start, stop in gates])
-    return Measurement(replayed, recorded, index, gates, output_limits)
+    return Measurement(replayed, recorded, index, gates, output_limits, len(rx_data))
 
 
 # =====================================================================================================================
@@ -455,7 +456,8 @@ def print_summary(values: dict[Tolerance, np.ndarray], measurement: Measurement,
     print("\n---------- Loopback test result (report in PR) ----------")
     print(f"Date: {datetime.now().astimezone():%Y-%m-%d %H:%M UTC%z}")
     print(header)
-    print(f"Recorded: {len(measurement.gates)} ADC gates x {measurement.recorded.shape[0]} repetitions, complete\n")
+    repetitions = measurement.recorded.shape[0]
+    print(f"Recorded: {measurement.num_recorded}/{len(measurement.gates) * repetitions} ({repetitions} repetitions)\n")
     print_table(rows)
     print(f"\nResult: {'PASSED' if passed else 'FAILED'}\n")
     return passed
