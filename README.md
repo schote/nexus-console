@@ -23,10 +23,10 @@ Nexus replaces the proprietary spectrometer of an MRI system with two commercial
 
 The [documentation](https://schote.github.io/nexus-console/) includes a quick start guide, system guide, examples, API reference and a list of related references.
 
-To build the documentation locally, install the `docs-mkdocs` extra and start the development server:
+To build the documentation locally, install the `docs` extra and start the development server:
 
 ```bash
-pip install -e ".[docs-mkdocs]"
+pip install -e ".[docs]"
 mkdocs serve --watch src
 ```
 

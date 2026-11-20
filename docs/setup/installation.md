@@ -28,7 +28,7 @@ pip install -e ".[test,lint,dev]"
 | `test` | pytest and coverage |
 | `lint` | ruff, mypy |
 | `dev` | Profiling and notebook tools |
-| `docs-mkdocs` | Documentation build |
+| `docs` | Documentation build |
 
 ## Verification
 
