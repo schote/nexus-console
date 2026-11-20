@@ -13,7 +13,7 @@ flowchart TD
     GRD --> OUT["<b>UnrolledSequence</b>"]
     RF --> OUT
     ADC --> OUT
-    click OUT href "../../reference/interfaces/unrolled_sequence/#console.interfaces.unrolled_sequence.UnrolledSequence" "API reference of UnrolledSequence"
+    click OUT href "../../api_reference/interfaces/unrolled_sequence/#console.interfaces.unrolled_sequence.UnrolledSequence" "API reference of UnrolledSequence"
 ```
 
 ## Replay buffer

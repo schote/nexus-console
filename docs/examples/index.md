@@ -17,4 +17,4 @@ The examples below are complete acquisition scripts from the [`examples/`](https
 | [3D turbo spin-echo](tse_3d.md) | 3D TSE | Image volume and ISMRMRD export |
 | [Remote acquisition](remote_acquisition.md) | 3D TSE | Acquisition via the `nexus` service |
 
-The parameters of all sequence constructors are documented in the API reference under [`utilities.sequences`](../reference/utilities/sequences/tse/tse_3d.md).
+The parameters of all sequence constructors are documented in the API reference under [`utilities.sequences`](../api_reference/utilities/sequences/tse/tse_3d.md).
