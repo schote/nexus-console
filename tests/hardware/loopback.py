@@ -12,13 +12,13 @@ With -v (verbose), the values of all channels are printed and the recorded signa
 
 Evaluation
 ----------
-Each channel is compared to a model of the TX -> RX chain:
+Each channel is compared to a model of the DAC -> ADC transfer function:
 
-    model(t) = gain * chain(replayed)(t) + offset
+    model(t) = gain * transfer(replayed)(t) + offset
 
-where `replayed` is the unrolled sequence from the SequenceProvider and `chain` applies the sample-and-hold of the DAC,
-a 2nd-order low-pass (analog bandwidth) and a delay. The parameters are fitted to the measurement `recorded` by least
-squares: the low-pass on the RF channel (applied to all channels), gain, delay and offset per channel.
+where `replayed` is the unrolled sequence from the SequenceProvider and `transfer` applies the sample-and-hold of the
+DAC, a 2nd-order low-pass (analog bandwidth) and a delay. The parameters are fitted to the measurement `recorded` by
+least squares: the low-pass on the RF channel (applied to all channels), gain, delay and offset per channel.
 The error is the deviation of the averaged recording from the model.
 Unless stated otherwise, all metrics in % are relative to the designed peak amplitude of the channel.
 
@@ -312,27 +312,71 @@ def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gate
 MAX_DELAY = 32  # Max. delay in samples searched by the correlation which provides the start value of the fit
 
 
-def chain_response(freq: np.ndarray, delay: float, corner: float, quality: float) -> np.ndarray:
-    """Return the frequency response of the DAC -> ADC chain, normalized to 1 at DC.
+def transfer_function(freq: np.ndarray, delay: float, corner: float, quality: float) -> np.ndarray:
+    """Return the DAC -> ADC transfer function, normalized to 1 at DC.
 
     Product of the sample-and-hold of the DAC (sinc, half a sample delay), a 2nd-order low-pass (`corner`, `quality`)
-    and a delay (`delay`, excluding the sample-and-hold). Frequencies in cycles per sample, delays in samples.
+    and a delay (`delay`, excluding the sample-and-hold).
+
+    Parameters
+    ----------
+    freq
+        Frequencies in cycles per sample, i.e. normalized to the sampling rate (0.5 is the Nyquist frequency).
+    delay
+        Delay in samples, excluding the half sample of the sample-and-hold. Can be fractional.
+    corner
+        Corner frequency of the low-pass in cycles per sample, i.e. its natural (undamped) frequency.
+        Equals the -3 dB bandwidth only for a Butterworth low-pass, see `bandwidth`.
+    quality
+        Quality factor of the low-pass: 0.5 is critically damped, 1/sqrt(2) is Butterworth (maximally flat),
+        higher values cause a resonance peak at the corner frequency and overshoot in the step response.
+
+    Returns
+    -------
+        Complex frequency response at `freq`.
     """
     s = 1j * freq / corner
     return np.sinc(freq) * np.exp(-2j * pi * freq * (delay + 0.5)) / (1 + s / quality + s ** 2)
 
 
 def bandwidth(corner: float, quality: float) -> float:
-    """Return the -3 dB bandwidth of the chain in cycles per sample, at most the Nyquist frequency (0.5)."""
+    """Return the -3 dB bandwidth of the transfer function in cycles per sample, at most the Nyquist frequency (0.5).
+
+    Includes the sample-and-hold of the DAC, the delay does not affect the magnitude.
+
+    Parameters
+    ----------
+    corner
+        Corner frequency of the low-pass in cycles per sample, see `transfer_function`.
+    quality
+        Quality factor of the low-pass, see `transfer_function`.
+
+    Returns
+    -------
+        First frequency at which the magnitude drops below 1/sqrt(2), in cycles per sample (resolution 1e-4).
+    """
     freq = np.linspace(0, 0.5, 5001)
-    below = np.flatnonzero(np.abs(chain_response(freq, 0, corner, quality)) < np.sqrt(0.5))
+    below = np.flatnonzero(np.abs(transfer_function(freq, 0, corner, quality)) < np.sqrt(0.5))
     return float(freq[below[0]]) if below.size else 0.5
 
 
 def latency(delay: float, corner: float, quality: float) -> float:
-    """Return the total delay of the chain at low frequencies in samples.
+    """Return the total delay of the transfer function at low frequencies in samples.
 
     Sum of the delay, half a sample of the sample-and-hold and the group delay of the low-pass at DC.
+
+    Parameters
+    ----------
+    delay
+        Delay in samples, excluding the half sample of the sample-and-hold, see `transfer_function`.
+    corner
+        Corner frequency of the low-pass in cycles per sample, see `transfer_function`.
+    quality
+        Quality factor of the low-pass, see `transfer_function`.
+
+    Returns
+    -------
+        Total delay in samples.
     """
     return delay + 0.5 + 1 / (2 * pi * corner * quality)
 
@@ -340,12 +384,12 @@ def latency(delay: float, corner: float, quality: float) -> float:
 def fit_channel(
     replayed: np.ndarray, recorded: np.ndarray, index: np.ndarray, lowpass: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Fit recorded = gain * chain(replayed) + offset.
+    """Fit recorded = gain * transfer(replayed) + offset.
 
-    Return the chain parameters (delay, corner, quality), gain and offset, and the fitted model.
-    The chain (`chain_response`) is applied to the replayed sequence in the frequency domain,
+    Return the transfer parameters (delay, corner, quality), gain and offset, and the fitted model.
+    The transfer function (`transfer_function`) is applied to the replayed sequence in the frequency domain,
     the model is evaluated at the recorded samples (`index`).
-    For a given chain, gain and offset follow from linear least squares.
+    For given transfer parameters, gain and offset follow from linear least squares.
     Delay and low-pass are fitted by nonlinear least squares, a given `lowpass` (corner, quality) is kept fixed.
     The fit starts at the whole-sample delay of max. correlation, otherwise a shift by several samples would end
     in a wrong period of the RF carrier.
@@ -355,12 +399,12 @@ def fit_channel(
     start = lags[np.argmax([recorded @ replayed[index - lag] for lag in lags])]
 
     def model(params: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Return chain parameters, gain and offset, and the model for the fitted parameters."""
-        chain = np.array([params[0], *(params[1:] if lowpass is None else lowpass)])
-        waveform = np.fft.irfft(spectrum * chain_response(freq, *chain), replayed.size)[index]
+        """Return transfer parameters, gain and offset, and the model for the fitted parameters."""
+        transfer_params = np.array([params[0], *(params[1:] if lowpass is None else lowpass)])
+        waveform = np.fft.irfft(spectrum * transfer_function(freq, *transfer_params), replayed.size)[index]
         design = np.column_stack([waveform, np.ones_like(waveform)])
         coefficients = np.linalg.lstsq(design, recorded)[0]
-        return chain, coefficients, design @ coefficients
+        return transfer_params, coefficients, design @ coefficients
 
     def residual(params: np.ndarray) -> np.ndarray:
         return model(params)[2] - recorded
@@ -374,29 +418,31 @@ def fit_channel(
 
 def analyze(measurement: Measurement) -> tuple[dict[Tolerance, np.ndarray], np.ndarray]:
     """Evaluate all TOLERANCES per channel, return the values (NaN if not evaluated) and the fitted model."""
-    m = measurement
-    mean, spread = m.recorded.mean(axis=0), m.recorded.std(axis=0, ddof=1)
+    mean = measurement.recorded.mean(axis=0)
+    spread = measurement.recorded.std(axis=0, ddof=1)
     values = {tolerance: np.full(4, np.nan) for tolerance in TOLERANCES}
     model = np.empty_like(mean)
     lowpass: np.ndarray | None = None  # Fitted on the RF channel, the gradient waveforms carry no information on it
     rf_delay = 0.
     for ch in range(4):
-        chain, (gain, offset), model[ch] = fit_channel(m.replayed[ch], mean[ch], m.index, lowpass)
+        transfer_params, (gain, offset), model[ch] = fit_channel(
+            measurement.replayed[ch], mean[ch], measurement.index, lowpass,
+        )
         values[GAIN_ERROR][ch] = gain - 1
-        values[OFFSET][ch] = offset / m.output_limits[ch]
+        values[OFFSET][ch] = offset / measurement.output_limits[ch]
         if ch == 0:  # Bandwidth and latency are precise on the RF channel only (carrier and steps)
-            lowpass, rf_delay = chain[1:], chain[0]
+            lowpass, rf_delay = transfer_params[1:], transfer_params[0]
             values[BANDWIDTH][ch] = bandwidth(*lowpass) * SAMPLING_RATE  # Cycles per sample -> MHz
-            values[LATENCY][ch] = latency(*chain)
+            values[LATENCY][ch] = latency(*transfer_params)
         else:  # Same low-pass, the delays are comparable
-            values[CHANNEL_SKEW][ch] = chain[0] - rf_delay
-    empty = m.gate_slices[0]  # Empty ADC gate (build_sequence), the model is the offset
-    noise = m.recorded[..., empty] - model[:, empty]
-    values[NOISE] = np.sqrt(np.mean(noise ** 2, axis=(0, 2))) / m.amplitude
-    error = np.abs(mean - model) / m.amplitude[:, None]
+            values[CHANNEL_SKEW][ch] = transfer_params[0] - rf_delay
+    empty_gate = measurement.gate_slices[0]
+    noise = measurement.recorded[..., empty_gate] - model[:, empty_gate] # Get noise by substracting the fitted offset
+    values[NOISE] = np.sqrt(np.mean(noise ** 2, axis=(0, 2))) / measurement.amplitude # Noise scaled by max. ch. amp.
+    error = np.abs(mean - model) / measurement.amplitude[:, None]
     values[RMS_ERROR] = np.sqrt(np.mean(error ** 2, axis=1))
     values[PEAK_ERROR] = np.amax(error, axis=1)
-    values[REPETITION_SPREAD] = np.amax(spread, axis=1) / m.amplitude
+    values[REPETITION_SPREAD] = np.amax(spread, axis=1) / measurement.amplitude
     return values, model
 
 
