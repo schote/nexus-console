@@ -1,40 +1,18 @@
-"""Hardware loopback test.
+"""Hardware loopback test, requires the measurement cards and is therefore not collected by pytest.
 
-Requires measurement cards, therefore not collected by pytest. Run from the repository root:
+`python tests/hardware/loopback.py [-v] [--save PATH]`
 
-    python tests/hardware/loopback.py [-v]
+The TX card replays a test sequence, the RX card records it through a direct loopback wiring.
+Detailed information about the test for individual ADC gates and channels and a plot can be obtained
+using the verbose flag (`-v`). Providing a path to `--save` saves the recorded data in numpy's `.npz` format.
 
-The test detects the available TX and RX modules and defines its own device configuration.
-The loopback wiring is printed and requires confirmation.
-A test sequence with different events is replayed by the TX module and recorded by the RX module.
-The result shows the worst value of all channels per metric, copy it into the pull request.
-With -v (verbose), the values of all channels are printed and the recorded signals and errors are plotted.
+Each channel is fitted by the sampled impulse response of the DAC -> ADC path (a short FIR) applied to the replayed
+sequence:
+    model[k] = sum_j impulse_response[j] * replayed[index[k] - lags[j]] + offset
 
-Evaluation
-----------
-Each channel is compared to a model of the DAC -> ADC transfer function:
-
-    model(t) = gain * transfer(replayed)(t) + offset
-
-where `replayed` is the unrolled sequence from the SequenceProvider and `transfer` applies the sample-and-hold of the
-DAC, a 2nd-order low-pass (analog bandwidth) and a delay. The parameters are fitted to the measurement `recorded` by
-least squares: the low-pass on the RF channel (applied to all channels), gain, delay and offset per channel.
-The error is the deviation of the averaged recording from the model.
-Unless stated otherwise, all metrics in % are relative to the designed peak amplitude of the channel.
-
-Metrics used for the loopback test:
-
-    Gain error          Relative deviation of the fitted gain (gain 1.0 corresponds to no gain error)
-    Bandwidth           -3 dB bandwidth of the fitted low-pass in MHz
-    Offset              Relative output offset of the channel
-    Latency             Fitted delay of the RF channel relative to the ADC gate in samples
-    Channel skew        Fitted delay of the gradient channels minus fitted delay of the RF channel in samples.
-    Noise               RMS of an ADC which only contains noise (after subtracting the offset)
-    RMS error           RMS of the error, i.e. averaged recording vs. model, to detect distortion, scaling or shift
-    Peak error          Max. absolute error to detect local glitches, e.g. single wrong samples.
-    Repetition spread   Max. std. dev. of a sample over all repetitions to detect timing jitter or dropped samples
-
-The test passes if all metrics are within their tolerance, see `TOLERANCES`
+Gain, offset and RF latency follow from the fit, the residual and the repetitions give the error metrics.
+The test passes if all metrics are within `TOLERANCES`.
+Analysis and derivation of the tolerances from the card manuals: docs/system/loopback-test.md.
 """
 import argparse
 import logging
@@ -42,13 +20,13 @@ import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from math import ceil, pi
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Literal
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pypulseq as pp
-from scipy.optimize import least_squares
 from system_info import RX, TX, CardInfo, SystemInfo, system_info
 
 from console.interfaces.acquisition_parameter import AcquisitionParameter
@@ -69,19 +47,17 @@ class Tolerance:
     name: str
     low: float
     high: float
-    unit: str  # "%" (value is a fraction), "samples" or "MHz"
+    unit: str  # "%" (value is a fraction) or "samples"
 
     def format(self, value: float, sign: str = "+") -> str:
         """Format a value in the unit of the tolerance, returns "-" if the value is NaN."""
         if np.isnan(value):
             return "-"
-        return f"{value:{sign}.2%}" if self.unit == "%" else f"{value:{sign}.2f}"
+        return f"{value:{sign}.2%}" if self.unit == "%" else f"{value:{sign}.3f}"
 
     def __str__(self) -> str:
-        """Return the allowed range, e.g. "±0.50%", "-0.50 ±0.25 samples" or "≥ 4.00 MHz"."""
+        """Return the allowed range, e.g. "±0.60%" or "-0.500 ±0.500 samples"."""
         unit = "" if self.unit == "%" else f" {self.unit}"
-        if self.high == np.inf:
-            return f"≥ {self.format(self.low, '')}{unit}"
         center, width = (self.high + self.low) / 2, (self.high - self.low) / 2
         return f"{self.format(center) + ' ' if center else ''}±{self.format(width, '')}{unit}"
 
@@ -95,22 +71,20 @@ def within(name: str, limit: float, unit: str) -> Tolerance:
     return Tolerance(name, -limit, limit, unit)
 
 
-GAIN_ERROR = within("Gain error", 0.01, "%")
-BANDWIDTH = Tolerance("Bandwidth", 4.0, np.inf, "MHz")
-OFFSET = within("Offset", 0.005, "%")
-LATENCY = Tolerance("Latency", -0.75, -0.25, "samples")
-CHANNEL_SKEW = within("Channel skew", 0.25, "samples")
-NOISE = within("Noise", 0.005, "%")
-RMS_ERROR = within("RMS error", 0.005, "%")
-PEAK_ERROR = within("Peak error", 0.02, "%")
-REPETITION_SPREAD = within("Repetition spread", 0.005, "%")
-TOLERANCES = (GAIN_ERROR, BANDWIDTH, OFFSET, LATENCY, CHANNEL_SKEW, NOISE, RMS_ERROR, PEAK_ERROR, REPETITION_SPREAD)
+# Derived from the card manuals, see docs/system/loopback-test.md (Tolerances).
+GAIN_ERROR = within("Gain error", 0.006, "%")
+OFFSET = within("Offset", 0.006, "%")
+RF_LATENCY = Tolerance("RF latency", -1.0, 0.0, "samples")
+NOISE = within("Noise", 0.001, "%")
+RMS_ERROR = within("RMS error", 0.001, "%")
+PEAK_ERROR = within("Peak error", 0.003, "%")
+REPETITION_SPREAD = within("Repetition spread", 0.0025, "%")
+TOLERANCES = (GAIN_ERROR, OFFSET, RF_LATENCY, NOISE, RMS_ERROR, PEAK_ERROR, REPETITION_SPREAD)
 
 # =====================================================================================================================
 # Device configuration
 # =====================================================================================================================
-# The test uses its own device configuration and enabled 4 transmit and receive channels.
-# Device paths and total number of available channels are automatically obtained from the detected cards.
+# Own device configuration with 4 TX and RX channels, device paths and channel count from the detected cards.
 
 SAMPLING_RATE = 20  # Sampling rate of TX and RX in MHz
 RANGE: Literal[200] = 200  # TX output and RX input range of channels 0-3 in mV (smallest RX range)
@@ -143,7 +117,7 @@ def device_config(tx: CardInfo, rx: CardInfo) -> NexusConfiguration:
             device_path=tx.path,
             sampling_rate=SAMPLING_RATE,
             channel_max_amplitude=(RANGE,) * 4,
-            channel_filter_type=(0,) * 4,  # Output filters would delay the waveforms
+            channel_filter_type=(0,) * 4,  # Widest output filter
             rf_terminated_50ohm=True,
             gradients_terminated_50ohm=True,
             gradient_efficiency=GRADIENT_EFFICIENCY,
@@ -160,7 +134,7 @@ def device_config(tx: CardInfo, rx: CardInfo) -> NexusConfiguration:
         ),
         SystemLimits=SystemLimits(
             max_grad=1e5,  # Hz/m, gradients of the test sequence are below 1e4 Hz/m
-            max_slew=1e10,  # Hz/m/s, steps of the channel skew pulse within one gradient raster time
+            max_slew=1e8,  # Hz/m/s, gradients of the test sequence are below 6e7 Hz/m/s
             rf_dead_time=20e-6,
             rf_ringdown_time=30e-6,
             adc_dead_time=75e-6,
@@ -186,12 +160,11 @@ Required wiring (RF and gradient amplifiers off/disconnected):
     TX X1  (ADC gate)        -> RX X1
     TX X2  (phase reference) -> RX X2
     RX Clk Out               -> TX Clk In
-    TX X3  (RF unblanking)   -> not connected
+    TX X3  (RF unblanking)   -> unconnected
 """
 CHANNELS = ("ch0 (RF)", "ch1 (Gx)", "ch2 (Gy)", "ch3 (Gz)")
 
 RAMP = 200e-6  # Gradient ramp time in s
-SKEW_PULSE = 20e-6  # Duration of each polarity of the bipolar pulse for the channel skew in s
 RF_DURATION = 200e-6  # RF pulse duration in s
 RF_AMP = 1 / RF_DURATION  # Peak RF amplitude in Hz, pypulseq magnitude of a 2 pi block pulse
 ADC_DWELL = 10e-6  # ADC dwell time in s
@@ -199,16 +172,7 @@ NUM_AVERAGES = 10
 
 
 def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Sequence:
-    """Construct the test sequence, each test case is a block with an ADC covering it, preceded by a delay block.
-
-    ADC gates:
-        0. Empty: no output, but ADC gate and phase reference active (noise and crosstalk)
-        1. Gradients: one gradient type per channel, shape and sign differ to detect swapped channels
-        2. Channel skew: bipolar pulse on all gradient channels (steps size within one gradient raster time).
-           The delay fit is weighted by the squared slope, the pulse is used to determine the delay of
-           the gradient channels.
-        3. All event types in parallel
-    """
+    """Return the test sequence: ADC gates 0. empty, 1. gradients, 2. RF and gradients, each after a 1 ms delay."""
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "loopback")
 
@@ -229,16 +193,8 @@ def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Seque
             amplitudes=gz_amp * np.array([0, .5, 1, -.5, 0]), system=system,
         ),
     )
-    step = system.grad_raster_time
-    skew_times = RAMP + np.cumsum([0., step, SKEW_PULSE, 2 * step, SKEW_PULSE, step])  # Middle step from +1 to -1
-    skew_pulses = [
-        pp.make_extended_trapezoid(axis, times=skew_times, amplitudes=amp * np.array([0, 1, 1, -1, -1, 0]),
-                                   system=system)
-        for axis, amp in zip("xyz", gradient_amplitudes, strict=True)
-    ]
     add(pp.make_delay(4 * RAMP))
     add(*gradients)
-    add(*skew_pulses, pp.make_delay(skew_times[-1] + SKEW_PULSE))  # Recording continues after the last step
     add(pp.make_block_pulse(2 * pi, duration=RF_DURATION, delay=RAMP, system=system), *gradients)
     return seq
 
@@ -268,6 +224,21 @@ class Measurement:
         """Position of each ADC gate in the concatenated recording."""
         stops = np.cumsum([stop - start for start, stop in self.gates]).tolist()
         return [slice(start, stop) for start, stop in zip([0, *stops[:-1]], stops, strict=True)]
+
+    def save(self, path: Path, system: str = "") -> None:
+        """Save the measurement and a description of the system to a compressed .npz file for offline analysis."""
+        np.savez_compressed(
+            path, replayed=self.replayed, recorded=self.recorded, index=self.index, gates=np.array(self.gates),
+            output_limits=self.output_limits, num_recorded=self.num_recorded, system=system,
+        )
+
+    @classmethod
+    def load(cls, path: Path) -> "Measurement":
+        """Load a measurement saved with `save`, e.g. `analyze(Measurement.load(path))`."""
+        with np.load(path) as data:
+            gates = [(int(start), int(stop)) for start, stop in data["gates"]]
+            return cls(data["replayed"], data["recorded"], data["index"], gates, data["output_limits"],
+                       int(data["num_recorded"]))
 
 
 def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gates: int) -> Measurement:
@@ -309,111 +280,24 @@ def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gate
 # =====================================================================================================================
 # Analysis
 # =====================================================================================================================
-MAX_DELAY = 32  # Max. delay in samples searched by the correlation which provides the start value of the fit
-
-
-def transfer_function(freq: np.ndarray, delay: float, corner: float, quality: float) -> np.ndarray:
-    """Return the DAC -> ADC transfer function, normalized to 1 at DC.
-
-    Product of the sample-and-hold of the DAC (sinc, half a sample delay), a 2nd-order low-pass (`corner`, `quality`)
-    and a delay (`delay`, excluding the sample-and-hold).
-
-    Parameters
-    ----------
-    freq
-        Frequencies in cycles per sample, i.e. normalized to the sampling rate (0.5 is the Nyquist frequency).
-    delay
-        Delay in samples, excluding the half sample of the sample-and-hold. Can be fractional.
-    corner
-        Corner frequency of the low-pass in cycles per sample, i.e. its natural (undamped) frequency.
-        Equals the -3 dB bandwidth only for a Butterworth low-pass, see `bandwidth`.
-    quality
-        Quality factor of the low-pass: 0.5 is critically damped, 1/sqrt(2) is Butterworth (maximally flat),
-        higher values cause a resonance peak at the corner frequency and overshoot in the step response.
-
-    Returns
-    -------
-        Complex frequency response at `freq`.
-    """
-    s = 1j * freq / corner
-    return np.sinc(freq) * np.exp(-2j * pi * freq * (delay + 0.5)) / (1 + s / quality + s ** 2)
-
-
-def bandwidth(corner: float, quality: float) -> float:
-    """Return the -3 dB bandwidth of the transfer function in cycles per sample, at most the Nyquist frequency (0.5).
-
-    Includes the sample-and-hold of the DAC, the delay does not affect the magnitude.
-
-    Parameters
-    ----------
-    corner
-        Corner frequency of the low-pass in cycles per sample, see `transfer_function`.
-    quality
-        Quality factor of the low-pass, see `transfer_function`.
-
-    Returns
-    -------
-        First frequency at which the magnitude drops below 1/sqrt(2), in cycles per sample (resolution 1e-4).
-    """
-    freq = np.linspace(0, 0.5, 5001)
-    below = np.flatnonzero(np.abs(transfer_function(freq, 0, corner, quality)) < np.sqrt(0.5))
-    return float(freq[below[0]]) if below.size else 0.5
-
-
-def latency(delay: float, corner: float, quality: float) -> float:
-    """Return the total delay of the transfer function at low frequencies in samples.
-
-    Sum of the delay, half a sample of the sample-and-hold and the group delay of the low-pass at DC.
-
-    Parameters
-    ----------
-    delay
-        Delay in samples, excluding the half sample of the sample-and-hold, see `transfer_function`.
-    corner
-        Corner frequency of the low-pass in cycles per sample, see `transfer_function`.
-    quality
-        Quality factor of the low-pass, see `transfer_function`.
-
-    Returns
-    -------
-        Total delay in samples.
-    """
-    return delay + 0.5 + 1 / (2 * pi * corner * quality)
+MAX_DELAY = 32  # Max. delay in samples searched by the correlation which places the impulse response
+RESPONSE_HALF_WIDTH = 3  # Samples of the impulse response before and after its center
 
 
 def fit_channel(
-    replayed: np.ndarray, recorded: np.ndarray, index: np.ndarray, lowpass: np.ndarray | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Fit recorded = gain * transfer(replayed) + offset.
+    replayed: np.ndarray, recorded: np.ndarray, index: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, float, np.ndarray]:
+    """Fit recorded[k] = sum_j impulse_response[j] * replayed[index[k] - lags[j]] + offset by linear least squares.
 
-    Return the transfer parameters (delay, corner, quality), gain and offset, and the fitted model.
-    The transfer function (`transfer_function`) is applied to the replayed sequence in the frequency domain,
-    the model is evaluated at the recorded samples (`index`).
-    For given transfer parameters, gain and offset follow from linear least squares.
-    Delay and low-pass are fitted by nonlinear least squares, a given `lowpass` (corner, quality) is kept fixed.
-    The fit starts at the whole-sample delay of max. correlation, otherwise a shift by several samples would end
-    in a wrong period of the RF carrier.
+    The impulse response is centered at the delay of max. correlation.
+    Return lags, impulse response, offset and the fitted model.
     """
-    spectrum, freq = np.fft.rfft(replayed), np.fft.rfftfreq(replayed.size)
-    lags = np.arange(-MAX_DELAY, MAX_DELAY + 1)
-    start = lags[np.argmax([recorded @ replayed[index - lag] for lag in lags])]
-
-    def model(params: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Return transfer parameters, gain and offset, and the model for the fitted parameters."""
-        transfer_params = np.array([params[0], *(params[1:] if lowpass is None else lowpass)])
-        waveform = np.fft.irfft(spectrum * transfer_function(freq, *transfer_params), replayed.size)[index]
-        design = np.column_stack([waveform, np.ones_like(waveform)])
-        coefficients = np.linalg.lstsq(design, recorded)[0]
-        return transfer_params, coefficients, design @ coefficients
-
-    def residual(params: np.ndarray) -> np.ndarray:
-        return model(params)[2] - recorded
-
-    if lowpass is None:  # Fit delay and low-pass, starting at a Butterworth low-pass at 0.3 times the sampling rate
-        result = least_squares(residual, [start, 0.3, 0.7], bounds=([-np.inf, 0.02, 0.1], [np.inf, np.inf, 3]))
-    else:  # Fit the delay only
-        result = least_squares(residual, [start])
-    return model(result.x)
+    search = np.arange(-MAX_DELAY, MAX_DELAY + 1)
+    start = search[np.argmax([recorded @ replayed[index - lag] for lag in search])]
+    lags = start + np.arange(-RESPONSE_HALF_WIDTH, RESPONSE_HALF_WIDTH + 1)
+    design = np.column_stack([*(replayed[index - lag] for lag in lags), np.ones(index.size)])
+    coefficients = np.linalg.lstsq(design, recorded)[0]
+    return lags, coefficients[:-1], float(coefficients[-1]), design @ coefficients
 
 
 def analyze(measurement: Measurement) -> tuple[dict[Tolerance, np.ndarray], np.ndarray]:
@@ -422,23 +306,16 @@ def analyze(measurement: Measurement) -> tuple[dict[Tolerance, np.ndarray], np.n
     spread = measurement.recorded.std(axis=0, ddof=1)
     values = {tolerance: np.full(4, np.nan) for tolerance in TOLERANCES}
     model = np.empty_like(mean)
-    lowpass: np.ndarray | None = None  # Fitted on the RF channel, the gradient waveforms carry no information on it
-    rf_delay = 0.
     for ch in range(4):
-        transfer_params, (gain, offset), model[ch] = fit_channel(
-            measurement.replayed[ch], mean[ch], measurement.index, lowpass,
-        )
+        lags, impulse_response, offset, model[ch] = fit_channel(measurement.replayed[ch], mean[ch], measurement.index)
+        gain = impulse_response.sum()  # Response at DC
         values[GAIN_ERROR][ch] = gain - 1
         values[OFFSET][ch] = offset / measurement.output_limits[ch]
-        if ch == 0:  # Bandwidth and latency are precise on the RF channel only (carrier and steps)
-            lowpass, rf_delay = transfer_params[1:], transfer_params[0]
-            values[BANDWIDTH][ch] = bandwidth(*lowpass) * SAMPLING_RATE  # Cycles per sample -> MHz
-            values[LATENCY][ch] = latency(*transfer_params)
-        else:  # Same low-pass, the delays are comparable
-            values[CHANNEL_SKEW][ch] = transfer_params[0] - rf_delay
+        if ch == 0:  # Centroid of the impulse response: group delay at low frequencies
+            values[RF_LATENCY][0] = lags @ impulse_response / gain
     empty_gate = measurement.gate_slices[0]
-    noise = measurement.recorded[..., empty_gate] - model[:, empty_gate] # Get noise by substracting the fitted offset
-    values[NOISE] = np.sqrt(np.mean(noise ** 2, axis=(0, 2))) / measurement.amplitude # Noise scaled by max. ch. amp.
+    noise = measurement.recorded[..., empty_gate] - model[:, empty_gate]  # Model of the empty gate is the offset
+    values[NOISE] = np.sqrt(np.mean(noise ** 2, axis=(0, 2))) / measurement.amplitude
     error = np.abs(mean - model) / measurement.amplitude[:, None]
     values[RMS_ERROR] = np.sqrt(np.mean(error ** 2, axis=1))
     values[PEAK_ERROR] = np.amax(error, axis=1)
@@ -468,10 +345,7 @@ def print_details(values: dict[Tolerance, np.ndarray], measurement: Measurement)
 
 
 def print_gates(measurement: Measurement, model: np.ndarray) -> None:
-    """Print RMS and peak error per ADC gate and channel, mean ± standard deviation of the repetitions.
-
-    Unlike the test values, the error is evaluated for each repetition and therefore includes its noise.
-    """
+    """Print RMS and peak error per ADC gate and channel of single repetitions (including noise), mean ± std. dev."""
     error = np.abs(measurement.recorded - model) / measurement.amplitude[:, None]  # (repetitions, 4, samples)
     gates = measurement.gate_slices
     metrics = {  # (gates, repetitions, 4)
@@ -510,13 +384,7 @@ def print_summary(values: dict[Tolerance, np.ndarray], measurement: Measurement,
 
 
 def plot_signals(measurement: Measurement, model: np.ndarray, dwell_time: float) -> None:
-    """Plot the calculated and recorded waveforms and the error for each channel.
-
-    Two axis per channel:
-        1. Signals in mV (replayed, mean recording +/- standard deviation of the repetitions)
-        2. Residual (mean recording - fitted model) +/- standard error of the mean (noise) in % of the channel
-           amplitude: where the residual leaves the noise band, the model does not fit.
-    """
+    """Plot replayed and recorded signals and the residual (recording - model) with its noise band per channel."""
     m = measurement
     mean, spread = m.recorded.mean(axis=0), m.recorded.std(axis=0, ddof=1)
     noise = spread / np.sqrt(m.recorded.shape[0])  # Standard error of the mean
@@ -569,6 +437,12 @@ def main() -> None:
         action="store_true",
         help="Print the values of all channels and plot the measured signals and errors.",
     )
+    parser.add_argument(
+        "--save",
+        type=Path,
+        metavar="PATH",
+        help="Save the measurement to a .npz file for offline analysis, load it with Measurement.load(PATH).",
+    )
     args = parser.parse_args()
 
     print(WIRING)
@@ -604,6 +478,9 @@ def main() -> None:
         raise SystemExit(msg)
 
     measurement = load_measurement(unrolled, data.receive_data, len(adc_blocks))
+    if args.save:
+        measurement.save(args.save, str(system))
+        print(f"Measurement saved to {args.save.resolve()}")
     values, model = analyze(measurement)
     if args.verbose:
         print_details(values, measurement)
