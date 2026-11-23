@@ -22,11 +22,11 @@ The four analog outputs of the AWG are connected directly to four analog inputs 
 !!! warning
     Switch off or disconnect any amplifiers before you change the wiring. Restore the default wiring of the cards, amplifiers and coils before the next MRI measurement.
 
-To execute the loopback test, run the following command from the repository root. The options and the result are described in [Test result](#test-result), the module itself in the [API reference](../api_reference/hardware_tests/loopback.md).
+To execute the loopback test, run the following command from the repository root. A detailed module description can be found in the [API reference](../api_reference/hardware_tests/loopback.md). The script prints the required wiring and waits for confirmation before the cards are started.
+
 ```
 python tests/hardware/loopback.py
 ```
-The script prints the required wiring and waits for confirmation before the cards are started. After the acquisition, it prints the result and exits with code 0 if the test passed and 1 if it failed.
 
 | Option | Description |
 |---|---|
@@ -45,18 +45,18 @@ Each ADC gate starts 75 µs after the start of its block (`adc_dead_time`) and l
 | Block | ADC | Events | Purpose |
 |---|---|---|---|
 | 1 | – | Delay, 1 ms | Separates the test cases, so that each block starts from a settled, zero output |
-| 2 | 0 | Delay, 800 µs | Empty gate: ADC gate and phase reference are active, the analog outputs are zero. Measures noise, offset and crosstalk of the digital signals |
+| 2 | 0 | Delay, 800 µs | Empty ADC gate: The analog outputs are zero, measures noise and offset |
 | 3 | – | Delay, 1 ms | Separation |
-| 4 | 1 | Gx: trapezoid<br>Gy: negative sin² shape<br>Gz: piecewise linear | Gain, offset and distortion of the gradient channels. The shape and sign differ per channel, so swapped channels are detected |
+| 4 | 1 | Gx: trapezoid<br>Gy: neg. sin² shape<br>Gz: piecewise linear | Gain, offset and distortion of the gradient channels, the shape and sign differ per channel to detect mix-ups |
 | 5 | – | Delay, 1 ms | Separation |
-| 6 | 2 | 200 µs block pulse (flip angle 2π) with a 2 MHz carrier, together with the gradients of block 4 | All event types in parallel, including the RF unblanking. The carrier and the steep pulse edges determine the response and latency of the RF channel, crosstalk between RF and gradients shows up in the residual |
+| 6 | 2 | 200 µs RF block pulse (f0 = 2 MHz) + gradients of block 4 | All event types in parallel. The carrier and the steep pulse edges determine the response and latency of the RF channel, crosstalk between RF and gradients shows up in the residual |
 
 ### Device configuration
 
 The test defines its own device configuration in [`device_config`][loopback.device_config] instead of loading a configuration file to simplify the execution and guarantee comparable results on different systems. Only the device paths and the number of RX channels are taken from the detected cards. The most important differences from `examples/example_device_config.yaml` are:
 
 - 4 transmit channels configured with a maximum output amplitude of 200 mV and termination into 50 ohms
-- Output filter 0 of the transmit channels, the widest filter (70 MHz, 3rd-order Butterworth). The AWG has no unfiltered path, the filter is always located between DAC and output amplifier (M2p.65xx manual, *Output Filters*)
+- Output filter 0 of the transmit channels which yields the widest filter (70 MHz, 3rd-order Butterworth), see M2p.65xx manual, *Output Filters*
 - 4 receive channels enabled and configured with a maximum input amplitude of 200 mV and termination into 50 ohms
 - Different `gpa_gain` and `gradient_efficiency` conversions per channel, but identical gradient amplitudes 
 - 75 us `adc_dead_time`
@@ -100,23 +100,16 @@ flowchart TB
     class SEQ,X,Y,P,M,R iface
 ```
 
-| Step | Description |
-|---|---|
-| Acquisition | The sequence is calculated and replayed by like any other acquisition. The raw data of the digitizer are kept in mV at the full sampling rate. |
-| Fit | A model of the analog signal path is fitted to the mean of the 10 repetitions, separately for each channel (see [Model and fit](#model-and-fit)). |
-| Metrics | The fit parameters, the residual (recording − model) and the variation between the repetitions are used to calculate the metrics (see [Metrics and tolerances](#metrics-and-tolerances)). |
-| Report | For each metric, the channel closest to or farthest beyond a limit is reported. The test passes if all metrics are within their tolerances (see [Test result](#test-result)). |
-
 ## Model and fit
 
 ### Why the data are fitted
 
-Even with flawless hardware, the recorded signal does not equal the replayed signal exactly. The calibrations of AWG and digitizer differ slightly, both cards have a small DC offset, the analog filters smooth the signal, and the signal path delays it slightly. These deviations are expected and specified in the manuals (see [Hardware Documentation](../references.md#hardware-documentation)). A direct comparison of the samples would not distinguish them from actual faults.
+Even with perfect hardware, the recorded signal does not equal the replayed signal exactly. The calibrations of AWG and digitizer differ slightly, both cards have a small DC offset, the analog filters smooth the signal, and the signal path delays it slightly. These deviations are expected and specified in the manuals (see [Hardware Documentation](../references.md#hardware-documentation)). A direct comparison of the samples would not distinguish them from actual faults.
 
-The test therefore fits a model that contains only the expected deviations, and evaluates two things:
+The test therefore fits a model that contains the expected deviations, and evaluates two things:
 
 - **Fit parameters:** the expected deviations must be within the specifications of the cards. This gives the gain error, offset and RF latency.
-- **Residual:** the difference between recording and model contains everything the model cannot explain, such as distortion, crosstalk, glitches, dropped samples or timing jitter. It must stay at the level of the noise.
+- **Residual:** the difference between recording and model contains everything the model cannot cover, such as distortion, crosstalk, glitches, dropped samples or timing jitter. It must stay at a level similar to the noise.
 
 ### Model
 
@@ -167,7 +160,7 @@ The FIR filter has seven coefficients, three on each side of the center. The num
 | Gain error | Σ h<sub>j</sub> − 1 | Calibration mismatch between AWG and digitizer |
 | Offset | c / 200 mV | DC offset of the output or input stage |
 | RF latency | τ, in samples | RF channel shifted relative to the ADC gate |
-| Noise | RMS(single repetitions − model) / A, in gate 0 | Noise of both cards and crosstalk of the digital lines X1 and X2 |
+| Noise | RMS(single repetitions − model) / A, in gate 0 | Noise of both cards |
 | RMS error | RMS(mean − model) / A | Distortion, nonlinearity or crosstalk that affect the whole signal |
 | Peak error | max(abs(mean − model)) / A | Local faults, e.g. a single wrong sample, which barely change the RMS error |
 | Repetition spread | max(std(repetitions)) / A | Timing jitter and dropped samples. Without faults, the spread is close to the noise |
@@ -191,13 +184,13 @@ The tolerances follow from the technical data of the AWG (M2p.65xx) and the digi
 
 | Entry | Content |
 |---|---|
-| Date | Date and time of the test |
+| Time stamp | Date and time of the test |
 | OS, Python | Operating system and Python version of the workstation |
-| nexus-console | Package version, git branch and commit of the tested code. `(uncommitted changes)` indicates that tracked files differ from the commit |
+| Code version | Nexus-console version, git branch and commit of the tested code. `(uncommitted changes)` indicates that tracked files differ from the commit |
 | SPCM driver | Versions of the driver library and the kernel driver |
 | Spectrum cards | Model, function and number of channels of each detected card |
-| Recorded | Number of recorded ADC gates out of the expected number. Missing gates or a wrong number of samples abort the test before the analysis |
-| Table | Worst value of all channels per metric, the tolerance and the result |
+| Recording | Number of recorded ADC gates out of the expected number. Missing gates, a wrong number of samples or a recorded phase reference that does not oscillate at the frequency of the phase reference signal abort the test before the analysis. The phase reference is checked with the magnitude of the same demodulation that the phase correction in `RxData` uses, the threshold detects frequency errors above about 0.4 % |
+| Metrics | Worst value of all channels per metric, the tolerance and the final test result |
 
 
 The result is only meaningful together with the system on which it was obtained. The commit identifies the exact state of the code such that a reviewer can verify that the result belongs to the latest changes of the pull request. The driver version and operating system may affect the operation of the cards. If a result changes between two pull requests, the system information shows whether the code or the system has changed.
