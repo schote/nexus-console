@@ -489,7 +489,7 @@ class SequenceProvider(Sequence):
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
             rf_scaling = b1_scaling * self.rf_to_mvolt * phase_offset / self.rf_out_limit
-            if np.abs(np.amax(envelope_scaled := block.signal * rf_scaling)) > 1:
+            if np.amax(np.abs(envelope_scaled := block.signal * rf_scaling)) > 1:
                 raise ValueError(f"RF magnitude exceeds output limit by {np.amax(envelope_scaled)*100}%.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
