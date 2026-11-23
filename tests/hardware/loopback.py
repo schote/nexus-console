@@ -202,6 +202,9 @@ def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Seque
 # =====================================================================================================================
 # Data extraction
 # =====================================================================================================================
+# pi * abs(mean(ref_demod)) drops < 1 if frequency doesn't match the reference
+REFERENCE_MAGNITUDE_BOUND = 0.9 # corresponds to approx. 0.4 % frequency error
+
 
 @dataclass
 class Measurement:
@@ -264,8 +267,15 @@ def load_measurement(unrolled: UnrolledSequence, rx_data: list[RxData], num_gate
         for rx, (start, stop) in zip(rx_data, gates * num_averages, strict=True):
             if rx.raw_data is None or rx.raw_data.shape[-1] != stop - start:
                 errors.append(f"Gate {rx.index}, repetition {rx.average_index}: incorrect number of samples")
-            elif rx.phase_reference is None or not rx.phase_reference.any():
+            elif rx.phase_reference is None:
                 errors.append(f"Gate {rx.index}, repetition {rx.average_index}: missing phase reference")
+            else:
+                # Demodulation of the phase reference as in RxData.demod_and_phase_data, pi * |mean| is 1 for a
+                # reference signal at the reference frequency and drops to 0.9 for a frequency error of about 0.4 %
+                time = np.arange(rx.phase_reference.size) * rx.dwell_time_raw
+                demod = rx.phase_reference * np.exp(-2j * pi * rx.phase_ref_frequency * time)
+                if pi * abs(demod.mean()) < REFERENCE_MAGNITUDE_BOUND:
+                    errors.append(f"Gate {rx.index}, repetition {rx.average_index}: phase reference frequency error")
     if errors:
         msg = "\n".join(["Invalid ADC gates:", *errors, "\nResult: FAILED"])
         raise SystemExit(msg)
