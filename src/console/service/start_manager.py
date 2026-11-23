@@ -83,7 +83,7 @@ def main() -> None:
     # Setup global acquisition control with argparse arguments
     # global acquisition_control
     acquisition_control = AcquisitionControl(
-        configuration_file=args.device_config,
+        configuration=args.device_config,
         nexus_data_dir=args.sessions_folder,
         console_log_level=logging.INFO,
         file_log_level=logging.INFO
