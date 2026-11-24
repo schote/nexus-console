@@ -60,8 +60,8 @@ class AcquisitionControl:
         Parameters
         ----------
         configuration
-            Path to configuration yaml file which is used to create measurement card and sequence
-            provider instances.
+            Path to a YAML configuration file (str or Path) from which a `NexusConfiguration` is loaded,
+            or a `NexusConfiguration` instance. Used to configure the measurement modules and the sequence provider.
         nexus_data_dir
             Directory to store logs and acquisition data, by default ``<home>/nexus-console``.
             A session subdirectory ``<YYYY-MM-DD>-session`` is created inside.
