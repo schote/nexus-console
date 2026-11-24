@@ -15,7 +15,7 @@ In a first step, we import the `AcquisitionControl` and create an instance of it
 ```python
 from console.spcm_control.acquisition_control import AcquisitionControl
 
-acq = AcquisitionControl(configuration_file="device_config.yaml")
+acq = AcquisitionControl(configuration="device_config.yaml")
 ```
 
 ## Construct a sequence

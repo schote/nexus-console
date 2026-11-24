@@ -10,7 +10,7 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 from console.utilities import sequences
 
 # Create acquisition control instance, adapt the path to the device configuration of your system
-acq = AcquisitionControl(configuration_file="example_device_config.yaml")
+acq = AcquisitionControl(configuration="example_device_config.yaml")
 
 # Construct and plot sequence
 params = {
