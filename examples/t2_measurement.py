@@ -74,6 +74,6 @@ acq_data.add_info({
 })
 acq_data.save()
 
-del acq
+acq.close()
 
 # %%

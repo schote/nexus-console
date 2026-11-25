@@ -1,5 +1,4 @@
 """Implementation of nexus acquisition manager for multiprocessing."""
-import traceback
 from collections.abc import Callable
 from multiprocessing.managers import BaseManager
 from types import TracebackType
@@ -65,8 +64,4 @@ class AcquisitionControlManager(BaseManager):
         # Explicitly remove the proxy references
         if hasattr(self, "acquisition"):
             del self.acquisition
-
-        if exc_type is not None:
-            print(f"An error occurred: {exc_value}")
-            traceback.print_tb(exc_tb)
-        # Returning None propagates exceptions if they occur
+        # Returning None propagates exceptions if they occur, traceback is printed by the caller

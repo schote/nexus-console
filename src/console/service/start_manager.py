@@ -101,7 +101,7 @@ def main() -> None:
         try:
             print("\n[neXus] Shutting down nexus server...\n")
             if acquisition_control:
-                acquisition_control.__del__()
+                acquisition_control.close()
                 print("[neXus] Acquisition control shutdown successfully.")
         except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
             print(f"[neXus] Error during shutdown: {e}")

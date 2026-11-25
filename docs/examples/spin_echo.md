@@ -12,7 +12,7 @@ The constructor [`se_spectrum.constructor`][console.utilities.sequences.spectrom
 2. Construct the sequence, set the calibrated Larmor frequency and $B_1$ scaling.
 3. Unroll the sequence with `set_sequence` and run the acquisition.
 4. Calculate the spectrum from `processed_data`; the frequency axis follows from the dwell time `RxData.dwell_time`.
-5. Store the data with `save()` and disconnect the cards by deleting the instance.
+5. Store the data with `save()` and disconnect the cards with `close()`.
 
 ## Script
 

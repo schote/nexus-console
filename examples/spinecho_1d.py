@@ -50,7 +50,7 @@ acq_data.add_info({
 # Write acquisition data object
 acq_data.save()
 
-# Delete the acquisition control, which disconnects from the measurement cards
-del acq
+# Disconnect from the measurement cards
+acq.close()
 
 # %%

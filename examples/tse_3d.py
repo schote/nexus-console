@@ -81,6 +81,6 @@ acq_data.save()
 # Export to ISMRMRD, using the header returned by the sequence constructor
 acq_data.save_ismrmrd(header=header)
 
-del acq
+acq.close()
 
 # %%

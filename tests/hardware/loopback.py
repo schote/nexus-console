@@ -481,10 +481,7 @@ def main() -> None:
             data = acq.run(store_unprocessed=True)
             unrolled = acq.sequence
         finally:
-            # Disconnect explicitly
-            acq.tx_card.disconnect()
-            acq.rx_card.disconnect()
-            del acq
+            acq.close()
             print("\n(!) NOTE: Restore the default wiring of TX/RX cards, amplifiers and coils before measuring.")
     if unrolled is None:
         msg = "Sequence could not be unrolled."
