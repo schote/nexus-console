@@ -364,7 +364,8 @@ class SequenceProvider(Sequence):
 
             if block.adc is not None:  # ADC event
                 # Calculate the number of samples to be discarded from the decimated signal
-                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell)
+                # A small tolerance value is added to compensate floating point errors
+                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell + 1e-6)
                 # Calculate the total gate duration, given by number of samples
                 # and two times the number of discarded samples for symmetric adc dead time
                 # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
