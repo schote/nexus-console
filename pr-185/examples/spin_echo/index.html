@@ -2883,7 +2883,7 @@
 <li>Construct the sequence, set the calibrated Larmor frequency and <span class="arithmatex">\(B_1\)</span> scaling.</li>
 <li>Unroll the sequence with <code>set_sequence</code> and run the acquisition.</li>
 <li>Calculate the spectrum from <code>processed_data</code>; the frequency axis follows from the dwell time <code>RxData.dwell_time</code>.</li>
-<li>Store the data with <code>save()</code> and disconnect the cards by deleting the instance.</li>
+<li>Store the data with <code>save()</code> and disconnect the cards with <code>close()</code>.</li>
 </ol>
 <h2 id="script">Script</h2>
 <div class="language-python highlight"><span class="filename">examples/spinecho_1d.py</span><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="sd">"""Experiment to acquire a spin echo spectrum."""</span>
@@ -2938,8 +2938,8 @@
 </span><span id="__span-0-50"><a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="c1"># Write acquisition data object</span>
 </span><span id="__span-0-51"><a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a><span class="n">acq_data</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </span><span id="__span-0-52"><a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>
-</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="c1"># Delete the acquisition control, which disconnects from the measurement cards</span>
-</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="k">del</span> <span class="n">acq</span>
+</span><span id="__span-0-53"><a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a><span class="c1"># Disconnect from the measurement cards</span>
+</span><span id="__span-0-54"><a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="n">acq</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </span><span id="__span-0-55"><a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>
 </span><span id="__span-0-56"><a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a><span class="c1"># %%</span>
 </span></code></pre></div>

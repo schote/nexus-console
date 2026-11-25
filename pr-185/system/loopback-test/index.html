@@ -3276,7 +3276,7 @@ The four analog outputs of the AWG are connected directly to four analog inputs 
 </table>
 <h2 id="test-setup">Test setup</h2>
 <h3 id="sequence">Sequence</h3>
-<p><a class="autorefs autorefs-internal" title="build_sequence" href="../../api_reference/hardware_tests/loopback/#loopback.build_sequence"><code>build_sequence</code></a> creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block.
+<p><a class="autorefs autorefs-internal" title="build_sequence" href="../../api_reference/hardware_tests/loopback/#loopback.build_sequence"><code>build_sequence</code></a> creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block. A final delay block follows the last test case.
 All analog waveforms have a peak amplitude of 160 mV, which is 80 % of the configured 200 mV channel range.
 Each ADC gate starts 75 µs after the start of its block (<code>adc_dead_time</code>) and lasts until the end of the block's events.</p>
 <table>
@@ -3324,6 +3324,12 @@ Each ADC gate starts 75 µs after the start of its block (<code>adc_dead_time</c
 <td>2</td>
 <td>200 µs RF block pulse (f0 = 2 MHz) + gradients of block 4</td>
 <td>All event types in parallel. The carrier and the steep pulse edges determine the response and latency of the RF channel, crosstalk between RF and gradients shows up in the residual</td>
+</tr>
+<tr>
+<td>7</td>
+<td>–</td>
+<td>Delay, 1 ms</td>
+<td>Zero output after the last gate, to ensure enough samples for the fit after each gate</td>
 </tr>
 </tbody>
 </table>

@@ -2966,7 +2966,7 @@ One specific object can be selected from the list of acquired <code>RxData</code
 The acquired complex-valued signal is stored in the <code>processed_data</code> attribute.
 <code>save()</code> stores the <code>AcquisitionData</code>, the metadata and the sequence.
 Using <code>save_ismrmrd()</code>, the <code>AcquisitionData</code> can be stored in ISMRMRD format.
-To close the card connection, delete the <code>AcquisitionControl</code> instance.</p>
+To close the card connection, call <code>close()</code> on the <code>AcquisitionControl</code> instance.</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">rx_data</span> <span class="o">=</span> <span class="n">acq_data</span><span class="o">.</span><span class="n">receive_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>           <span class="c1"># first ADC event of the first average</span>
 </span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">signal</span> <span class="o">=</span> <span class="n">rx_data</span><span class="o">.</span><span class="n">processed_data</span>              <span class="c1"># complex, shape (channels, samples)</span>
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">acq_data</span><span class="o">.</span><span class="n">add_info</span><span class="p">({</span><span class="s2">"note"</span><span class="p">:</span> <span class="s2">"first acquisition"</span><span class="p">})</span>
@@ -2974,9 +2974,9 @@ To close the card connection, delete the <code>AcquisitionControl</code> instanc
 </span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="n">acq_data</span><span class="o">.</span><span class="n">save_ismrmrd</span><span class="p">()</span>                      <span class="c1"># ISMRMRD file</span>
 </span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
 </span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Disconnect from the cards</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="k">del</span> <span class="n">acq</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="n">acq</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </span></code></pre></div>
-<p>Instead of manually creating and deleting the <code>AcquisitionControl</code> in the experiment script, the cards can be operated by a persistent service (see <a href="../nexus-service/">Acquisition service</a>). Complete experiments are given in the <a href="../../examples/">Examples</a>.</p>
+<p>Instead of manually creating and closing the <code>AcquisitionControl</code> in the experiment script, the cards can be operated by a persistent service (see <a href="../nexus-service/">Acquisition service</a>). Complete experiments are given in the <a href="../../examples/">Examples</a>.</p>
 
 
 
