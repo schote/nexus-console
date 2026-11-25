@@ -38,7 +38,7 @@ python tests/hardware/loopback.py
 
 ### Sequence
 
-[`build_sequence`][loopback.build_sequence] creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block.
+[`build_sequence`][loopback.build_sequence] creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block. A final delay block follows the last test case.
 All analog waveforms have a peak amplitude of 160 mV, which is 80 % of the configured 200 mV channel range.
 Each ADC gate starts 75 µs after the start of its block (`adc_dead_time`) and lasts until the end of the block's events.
 
@@ -50,6 +50,7 @@ Each ADC gate starts 75 µs after the start of its block (`adc_dead_time`) and l
 | 4 | 1 | Gx: trapezoid<br>Gy: neg. sin² shape<br>Gz: piecewise linear | Gain, offset and distortion of the gradient channels, the shape and sign differ per channel to detect mix-ups |
 | 5 | – | Delay, 1 ms | Separation |
 | 6 | 2 | 200 µs RF block pulse (f0 = 2 MHz) + gradients of block 4 | All event types in parallel. The carrier and the steep pulse edges determine the response and latency of the RF channel, crosstalk between RF and gradients shows up in the residual |
+| 7 | – | Delay, 1 ms | Zero output after the last gate, to ensure enough samples for the fit after each gate |
 
 ### Device configuration
 

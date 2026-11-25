@@ -172,7 +172,7 @@ NUM_AVERAGES = 10
 
 
 def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Sequence:
-    """Return the test sequence: ADC gates 0. empty, 1. gradients, 2. RF and gradients, each after a 1 ms delay."""
+    """Build the test sequence."""
     seq = pp.Sequence(system=system)
     seq.set_definition("Name", "loopback")
 
@@ -196,6 +196,8 @@ def build_sequence(system: pp.Opts, gradient_amplitudes: np.ndarray) -> pp.Seque
     add(pp.make_delay(4 * RAMP))
     add(*gradients)
     add(pp.make_block_pulse(2 * pi, duration=RF_DURATION, delay=RAMP, system=system), *gradients)
+    # Trailing delay: the fit reads replayed samples up to MAX_DELAY + RESPONSE_HALF_WIDTH after the last gate
+    seq.add_block(pp.make_delay(1e-3))
     return seq
 
 
