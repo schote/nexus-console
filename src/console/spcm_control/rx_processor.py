@@ -6,6 +6,8 @@ each worker runs `RxData.process_data` (scaling, demodulation, phase correction,
 After the last average, `RxProcessor.collect` returns the processed objects ordered by index.
 """
 
+import contextlib
+import functools
 import logging
 import multiprocessing
 import signal
@@ -34,6 +36,16 @@ def _process_one(index: int, rx_data: RxData, store_unprocessed: bool) -> tuple[
     rx_data.process_data(store_unprocessed=store_unprocessed)
     rx_data.materialize(keep=store_unprocessed)
     return index, rx_data
+
+
+def _release(rx_data: RxData, _future: Future) -> None:
+    """Release the shared memory in the main process when a future is done.
+
+    Unlinks the segment if no worker did, e.g. the future was cancelled before a worker received it,
+    processing failed or the worker crashed.
+    """
+    with contextlib.suppress(FileNotFoundError):  # Already unlinked by the worker
+        rx_data.materialize()
 
 
 class RxProcessor:
@@ -86,7 +98,9 @@ class RxProcessor:
         """
         if self._executor is None:
             raise RuntimeError("RxProcessor is not started. Call start() first.")
-        self._futures[index] = self._executor.submit(_process_one, index, rx_data, store_unprocessed)
+        future = self._executor.submit(_process_one, index, rx_data, store_unprocessed)
+        future.add_done_callback(functools.partial(_release, rx_data))
+        self._futures[index] = future
 
     def collect(self, expected_count: int, timeout: float = 60.0) -> list[RxData]:
         """Wait for all submitted futures and return results ordered by index.
