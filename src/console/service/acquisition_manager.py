@@ -9,6 +9,9 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # Alias required within the manager class body, where `AcquisitionControl` is shadowed by the proxy factory
 _AcquisitionControl = AcquisitionControl
 
+# Methods served to clients, `close()` is not exposed to the service
+SERVICE_METHODS = ("set_sequence", "run", "get_device_configuration", "get_sequence_system", "plot_waveforms")
+
 
 class AcquisitionControlManager(BaseManager):
     """Acquisition control manager."""
@@ -40,7 +43,7 @@ class AcquisitionControlManager(BaseManager):
         super().__init__(address=address, authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
-            self.register("AcquisitionControl", callable=callable_acq_control)
+            self.register("AcquisitionControl", callable=callable_acq_control, exposed=SERVICE_METHODS)
         else:
             self.register("AcquisitionControl")
 
