@@ -1,0 +1,25 @@
+name: Loopback report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]  # synchronize = new commits, edited = description changed
+
+permissions: {}
+
+jobs:
+  commit:
+    # Skipped if no loopback result is reported in the PR description
+    if: contains(github.event.pull_request.body, 'Loopback test result (report in PR)')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check commit
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          reported=$(tr -d '\r' <<< "$BODY" | grep '^nexus-console: ' || true)
+          echo "$reported"
+          if [[ -z "$reported" ]] || grep -qv "@ $HEAD_SHA\$" <<< "$reported"; then
+            echo "::error::The commit the loopback test was run with does not match the latest commit of the PR ($HEAD_SHA)."
+            exit 1
+          fi

@@ -200,6 +200,6 @@ The result is only meaningful together with the system on which it was obtained.
 
 The unit tests in the continuous integration cannot access the cards, so the loopback test is the only check that a change does not break the operation of the hardware. The pull request template therefore asks for the result of every pull request. It is essential for changes to the card control (`console.spcm_control`), the sequence calculation, the device configuration and the acquisition parameters, and after updates of dependencies or the Spectrum driver.
 
-- Run the test with the final state of the pull request. The reported commit should match the last commit of the pull request and must not show `(uncommitted changes)`.
+- Run the test with the final state of the pull request. The reported commit should match the last commit of the pull request and must not show `(uncommitted changes)`. If a result is reported, the CI check *Loopback report* verifies this and fails until the result is updated after every new commit. Without a reported result, the check is skipped.
 - Copy the complete result, from the header line to `Result`, into the section *Loopback test* of the pull request.
 - All metrics must pass. If a metric fails, rerun the test with `-v` to see which channel and which ADC gate cause the failure, and check the wiring first.
