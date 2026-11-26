@@ -1,6 +1,7 @@
 """Testing of sequence unrolling function."""
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pypulseq as pp
@@ -246,6 +247,27 @@ def test_calculate_rf_block(seq_provider: SequenceProvider):
         _ = seq_provider._calculate_rf(block, b1_scaling=invalid_scaling, larmor_frequency=-1.e3)
 
 
+@pytest.mark.parametrize("phase_offset", [0., np.pi / 2, np.pi, 3 * np.pi / 2])
+def test_calculate_rf_amplitude_limit(seq_provider: SequenceProvider, phase_offset: float):
+    """RF magnitude exceeding the output limit must raise independent of the phase offset."""
+    # Sinc pulse: magnitude varies, the peak is not the maximum of the real part for all phase offsets
+    block = pp.make_sinc_pulse(flip_angle=np.pi / 2, duration=200e-6, phase_offset=phase_offset)
+    # B1 scaling for a peak magnitude equal to the output limit
+    b1_limit = seq_provider.rf_out_limit / (np.max(np.abs(block.signal)) * seq_provider.rf_to_mvolt)
+
+    # Ensure that test succeeds below the output limit (90%)
+    larmor_frequency = 2.e6
+    rf_waveform, _ = seq_provider._calculate_rf(
+        block=block, b1_scaling=0.9 * b1_limit, larmor_frequency=larmor_frequency,
+    )
+    peak = np.max(np.abs(rf_waveform)) / (0.9 * np.iinfo(np.int16).max)
+    assert np.cos(np.pi * larmor_frequency * seq_provider.spcm_dwell_time) <= peak <= 1.01
+
+    # Exceeding the output limit (110%)
+    with pytest.raises(ValueError):
+        _ = seq_provider._calculate_rf(block=block, b1_scaling=1.1 * b1_limit, larmor_frequency=larmor_frequency)
+
+
 def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
     """Labels in blocks must be propagated into RxData.labels for each ADC event."""
     n_samples = 1000
@@ -268,6 +290,178 @@ def test_sequence_rx_data(seq_provider: SequenceProvider, acquisition_parameter:
     assert rx0.num_samples == n_samples
     assert rx0.num_samples_raw == n_samples / (bw*seq_provider.spcm_dwell_time)
     assert rx0.dwell_time == 1/bw
+
+
+def _unrolled_channels(seq_provider: SequenceProvider, unrolled_seq: UnrolledSequence) -> tuple[np.ndarray, np.ndarray]:
+    """Return the analog waveforms in mV (RF, gradient 1-3) and the digital signals (bit 15 of gradient 1-3)."""
+    seq = unrolled_seq.seq.reshape(-1, 4).T
+    waveforms = np.vstack([seq[:1], (seq[1:].view(np.uint16) << 1).view(np.int16)]) / np.iinfo(np.int16).max
+    output_limits = np.array([seq_provider.rf_out_limit, *seq_provider.gradient_out_limits])
+    return waveforms * output_limits[:, None], seq[1:].view(np.uint16) >> 15
+
+
+def _compare_gradients(seq_provider: SequenceProvider, unrolled_seq: UnrolledSequence,
+                       acquisition_parameter: AcquisitionParameter) -> None:
+    """Compare the unrolled gradient waveforms to the pypulseq waveforms, considering scaling and channel assignment."""
+    analog, _ = _unrolled_channels(seq_provider, unrolled_seq)
+    time = np.arange(unrolled_seq.sample_count) * seq_provider.spcm_dwell_time
+    channels = acquisition_parameter.channel_assignment.to_list()
+    fov_scaling = acquisition_parameter.fov_scaling.to_list()
+    for wave, channel, scaling in zip(seq_provider.waveforms(), channels, fov_scaling, strict=True):
+        # Gradient waveform in Hz/m to output voltage in mV
+        mvolt_per_hz = scaling / (
+            seq_provider.system.gamma * 1e-3 * seq_provider.gpa_gain[channel - 1] * seq_provider.grad_eff[channel - 1]
+        )
+        expected = np.interp(time, wave[0], wave[1], left=0, right=0) * mvolt_per_hz if wave.size else 0 * time
+        # Deviation of the linear interpolation on the card raster and the 15 bit resolution of the gradient channels
+        tolerance = 0.01 * np.max(np.abs(expected)) + 2 * seq_provider.gradient_out_limits[channel - 1] / 2**15
+        np.testing.assert_allclose(analog[channel], expected, rtol=0, atol=tolerance)
+
+
+def test_unrolled_gradient_waveforms(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
+    """Unrolled gradients must match the pypulseq waveforms of all gradient types, delays and spanning blocks."""
+    acquisition_parameter.fov_scaling.y = 0.8  # Disabled by the fixture
+    system = seq_provider.system
+    amp = 0.9 * system.max_grad
+    ramp = 1e-3
+    t_arb = (np.arange(n := round(4 * ramp / system.grad_raster_time)) + 0.5) / n
+    t_ext = np.array([0., ramp / 2, 2 * ramp, 3 * ramp, 4 * ramp])
+    for delay in [0., ramp]:
+        # Trapezoid, triangle and asymmetric trapezoid with different delays
+        seq_provider.add_block(
+            pp.make_trapezoid("x", amplitude=amp, rise_time=ramp, flat_time=2 * ramp, delay=delay, system=system),
+            pp.make_trapezoid("y", amplitude=-amp, rise_time=ramp, flat_time=0., delay=delay / 2, system=system),
+            pp.make_trapezoid(
+                "z", amplitude=amp / 2, rise_time=ramp, flat_time=ramp, fall_time=2 * ramp, delay=2 * delay,
+                system=system,
+            ),
+        )
+        # Arbitrary gradients
+        seq_provider.add_block(
+            pp.make_arbitrary_grad("x", amp * np.sin(np.pi * t_arb), first=0., last=0., delay=delay, system=system),
+            pp.make_arbitrary_grad(
+                "y", -amp * np.sin(np.pi * t_arb) ** 2, first=0., last=0., delay=delay / 2, system=system,
+            ),
+            pp.make_arbitrary_grad(
+                "z", amp / 2 * np.sin(2 * np.pi * t_arb), first=0., last=0., delay=2 * delay, system=system,
+            ),
+        )
+        # Extended trapezoids on non-uniform time raster, the first time point defines the delay
+        seq_provider.add_block(
+            pp.make_extended_trapezoid("x", times=t_ext + delay, amplitudes=amp * np.array([0, 1, .5, .5, 0])),
+            pp.make_extended_trapezoid(
+                "y", times=t_ext + delay / 2, amplitudes=amp * np.array([0, -1, 0, 1, 0]), convert_to_arbitrary=True,
+            ),
+            pp.make_extended_trapezoid("z", times=t_ext + 2 * delay, amplitudes=amp * np.array([0, .5, 1, -.5, 0])),
+        )
+    # Gradients spanning two blocks, non-zero amplitude at the block boundary
+    amplitudes = [("x", amp), ("y", -amp), ("z", amp / 2)]
+    seq_provider.add_block(*[
+        pp.make_extended_trapezoid(c, times=t_ext[:3], amplitudes=np.array([0, a, a])) for c, a in amplitudes
+    ])
+    seq_provider.add_block(*[
+        pp.make_extended_trapezoid(c, times=t_ext[:3], amplitudes=np.array([a, a, 0])) for c, a in amplitudes
+    ])
+    assert seq_provider.check_timing()[0]
+
+    unrolled_seq = seq_provider.unroll_sequence(acquisition_parameter)
+    _compare_gradients(seq_provider, unrolled_seq, acquisition_parameter)
+    _, digital = _unrolled_channels(seq_provider, unrolled_seq)
+    assert not digital.any()
+
+
+def test_unrolled_rf_waveforms(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
+    """Unrolled RF pulses and unblanking must match the pypulseq waveforms, including frequency and phase offsets."""
+    system = seq_provider.system
+    duration = 200e-6
+    amp = 1 / duration  # Peak amplitude of a 2 pi block pulse
+
+    def peak_normalized(rf: SimpleNamespace) -> SimpleNamespace:
+        rf.signal *= amp / np.max(np.abs(rf.signal))
+        return rf
+
+    # Block pulse with delay equal to and larger than the dead time
+    for delay in [system.rf_dead_time, 3 * system.rf_dead_time]:
+        seq_provider.add_block(pp.make_block_pulse(2 * np.pi, duration=duration, delay=delay, system=system))
+    # Sinc pulse and complex arbitrary pulse with frequency and phase offset
+    seq_provider.add_block(peak_normalized(pp.make_sinc_pulse(
+        2 * np.pi, duration=duration, delay=system.rf_dead_time, freq_offset=5e3, phase_offset=np.pi / 2,
+        system=system,
+    )))
+    seq_provider.add_block(peak_normalized(pp.make_arbitrary_rf(
+        signal=np.exp(1j * np.linspace(-1, 1, round(duration / system.rf_raster_time)) ** 2), flip_angle=2 * np.pi,
+        delay=system.rf_dead_time, freq_offset=-3e3, phase_offset=-np.pi / 4, system=system,
+    )))
+    # RF unblanking is encoded in bit 15 of gradient channel 3, an overlapping gradient must not be affected
+    seq_provider.add_block(
+        pp.make_block_pulse(2 * np.pi, duration=duration, delay=1e-3, system=system),
+        pp.make_trapezoid("z", amplitude=0.9 * system.max_grad, rise_time=1e-3, flat_time=1e-3, system=system),
+    )
+    assert seq_provider.check_timing()[0]
+
+    unrolled_seq = seq_provider.unroll_sequence(acquisition_parameter)
+    analog, digital = _unrolled_channels(seq_provider, unrolled_seq)
+    fs = seq_provider.spcm_freq
+    dwell_time = seq_provider.spcm_dwell_time
+    rf_wave = seq_provider.waveforms(append_RF=True)[3]
+    block_start = 0.
+    for block_idx in seq_provider.block_events:
+        rf = seq_provider.get_block(block_idx).rf
+        block = slice(round(block_start * fs), round((block_start + seq_provider.block_durations[block_idx]) * fs))
+        # RF waveform within the shape, unblanking starts the dead time before (sample positions relative to the block)
+        start = round(rf.delay * fs)
+        stop = start + round(rf.shape_dur * fs)
+        rf_samples = np.flatnonzero(analog[0, block])
+        assert rf_samples[0] >= start
+        assert rf_samples[-1] < stop
+        unblanking = np.flatnonzero(digital[2, block])
+        np.testing.assert_array_equal(unblanking, np.arange(start - round(rf.dead_time * fs), stop))
+        start, stop = start + block.start, stop + block.start
+
+        # Envelope including frequency and phase offset from pypulseq, the carrier phase starts with the shape.
+        # One RF raster at the edges is excluded, pypulseq defines the shape at the raster centers.
+        margin = round(system.rf_raster_time * fs)
+        time = np.arange(start + margin, stop - margin) * dwell_time
+        t_wave = rf_wave[0].real
+        envelope = np.interp(time, t_wave, rf_wave[1].real) + 1j * np.interp(time, t_wave, rf_wave[1].imag)
+        carrier = np.exp(2j * np.pi * acquisition_parameter.larmor_frequency * (time - start * dwell_time))
+        expected = np.real(envelope * carrier) * acquisition_parameter.b1_scaling * seq_provider.rf_to_mvolt
+        # Deviation of the FFT resampling of the envelope
+        tolerance = 0.02 * np.max(np.abs(expected))
+        np.testing.assert_allclose(analog[0, start + margin:stop - margin], expected, rtol=0, atol=tolerance)
+        block_start += seq_provider.block_durations[block_idx]
+
+    _compare_gradients(seq_provider, unrolled_seq, acquisition_parameter)
+    assert not digital[:2].any()
+
+
+def test_unrolled_adc_gate(seq_provider: SequenceProvider, acquisition_parameter: AcquisitionParameter):
+    """ADC gate must cover the pypulseq ADC samples, frequency and phase offsets are passed to the receive data."""
+    dwell = 1e-5
+    adc = pp.make_adc(
+        num_samples=100, dwell=dwell, delay=seq_provider.system.adc_dead_time + 5 * dwell, freq_offset=1e3,
+        phase_offset=np.pi / 3, system=seq_provider.system,
+    )
+    seq_provider.add_block(pp.make_delay(1e-4))
+    seq_provider.add_block(adc)
+    unrolled_seq = seq_provider.unroll_sequence(acquisition_parameter)
+    _, digital = _unrolled_channels(seq_provider, unrolled_seq)
+    rx_data = unrolled_seq.rx_data[0]
+
+    # ADC sample times are the centers of the dwell intervals, the gate is extended by the discarded samples
+    adc_times, _ = seq_provider.adc_times()
+    margin = (0.5 + rx_data.num_samples_discard) * dwell
+    start = round((adc_times[0] - margin) * seq_provider.spcm_freq)
+    stop = round((adc_times[-1] + margin) * seq_provider.spcm_freq)
+    np.testing.assert_array_equal(np.flatnonzero(digital[0]), np.arange(start, stop))
+    assert stop - start == rx_data.num_samples_raw
+    # Phase reference starts with the ADC gate and ends within
+    reference = np.flatnonzero(digital[1])
+    assert reference[0] == start
+    assert reference[-1] < stop
+    assert not digital[2].any()
+    assert rx_data.freq_offset == adc.freq_offset
+    assert rx_data.phase_offset == adc.phase_offset
 
 
 @pytest.mark.parametrize("dead_time", [0., 10e-3])

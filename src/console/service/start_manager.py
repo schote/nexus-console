@@ -83,7 +83,7 @@ def main() -> None:
     # Setup global acquisition control with argparse arguments
     # global acquisition_control
     acquisition_control = AcquisitionControl(
-        configuration_file=args.device_config,
+        configuration=args.device_config,
         nexus_data_dir=args.sessions_folder,
         console_log_level=logging.INFO,
         file_log_level=logging.INFO
@@ -101,7 +101,7 @@ def main() -> None:
         try:
             print("\n[neXus] Shutting down nexus server...\n")
             if acquisition_control:
-                acquisition_control.__del__()
+                acquisition_control.close()
                 print("[neXus] Acquisition control shutdown successfully.")
         except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
             print(f"[neXus] Error during shutdown: {e}")

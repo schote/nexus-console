@@ -81,7 +81,8 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [src]
+          # tests/hardware: hardware test scripts, e.g. the loopback test
+          paths: [src, tests/hardware]
           inventories:
             - https://docs.python.org/3/objects.inv
             - https://numpy.org/doc/stable/objects.inv
@@ -121,13 +122,14 @@ nav:
     - Sequence calculation: system/sequence-calculation.md
     - Acquisition: system/acquisition.md
     - Postprocessing: system/postprocessing.md
+    - Loopback test: system/loopback-test.md
   - Examples:
     - Overview: examples/index.md
     - Spin-echo spectrum: examples/spin_echo.md
     - T2 relaxation: examples/t2_measurement.md
     - 3D turbo spin-echo: examples/tse_3d.md
     - Remote acquisition: examples/remote_acquisition.md
-  - API reference: reference/
+  - API reference: api_reference/
   - References: references.md
 
 docs_dir: docs

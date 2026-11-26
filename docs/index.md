@@ -46,7 +46,7 @@ hide:
 
     Classes and functions of the console package, generated from the docstrings of the source code.
 
-    [:octicons-arrow-right-24: API reference](reference/index.md)
+    [:octicons-arrow-right-24: API reference](api_reference/index.md)
 
 -   :material-console:{ .lg .middle } **Nexus CLI**
 

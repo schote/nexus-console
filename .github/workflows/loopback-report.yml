@@ -1,0 +1,46 @@
+name: Loopback report
+
+on:
+  pull_request:
+    # synchronize = new commits, edited = description changed
+    types: [opened, synchronize, reopened, edited]
+
+permissions: {}
+
+jobs:
+  commit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check commit
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+
+          # Files changed by the PR -> any python file touched?
+          changed=$(gh api "repos/$REPO/compare/$BASE_SHA...$HEAD_SHA" --jq '.files[].filename') || exit 1
+          if ! grep -q '\.py$' <<< "$changed"; then
+            echo "No Python files changed, loopback test not required."
+            exit 0
+          fi
+
+          # Commit of the loopback test reported in the PR body
+          reported=$(tr -d '\r' <<< "$BODY" | grep '^nexus-console: ' | grep -oE '[0-9a-f]{40}$' || true)
+          echo "Loopback test commit: ${reported:-none}, PR head: $HEAD_SHA"
+          if [[ -z "$reported" ]]; then
+            echo "::error::Python files touched, run the loopback test with the latest commit (no uncommited changes) and report the result in the PR description."
+            exit 1
+          fi
+
+          # Check if the loopback test report is up to date with the last commit
+          changed=$(gh api "repos/$REPO/compare/$reported...$HEAD_SHA" --jq '.files[].filename') || exit 1
+          echo "$changed"
+          if grep -q '\.py$' <<< "$changed"; then
+            echo "::error::Python files changed since the reported loopback test, rerun the test with the latest commit."
+            exit 1
+          fi

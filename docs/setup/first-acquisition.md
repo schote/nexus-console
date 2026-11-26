@@ -15,7 +15,7 @@ In a first step, we import the `AcquisitionControl` and create an instance of it
 ```python
 from console.spcm_control.acquisition_control import AcquisitionControl
 
-acq = AcquisitionControl(configuration_file="device_config.yaml")
+acq = AcquisitionControl(configuration="device_config.yaml")
 ```
 
 ## Construct a sequence
@@ -59,7 +59,7 @@ One specific object can be selected from the list of acquired `RxData` objects.
 The acquired complex-valued signal is stored in the `processed_data` attribute.
 `save()` stores the `AcquisitionData`, the metadata and the sequence.
 Using `save_ismrmrd()`, the `AcquisitionData` can be stored in ISMRMRD format.
-To close the card connection, delete the `AcquisitionControl` instance.
+To close the card connection, call `close()` on the `AcquisitionControl` instance.
 
 ```python
 rx_data = acq_data.receive_data[0]           # first ADC event of the first average
@@ -69,7 +69,7 @@ acq_data.save()                              # store HDF5, meta.json and sequenc
 acq_data.save_ismrmrd()                      # ISMRMRD file
 
 # Disconnect from the cards
-del acq
+acq.close()
 ```
 
-Instead of manually creating and deleting the `AcquisitionControl` in the experiment script, the cards can be operated by a persistent service (see [Acquisition service](nexus-service.md)). Complete experiments are given in the [Examples](../examples/index.md).
+Instead of manually creating and closing the `AcquisitionControl` in the experiment script, the cards can be operated by a persistent service (see [Acquisition service](nexus-service.md)). Complete experiments are given in the [Examples](../examples/index.md).

@@ -10,7 +10,7 @@ from console.utilities import sequences
 
 # Create acquisition control instance, adapt the path to the device configuration of your system
 config_file = "example_device_config.yaml"
-acq = AcquisitionControl(configuration_file=config_file)
+acq = AcquisitionControl(configuration=config_file)
 
 # Construct a spin echo based spectrum sequence
 params = {
@@ -50,7 +50,7 @@ acq_data.add_info({
 # Write acquisition data object
 acq_data.save()
 
-# Delete the acquisition control, which disconnects from the measurement cards
-del acq
+# Disconnect from the measurement cards
+acq.close()
 
 # %%

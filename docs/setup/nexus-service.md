@@ -70,7 +70,7 @@ with AcquisitionControlManager() as manager:
 acq_data.save()
 ```
 
-The client uses the same API as a local `AcquisitionControl`, so existing scripts only need to replace the instantiation.
+The client uses the same API as a local `AcquisitionControl`, so existing scripts only need to replace the instantiation. Clients must not call `close()`, the service owns the cards and does not expose this method.
 
 !!! warning "One client at a time"
     All clients share a single `AcquisitionControl` instance, and the service does not serialize access to it. Each client connection is handled in its own thread, so calls of different clients run concurrently: a `set_sequence` of a second client can replace the sequence of the first one before its `run`, and two simultaneous `run` calls access the cards at the same time. Coordinate the use of the console so that only one client runs acquisitions at a time.

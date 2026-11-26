@@ -364,7 +364,8 @@ class SequenceProvider(Sequence):
 
             if block.adc is not None:  # ADC event
                 # Calculate the number of samples to be discarded from the decimated signal
-                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell)
+                # A small tolerance value is added to compensate floating point errors
+                num_samples_discard = floor(block.adc.dead_time / block.adc.dwell + 1e-6)
                 # Calculate the total gate duration, given by number of samples
                 # and two times the number of discarded samples for symmetric adc dead time
                 # Note: The total gate duration is only increased if the dead time is a multiple of the adc dwell time.
@@ -489,8 +490,8 @@ class SequenceProvider(Sequence):
         try:
             # RF scaling according to B1 calibration and "device" (translation from pulseq to output voltage)
             rf_scaling = b1_scaling * self.rf_to_mvolt * phase_offset / self.rf_out_limit
-            if np.abs(np.amax(envelope_scaled := block.signal * rf_scaling)) > 1:
-                raise ValueError(f"RF magnitude exceeds output limit by {np.amax(envelope_scaled)*100}%.")
+            if np.amax(np.abs(envelope_scaled := block.signal * rf_scaling)) > 1:
+                raise ValueError(f"RF magnitude {np.amax(np.abs(envelope_scaled)):.1%} of output limit exceeds 100%.")
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err

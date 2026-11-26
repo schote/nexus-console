@@ -13,7 +13,7 @@ flowchart TD
     GRD --> OUT["<b>UnrolledSequence</b>"]
     RF --> OUT
     ADC --> OUT
-    click OUT href "../../reference/interfaces/unrolled_sequence/#console.interfaces.unrolled_sequence.UnrolledSequence" "API reference of UnrolledSequence"
+    click OUT href "../../api_reference/interfaces/unrolled_sequence/#console.interfaces.unrolled_sequence.UnrolledSequence" "API reference of UnrolledSequence"
 ```
 
 ## Replay buffer
@@ -184,7 +184,7 @@ block-beta
 
 The diagram shows the attribute names of the PyPulseq ADC event; the widths are not to scale. The ADC samples start `delay` after the block start and last `num_samples` × `dwell`:
 
-- **ADC gate:** extended on both sides by `dead_time`, rounded down to a whole number of dwell times. The receive data of the extension are discarded after processing.
+- **ADC gate:** extended on both sides by `dead_time`. The extension equals an integer multiple of the dwell time which fits within the `dead_time`. The receive data of the extension are discarded after processing.
 - **Phase reference:** 1.095 MHz square wave during the first 1000 frames of the gate (50 µs at 20 MHz), or the whole gate if it is shorter.
 
 For each ADC event, an [`RxData`][console.interfaces.rx_data.RxData] template is created. It contains the sample counts, dwell times, frequency and phase offsets of the event, and the PyPulseq labels set since the previous ADC event. The templates are filled with data during the acquisition (see [Postprocessing](postprocessing.md)).

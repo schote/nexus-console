@@ -13,7 +13,7 @@ from console.utilities.sequences import tse_3d
 
 # Create acquisition control instance, adapt the path to the device configuration of your system
 config_file = "example_device_config.yaml"
-acq = AcquisitionControl(configuration_file=config_file,
+acq = AcquisitionControl(configuration=config_file,
                          file_log_level=logging.DEBUG,
                          console_log_level=logging.DEBUG)
 # %%
@@ -81,6 +81,6 @@ acq_data.save()
 # Export to ISMRMRD, using the header returned by the sequence constructor
 acq_data.save_ismrmrd(header=header)
 
-del acq
+acq.close()
 
 # %%

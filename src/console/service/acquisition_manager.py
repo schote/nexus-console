@@ -1,5 +1,5 @@
 """Implementation of nexus acquisition manager for multiprocessing."""
-import traceback
+import inspect
 from collections.abc import Callable
 from multiprocessing.managers import BaseManager
 from types import TracebackType
@@ -9,6 +9,12 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 
 # Alias required within the manager class body, where `AcquisitionControl` is shadowed by the proxy factory
 _AcquisitionControl = AcquisitionControl
+
+# Define the AcquisitionControl methods served to clients, shutdown is owned by the service and not exposed
+METHODS = tuple(
+    name for name, _ in inspect.getmembers(_AcquisitionControl, inspect.isfunction)
+    if not name.startswith("_") and name != "close"
+)
 
 
 class AcquisitionControlManager(BaseManager):
@@ -41,7 +47,7 @@ class AcquisitionControlManager(BaseManager):
         super().__init__(address=address, authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
-            self.register("AcquisitionControl", callable=callable_acq_control)
+            self.register("AcquisitionControl", callable=callable_acq_control, exposed=METHODS)
         else:
             self.register("AcquisitionControl")
 
@@ -65,8 +71,4 @@ class AcquisitionControlManager(BaseManager):
         # Explicitly remove the proxy references
         if hasattr(self, "acquisition"):
             del self.acquisition
-
-        if exc_type is not None:
-            print(f"An error occurred: {exc_value}")
-            traceback.print_tb(exc_tb)
-        # Returning None propagates exceptions if they occur
+        # Returning None propagates exceptions if they occur, traceback is printed by the caller

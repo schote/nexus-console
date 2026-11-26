@@ -275,6 +275,7 @@ class RxCard(SpectrumDevice):
                     spcm.M2CMD_CARD_STOP | spcm.M2CMD_DATA_STOPDMA | spcm.M2CMD_EXTRA_STOPDMA,
                 )
             )
+            self.worker = None
         else:
             # No thread is running
             self.log.error("No active process found")

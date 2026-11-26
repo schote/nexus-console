@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install ".[docs-mkdocs]"
+          pip install ".[docs]"
 
       - name: Check API surface (griffe)
         # Reports breaking changes of the public API introduced by the pull request (compared to its base
@@ -103,7 +103,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install ".[docs-mkdocs]"
+          pip install ".[docs]"
 
       - name: Delete preview version
         run: |
