@@ -2852,7 +2852,7 @@
 
 
 <h1 id="remote-acquisition">Remote acquisition</h1>
-<p>The acquisition can be run in a separate service process that connects to the cards once and remains active between experiments. Experiment scripts connect to this service as clients, either on the host computer or, with an appropriate address configuration, from another computer.</p>
+<p>The acquisition can be run in a separate service process that connects to the cards once and remains active between experiments. Experiment scripts connect to this service as clients on the host computer. The service is not reachable over the network; to use the console from another computer, log in via SSH and run the client there.</p>
 <h2 id="service">Service</h2>
 <p>Start the service on the host computer with the device configuration of the system:</p>
 <div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>nexus<span class="w"> </span>-d<span class="w"> </span>path/to/device_config.yaml

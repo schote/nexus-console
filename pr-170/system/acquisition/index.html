@@ -2964,7 +2964,7 @@ sequenceDiagram
 </tr>
 <tr>
 <td>12</td>
-<td>The main thread polls the number of received gates every 100 ms. The progress in percent is estimated from the elapsed time relative to the sequence duration; it is reported to the optional <code>progress_callback</code> and can be queried with <code>get_progress()</code>, e.g. by a client of the <a href="../../setup/nexus-service/">acquisition service</a>. The average ends when all gates are received, or after a timeout of 5 s plus the sequence duration.</td>
+<td>The main thread polls the number of received gates every 100 ms. The progress in percent covers all averages and is estimated from the elapsed time relative to the sequence duration, 100 % is reported once the run is complete; it is reported to the optional <code>progress_callback</code> and can be queried with <code>get_progress()</code>, e.g. by a client of the <a href="../../setup/nexus-service/">acquisition service</a>. The average ends when all gates are received (without ADC events, when the sequence duration has elapsed), or after a timeout of 5 s plus the sequence duration. A <code>close()</code> from another thread, e.g. on shutdown of the service, aborts the acquisition: the cards are stopped and the gradient offsets reset before they are disconnected.</td>
 </tr>
 <tr>
 <td>13, 14</td>
