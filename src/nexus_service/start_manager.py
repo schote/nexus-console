@@ -136,9 +136,9 @@ def main() -> None:
 
     atexit.register(shutdown_handler)
     # Run the atexit handlers on SIGTERM (systemctl stop) and SIGHUP (terminal closed) as well, otherwise socket,
-    # key and directory would be left behind
+    # key and directory would be left behind. A service started with nohup ignores SIGHUP and keeps running.
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    if sys.platform != "win32":
+    if sys.platform != "win32" and signal.getsignal(signal.SIGHUP) is not signal.SIG_IGN:
         signal.signal(signal.SIGHUP, lambda *_: sys.exit(0))
 
     if not args.no_verify:
