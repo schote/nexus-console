@@ -19,7 +19,7 @@ flowchart LR
     *owned by nexus*`")]
     logs[("`**log directory**
     /var/log/nexus
-    contains one log file per day
+    contains one log file per start date
     *owned by nexus*`")]
 
     systemd -- "creates /run/nexus and /var/log/nexus, starts" --> service
@@ -87,7 +87,7 @@ sudo systemctl enable --now nexus
 
 On start, systemd creates `/run/nexus` (configured via `RuntimeDirectory=`) with owner `nexus` and mode `755` (owner: rwx, group: r-x, others: r-x). The service publishes `nexus.sock` and `authkey` in `/run/nexus`, where clients find them automatically. On stop, and after a crash, systemd removes `/run/nexus` again, so no stale socket or key survives. `/run` itself is owned by root, so only root can delete `/run/nexus`, and no other account can place files next to it.
 
-Likewise, systemd creates `/var/log/nexus` (configured via `LogsDirectory=`) with owner `nexus` and mode `755`, and the service writes one log file per day (`<date>_nexus.log`) into it, as passed with `--log_dir`. Unlike `/run/nexus`, this directory is kept on stop. Without `--log_dir`, the log file is written to `~/nexus-console` of the account running the service, which the system account created above does not have, so the unit always passes `--log_dir`.
+Likewise, systemd creates `/var/log/nexus` (configured via `LogsDirectory=`) with owner `nexus` and mode `755`, and the service writes its log into it, as passed with `--log_dir`. The log file `<date>_nexus.log` is named after the date the service was started: a service running for several days keeps writing to the file of its start date, and restarts on the same day append to it. Unlike `/run/nexus`, this directory is kept on stop. Without `--log_dir`, the log file is written to `~/nexus-console` of the account running the service, which the system account created above does not have, so the unit always passes `--log_dir`.
 
 ## 5. Usage and inspection
 
