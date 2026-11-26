@@ -1,4 +1,5 @@
 """Implementation of nexus acquisition manager for multiprocessing."""
+import inspect
 from collections.abc import Callable
 from multiprocessing.managers import BaseManager
 from types import TracebackType
@@ -9,8 +10,11 @@ from console.spcm_control.acquisition_control import AcquisitionControl
 # Alias required within the manager class body, where `AcquisitionControl` is shadowed by the proxy factory
 _AcquisitionControl = AcquisitionControl
 
-# Methods served to clients, `close()` is not exposed to the service
-SERVICE_METHODS = ("set_sequence", "run", "get_device_configuration", "get_sequence_system", "plot_waveforms")
+# Define the AcquisitionControl methods served to clients, shutdown is owned by the service and not exposed
+METHODS = tuple(
+    name for name, _ in inspect.getmembers(_AcquisitionControl, inspect.isfunction)
+    if not name.startswith("_") and name != "close"
+)
 
 
 class AcquisitionControlManager(BaseManager):
@@ -43,7 +47,7 @@ class AcquisitionControlManager(BaseManager):
         super().__init__(address=address, authkey=authkey, **kwargs)
         # Dynamically register acquisition control and the acquisition parameter proxy
         if callable_acq_control:
-            self.register("AcquisitionControl", callable=callable_acq_control, exposed=SERVICE_METHODS)
+            self.register("AcquisitionControl", callable=callable_acq_control, exposed=METHODS)
         else:
             self.register("AcquisitionControl")
 
