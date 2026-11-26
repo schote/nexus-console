@@ -1,0 +1,375 @@
+/* ── Brand tokens ────────────────────────────────────────────────────────── */
+
+:root {
+  --nx-navy: #131c2b;          /* logo colour, used for header and footer */
+  --nx-navy-light: #22304a;
+  --nx-navy-dark: #0b111b;
+  --nx-accent: #2f6bff;
+  --nx-radius: 8px;
+}
+
+/* Light scheme */
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: var(--nx-navy);
+  --md-primary-fg-color--light: var(--nx-navy-light);
+  --md-primary-fg-color--dark: var(--nx-navy-dark);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+  --md-accent-fg-color: var(--nx-accent);
+  --md-accent-fg-color--transparent: rgba(47, 107, 255, 0.1);
+
+  --md-default-fg-color: rgba(19, 28, 43, 0.92);
+  --md-default-fg-color--light: rgba(19, 28, 43, 0.62);
+  --md-default-fg-color--lighter: rgba(19, 28, 43, 0.32);
+  --md-default-fg-color--lightest: rgba(19, 28, 43, 0.08);
+  --md-typeset-a-color: #2556d9;
+  --md-code-bg-color: #f4f6fa;
+
+  --nx-border: #e3e7ee;
+  --nx-surface: #f8f9fb;
+}
+
+/* Dark scheme – navy-tinted instead of Material's default slate */
+[data-md-color-scheme="slate"] {
+  --nx-accent: #6c9bff;
+
+  --md-primary-fg-color: var(--nx-navy);
+  --md-primary-fg-color--light: var(--nx-navy-light);
+  --md-primary-fg-color--dark: var(--nx-navy-dark);
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: rgba(255, 255, 255, 0.7);
+  --md-accent-fg-color: var(--nx-accent);
+  --md-accent-fg-color--transparent: rgba(108, 155, 255, 0.12);
+
+  --md-default-bg-color: #0e1520;
+  --md-default-fg-color: rgba(232, 237, 245, 0.9);
+  --md-default-fg-color--light: rgba(232, 237, 245, 0.6);
+  --md-default-fg-color--lighter: rgba(232, 237, 245, 0.32);
+  --md-default-fg-color--lightest: rgba(232, 237, 245, 0.1);
+  --md-typeset-a-color: #8fb3ff;
+  --md-code-bg-color: #151e2d;
+  --md-footer-bg-color: var(--nx-navy-dark);
+  --md-footer-bg-color--dark: #070b12;
+
+  --nx-border: #1f2a3c;
+  --nx-surface: #121b29;
+}
+
+/* ── Header & tabs ───────────────────────────────────────────────────────── */
+
+.md-header,
+.md-tabs {
+  background-color: var(--nx-navy);
+}
+
+.md-header {
+  box-shadow: none;
+}
+
+.md-header[data-md-state="shadow"],
+.md-header--shadow {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.md-tabs {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.md-tabs__link {
+  font-weight: 500;
+  opacity: 0.65;
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover {
+  opacity: 1;
+}
+
+/* The full logo SVG has generous padding; crop it visually so the mark and
+   wordmark fill the header height without enlarging the header. */
+.md-header__button.md-logo {
+  margin-right: 0.6rem;
+}
+
+.md-header__button.md-logo img {
+  height: 2.8rem;
+  margin: -0.6rem -0.75rem;
+}
+
+.md-nav__button.md-logo img {
+  height: 3.6rem;
+  margin: -0.8rem -1rem;
+}
+
+/* The logo already contains the wordmark – hide the duplicate site name on
+   desktop, where the logo is visible. The page title still fades in on scroll. */
+@media screen and (min-width: 76.25em) {
+  .md-header__title:not(.md-header__title--active) .md-header__topic:first-child {
+    visibility: hidden;
+  }
+}
+
+/* Search field */
+.md-search__form {
+  border-radius: var(--nx-radius);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.md-search__form:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ── Typography ──────────────────────────────────────────────────────────── */
+
+.md-typeset {
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4 {
+  color: var(--md-default-fg-color);
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.md-typeset h1 {
+  font-size: 1.9em;
+  font-weight: 700;
+  margin-bottom: 0.8em;
+}
+
+.md-typeset h2 {
+  padding-top: 0.6em;
+  border-top: 1px solid var(--nx-border);
+}
+
+.md-typeset h1 + h2,
+.md-typeset h2:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.md-typeset a {
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.md-typeset a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.md-typeset hr {
+  border-bottom-color: var(--nx-border);
+}
+
+/* ── Navigation ──────────────────────────────────────────────────────────── */
+
+.md-nav__link--active,
+.md-nav__item .md-nav__link--active {
+  color: var(--md-typeset-a-color);
+  font-weight: 600;
+}
+
+.md-nav__title {
+  font-weight: 600;
+}
+
+/* ── Code ────────────────────────────────────────────────────────────────── */
+
+.md-typeset code {
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+
+.md-typeset pre > code {
+  border-radius: var(--nx-radius);
+}
+
+.md-typeset .highlight,
+.md-typeset .highlighttable {
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  overflow: hidden;
+}
+
+.md-typeset .highlight pre {
+  margin: 0;
+}
+
+/* ── Admonitions ─────────────────────────────────────────────────────────── */
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-width: 0 0 0 3px;
+  border-radius: var(--nx-radius);
+  box-shadow: none;
+  background-color: var(--nx-surface);
+  font-size: 0.74rem;
+}
+
+.md-typeset .admonition-title,
+.md-typeset summary {
+  background-color: transparent !important;
+  font-weight: 600;
+}
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--nx-border);
+  border-radius: var(--nx-radius);
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--nx-surface);
+  font-weight: 600;
+}
+
+.md-typeset table:not([class]) td {
+  border-top-color: var(--nx-border);
+}
+
+/* ── Grid cards (landing page) ───────────────────────────────────────────── */
+
+.md-typeset .grid.cards > ul > li,
+.md-typeset .grid > .card {
+  border: 1px solid var(--nx-border);
+  border-radius: calc(var(--nx-radius) + 2px);
+  background-color: var(--nx-surface);
+  transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover,
+.md-typeset .grid > .card:hover {
+  border-color: var(--nx-accent);
+  box-shadow: 0 6px 20px -12px rgba(19, 28, 43, 0.35);
+  transform: translateY(-2px);
+}
+
+.md-typeset .grid.cards .lg {
+  color: var(--nx-accent);
+}
+
+/* Six cards as 3x2 on wide screens, 2x3 on tablets, stacked on phones.
+   Fixed steps instead of auto-fit to avoid an orphaned card in the last row. */
+.md-typeset .grid.cards-3 {
+  grid-template-columns: 1fr;
+}
+
+@media screen and (min-width: 30em) {
+  .md-typeset .grid.cards-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (min-width: 60em) {
+  .md-typeset .grid.cards-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.md-typeset .md-button {
+  border-radius: var(--nx-radius);
+  font-weight: 600;
+}
+
+.md-typeset .md-button--primary {
+  background-color: var(--nx-navy);
+  border-color: var(--nx-navy);
+}
+
+.md-typeset .md-button:hover {
+  background-color: var(--nx-accent);
+  border-color: var(--nx-accent);
+  color: #ffffff;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.md-footer-meta {
+  background-color: var(--nx-navy-dark);
+}
+
+/* ── API reference: right-side ToC badges ────────────────────────────────── */
+
+.doc-toc-badge {
+  display: inline-block;
+  margin-left: 0.4em;
+  padding: 0.05em 0.38em;
+  border-radius: 3px;
+  font-family: var(--md-code-font-family);
+  font-size: 0.58em;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+/* Filled – used for class entries (top-level concept) */
+.doc-toc-badge--class {
+  background-color: var(--nx-accent);
+  color: #ffffff;
+}
+
+/* Outlined – used for method entries (subordinate concept) */
+.doc-toc-badge--meth {
+  background-color: transparent;
+  color: var(--nx-accent);
+  box-shadow: inset 0 0 0 1px var(--nx-accent);
+}
+
+/* ── Diagram legend ──────────────────────────────────────────────────────── */
+
+/* Colours match the classDef statements of the mermaid diagrams */
+.md-typeset .nx-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.3rem 1.2rem;
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.md-typeset .nx-legend__box,
+.md-typeset .nx-legend__line {
+  display: inline-block;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+}
+
+.md-typeset .nx-legend__box {
+  width: 1.4rem;
+  height: 0.8rem;
+  border: 1.5px solid;
+  border-radius: 2px;
+}
+
+.md-typeset .nx-legend__box--sw     { background: #2f6bff22; border-color: #2f6bff; }
+.md-typeset .nx-legend__box--vendor { background: #8a93a322; border-color: #8a93a3; }
+.md-typeset .nx-legend__box--hw     { background: #e67e2222; border-color: #e67e22; }
+.md-typeset .nx-legend__box--iface  { background: #8e44ad22; border-color: #8e44ad; border-radius: 0.4rem; }
+
+.md-typeset .nx-legend__line {
+  width: 1.6rem;
+  border-top: 1.5px solid var(--md-default-fg-color--light);
+}
+
+.md-typeset .nx-legend__line--dotted {
+  border-top-style: dotted;
+}
+
+/* Centres a mermaid diagram that is narrower than the content column */
+.md-typeset .nx-center .mermaid {
+  display: flex;
+  justify-content: center;
+}
