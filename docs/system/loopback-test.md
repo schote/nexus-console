@@ -40,7 +40,7 @@ python tests/hardware/loopback.py
 
 [`build_sequence`][loopback.build_sequence] creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block. A final delay block follows the last test case.
 All analog waveforms have a peak amplitude of 160 mV, which is 80 % of the configured 200 mV channel range.
-Each ADC gate starts 75 µs after the start of its block (`adc_dead_time`) and lasts until the end of the block's events.
+The `adc_dead_time` is set to 75 µs.
 
 | Block | ADC | Events | Purpose |
 |---|---|---|---|
