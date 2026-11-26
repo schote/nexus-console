@@ -1,0 +1,3653 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Open-source Python framework for versatile low-field MRI acquisition">
+      
+      
+      
+        <link rel="canonical" href="https://schote.github.io/nexus-console/latest/system/loopback-test/">
+      
+      
+        <link rel="prev" href="../postprocessing/">
+      
+      
+        <link rel="next" href="../../examples/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo/nexus_logo_light_transparent.svg">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
+    
+    
+      
+        <title>Loopback test - Nexus Console</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#loopback-test" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Nexus Console" class="md-header__button md-logo" aria-label="Nexus Console" data-md-component="logo">
+      
+  <img src="../../assets/logo/nexus_full_dark_transparent.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nexus Console
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Loopback test
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/schote/nexus-console" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schote/nexus-console
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../setup/hardware-setup/" class="md-tabs__link">
+          
+  
+  
+  Setup
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
+          
+  
+  
+  System guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api_reference/" class="md-tabs__link">
+          
+  
+  
+  API reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../references/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  References
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Nexus Console" class="md-nav__button md-logo" aria-label="Nexus Console" data-md-component="logo">
+      
+  <img src="../../assets/logo/nexus_full_dark_transparent.svg" alt="logo">
+
+    </a>
+    Nexus Console
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/schote/nexus-console" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    schote/nexus-console
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Setup
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/hardware-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/first-acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/nexus-service/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition service
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Service deployment
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    System guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    System guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../hardware/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Console hardware
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Device configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sequence-calculation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sequence calculation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../postprocessing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Postprocessing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loopback test
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Loopback test
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#test-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#device-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#acquisition-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acquisition parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-and-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model and fit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model and fit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-data-are-fitted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the data are fitted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signal-path-from-dac-to-adc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signal path from DAC to ADC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fit-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fit procedure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-and-tolerances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics and tolerances
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metrics and tolerances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tolerances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tolerances
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test result
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test result">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#report-in-pull-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report in pull requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/spin_echo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spin-echo spectrum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/t2_measurement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    T2 relaxation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/tse_3d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D turbo spin-echo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/remote_acquisition/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Remote acquisition
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    interfaces
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    interfaces
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/acquisition_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    acquisition_data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/acquisition_parameter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    acquisition_parameter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/device_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    device_configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/dimensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    dimensions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/enums/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    enums
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/rx_data/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rx_data
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/interfaces/unrolled_sequence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    unrolled_sequence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    pulseq_interpreter
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    pulseq_interpreter
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/pulseq_interpreter/sequence_provider/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sequence_provider
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    service
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    service
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/service/acquisition_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    acquisition_manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/service/start_manager/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    start_manager
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    spcm_control
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    spcm_control
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/spcm_control/abstract_device/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    abstract_device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/spcm_control/acquisition_control/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    acquisition_control
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/spcm_control/rx_device/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rx_device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/spcm_control/rx_processor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    rx_processor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/spcm_control/tx_device/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tx_device
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    utilities
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    utilities
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6_1" id="__nav_5_6_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    data
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    data
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/data/mrd_helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    mrd_helper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/data/write_acquisition_to_mrd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    write_acquisition_to_mrd
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/ddc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ddc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/json_encoder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    json_encoder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/load_configuration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    load_configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/plot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    plot
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6_6" id="__nav_5_6_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sequences
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_6_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    sequences
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6_6_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6_6_1" id="__nav_5_6_6_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    calibration
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_5_6_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    calibration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/calibration/fid_tx_adjust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fid_tx_adjust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/calibration/se_tx_adjust/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    se_tx_adjust
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6_6_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6_6_2" id="__nav_5_6_6_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    spectrometry
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_5_6_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    spectrometry
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/spectrometry/fid/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    fid
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/spectrometry/se_projection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    se_projection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/spectrometry/se_spectrum/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    se_spectrum
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/spectrometry/t2_relaxation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    t2_relaxation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/system_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    system_settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6_6_4" id="__nav_5_6_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tse
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="4" aria-labelledby="__nav_5_6_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    tse
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/sequences/tse/tse_3d/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    tse_3d
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/utilities/snr/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    snr
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    hardware_tests
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    hardware_tests
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_reference/hardware_tests/loopback/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    loopback
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../references/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    References
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#test-setup" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test setup
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test setup">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sequence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#device-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Device configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#acquisition-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Acquisition parameters
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model-and-fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model and fit
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Model and fit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-the-data-are-fitted" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the data are fitted
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#signal-path-from-dac-to-adc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Signal path from DAC to ADC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fit-procedure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fit procedure
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#metrics-and-tolerances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics and tolerances
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Metrics and tolerances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metrics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metrics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tolerances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tolerances
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test result
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Test result">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#report-in-pull-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Report in pull requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="loopback-test">Loopback Test</h1>
+<p>Most of the Nexus console functionality is covered by unit tests, which are located in the <code>/tests</code> folder and implemented with <code>pytest</code>.
+The unit tests are designed to cover as many lines as possible without access to the measurement cards.
+The operation of <a class="autorefs autorefs-internal" title="TxCard" href="../../api_reference/spcm_control/tx_device/#console.spcm_control.tx_device.TxCard"><code>TxCard</code></a> and <a class="autorefs autorefs-internal" title="RxCard
+
+
+  
+      dataclass
+  " href="../../api_reference/spcm_control/rx_device/#console.spcm_control.rx_device.RxCard"><code>RxCard</code></a> mostly consists of reading and writing values on the hardware modules.
+Meaningful tests therefore require the physical cards, which continuous integration with pytest cannot provide.
+The same applies to most of the <a class="autorefs autorefs-internal" title="AcquisitionControl" href="../../api_reference/spcm_control/acquisition_control/#console.spcm_control.acquisition_control.AcquisitionControl"><code>AcquisitionControl</code></a>, which orchestrates the operation of the <code>TxCard</code> and <code>RxCard</code>.
+For this reason, <code>/tests/hardware/loopback.py</code> implements an end-to-end test with an AWG and a digitizer in a loopback configuration.
+The four analog outputs of the AWG are connected directly to four analog inputs of the digitizer, according to the following wiring table.</p>
+<table>
+<thead>
+<tr>
+<th>AWG (TX)</th>
+<th>Signal</th>
+<th>Digitizer (RX)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ch0</td>
+<td>RF</td>
+<td>ch0</td>
+</tr>
+<tr>
+<td>ch1</td>
+<td>Gx</td>
+<td>ch1</td>
+</tr>
+<tr>
+<td>ch2</td>
+<td>Gy</td>
+<td>ch2</td>
+</tr>
+<tr>
+<td>ch3</td>
+<td>Gz</td>
+<td>ch3</td>
+</tr>
+<tr>
+<td>X1</td>
+<td>ADC gate</td>
+<td>X1</td>
+</tr>
+<tr>
+<td>X2</td>
+<td>Phase reference</td>
+<td>X2</td>
+</tr>
+<tr>
+<td>Clk In</td>
+<td>Sampling clock</td>
+<td>Clk Out</td>
+</tr>
+<tr>
+<td>X3</td>
+<td>RF unblanking</td>
+<td>unconnected</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Switch off or disconnect any amplifiers before you change the wiring. Restore the default wiring of the cards, amplifiers and coils before the next MRI measurement.</p>
+</div>
+<p>To execute the loopback test, run the following command from the repository root. A detailed module description can be found in the <a href="../../api_reference/hardware_tests/loopback/">API reference</a>. The script prints the required wiring and waits for confirmation before the cards are started.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>python tests/hardware/loopback.py
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>-v</code></td>
+<td>Prints the metrics of all channels and the errors per ADC gate, and plots the recorded signals and the residual</td>
+</tr>
+<tr>
+<td><code>--save PATH</code></td>
+<td>Saves the measurement and the system information to a <code>.npz</code> file. <code>Measurement.load(PATH)</code> loads it for an analysis without the cards</td>
+</tr>
+</tbody>
+</table>
+<h2 id="test-setup">Test setup</h2>
+<h3 id="sequence">Sequence</h3>
+<p><a class="autorefs autorefs-internal" title="build_sequence" href="../../api_reference/hardware_tests/loopback/#loopback.build_sequence"><code>build_sequence</code></a> creates a Pulseq sequence with three test cases. Each test case is a block with an ADC event, preceded by a delay block. A final delay block follows the last test case.
+All analog waveforms have a peak amplitude of 160 mV, which is 80 % of the configured 200 mV channel range.
+The <code>adc_dead_time</code> is set to 75 µs.</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>ADC</th>
+<th>Events</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>–</td>
+<td>Delay, 1 ms</td>
+<td>Separates the test cases, so that each block starts from a settled, zero output</td>
+</tr>
+<tr>
+<td>2</td>
+<td>0</td>
+<td>Delay, 800 µs</td>
+<td>Empty ADC gate: The analog outputs are zero, measures noise and offset</td>
+</tr>
+<tr>
+<td>3</td>
+<td>–</td>
+<td>Delay, 1 ms</td>
+<td>Separation</td>
+</tr>
+<tr>
+<td>4</td>
+<td>1</td>
+<td>Gx: trapezoid<br>Gy: neg. sin² shape<br>Gz: piecewise linear</td>
+<td>Gain, offset and distortion of the gradient channels, the shape and sign differ per channel to detect mix-ups</td>
+</tr>
+<tr>
+<td>5</td>
+<td>–</td>
+<td>Delay, 1 ms</td>
+<td>Separation</td>
+</tr>
+<tr>
+<td>6</td>
+<td>2</td>
+<td>200 µs RF block pulse (f0 = 2 MHz) + gradients of block 4</td>
+<td>All event types in parallel. The carrier and the steep pulse edges determine the response and latency of the RF channel, crosstalk between RF and gradients shows up in the residual</td>
+</tr>
+<tr>
+<td>7</td>
+<td>–</td>
+<td>Delay, 1 ms</td>
+<td>Zero output after the last gate, to ensure enough samples for the fit after each gate</td>
+</tr>
+</tbody>
+</table>
+<h3 id="device-configuration">Device configuration</h3>
+<p>The test defines its own device configuration in <a class="autorefs autorefs-internal" title="device_config" href="../../api_reference/hardware_tests/loopback/#loopback.device_config"><code>device_config</code></a> instead of loading a configuration file to simplify the execution and guarantee comparable results on different systems. Only the device paths and the number of RX channels are taken from the detected cards. The most important differences from <code>examples/example_device_config.yaml</code> are:</p>
+<ul>
+<li>4 transmit channels configured with a maximum output amplitude of 200 mV and termination into 50 ohms</li>
+<li>Output filter 0 of the transmit channels which yields the widest filter (70 MHz, 3rd-order Butterworth), see M2p.65xx manual, <em>Output Filters</em></li>
+<li>4 receive channels enabled and configured with a maximum input amplitude of 200 mV and termination into 50 ohms</li>
+<li>Different <code>gpa_gain</code> and <code>gradient_efficiency</code> conversions per channel, but identical gradient amplitudes </li>
+<li>75 us <code>adc_dead_time</code></li>
+</ul>
+<h3 id="acquisition-parameters">Acquisition parameters</h3>
+<ul>
+<li><code>larmor_frequency = 2e6</code> for 2 MHz RF pulse</li>
+<li><code>b1_scaling = 1.6</code> which yields 160 mV block pulse amplitude</li>
+<li><code>num_averages = 10</code> to analyse repetition spread</li>
+<li><code>state_filepath</code> is set to a temporary directory which is deleted after the test</li>
+</ul>
+<p>The test runs the acquisition with <code>store_unprocessed=True</code>, so the raw ADC data at the full sampling rate of 20 MHz is kept. The analysis compares it sample by sample with the replayed sequence.</p>
+<h2 id="pipeline">Pipeline</h2>
+<p>The AWG replays the test sequence ten times, and the digitizer records the three ADC gates of each repetition. The analysis compares the recordings with the unrolled sequence, the samples that the AWG was instructed to output.</p>
+<pre class="mermaid"><code>%%{init: {"fontFamily": "Inter, sans-serif"}}%%
+flowchart TB
+    SEQ(["Test sequence,&lt;br/&gt;device configuration"]) --&gt; AC["AcquisitionControl"]
+    AC --&gt; AWG["AWG"]
+    AWG --&gt;|"loopback wiring"| DIG["Digitizer"]
+    AC --&gt; X(["Replayed:&lt;br/&gt;unrolled sequence"])
+    DIG --&gt; Y(["Recorded:&lt;br/&gt;10 repetitions"])
+    Y --&gt;|"mean"| FIT["Fit per channel"]
+    X --&gt; FIT
+    FIT --&gt; P(["Impulse response,&lt;br/&gt;offset"])
+    FIT --&gt; M(["Model"])
+    P --&gt; MET["Metrics"]
+    M --&gt; MET
+    Y --&gt;|"repetitions"| MET
+    MET --&gt; TOL["Comparison&lt;br/&gt;with tolerances"]
+    TOL --&gt; R(["Report:&lt;br/&gt;PASSED / FAILED"])
+
+    classDef sw fill:#2f6bff22,stroke:#2f6bff,stroke-width:1.5px
+    classDef hw fill:#e67e2222,stroke:#e67e22,stroke-width:1.5px
+    classDef iface fill:#8e44ad22,stroke:#8e44ad,stroke-width:1.5px
+    class AC,FIT,MET,TOL sw
+    class AWG,DIG hw
+    class SEQ,X,Y,P,M,R iface</code></pre>
+<h2 id="model-and-fit">Model and fit</h2>
+<h3 id="why-the-data-are-fitted">Why the data are fitted</h3>
+<p>Even with perfect hardware, the recorded signal does not equal the replayed signal exactly. The calibrations of AWG and digitizer differ slightly, both cards have a small DC offset, the analog filters smooth the signal, and the signal path delays it slightly. These deviations are expected and specified in the manuals (see <a href="../../references/#hardware-documentation">Hardware Documentation</a>). A direct comparison of the samples would not distinguish them from actual faults.</p>
+<p>The test therefore fits a model that contains the expected deviations, and evaluates two things:</p>
+<ul>
+<li><strong>Fit parameters:</strong> the expected deviations must be within the specifications of the cards. This gives the gain error, offset and RF latency.</li>
+<li><strong>Residual:</strong> the difference between recording and model contains everything the model cannot cover, such as distortion, crosstalk, glitches, dropped samples or timing jitter. It must stay at a level similar to the noise.</li>
+</ul>
+<h3 id="model">Model</h3>
+<p>Each recorded sample is modeled as a weighted sum of seven neighboring replayed samples plus an offset:</p>
+<div class="arithmatex">\[
+y[k] = \sum_{j=-3}^{3} h_j \, x[n_k - d - j] + c
+\]</div>
+<table>
+<thead>
+<tr>
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="arithmatex">\(y[k]\)</span></td>
+<td>Recorded sample <span class="arithmatex">\(k\)</span> in mV, mean of the 10 repetitions</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(x[n]\)</span></td>
+<td>Replayed sample <span class="arithmatex">\(n\)</span> of the unrolled sequence in mV</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(n_k\)</span></td>
+<td>Position of the recorded sample <span class="arithmatex">\(k\)</span> in the unrolled sequence</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(d\)</span></td>
+<td>Delay of the recording in whole samples</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(h_j\)</span></td>
+<td>Impulse response of the signal path from DAC to ADC, seven samples</td>
+</tr>
+<tr>
+<td><span class="arithmatex">\(c\)</span></td>
+<td>Offset in mV</td>
+</tr>
+</tbody>
+</table>
+<p>The model is a discrete-time FIR filter applied to the replayed sequence. Gain and RF latency follow from the impulse response:</p>
+<ul>
+<li><strong>Gain</strong> <span class="arithmatex">\(g = \sum_j h_j\)</span>, the response at DC. A gain of 1 means that the calibrations of AWG and digitizer match perfectly.</li>
+<li><strong>RF latency</strong> <span class="arithmatex">\(\tau = \sum_j (d + j)\, h_j \,/\, g\)</span>, the centroid of the impulse response of the RF channel. It is the delay that the envelope of an RF pulse experiences, relative to the ADC gate. A negative value means that the recording starts slightly later than the gate in the unrolled sequence.</li>
+</ul>
+<h3 id="signal-path-from-dac-to-adc">Signal path from DAC to ADC</h3>
+<p>The AWG outputs each sample as a constant value for one sample period, without interpolation (M2p.65xx, <em>Technical Data → Analog Outputs</em>). The analog filters slightly smooth these steps: the 70 MHz output filter of the AWG (M2p.65xx, <em>Output Filters</em>) and the anti-aliasing filter of the digitizer, 10 MHz for the 592x and 20 MHz for the 593x (M2p.59xx, <em>Technical Data → Analog Inputs</em>). Both filters are at or above the Nyquist frequency of 10 MHz, so they round off the edges of the steps but do not remove them. The digitizer then samples the smoothed signal. Since each step is spread over a few sample periods, a recorded sample contains contributions of a few consecutive replayed samples. The AWG runs on the sampling clock of the digitizer, so the ADC samples at the same position within every step, and the contributions are given by the same weights <span class="arithmatex">\(h_j\)</span> for every recorded sample. This corresponds to the FIR model above. The time offset may differ between setups, so the weights are fitted rather than predefined.</p>
+<p>The FIR filter has seven coefficients, three on each side of the center. The number follows from the settling time of the slowest filter, the 3rd-order Butterworth anti-aliasing filter of the 592x at 10 MHz (M2p.59xx, Technical Data → Analog Inputs): its ringing decays with a time constant of 1/(π · 10 MHz) ≈ 32 ns, so the response to one replayed sample extends over about four sample periods. Seven coefficients cover this response for both digitizer models and keep the number of fit parameters small.</p>
+<h3 id="fit-procedure">Fit procedure</h3>
+<p><a class="autorefs autorefs-internal" title="fit_channel" href="../../api_reference/hardware_tests/loopback/#loopback.fit_channel"><code>fit_channel</code></a> fits each channel independently and uses the mean of the 10 repetitions, which reduces the noise.</p>
+<ol>
+<li><strong>Delay <span class="arithmatex">\(d\)</span>:</strong> the recording can be shifted by whole samples relative to the replay, so the shift with the highest cross-correlation (searched within ±32 samples) is used to center the seven FIR coefficients <span class="arithmatex">\(h_j\)</span> on the recorded response.</li>
+<li><strong>Impulse response and offset:</strong> the model is linear in <span class="arithmatex">\(h_j\)</span> and <span class="arithmatex">\(c\)</span>. A single linear least-squares solution gives both, without start values or iterations.</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Timing of the gradient channels</p>
+<p>The delay is fitted per channel, so a timing shift of a gradient channel relative to the RF channel is absorbed by the fit and is not tested. Both manuals specify a skew between channels of less than 200 ps (<em>Technical Data → Clock</em>), which is 0.004 samples at 20 MS/s. Timing errors that matter for MRI originate in the sequence calculation, which is covered by the unit tests.</p>
+</div>
+<h2 id="metrics-and-tolerances">Metrics and tolerances</h2>
+<h3 id="metrics">Metrics</h3>
+<p><a class="autorefs autorefs-internal" title="analyze" href="../../api_reference/hardware_tests/loopback/#loopback.analyze"><code>analyze</code></a> evaluates the following seven metrics per channel. The RF latency is only evaluated on the RF channel. Model is the fitted right-hand side of the model equation, mean is the mean of the 10 repetitions, and A is the channel amplitude (160 mV).</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Definition</th>
+<th>Indicates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gain error</td>
+<td>Σ h<sub>j</sub> − 1</td>
+<td>Calibration mismatch between AWG and digitizer</td>
+</tr>
+<tr>
+<td>Offset</td>
+<td>c / 200 mV</td>
+<td>DC offset of the output or input stage</td>
+</tr>
+<tr>
+<td>RF latency</td>
+<td>τ, in samples</td>
+<td>RF channel shifted relative to the ADC gate</td>
+</tr>
+<tr>
+<td>Noise</td>
+<td>RMS(single repetitions − model) / A, in gate 0</td>
+<td>Noise of both cards</td>
+</tr>
+<tr>
+<td>RMS error</td>
+<td>RMS(mean − model) / A</td>
+<td>Distortion, nonlinearity or crosstalk that affect the whole signal</td>
+</tr>
+<tr>
+<td>Peak error</td>
+<td>max(abs(mean − model)) / A</td>
+<td>Local faults, e.g. a single wrong sample, which barely change the RMS error</td>
+</tr>
+<tr>
+<td>Repetition spread</td>
+<td>max(std(repetitions)) / A</td>
+<td>Timing jitter and dropped samples. Without faults, the spread is close to the noise</td>
+</tr>
+</tbody>
+</table>
+<h3 id="tolerances">Tolerances</h3>
+<p>The tolerances follow from the technical data of the AWG (M2p.65xx) and the digitizer (M2p.59xx) at the ±200 mV range with 50 Ω termination. Guaranteed values are used directly, typical values with a margin of a factor ~2.</p>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Tolerance</th>
+<th>Values in the manuals</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gain error</td>
+<td>±0.6 %</td>
+<td>AWG output accuracy (0.5 % of amplitude) + digitizer gain error (0.1 %)</td>
+</tr>
+<tr>
+<td>Offset</td>
+<td>±0.6 %</td>
+<td>AWG output accuracy (1 mV) + digitizer offset error (0.1 % of range)</td>
+</tr>
+<tr>
+<td>RF latency</td>
+<td>−0.5 ±0.5 samples</td>
+<td>Digitizer trigger accuracy (1 sample), center measured on the development setup</td>
+</tr>
+<tr>
+<td>Noise</td>
+<td>±0.1 %</td>
+<td>Digitizer noise and AWG noise density</td>
+</tr>
+<tr>
+<td>RMS error</td>
+<td>±0.1 %</td>
+<td>Noise, harmonic distortion (THD) and integral nonlinearity (INL) of both cards</td>
+</tr>
+<tr>
+<td>Peak error</td>
+<td>±0.3 %</td>
+<td>As RMS error, for the largest deviation among all samples</td>
+</tr>
+<tr>
+<td>Repetition spread</td>
+<td>±0.25 %</td>
+<td>Noise, for the largest spread among all samples</td>
+</tr>
+</tbody>
+</table>
+<h2 id="test-result">Test result</h2>
+<table>
+<thead>
+<tr>
+<th>Entry</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time stamp</td>
+<td>Date and time of the test</td>
+</tr>
+<tr>
+<td>OS, Python</td>
+<td>Operating system and Python version of the workstation</td>
+</tr>
+<tr>
+<td>Code version</td>
+<td>Nexus-console version, git branch and commit of the tested code. <code>(uncommitted changes)</code> indicates that tracked files differ from the commit</td>
+</tr>
+<tr>
+<td>SPCM driver</td>
+<td>Versions of the driver library and the kernel driver</td>
+</tr>
+<tr>
+<td>Spectrum cards</td>
+<td>Model, function and number of channels of each detected card</td>
+</tr>
+<tr>
+<td>Recording</td>
+<td>Number of recorded ADC gates out of the expected number. Missing gates, a wrong number of samples or a recorded phase reference that does not oscillate at the frequency of the phase reference signal abort the test before the analysis. The phase reference is checked with the magnitude of the same demodulation that the phase correction in <code>RxData</code> uses, the threshold detects frequency errors above about 0.4 %</td>
+</tr>
+<tr>
+<td>Metrics</td>
+<td>Worst value of all channels per metric, the tolerance and the final test result</td>
+</tr>
+</tbody>
+</table>
+<p>The result is only meaningful together with the system on which it was obtained. The commit identifies the exact state of the code such that a reviewer can verify that the result belongs to the latest changes of the pull request. The driver version and operating system may affect the operation of the cards. If a result changes between two pull requests, the system information shows whether the code or the system has changed.</p>
+<h3 id="report-in-pull-requests">Report in pull requests</h3>
+<p>The unit tests in the continuous integration cannot access the cards, so the loopback test is the only check that a change does not break the operation of the hardware. The pull request template therefore asks for the result of every pull request. It is essential for changes to the card control (<code>console.spcm_control</code>), the sequence calculation, the device configuration and the acquisition parameters, and after updates of dependencies or the Spectrum driver.</p>
+<ul>
+<li>Run the test with the final state of the pull request. The reported commit should match the last commit of the pull request and must not show <code>(uncommitted changes)</code>. If a result is reported, the CI check <em>Loopback report</em> verifies this and fails until the result is updated after every new commit. Without a reported result, the check is skipped.</li>
+<li>Copy the complete result, from the header line to <code>Result</code>, into the section <em>Loopback test</em> of the pull request.</li>
+<li>All metrics must pass. If a metric fails, rerun the test with <code>-v</code> to see which channel and which ADC gate cause the failure, and check the wiring first.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "content.code.copy", "content.code.annotate", "toc.follow", "search.suggest", "search.highlight"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+        <script src="../../assets/js/doc-badges.js"></script>
+      
+    
+  </body>
+</html>
