@@ -3580,7 +3580,7 @@ y[k] = \sum_{j=-3}^{3} h_j \, x[n_k - d - j] + c
 <h3 id="report-in-pull-requests">Report in pull requests</h3>
 <p>The unit tests in the continuous integration cannot access the cards, so the loopback test is the only check that a change does not break the operation of the hardware. The pull request template therefore asks for the result of every pull request. It is essential for changes to the card control (<code>console.spcm_control</code>), the sequence calculation, the device configuration and the acquisition parameters, and after updates of dependencies or the Spectrum driver.</p>
 <ul>
-<li>Run the test with the final state of the pull request. The reported commit should match the last commit of the pull request and must not show <code>(uncommitted changes)</code>.</li>
+<li>Run the test with the final state of the pull request. The reported commit should match the last commit of the pull request and must not show <code>(uncommitted changes)</code>. If a result is reported, the CI check <em>Loopback report</em> verifies this and fails until the result is updated after every new commit. Without a reported result, the check is skipped.</li>
 <li>Copy the complete result, from the header line to <code>Result</code>, into the section <em>Loopback test</em> of the pull request.</li>
 <li>All metrics must pass. If a metric fails, rerun the test with <code>-v</code> to see which channel and which ADC gate cause the failure, and check the wiring first.</li>
 </ul>
