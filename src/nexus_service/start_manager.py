@@ -5,33 +5,66 @@ import logging
 import os
 import signal
 import sys
+from contextlib import suppress
 from multiprocessing.connection import Client
+from multiprocessing.managers import Server
 from pathlib import Path
 
 from console.spcm_control.acquisition_control import AcquisitionControl
 from nexus_service.acquisition_manager import AcquisitionControlManager, runtime_dir, service_address
 
 
-def ensure_socket_free(address: str | Path) -> None:
-    """Remove a socket file left behind by a crashed service, abort if a service is listening on it.
+def claim_runtime_dir(directory: Path, address: str) -> None:
+    """Prepare the runtime directory for this service, before any hardware is touched.
+
+    The directory is created for the service account with mode 755: every account can read the key and connect
+    to the socket, but no other account can place files in it. A leftover of a killed service of the same
+    account is reused, its socket file and key are removed.
 
     Parameters
     ----------
+    directory
+        Runtime directory of the service.
     address
         Path of the unix domain socket (name of the named pipe on Windows) of the acquisition service.
 
     Raises
     ------
     RuntimeError
-        If another acquisition service is already listening on the socket.
+        If a service is already running, or if the directory belongs to another account, e.g. as leftover of
+        a killed service. In the sticky temporary directory, only that account or root can remove it.
     """
     try:
-        Client(str(address)).close()
-    except (ConnectionRefusedError, FileNotFoundError):
-        # Nobody is listening, a named pipe vanishes with its server but a socket file is left behind
-        Path(address).unlink(missing_ok=True)
-        return
-    raise RuntimeError(f"A nexus service is already running on {address}.")
+        Client(address).close()
+    except (ConnectionRefusedError, FileNotFoundError, PermissionError):
+        pass  # nobody reachable is listening
+    else:
+        raise RuntimeError(f"A nexus service is already running on {address}.")
+    try:
+        directory.mkdir(parents=True)
+    except FileExistsError:
+        # A symbolic link is judged by its own owner, so it cannot redirect the service into a foreign directory
+        if sys.platform != "win32" and directory.lstat().st_uid != os.getuid():
+            owner = directory.owner(follow_symlinks=False)
+            raise RuntimeError(
+                f"{directory} belongs to {owner}, e.g. as leftover of a killed service. "
+                f"Ask {owner} or an administrator to remove it."
+            ) from None
+    directory.chmod(0o755)  # mkdir applies the umask
+    # A named pipe vanishes with its server, but socket file and key of a killed service are left behind
+    Path(address).unlink(missing_ok=True)
+    (directory / "authkey").unlink(missing_ok=True)
+
+
+def release_runtime_dir(directory: Path) -> None:
+    """Remove the runtime directory if it is empty, so that any account can start the service again.
+
+    Socket and key are removed before by the service which published them. If the directory still holds those
+    of a running service, e.g. after this instance failed to bind the socket, it is kept. Under systemd, the
+    service account may not remove ``/run/nexus``, systemd removes it on stop instead.
+    """
+    with suppress(OSError):
+        directory.rmdir()
 
 
 def main() -> None:
@@ -76,9 +109,37 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Validate the runtime directory and free the socket before any hardware is touched
+    # Claim the runtime directory before any hardware is touched, and release it on every exit from here on
+    directory = runtime_dir()
     address = service_address()
-    ensure_socket_free(address)
+    claim_runtime_dir(directory, address)
+
+    acquisition_control: AcquisitionControl | None = None
+    server: Server | None = None
+
+    def shutdown_handler() -> None:
+        try:
+            print("\n[nexus] Shutting down nexus server...\n")
+            if acquisition_control is not None:
+                acquisition_control.close()
+                print("[nexus] Acquisition control shutdown successfully.")
+        except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
+            print(f"[nexus] Error during shutdown: {e}")
+        finally:
+            # Only a service which bound the socket removes socket and key, an instance which failed to bind
+            # must leave those of the running service alone
+            if server is not None:
+                server.listener.close()  # type: ignore[attr-defined]  # removes the socket, missing in typeshed
+                manager.key_file.unlink(missing_ok=True)
+            release_runtime_dir(directory)
+            print("[nexus] Shutdown complete.")
+
+    atexit.register(shutdown_handler)
+    # Run the atexit handlers on SIGTERM (systemctl stop) and SIGHUP (terminal closed) as well, otherwise socket,
+    # key and directory would be left behind
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    if sys.platform != "win32":
+        signal.signal(signal.SIGHUP, lambda *_: sys.exit(0))
 
     if not args.no_verify:
         input("\n[nexus] Before starting the setup, confirm that all the amplifiers are turned off.\
@@ -105,23 +166,6 @@ def main() -> None:
         server = manager.get_server()
     finally:
         os.umask(umask)
-
-    def shutdown_handler() -> None:
-        try:
-            print("\n[nexus] Shutting down nexus server...\n")
-            if acquisition_control:
-                acquisition_control.close()
-                print("[nexus] Acquisition control shutdown successfully.")
-        except Exception as e:  # noqa: BLE001 - atexit handler must not raise, report any error instead
-            print(f"[nexus] Error during shutdown: {e}")
-        finally:
-            # The socket file itself is removed by the finalizer of the multiprocessing listener
-            (runtime_dir() / "authkey").unlink(missing_ok=True)
-            print("[nexus] Shutdown complete.")
-
-    atexit.register(shutdown_handler)
-    # Run the atexit handlers on SIGTERM (systemctl stop) as well, otherwise socket and key would be left behind
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
 
     print(f"\n[nexus] AcquisitionControlManager >> Server started on {address}...\n")
     server.serve_forever()

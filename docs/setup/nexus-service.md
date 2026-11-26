@@ -92,14 +92,17 @@ Service and clients exchange the connection details through a runtime directory.
 | `nexus.sock` | Unix domain socket of the service, accessible by every account |
 | `authkey` | Authentication key, generated at every service start and readable by every account |
 
-The directory is created with mode `1777`, the same permissions that `/tmp` uses. Every account on the workstation can read the key and connect to the socket, while the sticky bit allows only the owner of a file to delete or rename it, so no account can remove the socket or the key of another. If the directory is a symbolic link or has different permissions, e.g. because another account created it beforehand, the service and the clients refuse to use it.
-
-Note that `/tmp` is periodically cleaned by the system, and that leftovers of another account can only be removed by that account or root.
+The service creates the directory for its account with mode `755`: every account on the workstation can read the key and connect to the socket, but only the service account can place files in the directory. If the directory already exists and belongs to another account, the service refuses to start, because that account could replace socket and key.
 
 !!! warning "The authentication key is not a secret"
-    The key only ensures that clients connect to the currently running service, not to one from a previous run. It does not protect against other users of the workstation: any client holding the key can make the service execute code on its behalf, and the measurement cards are world-accessible character devices. Run the service under an ordinary operator account, never as root.
+    The key only ensures that clients connect to the currently running service, not to one from a previous run. It does not protect against other users of the workstation: any client holding the key can make the service execute code on its behalf, and the measurement cards are world-accessible character devices. Run the service under an ordinary operator account, never as root. Conversely, clients trust the account running the service, since they deserialize its replies.
 
-Both files are removed when the service shuts down. If the service is killed without being able to clean up, the socket file remains; the next service start detects that nothing is listening behind it and removes it. A second service instance started while the first one is still running aborts with an error instead of interfering with the running acquisition.
+On shutdown, the service removes the socket, the key and the directory, so that any account can start the service next. This includes <kbd>Ctrl</kbd>+<kbd>C</kbd>, `kill`/`systemctl stop` (SIGTERM) and closing the terminal (SIGHUP). If the service is killed without being able to clean up (SIGKILL, a crash of the interpreter, a power loss), the directory is left behind:
+
+- The same account reuses it at the next start, the stale socket and key are detected and removed.
+- Another account cannot start the service until the owner or root removes the directory, as the sticky bit of `/tmp` protects it. `/tmp` is not necessarily cleared at reboot, e.g. on RHEL systemd-tmpfiles only removes entries unused for 10 days.
+
+A second service instance started while the first one is still running aborts with an error instead of interfering with the running acquisition. To share the service among several accounts without these leftovers, run it as a systemd unit, see [Service deployment](deployment.md).
 
 !!! note "Windows"
     Windows has neither unix domain sockets nor POSIX permissions. There, the service listens on a named pipe named after the socket path, `\\.\pipe\<runtime directory>/nexus.sock`, which vanishes with the service, and the runtime directory is `<tempdir>\nexus`, which is private to the account. Windows only grants the account which started the service write access to the pipe, so only this account can connect to it.

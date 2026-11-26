@@ -2,12 +2,11 @@
 import inspect
 import os
 import secrets
-import stat
 import sys
 import tempfile
 from collections.abc import Callable
-from contextlib import suppress
-from multiprocessing.managers import BaseManager
+from multiprocessing import AuthenticationError
+from multiprocessing.managers import BaseManager, Server
 from pathlib import Path
 from types import TracebackType
 from typing import Any
@@ -36,35 +35,20 @@ def runtime_dir() -> Path:
     """Return the directory holding socket and authentication key of the service.
 
     ``NEXUS_RUNTIME_DIR`` overrides the location (used by the tests). Otherwise, if the service runs as
-    a systemd unit, ``/run/nexus`` exists and is used as-is: systemd creates it for the service account
-    and removes it on stop, so only root can delete it and no other account can place files in it.
-    Without the unit the location defaults to ``<tempdir>/nexus``, created on demand with mode 1777:
-    every account may use the console, so every account must be able to read the key and open the
-    socket, while the sticky bit keeps one account from removing the files of another. A symbolic
-    link or a directory with different permissions, which could have been pre-created by another
-    user, is refused. Windows has no such permissions, there ``<tempdir>`` is private to the account.
+    a systemd unit, ``/run/nexus`` exists and is used: systemd creates it for the service account and
+    removes it on stop. Without the unit the location defaults to ``<tempdir>/nexus``, which the service
+    started by hand creates for its account and removes on shutdown. Every account may use the console,
+    so the directory and the key are readable and the socket is accessible by every account, but only the
+    service account can place files in the directory. This function neither creates nor checks the
+    directory, the service does (see ``nexus_service.start_manager.claim_runtime_dir``).
 
     Returns
     -------
         Path of the runtime directory.
-
-    Raises
-    ------
-    RuntimeError
-        If the runtime directory is a symbolic link or has unexpected permissions.
     """
     if "NEXUS_RUNTIME_DIR" not in os.environ and SYSTEM_RUNTIME_DIR.is_dir() and not SYSTEM_RUNTIME_DIR.is_symlink():
         return SYSTEM_RUNTIME_DIR
-    path = Path(os.environ.get("NEXUS_RUNTIME_DIR", Path(tempfile.gettempdir()) / "nexus"))
-    if path.is_symlink():
-        raise RuntimeError(f"Runtime directory {path} is a symbolic link, refusing to use it.")
-    path.mkdir(parents=True, exist_ok=True)
-    if sys.platform != "win32":
-        with suppress(PermissionError):  # directory may belong to the account which started the service
-            path.chmod(0o1777)
-        if stat.S_IMODE(path.stat().st_mode) != 0o1777:
-            raise RuntimeError(f"Runtime directory {path} has wrong permissions, remove it or set NEXUS_RUNTIME_DIR.")
-    return path
+    return Path(os.environ.get("NEXUS_RUNTIME_DIR", Path(tempfile.gettempdir()) / "nexus"))
 
 
 def service_address() -> str:
@@ -91,12 +75,15 @@ class AcquisitionControlManager(BaseManager):
             acquisition_data = manager.acquisition.run()
 
     The service side passes ``callable_acq_control`` and thereby generates a fresh
-    authentication key for this run, which is published in the runtime directory.
+    authentication key for this run, which is published in the runtime directory
+    by ``get_server()`` or ``start()`` once the socket is bound.
 
     Raises
     ------
     NexusNotRunningError
         If no authentication key is found, i.e. the acquisition service is not running.
+    TypeError
+        If the address is not a socket path, e.g. a TCP address of the former API.
     """
 
     # Proxy factory, added dynamically by BaseManager.register("AcquisitionControl") in __init__
@@ -116,6 +103,7 @@ class AcquisitionControlManager(BaseManager):
         address : str or Path or None, optional
             Address of the manager process, by default None.
             If None, the unix domain socket in the runtime directory is used.
+            TCP addresses, i.e. ``(host, port)`` tuples, are not supported.
         authkey : bytes or None, optional
             Authentication key of the manager process, by default None.
             If None, a fresh key is generated on the service side
@@ -126,14 +114,19 @@ class AcquisitionControlManager(BaseManager):
         **kwargs
             Additional keyword arguments passed to ``BaseManager``.
         """
-        key_file = runtime_dir() / "authkey"
+        if address is not None and not isinstance(address, str | Path):
+            raise TypeError(
+                f"Address must be the path of the service socket, got {address!r}. The service does not listen on a "
+                "TCP port anymore, construct the manager without address and authkey to connect to the local service."
+            )
+        self.key_file = runtime_dir() / "authkey"
+        # Key generated by the service, published by get_server() or start() once the socket is bound
+        self._generated_key: bytes | None = None
         if authkey is None and callable_acq_control:
-            authkey = secrets.token_bytes(32)
-            key_file.write_bytes(authkey)
-            key_file.chmod(0o644)
+            authkey = self._generated_key = secrets.token_bytes(32)
         elif authkey is None:
             try:
-                authkey = key_file.read_bytes()
+                authkey = self.key_file.read_bytes()
             except FileNotFoundError as exc:
                 raise NexusNotRunningError(NOT_RUNNING_MSG) from exc
 
@@ -144,6 +137,28 @@ class AcquisitionControlManager(BaseManager):
         else:
             self.register("AcquisitionControl")
 
+    def get_server(self) -> Server:
+        """Bind the socket and return the server, then publish the authentication key."""
+        server = super().get_server()
+        self._publish_authkey()
+        return server
+
+    def start(self, *args: Any, **kwargs: Any) -> None:
+        """Start the server in a child process, then publish the authentication key."""
+        super().start(*args, **kwargs)
+        self._publish_authkey()
+
+    def _publish_authkey(self) -> None:
+        """Write the generated key to the runtime directory.
+
+        Only called once the socket is bound, so a second service instance, which fails to bind, cannot replace
+        the key of the running one.
+        """
+        if self._generated_key is None:
+            return
+        self.key_file.write_bytes(self._generated_key)
+        self.key_file.chmod(0o644)
+
     def __enter__(self) -> "AcquisitionControlManager":
         """Enter with context.
 
@@ -151,11 +166,26 @@ class AcquisitionControlManager(BaseManager):
         ------
         NexusNotRunningError
             If the acquisition service is not reachable at the runtime socket.
+        PermissionError
+            If the account may not connect to the socket or named pipe.
+        AuthenticationError
+            If the service rejects the authentication key.
         """
+        address = str(self.address)
         try:
             self.connect()
         except (ConnectionRefusedError, FileNotFoundError) as exc:
             raise NexusNotRunningError(NOT_RUNNING_MSG) from exc
+        except PermissionError as exc:
+            raise PermissionError(
+                f"No permission to connect to the nexus service at {address}. "
+                "On Windows, only the account which started the service can connect."
+            ) from exc
+        except AuthenticationError as exc:
+            raise AuthenticationError(
+                f"The nexus service at {address} rejected the authentication key. Construct the manager without "
+                "authkey to use the key of the running service, and construct it anew after a service restart."
+            ) from exc
         self.acquisition: AcquisitionControl = self.AcquisitionControl()
         return self
 
