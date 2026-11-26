@@ -117,6 +117,12 @@ class RxProcessor:
         self._futures.clear()
         return [results[i] for i in range(expected_count) if i in results]
 
+    def clear(self) -> None:
+        """Cancel pending futures and discard all results that were not collected."""
+        for future in self._futures.values():
+            future.cancel()
+        self._futures.clear()
+
     def shutdown(self) -> None:
         """Shut down the process pool."""
         if self._executor is not None:

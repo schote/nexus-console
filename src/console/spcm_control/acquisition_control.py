@@ -286,6 +286,10 @@ class AcquisitionControl:
 
         self.num_adc_events = len(self.sequence.rx_data)
 
+        if self._processor is not None:
+            # Clear any results of a previous, aborted run
+            self._processor.clear()
+
         submit_fn = (
             functools.partial(self._processor.submit, store_unprocessed=store_unprocessed)
             if self._processor is not None else None
@@ -354,12 +358,13 @@ class AcquisitionControl:
                             if rx is not None:
                                 inprocess_items.append((k * self.num_adc_events + j, rx))
                 finally:
-                    self.rx_card.rx_data = None
                     try:
                         if self.tx_card.worker is not None:
                             self.tx_card.stop_operation()
                     finally:
                         self.rx_card.stop_operation()
+                        # Clear after the receive thread is joined, a gate may still arrive after an error
+                        self.rx_card.rx_data = None
 
                 if self.sequence.parameter.averaging_delay > 0:
                     time.sleep(self.sequence.parameter.averaging_delay)
