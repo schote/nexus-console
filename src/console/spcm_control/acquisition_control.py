@@ -4,6 +4,7 @@ import copy
 import functools
 import logging
 import logging.config
+import threading
 import time
 from collections.abc import Callable
 from datetime import datetime
@@ -73,7 +74,9 @@ class AcquisitionControl:
         console_log_level
             Set the logging level for the terminal/console output.
         """
-        # Set first, so that close() also disconnects the cards if the constructor fails
+        # Held by run() while the cards are operated, close() waits for it before disconnecting the cards
+        self._run_lock = threading.Lock()
+        # Set before the cards are created, so that close() also disconnects them if the constructor fails
         self._closed = False
 
         date = datetime.now().strftime("%Y-%m-%d")
@@ -166,22 +169,30 @@ class AcquisitionControl:
         if getattr(self, "_closed", True):
             return
         self._closed = True
-        # Attributes may be missing if the constructor fails
-        log = logging.getLogger("AcqCtrl")
-        for card in [getattr(self, "tx_card", None), getattr(self, "rx_card", None)]:
-            if card is None:
-                continue
-            try:
-                if card.worker is not None:
-                    card.stop_operation()
-            except RuntimeError:
-                log.exception("Could not stop operation of card %s", card.name)
-            card.disconnect()
-        processor: RxProcessor | None = getattr(self, "_processor", None)
-        if processor is not None:
-            processor.shutdown()
-        log.info("Measurement cards disconnected")
-        log.info("Acquisition control terminated\n---------------------------------------------------\n")
+        # A running acquisition notices the flag, stops the card threads and resets the gradient offsets in its own
+        # thread and releases the lock, only then the cards are disconnected
+        with self._run_lock:
+            # Attributes may be missing if the constructor fails
+            log = logging.getLogger("AcqCtrl")
+            for card in [getattr(self, "tx_card", None), getattr(self, "rx_card", None)]:
+                if card is None:
+                    continue
+                try:
+                    if card.worker is not None:
+                        card.stop_operation()
+                except RuntimeError:
+                    log.exception("Could not stop operation of card %s", card.name)
+                card.disconnect()
+            processor: RxProcessor | None = getattr(self, "_processor", None)
+            if processor is not None:
+                processor.shutdown()
+            log.info("Measurement cards disconnected")
+            log.info("Acquisition control terminated\n---------------------------------------------------\n")
+
+    def _raise_if_closed(self) -> None:
+        """Abort a running acquisition once ``close()`` was called, e.g. on shutdown of the service."""
+        if self._closed:
+            raise RuntimeError("Acquisition aborted, the acquisition control was closed.")
 
     def __del__(self) -> None:
         """Class destructor disconnecting measurement cards."""
@@ -305,84 +316,95 @@ class AcquisitionControl:
             if self._processor is not None else None
         )
 
-        # Set gradient offset values
-        self.tx_card.set_gradient_offsets(
-            offsets=self.sequence.parameter.gradient_offset,
-            is_50ohms=self.config.tx.gradients_terminated_50ohm,
-        )
-
         # Accumulates (global_index, rx_data) pairs when processing in the main process
         inprocess_items: list[tuple[int, RxData]] = []
 
-        try:
-            for k in range(self.sequence.parameter.num_averages):
-                rx_data_list = copy.deepcopy(self.sequence.rx_data)
-                for data in rx_data_list:
-                    data.average_index = k
-                    data.larmor_frequency = self.sequence.parameter.larmor_frequency
+        num_averages = self.sequence.parameter.num_averages
+        last_progress_step = -1
 
-                self.rx_card.rx_data = cast(list[RxData | None], rx_data_list)
-
-                self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
-
-                self.rx_card.start_operation(submit_fn=submit_fn, index_offset=k * self.num_adc_events)
-
-                # Stop the worker threads also if an error occurs (or Ctrl+C), otherwise the receive thread keeps
-                # running, the cards keep streaming and the process cannot exit
-                try:
-                    while not self.rx_card.is_receiving.is_set():
-                        rx_worker = self.rx_card.worker
-                        if rx_worker is not None and not rx_worker.is_alive():
-                            raise RuntimeError("Receive thread terminated before the acquisition started.")
-                        time.sleep(0.01)
-                    self.tx_card.start_operation(self.sequence)
-
-                    # Get start time of acquisition
-                    time_start = time.time()
-                    last_progress_step = -1
-
-                    while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or num_gates == 0:
-                        self.progress = min(100, int(100 * (time.time() - time_start) / self.sequence.duration))
-                        if callable(progress_callback) and self.progress > last_progress_step + 2:
-                            last_progress_step = self.progress
-                            progress_callback(self.progress)
-
-                        # Delay poll by 100 ms
-                        time.sleep(0.1)
-
-                        if (time.time() - time_start) > timeout:
-                            # Could not receive all the data before timeout
-                            self.log.warning(
-                                "Acquisition Timeout: Only received %s/%s adc events",
-                                num_gates,
-                                self.sequence.adc_count,
-                            )
-                            break
-
-                        if num_gates >= self.sequence.adc_count and num_gates > 0:
-                            break
-
-                    if self._processor is None:
-                        for j, rx in enumerate(rx_data_list):
-                            if rx is not None:
-                                inprocess_items.append((k * self.num_adc_events + j, rx))
-                finally:
-                    try:
-                        if self.tx_card.worker is not None:
-                            self.tx_card.stop_operation()
-                    finally:
-                        self.rx_card.stop_operation()
-                        # Clear after the receive thread is joined, a gate may still arrive after an error
-                        self.rx_card.rx_data = None
-
-                if self.sequence.parameter.averaging_delay > 0:
-                    time.sleep(self.sequence.parameter.averaging_delay)
-        finally:
-            # Reset gradient offset values
+        # close() waits for this lock, so an aborted acquisition stops the cards and resets the gradient offsets
+        # before the cards are disconnected
+        with self._run_lock:
+            self._raise_if_closed()
+            # Set gradient offset values
             self.tx_card.set_gradient_offsets(
-                offsets=Dimensions(x=0, y=0, z=0),
+                offsets=self.sequence.parameter.gradient_offset,
                 is_50ohms=self.config.tx.gradients_terminated_50ohm,
             )
+
+            try:
+                for k in range(num_averages):
+                    self._raise_if_closed()
+                    rx_data_list = copy.deepcopy(self.sequence.rx_data)
+                    for data in rx_data_list:
+                        data.average_index = k
+                        data.larmor_frequency = self.sequence.parameter.larmor_frequency
+
+                    self.rx_card.rx_data = cast(list[RxData | None], rx_data_list)
+
+                    self.log.info("Acquisition %s/%s", k + 1, self.sequence.parameter.num_averages)
+
+                    self.rx_card.start_operation(submit_fn=submit_fn, index_offset=k * self.num_adc_events)
+
+                    # Stop the worker threads also if an error occurs (or Ctrl+C), otherwise the receive thread keeps
+                    # running, the cards keep streaming and the process cannot exit
+                    try:
+                        while not self.rx_card.is_receiving.is_set():
+                            self._raise_if_closed()
+                            rx_worker = self.rx_card.worker
+                            if rx_worker is not None and not rx_worker.is_alive():
+                                raise RuntimeError("Receive thread terminated before the acquisition started.")
+                            time.sleep(0.01)
+                        self.tx_card.start_operation(self.sequence)
+
+                        # Get start time of acquisition
+                        time_start = time.time()
+
+                        # Without ADC events, wait until the sequence has been played out
+                        while (num_gates := self.rx_card.total_gates) < self.sequence.adc_count or (
+                            self.sequence.adc_count == 0 and time.time() - time_start < self.sequence.duration
+                        ):
+                            self._raise_if_closed()
+                            # Progress of the whole run, 100 % is only reported once the run is complete
+                            fraction = min(0.99, (time.time() - time_start) / self.sequence.duration)
+                            self.progress = int(100 * (k + fraction) / num_averages)
+                            if callable(progress_callback) and self.progress > last_progress_step + 2:
+                                last_progress_step = self.progress
+                                progress_callback(self.progress)
+
+                            # Delay poll by 100 ms
+                            time.sleep(0.1)
+
+                            if (time.time() - time_start) > timeout:
+                                # Could not receive all the data before timeout
+                                self.log.warning(
+                                    "Acquisition Timeout: Only received %s/%s adc events",
+                                    num_gates,
+                                    self.sequence.adc_count,
+                                )
+                                break
+
+                        if self._processor is None:
+                            for j, rx in enumerate(rx_data_list):
+                                if rx is not None:
+                                    inprocess_items.append((k * self.num_adc_events + j, rx))
+                    finally:
+                        try:
+                            if self.tx_card.worker is not None:
+                                self.tx_card.stop_operation()
+                        finally:
+                            self.rx_card.stop_operation()
+                            # Clear after the receive thread is joined, a gate may still arrive after an error
+                            self.rx_card.rx_data = None
+
+                    if self.sequence.parameter.averaging_delay > 0:
+                        time.sleep(self.sequence.parameter.averaging_delay)
+            finally:
+                # Reset gradient offset values
+                self.tx_card.set_gradient_offsets(
+                    offsets=Dimensions(x=0, y=0, z=0),
+                    is_50ohms=self.config.tx.gradients_terminated_50ohm,
+                )
 
         total_expected = self.sequence.parameter.num_averages * self.num_adc_events
         total_raw_samples = (
@@ -418,6 +440,10 @@ class AcquisitionControl:
         except ValueError as err:
             self.log.exception(err, exc_info=True)
             raise err
+
+        self.progress = 100
+        if callable(progress_callback):
+            progress_callback(self.progress)
 
         return AcquisitionData(
             receive_data=self.receive_data,
