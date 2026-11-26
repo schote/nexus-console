@@ -28,6 +28,11 @@ def _dict_factory(items: Iterable[tuple[str, Any]]) -> dict[str, Any]:
     return {key: value for key, value in items if not key.startswith("_")}
 
 
+def _default_state_filepath() -> str:
+    """Return the default state file, read at call time so that ``NEXUS_PARAMETER_FILE`` may be set after import."""
+    return os.environ.get("NEXUS_PARAMETER_FILE", str(Path.home() / "nexus-console/acquisition-parameter.state"))
+
+
 @dataclass
 class AcquisitionParameter:
     """Runtime parameters of an acquisition.
@@ -75,9 +80,7 @@ class AcquisitionParameter:
     averaging_delay: float = 0.0
     """Delay in seconds between acquisition averages."""
 
-    state_filepath: str = os.environ.get(
-        "NEXUS_PARAMETER_FILE", str(Path.home() / "nexus-console/acquisition-parameter.state")
-    )
+    state_filepath: str = field(default_factory=_default_state_filepath)
     """File path for acquisition parameter state, defaults to `NEXUS_PARAMETER_FILE` if set.
 
     Don't enforce a Path object here to prevent conflicts when sending acquisition parameter
@@ -208,7 +211,7 @@ class AcquisitionParameter:
         log = logging.getLogger("AcqParam")
 
         # Resolve file path
-        _path = filepath or cls.state_filepath
+        _path = filepath or _default_state_filepath()
         _path = Path(_path)
 
         # Enforce `.state` suffix
