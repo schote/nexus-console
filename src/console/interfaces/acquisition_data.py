@@ -77,7 +77,7 @@ class AcquisitionData:
         """Resolve the directory the acquisition folder is created in.
 
         The default is resolved in the saving process, i.e. the account calling ``save()`` owns the
-        data: ``~/nexus-console/<date>-session`` with the date of the call.
+        data: ``~/nexus-console/<date>-session`` with the date of the acquisition.
         """
         session_folder = self.meta["date"] + "-session"
         if user_path is not None:

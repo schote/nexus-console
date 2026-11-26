@@ -1,6 +1,6 @@
 # Remote acquisition
 
-The acquisition can be run in a separate service process that connects to the cards once and remains active between experiments. Experiment scripts connect to this service as clients, either on the host computer or, with an appropriate address configuration, from another computer.
+The acquisition can be run in a separate service process that connects to the cards once and remains active between experiments. Experiment scripts connect to this service as clients on the host computer. The service is not reachable over the network; to use the console from another computer, log in via SSH and run the client there.
 
 ## Service
 
