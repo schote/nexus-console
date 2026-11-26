@@ -1,0 +1,17 @@
+[Unit]
+Description=Nexus acquisition service
+
+[Service]
+User=nexus
+Group=nexus
+# /run/nexus: socket and authentication key, created before start and removed after stop
+RuntimeDirectory=nexus
+# /var/log/nexus: log files, created before start and kept after stop
+LogsDirectory=nexus
+# Adapt the paths of the virtual environment and of the device configuration
+ExecStart=/opt/nexus/venv/bin/nexus --no-verify --device_config /etc/nexus/device_config.yaml --log_dir /var/log/nexus
+KillSignal=SIGTERM
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

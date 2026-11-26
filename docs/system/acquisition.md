@@ -76,7 +76,7 @@ Steps 2–14 are executed once per average; the next average starts after `avera
 | 2–5 | The digitizer is started first and waits for the first ADC gate. As soon as its thread is ready, the AWG is started; it uses a software trigger, so the replay begins immediately. |
 | 6–8 | The AWG replays the sequence while the TX thread refills the ring buffer (see [AWG: FIFO streaming](#awg-fifo-streaming)). |
 | 9–11 | The ADC gates and the phase reference embedded in the replay buffer (see [Sequence calculation](sequence-calculation.md#replay-buffer)) trigger the gated recording of the digitizer (see [Digitizer: gated recording](#digitizer-gated-recording)). Each gate is submitted for processing while the acquisition continues (see [Postprocessing](postprocessing.md)). |
-| 12 | The main thread polls the number of received gates every 100 ms and reports the progress to the optional `progress_callback`. The average ends when all gates are received, or after a timeout of 5 s plus the sequence duration. |
+| 12 | The main thread polls the number of received gates every 100 ms. The progress in percent is estimated from the elapsed time relative to the sequence duration; it is reported to the optional `progress_callback` and can be queried with `get_progress()`, e.g. by a client of the [acquisition service](../setup/nexus-service.md). The average ends when all gates are received, or after a timeout of 5 s plus the sequence duration. |
 | 13, 14 | Both cards are stopped as soon as the last gate is received, so blocks after the last ADC event (e.g. a final TR delay) are not necessarily played out completely. |
 | 16 | The processed `RxData` of all averages are collected in order. |
 

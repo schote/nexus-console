@@ -10,11 +10,11 @@ Start the service on the host computer with the device configuration of the syst
 nexus -d path/to/device_config.yaml
 ```
 
-The service asks for confirmation that the amplifiers are switched off before the cards are opened (see [Console hardware](../system/hardware.md#safety)). The available options are documented in [`start_manager.main`][console.service.start_manager.main].
+The service asks for confirmation that the amplifiers are switched off before the cards are opened (see [Console hardware](../system/hardware.md#safety)). The available options are documented in [`start_manager.main`][nexus_service.start_manager.main].
 
 ## Client
 
-The client connects with [`AcquisitionControlManager`][console.service.acquisition_manager.AcquisitionControlManager] and accesses the remote `AcquisitionControl` instance as `mngr.acquisition`. Sequence and acquisition parameters are transferred to the service, and the `AcquisitionData` is returned to the client.
+The client connects with [`AcquisitionControlManager`][nexus_service.acquisition_manager.AcquisitionControlManager] and accesses the remote `AcquisitionControl` instance as `mngr.acquisition`. Sequence and acquisition parameters are transferred to the service, and the `AcquisitionData` is returned to the client.
 
 ```python title="examples/acquisition_manager.py"
 --8<-- "examples/acquisition_manager.py"
