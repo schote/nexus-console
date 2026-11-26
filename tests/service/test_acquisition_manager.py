@@ -129,6 +129,22 @@ def test_release_keeps_files_of_running_service(nexus_runtime_dir: Path) -> None
         assert manager.acquisition.get_progress() == 42
 
 
+@posix_only
+@pytest.mark.usefixtures("nexus_runtime_dir")
+def test_client_reads_key_next_to_explicit_socket(tmp_path: Path) -> None:
+    """A client given the socket of a service outside the runtime directory reads the key next to it."""
+    other = tmp_path / "other"
+    address = str(other / "nexus.sock")
+    claim_runtime_dir(other, address)
+    server = AcquisitionControlManager(callable_acq_control=DummyAcquisitionControl, address=address)
+    server.start()
+    try:
+        with AcquisitionControlManager(address=address) as manager:
+            assert manager.acquisition.get_progress() == 42
+    finally:
+        server.shutdown()
+
+
 @pytest.mark.usefixtures("nexus_runtime_dir")
 def test_tcp_address_is_rejected() -> None:
     """A TCP address of the former API is reported instead of being misread as socket path."""

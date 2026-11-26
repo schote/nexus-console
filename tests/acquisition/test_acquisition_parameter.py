@@ -46,6 +46,15 @@ def test_load_binds_to_file(acquisition_parameter: AcquisitionParameter, tmp_pat
     assert AcquisitionParameter.load(acquisition_parameter.state_filepath) == acquisition_parameter
 
 
+def test_environment_is_read_after_import(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Check that NEXUS_PARAMETER_FILE set after the import is used by new instances and by load()."""
+    path = tmp_path / "env.state"
+    monkeypatch.setenv("NEXUS_PARAMETER_FILE", str(path))
+
+    assert AcquisitionParameter().state_filepath == str(path)
+    assert AcquisitionParameter.load().state_filepath == str(path)
+
+
 def test_load_missing_file(tmp_path: Path) -> None:
     """Check that loading a missing file returns defaults bound to that path and writes only on mutation."""
     path = tmp_path / "missing.state"
