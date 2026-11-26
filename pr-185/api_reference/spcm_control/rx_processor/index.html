@@ -1907,6 +1907,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#console.spcm_control.rx_processor.RxProcessor.clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#console.spcm_control.rx_processor.RxProcessor.shutdown" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2984,6 +2995,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#console.spcm_control.rx_processor.RxProcessor.clear" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        clear
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#console.spcm_control.rx_processor.RxProcessor.shutdown" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -3376,6 +3398,39 @@ streaming thread.</p>
 <div class="doc doc-object doc-function">
 
 
+<h4 id="console.spcm_control.rx_processor.RxProcessor.clear" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">clear</span>
+
+
+</h4>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">clear</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Cancel pending futures and discard all results that were not collected.</p>
+
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/console/spcm_control/rx_processor.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-120">120</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-121">121</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-122">122</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-123">123</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-124">124</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="console.spcm_control.rx_processor.RxProcessor.clear--source--__span-0-120"><a id="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-120" name="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-120"></a><span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.clear--source--__span-0-121"><a id="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-121" name="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-121"></a><span class="w">    </span><span class="sd">"""Cancel pending futures and discard all results that were not collected."""</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.clear--source--__span-0-122"><a id="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-122" name="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-122"></a>    <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_futures</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.clear--source--__span-0-123"><a id="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-123" name="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-123"></a>        <span class="n">future</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.clear--source--__span-0-124"><a id="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-124" name="console.spcm_control.rx_processor.RxProcessor.clear--source--__codelineno-0-124"></a>    <span class="bp">self</span><span class="o">.</span><span class="n">_futures</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+</span></code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h4 id="console.spcm_control.rx_processor.RxProcessor.shutdown" class="doc doc-heading">
             <span class="doc doc-object-name doc-function-name">shutdown</span>
 
@@ -3391,17 +3446,17 @@ streaming thread.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/console/spcm_control/rx_processor.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-120">120</a></span>
-<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-121">121</a></span>
-<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-122">122</a></span>
-<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-123">123</a></span>
-<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-124">124</a></span>
-<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-125">125</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-120"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-120" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-120"></a><span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-121"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-121" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-121"></a><span class="w">    </span><span class="sd">"""Shut down the process pool."""</span>
-</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-122"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-122" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-122"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-123"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-123" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-123"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-124"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-124" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-124"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-125"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-125" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-125"></a>        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"RxProcessor pool shut down"</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-126">126</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-127">127</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-128">128</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-129">129</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-130">130</a></span>
+<span class="normal"><a href="#console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-131">131</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-126"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-126" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-126"></a><span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-127"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-127" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-127"></a><span class="w">    </span><span class="sd">"""Shut down the process pool."""</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-128"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-128" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-128"></a>    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-129"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-129" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-129"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">cancel_futures</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-130"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-130" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-130"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__span-0-131"><a id="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-131" name="console.spcm_control.rx_processor.RxProcessor.shutdown--source--__codelineno-0-131"></a>        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"RxProcessor pool shut down"</span><span class="p">)</span>
 </span></code></pre></div></td></tr></table></div>
             </details>
     </div>

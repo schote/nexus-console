@@ -3011,7 +3011,7 @@
 </span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">acq_data</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
 </span></code></pre></div>
-<p>The client uses the same API as a local <code>AcquisitionControl</code>, so existing scripts only need to replace the instantiation.</p>
+<p>The client uses the same API as a local <code>AcquisitionControl</code>, so existing scripts only need to replace the instantiation. Clients must not call <code>close()</code>, the service owns the cards and does not expose this method.</p>
 <div class="admonition warning">
 <p class="admonition-title">One client at a time</p>
 <p>All clients share a single <code>AcquisitionControl</code> instance, and the service does not serialize access to it. Each client connection is handled in its own thread, so calls of different clients run concurrently: a <code>set_sequence</code> of a second client can replace the sequence of the first one before its <code>run</code>, and two simultaneous <code>run</code> calls access the cards at the same time. Coordinate the use of the console so that only one client runs acquisitions at a time.</p>
